@@ -159,7 +159,7 @@ describe('Layout sider brand Home button', () => {
 
     // No actionable role/label in chat routes.
     expect(screen.queryByLabelText(BACK_KEY)).toBeNull();
-    const wordmark = screen.getByText('AionUi');
+    const wordmark = screen.getByText('Catfish');
     fireEvent.click(wordmark);
     expect(navigate).not.toHaveBeenCalled();
   });
@@ -168,7 +168,7 @@ describe('Layout sider brand Home button', () => {
     currentPathname = '/conversation/xyz';
     renderLayout();
 
-    fireEvent.click(screen.getByText('AionUi'));
+    fireEvent.click(screen.getByText('Catfish'));
     expect(navigate).not.toHaveBeenCalled();
   });
 
@@ -204,6 +204,9 @@ describe('Layout sider brand Home button', () => {
     // The icon is the SVG-wrapping div (bg-black), separate from the wordmark.
     const icon = container.querySelector('.bg-black') as HTMLElement;
     expect(icon).toBeTruthy();
+    const logo = icon.querySelector('svg');
+    expect(logo).toHaveAttribute('viewBox', '0 0 1024 1024');
+    expect(logo?.querySelector('circle')).toHaveAttribute('fill', '#1783ff');
     for (let i = 0; i < 4; i++) fireEvent.click(icon);
     expect(openDevTools).toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalled();

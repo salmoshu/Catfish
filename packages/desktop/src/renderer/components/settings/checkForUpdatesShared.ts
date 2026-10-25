@@ -83,7 +83,7 @@ export const runUpdateCheck = async (opts: {
     const releasePageUrl = latest?.htmlUrl || '';
 
     // Never treat a same-or-older feed version as an available update. The
-    // auto-updater and CDN manifest can report a version that is not strictly
+    // auto-updater and GitHub releases can report a version that is not strictly
     // newer than the installed build; comparing here prevents downgrade offers.
     const autoUpdateAvailable = isNewerVersion(autoUpdateInfo?.version, currentVersion);
     const manualUpdateAvailable = Boolean(

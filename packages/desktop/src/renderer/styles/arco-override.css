@@ -50,6 +50,7 @@
      selection for free — no need to touch those call sites. */
   --font-mono: var(
     --code-font-family,
+    'Geist Mono',
     ui-monospace,
     'SF Mono',
     SFMono-Regular,
@@ -68,17 +69,133 @@
   --font-mono-weight: var(--code-font-weight, inherit);
   --code-font-size: 13px;
   --aion-overlay-bg: #ffffff;
-  --aion-overlay-text: #1d2129;
-  --aion-overlay-border: #e5e6eb;
-  --aion-overlay-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --aion-overlay-text: #000000e6;
+  --aion-overlay-border: #00000021;
+  --aion-overlay-shadow: var(--shadow-pop);
 }
 
 html[data-theme='dark'],
 body[arco-theme='dark'] {
-  --aion-overlay-bg: #0e0e0e;
-  --aion-overlay-text: #f2f3f5;
-  --aion-overlay-border: #333333;
-  --aion-overlay-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --aion-overlay-bg: #1f1f1f;
+  --aion-overlay-text: #ffffffd6;
+  --aion-overlay-border: #ffffff1f;
+  --aion-overlay-shadow: var(--shadow-pop);
+}
+
+body {
+  --gray-1: 249, 251, 252;
+  --gray-2: 245, 245, 245;
+  --gray-3: 225, 227, 230;
+  --gray-4: 195, 195, 195;
+  --gray-5: 166, 166, 166;
+  --gray-6: 141, 141, 141;
+  --gray-7: 112, 112, 112;
+  --gray-8: 77, 77, 77;
+  --gray-9: 41, 41, 41;
+  --gray-10: 18, 18, 18;
+  --arcoblue-1: 232, 243, 255;
+  --arcoblue-2: 207, 229, 255;
+  --arcoblue-3: 168, 206, 255;
+  --arcoblue-4: 123, 179, 255;
+  --arcoblue-5: 72, 154, 255;
+  --arcoblue-6: 23, 131, 255;
+  --arcoblue-7: 22, 127, 247;
+  --arcoblue-8: 22, 124, 242;
+  --arcoblue-9: 18, 95, 202;
+  --arcoblue-10: 13, 70, 150;
+  --primary-1: var(--arcoblue-1);
+  --primary-2: var(--arcoblue-2);
+  --primary-3: var(--arcoblue-3);
+  --primary-4: var(--arcoblue-4);
+  --primary-5: var(--arcoblue-5);
+  --primary-6: var(--arcoblue-6);
+  --primary-7: var(--arcoblue-7);
+  --primary-8: var(--arcoblue-8);
+  --primary-9: var(--arcoblue-9);
+  --primary-10: var(--arcoblue-10);
+  --color-primary: rgb(var(--primary-6));
+  --color-border: #00000021;
+  --color-bg-popup: #ffffff;
+  --color-bg-1: #ffffff;
+  --color-bg-2: #f9fbfc;
+  --color-bg-3: #f5f5f5;
+  --color-bg-4: #f2f2f2;
+  --color-bg-5: #e9e9e9;
+  --color-text-1: #000000e6;
+  --color-text-2: #00000099;
+  --color-text-3: #00000073;
+  --color-text-4: #0000004d;
+  --color-border-1: #00000008;
+  --color-border-2: #00000021;
+  --color-border-3: #00000021;
+  --color-border-4: #00000021;
+  --color-fill-1: #00000008;
+  --color-fill-2: #0000000f;
+  --color-fill-3: #00000014;
+  --color-fill-4: #0000001a;
+  --color-secondary: var(--color-fill-1);
+  --color-secondary-hover: var(--color-fill-2);
+  --color-secondary-active: var(--color-fill-3);
+  --color-secondary-disabled: var(--color-fill-1);
+  --border-radius-small: 6px;
+  --border-radius-medium: 8px;
+  --border-radius-large: 12px;
+}
+
+body[arco-theme='dark'] {
+  --gray-1: 18, 18, 18;
+  --gray-2: 22, 23, 23;
+  --gray-3: 31, 31, 31;
+  --gray-4: 41, 41, 41;
+  --gray-5: 77, 77, 77;
+  --gray-6: 107, 107, 107;
+  --gray-7: 143, 143, 143;
+  --gray-8: 179, 179, 179;
+  --gray-9: 230, 230, 230;
+  --gray-10: 255, 255, 255;
+  --arcoblue-1: 30, 42, 56;
+  --arcoblue-2: 33, 50, 72;
+  --arcoblue-3: 37, 66, 95;
+  --arcoblue-4: 36, 87, 131;
+  --arcoblue-5: 34, 113, 179;
+  --arcoblue-6: 26, 136, 255;
+  --arcoblue-7: 37, 142, 255;
+  --arcoblue-8: 49, 148, 255;
+  --arcoblue-9: 102, 176, 255;
+  --arcoblue-10: 153, 203, 255;
+  --primary-1: var(--arcoblue-1);
+  --primary-2: var(--arcoblue-2);
+  --primary-3: var(--arcoblue-3);
+  --primary-4: var(--arcoblue-4);
+  --primary-5: var(--arcoblue-5);
+  --primary-6: var(--arcoblue-6);
+  --primary-7: var(--arcoblue-7);
+  --primary-8: var(--arcoblue-8);
+  --primary-9: var(--arcoblue-9);
+  --primary-10: var(--arcoblue-10);
+  --color-border: #ffffff1f;
+  --color-bg-popup: #1f1f1f;
+  --color-bg-1: #121212;
+  --color-bg-2: #161717;
+  --color-bg-3: #1f1f1f;
+  --color-bg-4: #292929;
+  --color-bg-5: #2a2a2a;
+  --color-text-1: #ffffffd6;
+  --color-text-2: #ffffff8f;
+  --color-text-3: #ffffff6b;
+  --color-text-4: #ffffff42;
+  --color-border-1: #ffffff0d;
+  --color-border-2: #ffffff1f;
+  --color-border-3: #ffffff1f;
+  --color-border-4: #ffffff1f;
+  --color-fill-1: #ffffff0d;
+  --color-fill-2: #ffffff19;
+  --color-fill-3: #ffffff25;
+  --color-fill-4: #ffffff30;
+  --color-secondary: var(--color-fill-1);
+  --color-secondary-hover: var(--color-fill-2);
+  --color-secondary-active: var(--color-fill-3);
+  --color-secondary-disabled: var(--color-fill-1);
 }
 
 /* Arco's arco.css puts 'Inter' first in font-family, which causes very thin
@@ -126,6 +243,7 @@ html body .arco-popconfirm-content {
   background: var(--aion-overlay-bg) !important;
   color: var(--aion-overlay-text) !important;
   border: 1px solid var(--aion-overlay-border) !important;
+  border-radius: var(--radius-input) !important;
   box-shadow: var(--aion-overlay-shadow) !important;
 }
 
@@ -180,10 +298,28 @@ html body .arco-popconfirm-arrow.arco-trigger-arrow {
   }
 } */
 
+.arco-input-wrapper,
+.arco-input,
+.arco-input-inner-wrapper,
+.arco-textarea,
+.arco-select-view,
+.arco-picker,
+.arco-input-number,
+.arco-cascader-view,
+.arco-tree-select-view,
+.arco-auto-complete-view,
+.arco-mentions-view {
+  border-radius: var(--radius-input);
+}
+
 .arco-btn {
+  &:not(.arco-btn-shape-circle):not(.arco-btn-shape-round) {
+    border-radius: var(--radius-button);
+  }
+
   &.arco-btn-outline {
-    border-color: #86909c;
-    color: #86909c;
+    border-color: var(--border-base);
+    color: var(--text-secondary);
   }
 }
 
@@ -194,10 +330,14 @@ html body .arco-popconfirm-arrow.arco-trigger-arrow {
 
 .arco-collapse {
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-button);
   .arco-collapse-item-header {
     border-bottom: none;
   }
+}
+
+.arco-tag {
+  border-radius: var(--radius-badge);
 }
 
 /* Arco Tag dark mode styles - enhance contrast with semi-transparent backgrounds */
@@ -243,11 +383,20 @@ body[arco-theme='dark'] .arco-tag-checked.arco-tag-gray {
   line-height: 28px !important;
 }
 
+.arco-modal {
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-overlay);
+}
+
+.arco-modal-content {
+  border-radius: var(--radius-card);
+}
+
 /* AionUi Modal wrapper styles */
 .aionui-modal .arco-modal-content {
   background: var(--dialog-fill-0) !important;
   border: 1px solid var(--border-base) !important;
-  border-radius: 16px !important;
+  border-radius: var(--radius-card) !important;
 }
 
 /* standard 变体：清除 Arco content 默认内边距，让三段（标题/内容/按钮）铺满到弹窗边框，
@@ -266,7 +415,7 @@ body[arco-theme='dark'] .arco-tag-checked.arco-tag-gray {
    弹窗自身不设固定高度时按内容自适应，因此短内容不会留白、长内容会滚动。 */
 .aionui-modal-standard .aionui-modal-wrapper {
   overflow: hidden !important;
-  border-radius: 16px !important;
+  border-radius: var(--radius-card) !important;
   max-height: calc(100vh - 64px);
 }
 
@@ -411,8 +560,8 @@ body[arco-theme='dark'] .arco-modal-confirm-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  transition: background-color 0.2s;
+  border-radius: var(--radius-button);
+  transition: background-color var(--duration-default) var(--ease-out);
   cursor: pointer;
   border: none;
   background: transparent;
@@ -426,7 +575,7 @@ body[arco-theme='dark'] .arco-modal-confirm-icon {
 /* Arco Message custom styles */
 .arco-message {
   border: none !important;
-  border-radius: 8px !important;
+  border-radius: var(--radius-button) !important;
 }
 
 /* Light mode */
@@ -466,7 +615,7 @@ body[arco-theme='dark'] .arco-message-error {
 /* Workspace tree: full-row hover & selection backgrounds (VSCode-style).
    Paint the whole node row, not the narrower title block. */
 .workspace-tree .arco-tree-node {
-  transition: background-color 0.12s ease;
+  transition: background-color var(--duration-default) var(--ease-out);
 }
 
 /* 对齐基准线（与 ExplorerContainer.tsx / SearchPanel.tsx 保持一致）：

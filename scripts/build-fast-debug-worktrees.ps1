@@ -166,7 +166,7 @@ function Wait-BuildProcess($Build, [int]$TimeoutSeconds) {
   $Build.process.WaitForExit()
   $Build.process.Refresh()
   $exitCode = $Build.process.ExitCode
-  $source = Join-Path $Build.worktreePath "out\AionUi-$($Build.version)-win-x64.exe"
+  $source = Join-Path $Build.worktreePath "out\Catfish-$($Build.version)-win-x64.exe"
   if (-not (Test-Path -LiteralPath $source)) {
     $tailParts = @()
     if (Test-Path -LiteralPath $Build.stderrPath) {
@@ -198,7 +198,7 @@ function Wait-BuildProcess($Build, [int]$TimeoutSeconds) {
     throw "build $($Build.version) produced an unexpectedly small installer ($($sourceItem.Length) bytes): $source. Logs: $($Build.stdoutPath), $($Build.stderrPath)"
   }
 
-  $target = Join-Path $script:OutputDirResolved "AionUi-$($Build.version)-win-x64.exe"
+  $target = Join-Path $script:OutputDirResolved "Catfish-$($Build.version)-win-x64.exe"
   Copy-Item -LiteralPath $source -Destination $target -Force
   $item = Get-Item -LiteralPath $target
   $hash = (Get-FileHash -LiteralPath $target -Algorithm SHA512).Hash

@@ -4,19 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { CdnGenericProvider } from './cdnGenericProvider';
-import type { CdnGenericProviderConfiguration } from './cdnGenericProvider';
+export const GITHUB_UPDATE_OWNER = 'salmoshu';
+export const GITHUB_UPDATE_REPO = 'Catfish';
 
-export const CDN_UPDATE_BASE_URL = 'https://static.aionui.com/releases';
-
-export type CdnFeedOptions = CdnGenericProviderConfiguration & {
-  updateProvider: typeof CdnGenericProvider;
-};
-
-export function buildCdnFeedOptions(): CdnFeedOptions {
+export function buildGitHubFeedOptions() {
   return {
-    provider: 'custom',
-    url: CDN_UPDATE_BASE_URL,
-    updateProvider: CdnGenericProvider,
+    provider: 'github' as const,
+    owner: GITHUB_UPDATE_OWNER,
+    repo: GITHUB_UPDATE_REPO,
   };
 }

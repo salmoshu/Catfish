@@ -24,7 +24,7 @@ import {
   recordAutoUpdateQuitAndInstall,
   recordAutoUpdateStatus,
 } from './autoUpdateDiagnostics';
-import { buildCdnFeedOptions } from './updateFeed';
+import { buildGitHubFeedOptions } from './updateFeed';
 
 const FORCE_DEV_AUTO_UPDATE_ENV = 'AIONUI_FORCE_DEV_AUTO_UPDATE';
 const DEBUG_AUTO_UPDATE_CURRENT_VERSION_ENV = 'AIONUI_DEBUG_AUTO_UPDATE_CURRENT_VERSION';
@@ -131,7 +131,7 @@ class AutoUpdaterService extends EventEmitter {
     autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = true;
     this.configureDevAutoUpdateDebug();
-    const cdnFeedOptions = buildCdnFeedOptions();
+    const githubFeedOptions = buildGitHubFeedOptions();
 
     // Set the correct update channel based on platform and architecture before
     // any update checks are performed
@@ -140,11 +140,12 @@ class AutoUpdaterService extends EventEmitter {
       autoUpdater.channel = channel;
       log.info(`Update channel set to: ${channel}`);
     }
-    autoUpdater.setFeedURL(cdnFeedOptions);
-    log.info('Update feed set to CDN provider');
-    log.debug('[auto-update] CDN feed configured', {
-      provider: cdnFeedOptions.provider,
-      url: cdnFeedOptions.url,
+    autoUpdater.setFeedURL(githubFeedOptions);
+    log.info('Update feed set to GitHub provider');
+    log.debug('[auto-update] GitHub feed configured', {
+      provider: githubFeedOptions.provider,
+      owner: githubFeedOptions.owner,
+      repo: githubFeedOptions.repo,
       channel: channel ?? 'latest',
       platform: process.platform,
       arch: process.arch,
@@ -188,17 +189,16 @@ class AutoUpdaterService extends EventEmitter {
   /**
    * Write a minimal dev-app-update.yml and point the updater at it, so the
    * download step's `updaterCacheDirName` lookup succeeds in dev mode. The
-   * `provider`/`url` here are placeholders — the real feed comes from
-   * setFeedURL() — but `updaterCacheDirName` must match the packaged value
-   * (electron-builder defaults it to the appId) to reuse the same cache dir.
+   * cache directory name must match the packaged appId to reuse the same cache.
    */
   private ensureDevUpdateConfig(): void {
     try {
-      const cdnFeedOptions = buildCdnFeedOptions();
+      const githubFeedOptions = buildGitHubFeedOptions();
       const devConfig = [
-        'provider: generic',
-        `url: ${cdnFeedOptions.url}`,
-        'updaterCacheDirName: com.aionui.app',
+        'provider: github',
+        `owner: ${githubFeedOptions.owner}`,
+        `repo: ${githubFeedOptions.repo}`,
+        'updaterCacheDirName: app.catfish.desktop',
         '',
       ].join('\n');
       const configPath = path.join(app.getPath('userData'), 'dev-app-update.yml');
@@ -459,7 +459,7 @@ class AutoUpdaterService extends EventEmitter {
 
   /**
    * In dev mode the running shell is the stock Electron bundle (com.github.Electron),
-   * while the downloaded archive contains the packaged app (com.aionui.app). Squirrel.Mac
+   * while the downloaded archive contains the packaged app (app.catfish.desktop). Squirrel.Mac
    * looks for a bundle matching the *running* id, fails to find it, and reports
    * "Could not locate update bundle". This is expected in dev and cannot be reproduced
    * without a packaged build, so surface a clearer message instead of the raw error.
@@ -618,7 +618,7 @@ class AutoUpdaterService extends EventEmitter {
 
       if (this._allowPrerelease) {
         log.info('Skipping electron-updater check for prerelease manual mode');
-        log.debug('[auto-update] CDN stable feed skipped because prerelease mode is handled by GitHub API');
+        log.debug('[auto-update] GitHub stable feed skipped because prerelease mode is handled by GitHub API');
         return { success: true };
       }
 
@@ -632,7 +632,7 @@ class AutoUpdaterService extends EventEmitter {
       // When isUpdateAvailable is false, updateInfoAndProvider is NOT set internally,
       // so a subsequent downloadUpdate() call would fail with "Please check update first".
       if (!result.isUpdateAvailable) {
-        log.debug('[auto-update] no update available from CDN feed', {
+        log.debug('[auto-update] no update available from GitHub feed', {
           version: result.updateInfo.version,
         });
         return { success: true };
@@ -651,7 +651,7 @@ class AutoUpdaterService extends EventEmitter {
         });
         return { success: true };
       }
-      log.debug('[auto-update] update available from CDN feed', {
+      log.debug('[auto-update] update available from GitHub feed', {
         version: result.updateInfo.version,
         releaseDate: result.updateInfo.releaseDate,
       });

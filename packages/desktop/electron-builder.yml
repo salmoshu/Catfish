@@ -1,10 +1,10 @@
-appId: com.aionui.app
-productName: AionUi
-executableName: AionUi
-copyright: Copyright © 2024 AionUi
+appId: app.catfish.desktop
+productName: Catfish
+executableName: Catfish
+copyright: Copyright © 2026 Catfish contributors
 
 protocols:
-  - name: AionUi Protocol
+  - name: Catfish Protocol
     schemes:
       - aionui
 
@@ -175,9 +175,9 @@ linux:
   description: ${description}
   desktop:
     entry:
-      Name: AionUi
+      Name: Catfish
       Comment: ${description}
-      Icon: AionUi
+      Icon: Catfish
       Categories: Office;Utility;
       MimeType: x-scheme-handler/aionui;
 
@@ -218,7 +218,7 @@ electronDownload:
 
 publish:
   provider: github
-  owner: iOfficeAI
-  repo: AionUi
+  owner: salmoshu
+  repo: Catfish
   publishAutoUpdate: true
   releaseType: release

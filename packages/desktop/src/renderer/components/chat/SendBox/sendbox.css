@@ -1,5 +1,9 @@
 /* Sendbox component styles */
 
+.sendbox-panel {
+  border-radius: var(--radius-hero) !important;
+}
+
 /* Send button layout - keep Arco primary states from drawing a square block */
 .send-button-custom,
 .send-button-custom.arco-btn,
@@ -677,7 +681,7 @@ body[arco-theme='dark'] .sendbox-panel .send-button-custom--disabled svg * {
      less vertical space on narrow screens. */
   .sendbox-panel {
     padding: 8px 10px !important;
-    border-radius: 16px !important;
+    border-radius: var(--radius-hero) !important;
   }
 
   .speech-input-feedback {

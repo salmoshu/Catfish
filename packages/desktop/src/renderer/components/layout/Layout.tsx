@@ -144,7 +144,7 @@ const Layout: React.FC<{
     return () => setGlobalNavigate(null);
   }, [navigate]);
   const { t } = useTranslation();
-  // The "AionUi" wordmark acts as Home / Back-to-Chat, but only from settings routes.
+  // The "Catfish" wordmark acts as Home / Back-to-Chat, but only from settings routes.
   // In non-settings routes the user is already "home", so it is a no-op (and not actionable).
   const isSettingsRoute = location.pathname.startsWith('/settings');
   // Only wired to the wordmark in the isSettingsRoute branch below, so the
@@ -408,23 +408,20 @@ const Layout: React.FC<{
                     className={classNames('w-5.5 h-5.5 absolute inset-0 m-auto', {
                       'scale-140': !collapsed,
                     })}
-                    viewBox='0 0 80 80'
+                    viewBox='0 0 1024 1024'
                     fill='none'
                   >
-                    <path
-                      key='logo-path-1'
-                      d='M40 20 Q38 22 25 40 Q23 42 26 42 L30 42 Q32 40 40 30 Q48 40 50 42 L54 42 Q57 42 55 40 Q42 22 40 20'
-                      fill='white'
-                    ></path>
-                    <circle key='logo-circle' cx='40' cy='46' r='3' fill='white'></circle>
-                    <path
-                      key='logo-path-2'
-                      d='M18 50 Q40 70 62 50'
-                      stroke='white'
-                      strokeWidth='3.5'
-                      fill='none'
-                      strokeLinecap='round'
-                    ></path>
+                    <g fill='#f5f5f4'>
+                      <path d='M 496 344 C 522 296, 552 272, 596 258 C 580 296, 572 326, 572 352 Z' />
+                      <path d='M 436 640 C 452 678, 484 700, 522 704 C 506 676, 494 652, 488 628 Z' />
+                      <path d='M 258 512 C 360 352, 540 322, 690 384 C 730 402, 752 434, 762 462 L 886 380 C 852 436, 832 474, 812 512 C 832 550, 852 588, 886 644 L 762 562 C 752 590, 730 622, 690 640 C 540 702, 360 672, 258 512 Z' />
+                    </g>
+                    <g fill='none' stroke='#f5f5f4' strokeWidth='24' strokeLinecap='round'>
+                      <path d='M 282 506 C 236 456, 180 430, 118 428' />
+                      <path d='M 274 518 C 216 520, 160 538, 112 576' />
+                      <path d='M 282 530 C 240 576, 192 608, 136 624' />
+                    </g>
+                    <circle cx='350' cy='455' r='32' fill='#1783ff' />
                   </svg>
                 </div>
                 {isSettingsRoute ? (
@@ -442,11 +439,11 @@ const Layout: React.FC<{
                         }
                       }}
                     >
-                      AionUi
+                      Catfish
                     </div>
                   </Tooltip>
                 ) : (
-                  <div className='text-16px text-t-primary collapsed-hidden font-semibold'>AionUi</div>
+                  <div className='text-16px text-t-primary collapsed-hidden font-semibold'>Catfish</div>
                 )}
                 {isMobile && !collapsed && (
                   <button

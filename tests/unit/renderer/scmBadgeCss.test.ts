@@ -80,17 +80,17 @@ describe('every badge class actually produces a CSS rule', () => {
   it('routes the ordinary filename through --text-primary, which flips per theme', () => {
     // The dark-mode bug this guards: a filename with no colour class inherited a
     // value that does not follow the theme (real-browser check: it stayed rgb(0,0,0)
-    // under the dark scheme). `--text-primary` is #000 light / #fff dark, so the token
-    // is what makes the name legible in both.
+    // under the dark scheme). `--text-primary` switches between black and white alpha
+    // tiers, so the token is what makes the name legible in both.
     //
     // Two halves make the title true, not just plausible:
     //  1. the class resolves to the token (not a literal hex), so it can follow theme;
     expect(ruleFor('text-t-primary')).toBe('color:var(--text-primary);');
     expect(ruleFor('text-t-primary')).not.toMatch(/#[0-9a-f]{3,8}/i);
 
-    //  2. the token itself actually flips: #000 under the light selector, #fff under
-    //     the dark one. Without this the token could be defined once (no flip) and the
-    //     name would be legible in one theme only — the exact bug, one level down.
+    //  2. the token itself actually flips between the light and dark values. Without
+    //     this the token could be defined once (no flip) and the name would be legible
+    //     in one theme only — the exact bug, one level down.
     const scheme = readFileSync(
       path.join(__dirname, '../../../packages/desktop/src/renderer/styles/themes/default-color-scheme.css'),
       'utf8'
@@ -99,8 +99,8 @@ describe('every badge class actually produces a CSS rule', () => {
     expect(darkAt, 'dark theme selector must exist').toBeGreaterThan(-1);
     const light = scheme.slice(0, darkAt); // everything before the dark block = the :root/light scope
     const dark = scheme.slice(darkAt);
-    expect(light).toMatch(/--text-primary:\s*#000000/i); // light → black
-    expect(dark).toMatch(/--text-primary:\s*#ffffff/i); //  dark  → white
+    expect(light).toMatch(/--text-primary:\s*#000000e6;/i); // light → 90% black
+    expect(dark).toMatch(/--text-primary:\s*#ffffffd6;/i); //  dark  → 84% white
   });
 
   it('resolves the conflicted chip variables down to real RGB components', () => {

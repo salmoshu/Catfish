@@ -9,7 +9,7 @@ import type { UpdateInfo } from 'electron-updater';
 import type { AppUpdater } from 'electron-updater/out/AppUpdater';
 import type { ProviderRuntimeOptions } from 'electron-updater/out/providers/Provider';
 import { CdnGenericProvider } from '@/process/services/cdnGenericProvider';
-import { buildCdnFeedOptions, CDN_UPDATE_BASE_URL } from '@/process/services/updateFeed';
+import { buildGitHubFeedOptions, GITHUB_UPDATE_OWNER, GITHUB_UPDATE_REPO } from '@/process/services/updateFeed';
 
 const makeRuntimeOptions = (): ProviderRuntimeOptions => ({
   isUseMultipleRangeRequest: true,
@@ -19,13 +19,13 @@ const makeRuntimeOptions = (): ProviderRuntimeOptions => ({
   } as unknown as ProviderRuntimeOptions['executor'],
 });
 
-describe('CDN update feed options', () => {
-  it('builds a custom electron-updater provider pointed at the release CDN', () => {
-    const options = buildCdnFeedOptions();
-
-    expect(options.provider).toBe('custom');
-    expect(options.url).toBe(CDN_UPDATE_BASE_URL);
-    expect(options.updateProvider).toBe(CdnGenericProvider);
+describe('GitHub update feed options', () => {
+  it('builds the native electron-updater provider for Catfish releases', () => {
+    expect(buildGitHubFeedOptions()).toEqual({
+      provider: 'github',
+      owner: GITHUB_UPDATE_OWNER,
+      repo: GITHUB_UPDATE_REPO,
+    });
   });
 });
 
@@ -34,7 +34,7 @@ describe('CdnGenericProvider', () => {
     const provider = new CdnGenericProvider(
       {
         provider: 'custom',
-        url: 'https://static.aionui.com/releases',
+        url: 'https://example.com/releases',
       },
       {} as AppUpdater,
       makeRuntimeOptions()
@@ -44,15 +44,15 @@ describe('CdnGenericProvider', () => {
       version: '2.1.14',
       files: [
         {
-          url: 'AionUi-2.1.14-mac-arm64.dmg',
+          url: 'Catfish-2.1.14-mac-arm64.dmg',
           sha512: 'sha512-value',
         },
       ],
-      path: 'AionUi-2.1.14-mac-arm64.dmg',
+      path: 'Catfish-2.1.14-mac-arm64.dmg',
       sha512: 'sha512-value',
       releaseDate: '2026-06-08T00:00:00.000Z',
     } satisfies UpdateInfo);
 
-    expect(files[0]?.url.href).toBe('https://static.aionui.com/releases/2.1.14/AionUi-2.1.14-mac-arm64.dmg');
+    expect(files[0]?.url.href).toBe('https://example.com/releases/2.1.14/Catfish-2.1.14-mac-arm64.dmg');
   });
 });
