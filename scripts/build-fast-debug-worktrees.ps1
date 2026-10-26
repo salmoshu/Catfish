@@ -240,24 +240,24 @@ Invoke-Git $repoRoot @('diff', '--binary', 'HEAD', "--output=$patchPath") | Out-
 $hasPatch = (Get-Item -LiteralPath $patchPath).Length -gt 0
 $baseRef = (Invoke-Git $repoRoot @('rev-parse', 'HEAD')).Trim()
 $nodeModules = Join-Path $repoRoot 'node_modules'
-$localAioncoreBinary = Join-Path $repoRoot 'resources\bundled-aioncore\win32-x64\aioncore.exe'
-$localAioncoreBundleDir = Join-Path $repoRoot 'out\win-unpacked\resources\bundled-aioncore\win32-x64'
+$localAioncoreBinary = Join-Path $repoRoot 'resources\bundled-catfishcore\win32-x64\catfishcore.exe'
+$localAioncoreBundleDir = Join-Path $repoRoot 'out\win-unpacked\resources\bundled-catfishcore\win32-x64'
 if (-not (Test-Path -LiteralPath (Join-Path $localAioncoreBundleDir 'managed-resources') -PathType Container)) {
-  $localAioncoreBundleDir = Join-Path $env:LOCALAPPDATA 'Programs\AionUi\resources\bundled-aioncore\win32-x64'
+  $localAioncoreBundleDir = Join-Path $env:LOCALAPPDATA 'Programs\AionUi\resources\bundled-catfishcore\win32-x64'
 }
 if (Test-Path -LiteralPath (Join-Path $localAioncoreBundleDir 'managed-resources') -PathType Container) {
   $localAioncoreBundleDir = (Resolve-Path -LiteralPath $localAioncoreBundleDir).Path
-  Write-Host "=== using local aioncore bundle fallback: $localAioncoreBundleDir ==="
+  Write-Host "=== using local catfishcore bundle fallback: $localAioncoreBundleDir ==="
 } else {
   $localAioncoreBundleDir = ''
-  Write-Warning 'Local aioncore bundle fallback was not found; builds may need to prepare managed resources.'
+  Write-Warning 'Local catfishcore bundle fallback was not found; builds may need to prepare managed resources.'
 }
 if (Test-Path -LiteralPath $localAioncoreBinary -PathType Leaf) {
   $localAioncoreBinary = (Resolve-Path -LiteralPath $localAioncoreBinary).Path
-  Write-Host "=== using local aioncore fallback: $localAioncoreBinary ==="
+  Write-Host "=== using local catfishcore fallback: $localAioncoreBinary ==="
 } else {
   $localAioncoreBinary = ''
-  Write-Warning 'Local aioncore fallback was not found; builds may need to download aioncore.'
+  Write-Warning 'Local aioncore fallback was not found; builds may need to download catfishcore.'
 }
 $worktrees = @()
 $builds = @()

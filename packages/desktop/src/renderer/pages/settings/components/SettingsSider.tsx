@@ -226,8 +226,8 @@ const SettingsSider: React.FC<{ collapsed?: boolean; tooltipEnabled?: boolean }>
                   'settings-sider__item h-34px rd-8px flex items-center gap-8px group cursor-pointer relative overflow-hidden shrink-0 conversation-item [&.conversation-item+&.conversation-item]:mt-2px transition-colors',
                   collapsed ? 'w-full justify-center px-0' : 'justify-start px-10px',
                   {
-                    'hover:bg-fill-3': !isSelected,
-                    '!bg-fill-3': isSelected,
+                    'hover:bg-fill-2': !isSelected,
+                    '!bg-fill-2': isSelected,
                   }
                 )}
                 onClick={() => {

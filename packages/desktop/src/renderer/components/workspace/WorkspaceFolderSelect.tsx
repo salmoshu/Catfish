@@ -7,7 +7,7 @@
 import { ipcBridge } from '@/common';
 import { Check, Close, Down, FolderClose, FolderOpen } from '@icon-park/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { DEFAULT_RECENT_WS_KEY, addRecentWorkspace, getRecentWorkspaces } from './recentWorkspaces';
+import { addRecentWorkspace, getActiveRecentWorkspaceKey, getRecentWorkspaces } from './recentWorkspaces';
 
 const MENU_GAP = 4;
 const VIEWPORT_MARGIN = 8;
@@ -48,7 +48,7 @@ const WorkspaceFolderSelect: React.FC<WorkspaceFolderSelectProps> = ({
   placeholder,
   recentLabel,
   chooseDifferentLabel,
-  recentStorageKey = DEFAULT_RECENT_WS_KEY,
+  recentStorageKey = getActiveRecentWorkspaceKey(),
   triggerTestId,
   menuTestId,
   menuZIndex = 10010,

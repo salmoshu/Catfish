@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.1](https://github.com/salmoshu/Catfish/releases/tag/v0.3.1) (2026-10-26)
+
+### Desktop
+
+#### Bug Fixes
+
+- **agent:** stop the thinking spinner and elapsed timer when an ACP turn is paused
+- **conversation:** exclude injected Assistant Rules from automatic conversation titles
+
+### Build and Release
+
+- Set the Catfish application version baseline to 0.3.1 for subsequent GitHub Releases.
+- Keep the CI backend preparation entry compatible with the CatfishCore shared module.
+
+---
+
 ## [2.2.2](https://github.com/iOfficeAI/AionUi/compare/v2.2.1...v2.2.2) (2026-09-09)
 
 ### Desktop

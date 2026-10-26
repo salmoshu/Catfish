@@ -98,7 +98,7 @@ const GuidInputCard: React.FC<GuidInputCardProps> = ({
       className={`${styles.guidInputCardWrap} guid-input-card-shell relative rd-24px flex flex-col ${slashCommandMenu ? 'overflow-visible' : 'overflow-hidden'} transition-all duration-200 ${isFileDragging ? 'b b-solid border-dashed guid-input-card-shell--dragging' : ''}`}
       style={{
         zIndex: 1,
-        transition: 'box-shadow 0.25s ease',
+        transition: 'box-shadow var(--duration-panel) var(--ease-out)',
         width: isMobile ? 'calc(100% + 28px)' : undefined,
         marginLeft: isMobile ? -14 : undefined,
         marginRight: isMobile ? -14 : undefined,
@@ -109,18 +109,19 @@ const GuidInputCard: React.FC<GuidInputCardProps> = ({
               borderWidth: '1px',
             }
           : {
-              boxShadow: isInputActive ? activeShadow : 'none',
+              boxShadow: isInputActive ? activeShadow : 'var(--shadow-xs)',
             }),
       }}
       {...dragHandlers}
     >
-      {/* inner white card — narrower than outer wrap */}
+      {/* Inner input surface — narrower than outer wrap */}
       <div
         className={`${styles.guidInputInner} relative p-12px flex flex-col bg-dialog-fill-0`}
         style={{
-          transition: 'box-shadow 0.25s ease, border-color 0.25s ease',
+          transition:
+            'box-shadow var(--duration-panel) var(--ease-out), border-color var(--duration-panel) var(--ease-out)',
           borderColor: isFileDragging ? 'rgb(var(--primary-3))' : borderColor,
-          boxShadow: isInputActive && !isFileDragging ? activeShadow : 'none',
+          boxShadow: isInputActive && !isFileDragging ? activeShadow : 'var(--shadow-xs)',
         }}
       >
         <Input.TextArea
@@ -128,7 +129,7 @@ const GuidInputCard: React.FC<GuidInputCardProps> = ({
           autoSize={textareaAutoSize}
           placeholder={placeholder}
           spellCheck={false}
-          className={`text-14px focus:b-none rounded-xl !bg-transparent !b-none !resize-none !py-0 !pe-0 !ps-7px ${styles.lightPlaceholder}`}
+          className={`text-15px lh-22px focus:b-none rounded-xl !bg-transparent !b-none !resize-none !py-0 !pe-0 !ps-7px ${styles.lightPlaceholder}`}
           value={input}
           onChange={onInputChange}
           onPaste={onPaste}

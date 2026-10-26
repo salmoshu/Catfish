@@ -763,12 +763,12 @@ try {
     return;
   }
 
-  // 5. Prepare aioncore binary (for packaged runtime usage)
-  const { prepareAioncore } = require('../packages/shared-scripts/src/prepare-aioncore.js');
+  // 5. Prepare catfishcore binary (for packaged runtime usage)
+  const { prepareCatfishcore } = require('../packages/shared-scripts/src/prepare-catfishcore.js');
   const { resolveAioncoreVersion } = require('./resolveAioncoreVersion.js');
   const projectRoot = path.resolve(__dirname, '..');
   writeGeneratedSentryDsnInclude(projectRoot);
-  prepareAioncore({
+  prepareCatfishcore({
     projectRoot,
     platform: process.platform,
     arch: targetArch,

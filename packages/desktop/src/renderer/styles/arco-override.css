@@ -68,18 +68,14 @@
      it, so the code-region weight follows the selection for free. */
   --font-mono-weight: var(--code-font-weight, inherit);
   --code-font-size: 13px;
-  --aion-overlay-bg: #ffffff;
-  --aion-overlay-text: #000000e6;
-  --aion-overlay-border: #00000021;
+  --aion-overlay-bg: var(--dialog-fill-0);
+  --aion-overlay-text: var(--text-primary);
+  --aion-overlay-border: var(--border-base);
   --aion-overlay-shadow: var(--shadow-pop);
 }
 
-html[data-theme='dark'],
-body[arco-theme='dark'] {
-  --aion-overlay-bg: #1f1f1f;
-  --aion-overlay-text: #ffffffd6;
-  --aion-overlay-border: #ffffff1f;
-  --aion-overlay-shadow: var(--shadow-pop);
+::selection {
+  background: var(--text-selection);
 }
 
 body {
@@ -220,10 +216,10 @@ body {
     'Microsoft YaHei',
     sans-serif
   );
-  /* Global ("app") region font size. --app-font-size defaults to 14px (Arco's
-     base), so the whole app scales with the global size, while regions with
-     their own size var (chat/markdown/code) still override within their scope. */
-  font-size: var(--app-font-size, 14px);
+  /* The user's font-size preference still takes precedence over the brand's
+     15px body text baseline. */
+  font-size: var(--app-font-size, var(--ui-body-font-size, 15px));
+  line-height: var(--ui-body-line-height, 22px);
   /* Global ("app") region font weight. --app-font-weight is set by
      applyFontWeights when a global weight is chosen (empty otherwise), so this
      falls back to `normal`, keeping default rendering unchanged. Only text that
@@ -312,7 +308,38 @@ html body .arco-popconfirm-arrow.arco-trigger-arrow {
   border-radius: var(--radius-input);
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-title, inherit);
+}
+
+.arco-dropdown-menu,
+.arco-select-popup,
+.arco-cascader-popup,
+.arco-picker-panel-container,
+.arco-tree-select-popup {
+  border-radius: var(--radius-input);
+  box-shadow: var(--shadow-pop);
+}
+
+.arco-dropdown-menu-item,
+.arco-select-option,
+.arco-cascader-list-item {
+  border-radius: var(--radius-button);
+  transition: background-color var(--duration-default) var(--ease-out);
+}
+
 .arco-btn {
+  transition:
+    color var(--duration-default) var(--ease-out),
+    background-color var(--duration-default) var(--ease-out),
+    border-color var(--duration-default) var(--ease-out),
+    box-shadow var(--duration-default) var(--ease-out);
+
   &:not(.arco-btn-shape-circle):not(.arco-btn-shape-round) {
     border-radius: var(--radius-button);
   }

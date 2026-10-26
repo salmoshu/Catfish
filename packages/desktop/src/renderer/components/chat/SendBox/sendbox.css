@@ -36,22 +36,27 @@
 
 .send-button-custom--enabled,
 .send-button-custom--enabled.arco-btn {
-  background-color: rgb(var(--primary-6)) !important;
-  border-color: rgb(var(--primary-6)) !important;
-  color: var(--text-white) !important;
+  background-color: var(--send-button-bg) !important;
+  border-color: var(--send-button-bg) !important;
+  color: var(--send-button-icon) !important;
 }
 
 .send-button-custom--enabled:not(:disabled):hover,
 .send-button-custom--enabled.arco-btn:not(:disabled):hover,
-.send-button-custom--enabled:not(:disabled):active,
-.send-button-custom--enabled.arco-btn:not(:disabled):active,
 .send-button-custom--enabled:not(:disabled):focus,
 .send-button-custom--enabled.arco-btn:not(:disabled):focus,
 .send-button-custom--enabled:not(:disabled):focus-visible,
 .send-button-custom--enabled.arco-btn:not(:disabled):focus-visible {
-  background-color: rgb(var(--primary-7)) !important;
-  border-color: rgb(var(--primary-7)) !important;
-  color: var(--text-white) !important;
+  background-color: var(--send-button-hover) !important;
+  border-color: var(--send-button-hover) !important;
+  color: var(--send-button-icon) !important;
+}
+
+.send-button-custom--enabled:not(:disabled):active,
+.send-button-custom--enabled.arco-btn:not(:disabled):active {
+  background-color: var(--send-button-active) !important;
+  border-color: var(--send-button-active) !important;
+  color: var(--send-button-icon) !important;
 }
 
 /* Send button disabled state - keep it synchronized with the draft action. */
@@ -63,7 +68,7 @@
   border-color: var(--color-fill-3) !important;
   border-radius: 50% !important;
   box-shadow: none !important;
-  color: var(--text-white) !important;
+  color: var(--text-tertiary) !important;
   opacity: 1 !important;
 }
 

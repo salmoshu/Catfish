@@ -715,6 +715,7 @@ export const useAcpMessage = (
   }, [conversation_id, options?.prepareRuntime, options?.skipWarmup]);
 
   const resetState = useCallback(() => {
+    completeActiveThinking({ conversation_id, created_at: Date.now() });
     turnFinishedRef.current = true;
     setRunning(false);
     runningRef.current = false;
@@ -726,7 +727,7 @@ export const useAcpMessage = (
     hasThinkingMessageRef.current = false;
     activeThinkingRef.current = null;
     setHasThinkingMessage(false);
-  }, [markTurnEnded]);
+  }, [completeActiveThinking, conversation_id, markTurnEnded]);
 
   const fetchSlashCommands = useCallback(() => {
     const runtimeReady = options?.prepareRuntime?.() ?? ensureConversationRuntime(conversation_id);

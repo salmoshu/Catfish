@@ -8,9 +8,9 @@ import { ipcBridge } from '@/common';
 import { TEAM_MODE_ENABLED } from '@/common/config/constants';
 import PwaPullToRefresh from '@/renderer/components/layout/PwaPullToRefresh';
 import Titlebar from '@/renderer/components/layout/Titlebar';
-import { Layout as ArcoLayout, Tooltip } from '@arco-design/web-react';
+import { Layout as ArcoLayout, Message, Tooltip } from '@arco-design/web-react';
 import classNames from 'classnames';
-import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { setGlobalNavigate } from '@/renderer/utils/navigation';
@@ -89,8 +89,6 @@ const useDebug = () => {
   return { onClick };
 };
 
-const UpdateModal = React.lazy(() => import('@/renderer/components/settings/UpdateModal'));
-
 const DEFAULT_SIDER_WIDTH = 260;
 const DESKTOP_COLLAPSED_WIDTH = 0;
 // 桌面侧栏连续可调：下限 200；低于此值拖拽即吸附收起（消灭旧 130 死区）。
@@ -144,6 +142,20 @@ const Layout: React.FC<{
     return () => setGlobalNavigate(null);
   }, [navigate]);
   const { t } = useTranslation();
+  useEffect(() => {
+    let reloadTimer: number | undefined;
+    const dispose =
+      ipcBridge.remoteEnvironment?.disconnected?.on((event) => {
+        const active = window.__backendEnvironment;
+        if (active?.type !== 'remote' || active.id !== event.environmentId) return;
+        Message.warning(t('guid.workspace.remote.unexpectedDisconnect'));
+        reloadTimer = window.setTimeout(() => window.location.reload(), 800);
+      }) ?? (() => {});
+    return () => {
+      dispose();
+      if (reloadTimer !== undefined) window.clearTimeout(reloadTimer);
+    };
+  }, [t]);
   // The "Catfish" wordmark acts as Home / Back-to-Chat, but only from settings routes.
   // In non-settings routes the user is already "home", so it is a no-op (and not actionable).
   const isSettingsRoute = location.pathname.startsWith('/settings');
@@ -427,7 +439,14 @@ const Layout: React.FC<{
                       <path d='M 855 477 C 886 461, 912 445, 936 426' />
                       <path d='M 860 509 C 893 518, 920 532, 944 549' />
                     </g>
-                    <path d='M 334 449 C 305 484, 305 540, 338 575' fill='none' stroke='#121318' strokeWidth='17' strokeLinecap='round' opacity='0.78' />
+                    <path
+                      d='M 334 449 C 305 484, 305 540, 338 575'
+                      fill='none'
+                      stroke='#121318'
+                      strokeWidth='17'
+                      strokeLinecap='round'
+                      opacity='0.78'
+                    />
                     <g fill='none' stroke='#f5f5f4' strokeWidth='23' strokeLinecap='round'>
                       <path d='M 238 454 C 181 389, 157 287, 221 197' />
                       <path d='M 215 521 C 158 614, 197 746, 337 806' />
@@ -515,9 +534,6 @@ const Layout: React.FC<{
               >
                 <Outlet />
                 <PwaPullToRefresh />
-                <Suspense fallback={null}>
-                  <UpdateModal />
-                </Suspense>
                 {IS_DISCONTINUED_BUILD && <UpdateMigrationDialog />}
               </ArcoLayout.Content>
               {/* Hoisted preview region (project conversations only). Structurally

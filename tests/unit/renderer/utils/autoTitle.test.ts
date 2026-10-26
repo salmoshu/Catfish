@@ -106,6 +106,28 @@ describe('autoTitle', () => {
       expect(deriveAutoTitleFromMessages(messages)).toBe('User question');
     });
 
+    it('uses the real prompt after a leading Assistant Rules block', () => {
+      const messages = [
+        mockUserMessage(
+          '[Assistant Rules]\r\n## Available Skills\r\n- **aionui-config**: Configure AionUi itself.\r\n[/Assistant Rules]\r\n\r\nFix conversation titles'
+        ),
+      ];
+
+      expect(deriveAutoTitleFromMessages(messages)).toBe('Fix conversation titles');
+    });
+
+    it('uses fallback content when a user message contains only Assistant Rules', () => {
+      const messages = [mockUserMessage('[Assistant Rules]\n## Available Skills\n[/Assistant Rules]')];
+
+      expect(deriveAutoTitleFromMessages(messages, 'Actual prompt')).toBe('Actual prompt');
+    });
+
+    it('does not remove an unclosed Assistant Rules prefix', () => {
+      const messages = [mockUserMessage('[Assistant Rules]\nActual prompt')];
+
+      expect(deriveAutoTitleFromMessages(messages)).toBe('[Assistant Rules]');
+    });
+
     it('skips assistant messages', () => {
       const messages = [mockAssistantMessage('Assistant response'), mockUserMessage('User question')];
       expect(deriveAutoTitleFromMessages(messages)).toBe('User question');

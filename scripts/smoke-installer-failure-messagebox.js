@@ -60,12 +60,12 @@ const INSTALLER_ERROR_SCENARIOS = [
     diagnostics: 'scenario=disk-insufficient phase=preflight requiredMb=1024 availableMb=0',
   },
   {
-    id: 'bundled-aioncore-incomplete',
-    defineName: 'AIONUI_E_BUNDLED_AIONCORE_INCOMPLETE',
+    id: 'bundled-catfishcore-incomplete',
+    defineName: 'AIONUI_E_BUNDLED_CATFISHCORE_INCOMPLETE',
     code: 'E1030',
     message: 'Catfish installed, but the bundled AionCore resources are incomplete.',
     action: 'Download a fresh installer and run it again.',
-    diagnostics: 'scenario=bundled-aioncore-incomplete phase=verify-bundled-aioncore runtime=win32-x64 result=1',
+    diagnostics: 'scenario=bundled-catfishcore-incomplete phase=verify-bundled-catfishcore runtime=win32-x64 result=1',
   },
   {
     id: 'core-app-files-incomplete',

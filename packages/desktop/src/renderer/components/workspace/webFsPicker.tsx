@@ -5,13 +5,9 @@
  */
 
 /**
- * Server-side file/directory picker for WebUI.
- *
- * The native `dialog.showOpen` channel only exists inside Electron. In WebUI the
- * agent runs on the *server*, so a browser `<input type="file">` would pick the
- * wrong machine's files — the user must browse the server filesystem instead.
- * This module talks to `/api/fs/dir` (already exposed by the backend) and
- * resolves with absolute server paths, matching the native dialog's contract.
+ * Backend file/directory picker for WebUI and remote Electron environments.
+ * It talks to `/api/fs/dir` and returns paths on the machine running the current
+ * AionCore backend, matching the native dialog's contract.
  */
 
 import { ipcBridge } from '@/common';
@@ -23,7 +19,12 @@ import { useTranslation } from 'react-i18next';
 import type { PickerEntry as Entry } from './webFsPickerUtils';
 import { matchesFilters, normalizeEntry, parentOf, sortEntries } from './webFsPickerUtils';
 
-const LAST_DIR_KEY = 'aionui:web-fs-picker:last-dir';
+const getLastDirKey = (): string => {
+  const environment = window.__backendEnvironment;
+  return environment?.type === 'remote'
+    ? `aionui:web-fs-picker:last-dir:remote:${environment.id}`
+    : 'aionui:web-fs-picker:last-dir';
+};
 
 type PickerProps = {
   options: ShowOpenOptions;
@@ -72,7 +73,7 @@ export const WebFsPicker: React.FC<PickerProps> = ({ options, onDone }) => {
         setPathDraft(dir);
         setSelected([]);
         try {
-          localStorage.setItem(LAST_DIR_KEY, dir);
+          localStorage.setItem(getLastDirKey(), dir);
         } catch {
           /* storage unavailable — non-fatal */
         }
@@ -93,7 +94,7 @@ export const WebFsPicker: React.FC<PickerProps> = ({ options, onDone }) => {
     const resolveStart = async (): Promise<string> => {
       if (options?.defaultPath) return options.defaultPath;
       try {
-        const last = localStorage.getItem(LAST_DIR_KEY);
+        const last = localStorage.getItem(getLastDirKey());
         if (last) return last;
       } catch {
         /* ignore */

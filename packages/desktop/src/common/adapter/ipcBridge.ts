@@ -8,7 +8,7 @@
  * IPC Bridge → HTTP/WS adapter.
  *
  * This file replaces the original IPC bridge calls with HTTP REST and WebSocket
- * calls routed to aioncore. Electron-native operations (window controls,
+ * calls routed to catfishcore. Electron-native operations (window controls,
  * native dialogs, auto-update, devtools, zoom, CDP, deep links) remain as IPC.
  */
 
@@ -770,12 +770,9 @@ export type ShowOpenOptions =
 export type ShowOpenHandler = (options: ShowOpenOptions) => Promise<string[] | undefined>;
 
 /**
- * `show-open` is an Electron-only IPC channel: on WebUI the bridge speaks over a
- * WebSocket whose server side has no provider for it, so an invoke would hang
- * forever with no rejection — every directory/file picker silently does nothing.
- *
- * The renderer registers a server-side picker here during startup. Electron is
- * unaffected: `window.electronAPI` is present there, so the native dialog wins.
+ * Local Electron uses the native dialog. WebUI and remote Electron environments
+ * use the backend filesystem picker so paths always belong to the machine running
+ * the current AionCore backend rather than to the browser or local desktop.
  */
 let webShowOpenHandler: ShowOpenHandler | null = null;
 
@@ -793,7 +790,8 @@ export const dialog = {
   showOpen: {
     provider: nativeShowOpen.provider,
     invoke: ((options?: ShowOpenOptions) => {
-      if (!isElectronRenderer() && webShowOpenHandler) {
+      const remoteEnvironment = typeof window !== 'undefined' && window.__backendEnvironment?.type === 'remote';
+      if (webShowOpenHandler && (!isElectronRenderer() || remoteEnvironment)) {
         return webShowOpenHandler(options);
       }
       return nativeShowOpen.invoke(options);
@@ -1327,6 +1325,38 @@ export const remoteAgent = {
   >('/api/remote-agents/test-connection'),
   handshake: httpPost<{ status: 'ok' | 'pending_approval' | 'error'; error?: string }, { id: string }>(
     (p) => `/api/remote-agents/${p.id}/handshake`
+  ),
+};
+
+export const remoteEnvironment = {
+  list: bridge.buildProvider<import('@/common/types/remote').RemoteEnvironmentSummary[], void>(
+    'remote-environment.list'
+  ),
+  state: bridge.buildProvider<import('@/common/types/remote').RemoteEnvironmentState, void>('remote-environment.state'),
+  discover: bridge.buildProvider<import('@/common/types/remote').RemoteEnvironmentDiscovery, void>(
+    'remote-environment.discover'
+  ),
+  save: bridge.buildProvider<
+    import('@/common/types/remote').RemoteOperationResult<import('@/common/types/remote').RemoteEnvironment>,
+    import('@/common/types/remote').RemoteEnvironmentInput
+  >('remote-environment.save'),
+  connect: bridge.buildProvider<
+    import('@/common/types/remote').RemoteOperationResult<import('@/common/types/remote').BackendEnvironment>,
+    import('@/common/types/remote').RemoteEnvironmentConnectParams
+  >('remote-environment.connect'),
+  disconnect: bridge.buildProvider<
+    import('@/common/types/remote').RemoteOperationResult<import('@/common/types/remote').BackendEnvironment>,
+    void
+  >('remote-environment.disconnect'),
+  cancel: bridge.buildProvider<void, void>('remote-environment.cancel'),
+  selectPrivateKey: bridge.buildProvider<string | undefined, void>('remote-environment.select-private-key'),
+  remove: bridge.buildProvider<import('@/common/types/remote').RemoteOperationResult, { id: string }>(
+    'remote-environment.remove'
+  ),
+  progress:
+    bridge.buildEmitter<import('@/common/types/remote').RemoteEnvironmentProgress>('remote-environment.progress'),
+  disconnected: bridge.buildEmitter<import('@/common/types/remote').RemoteEnvironmentDisconnectEvent>(
+    'remote-environment.disconnected'
   ),
 };
 

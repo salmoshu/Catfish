@@ -1,6 +1,6 @@
 {
   "name": "AionUi",
-  "version": "2.2.2",
+  "version": "0.3.1",
   "description": "Transform your command-line AI agent into a modern, efficient AI Chat interface.",
   "keywords": [],
   "license": "Apache-2.0",
@@ -126,7 +126,6 @@
     "docx": "^9.5.1",
     "electron-log": "^5.4.3",
     "electron-squirrel-startup": "^1.0.1",
-    "electron-updater": "^6.6.2",
     "eventemitter3": "^5.0.1",
     "express": "^5.1.0",
     "express-rate-limit": "^7.5.1",
@@ -166,6 +165,7 @@
     "semver": "^7.7.2",
     "sharp": "^0.34.3",
     "smol-toml": "^1.6.1",
+    "ssh2": "^1.17.0",
     "stream-browserify": "^3.0.0",
     "streamdown": "^1.5.1",
     "strip-json-comments": "^3.1.1",
@@ -202,6 +202,7 @@
     "@types/react-dom": "^19.1.6",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/semver": "^7.7.1",
+    "@types/ssh2": "^1.15.6",
     "@types/turndown": "^5.0.6",
     "@types/ws": "^8.18.1",
     "@types/yauzl": "^2.10.3",
@@ -213,6 +214,7 @@
     "electron-builder": "26.15.2",
     "electron-builder-squirrel-windows": "26.15.2",
     "electron-devtools-installer": "^4.0.0",
+    "electron-updater": "^6.6.2",
     "electron-vite": "^5.0.0",
     "esbuild": "^0.25.11",
     "husky": "^9.1.7",
@@ -261,7 +263,7 @@
   "engines": {
     "node": ">=22 <25"
   },
-  "aioncoreVersion": "v0.2.2",
+  "aioncoreVersion": "v0.2.3",
   "electronRebuild": {
     "electronVersion": "^37.3.1"
   },

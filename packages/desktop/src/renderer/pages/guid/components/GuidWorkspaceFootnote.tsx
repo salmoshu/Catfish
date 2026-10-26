@@ -8,10 +8,14 @@ import { ipcBridge } from '@/common';
 import { addRecentWorkspace, getRecentWorkspaces } from '@/renderer/components/workspace';
 import { AionInlineSearchInput } from '@/renderer/components/base';
 import { Tooltip } from '@arco-design/web-react';
-import { Close, Down } from '@icon-park/react';
+import { Close, Down, Link } from '@icon-park/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import RemoteEnvironmentMenu from '@/renderer/components/remote/RemoteEnvironmentMenu';
+import RemoteConnectionModal from '@/renderer/components/remote/RemoteConnectionModal';
+import type { RemoteEnvironmentSummary } from '@/common/types/remote';
+import { isElectronDesktop } from '@/renderer/utils/platform';
 import styles from '../index.module.css';
 
 type GuidWorkspaceFootnoteProps = {
@@ -56,6 +60,9 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
   const { t } = useTranslation();
   const recentWorkspaces = getRecentWorkspaces();
   const [open, setOpen] = useState(false);
+  const [connectionModal, setConnectionModal] = useState<{ open: boolean; environment?: RemoteEnvironmentSummary }>({
+    open: false,
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const triggerRef = useRef<HTMLButtonElement | HTMLDivElement>(null);
@@ -140,6 +147,7 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
   });
 
   const workspaceName = workspaceDir ? workspaceDir.split(/[\\/]/).pop() || workspaceDir : '';
+  const backendEnvironment = window.__backendEnvironment;
 
   const dropdownEl = open
     ? createPortal(
@@ -189,6 +197,17 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
             <span>{t('team.create.chooseDifferentFolder')}</span>
           </div>
 
+          {isElectronDesktop() && (
+            <RemoteEnvironmentMenu
+              searchQuery={searchQuery}
+              onClose={closeDropdown}
+              onRequestConnection={(environment) => {
+                closeDropdown();
+                setConnectionModal({ open: true, environment });
+              }}
+            />
+          )}
+
           <>
             <div className={styles.wsDropdownSep} />
             <div
@@ -220,6 +239,14 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
 
   return (
     <div className={styles.workspaceFootnote}>
+      {backendEnvironment?.type === 'remote' && (
+        <Tooltip content={`${backendEnvironment.kind.toUpperCase()} · ${backendEnvironment.name}`} position='top'>
+          <span className='inline-flex max-w-160px items-center gap-4px rounded-6px bg-aou-1 px-6px py-3px text-11px text-aou-6'>
+            <Link size={12} />
+            <span className='truncate'>{backendEnvironment.name}</span>
+          </span>
+        </Tooltip>
+      )}
       {workspaceDir ? (
         <>
           <Tooltip content={workspaceDir} position='top'>
@@ -259,21 +286,27 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
             ref={triggerRef as React.RefObject<HTMLButtonElement>}
             className={styles.workspaceEmptyBtn}
             data-testid='workspace-selector-btn'
-            onClick={recentWorkspaces.length > 0 ? toggleOpen : handleBrowseWorkspace}
+            onClick={toggleOpen}
           >
             <FolderIcon size={14} />
             <span>{t('guid.workspace.workInProject')}</span>
-            {recentWorkspaces.length > 0 && (
-              <Down
-                theme='outline'
-                size='12'
-                fill='currentColor'
-                style={{ flexShrink: 0, transform: 'translateY(1px)' }}
-              />
-            )}
+            <Down
+              theme='outline'
+              size='12'
+              fill='currentColor'
+              style={{ flexShrink: 0, transform: 'translateY(1px)' }}
+            />
           </button>
           {dropdownEl}
         </>
+      )}
+      {connectionModal.open && (
+        <RemoteConnectionModal
+          visible
+          environment={connectionModal.environment}
+          onClose={() => setConnectionModal({ open: false })}
+          onConnected={() => window.location.reload()}
+        />
       )}
     </div>
   );

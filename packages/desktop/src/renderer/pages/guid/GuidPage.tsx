@@ -669,7 +669,7 @@ const GuidPage: React.FC = () => {
       <div ref={guidContainerRef} className={styles.guidContainer}>
         <div className={styles.guidLayout}>
           <div className={styles.heroHeader}>
-            <p className='text-2xl font-semibold mb-0 text-t-primary text-center'>{t('conversation.welcome.title')}</p>
+            <p className={`${styles.heroTitle} mb-0 text-t-primary text-center`}>{t('conversation.welcome.title')}</p>
           </div>
 
           <AssistantSelectionArea

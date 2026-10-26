@@ -10,13 +10,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.heroTitle {
+  font-family: var(--font-title);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
 }
 
 .assistantPromptHint {
-  color: var(--color-text-3);
-  font-size: 13px;
-  line-height: 20px;
+  color: var(--text-tertiary);
+  font-size: var(--ui-caption-font-size);
+  line-height: var(--ui-caption-line-height);
 }
 
 .guidInputCard {
@@ -28,18 +35,14 @@
   width: 100%;
   box-sizing: border-box;
   background: var(--bg-2);
+  border-radius: var(--radius-hero);
 }
 
 .guidInputInner {
-  background: var(--bg-base, #fff);
-  border: 1px solid var(--color-border-3);
-  border-radius: 24px;
+  background: var(--dialog-fill-0);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-hero);
   box-sizing: border-box;
-}
-
-:global([data-theme='dark']) .guidInputInner {
-  background: #262626;
-  border-color: #3a3a3a;
 }
 
 .actionRow {
@@ -235,13 +238,11 @@
 
 /* workspace dropdown popup — portal-rendered, position set via JS */
 .wsDropdown {
-  background: var(--bg-base, #fff);
-  border: 1px solid var(--color-border-2);
-  border-radius: 12px;
+  background: var(--dialog-fill-0);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-input);
   padding: 6px;
-  box-shadow:
-    0 10px 32px rgba(0, 0, 0, 0.1),
-    0 2px 6px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-pop);
   min-width: 230px;
   max-height: 360px;
   overflow-y: auto;
@@ -317,7 +318,7 @@
 }
 
 .lightPlaceholder::placeholder {
-  color: #b4b5bc;
+  color: var(--text-tertiary);
   opacity: 1;
 }
 
@@ -504,9 +505,9 @@
   }
 }
 
-/* 浅色占位符 */
+/* 输入占位符 */
 .lightPlaceholder :global(textarea::placeholder) {
-  color: #b4b5bc !important;
+  color: var(--text-tertiary) !important;
   opacity: 1 !important;
 }
 
@@ -551,26 +552,20 @@
   gap: 10px;
   min-width: 0;
   padding: 12px 14px;
-  background: var(--bg-base, #fff);
-  border: 1px solid color-mix(in srgb, var(--color-border-2) 70%, transparent);
-  border-radius: 14px;
+  background: var(--dialog-fill-0);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-card);
   cursor: pointer;
   transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
+    background-color var(--duration-default) var(--ease-out),
+    border-color var(--duration-default) var(--ease-out),
+    box-shadow var(--duration-default) var(--ease-out);
 }
 
 .assistantCard:hover {
-  border-color: var(--color-border-3);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-}
-
-:global([data-theme='dark']) .assistantCard {
-  background: #262626;
-}
-
-:global([data-theme='dark']) .assistantCard:hover {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  background: var(--color-fill-1);
+  border-color: var(--border-base);
+  box-shadow: var(--shadow-xs);
 }
 
 .assistantCardAvatar {
@@ -681,5 +676,17 @@
 
   .presetAgentTagName {
     max-width: 100px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guidContainer,
+  .guidContainer *,
+  .guidContainer *::before,
+  .guidContainer *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }

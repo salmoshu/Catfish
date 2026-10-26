@@ -174,7 +174,7 @@ const SettingsPageWrapper: React.FC<SettingsPageWrapperProps> = ({ children, cla
   );
 
   const contentClass = classNames(
-    'settings-page-content mx-auto w-full md:max-w-1024px py-14px md:py-32px',
+    'settings-page-content mx-auto w-full md:max-w-640px py-14px md:py-32px',
     contentClassName
   );
 

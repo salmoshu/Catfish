@@ -3,7 +3,10 @@ import { readMessageContent } from '@/renderer/utils/chat/conversationExport';
 import { hasThinkTags, stripThinkTags } from '@/renderer/utils/chat/thinkTagFilter';
 
 export const buildAutoTitleFromContent = (content: string): string | null => {
-  const withoutThinkTags = hasThinkTags(content) ? stripThinkTags(content) : content;
+  const withoutAssistantRules = content.replace(/^\s*\[Assistant Rules\][\s\S]*?\[\/Assistant Rules\]\s*/i, '');
+  const withoutThinkTags = hasThinkTags(withoutAssistantRules)
+    ? stripThinkTags(withoutAssistantRules)
+    : withoutAssistantRules;
   const lines = withoutThinkTags
     .replace(/\r/g, '')
     .split('\n')

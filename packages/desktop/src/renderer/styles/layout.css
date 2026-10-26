@@ -32,7 +32,7 @@
 .layout-sider {
   overflow-x: hidden;
   box-shadow: none !important;
-  border-inline-end: 1px solid var(--border-base);
+  border-inline-end: 1px solid var(--border-light);
 }
 
 /* Arco Layout inner container needs flex layout so Header + Content + Footer

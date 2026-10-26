@@ -367,7 +367,7 @@ jobs:
           MSVS_VERSION: 2022
           GYP_MSVS_VERSION: 2022
 
-      - name: Prepare aioncore binary
+      - name: Prepare CatfishCore binary
         shell: bash
         run: node scripts/prepareAioncore.js
         env:

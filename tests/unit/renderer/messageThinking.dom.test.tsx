@@ -55,4 +55,33 @@ describe('MessageThinking', () => {
 
     expect(screen.getByText('Thinking... · 7s')).toBeInTheDocument();
   });
+
+  it('shows the final duration without a spinner after active thinking becomes done', () => {
+    vi.setSystemTime(new Date('2026-05-26T09:00:10.000Z'));
+    const activeMessage = createThinkingMessage(Date.now() - 5_000);
+    const { container, rerender } = render(<MessageThinking message={activeMessage} />);
+
+    expect(screen.getByText('Thinking... · 5s')).toBeInTheDocument();
+
+    rerender(
+      <MessageThinking
+        message={{
+          ...activeMessage,
+          content: {
+            ...activeMessage.content,
+            status: 'done',
+            duration: 5_000,
+          },
+        }}
+      />
+    );
+
+    expect(screen.getByText('Thought complete · 5s')).toBeInTheDocument();
+    expect(container.querySelector('.arco-spin')).toBeNull();
+
+    vi.advanceTimersByTime(10_000);
+
+    expect(screen.getByText('Thought complete · 5s')).toBeInTheDocument();
+    expect(screen.queryByText(/^Thinking\.\.\./)).not.toBeInTheDocument();
+  });
 });

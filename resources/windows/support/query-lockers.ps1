@@ -82,7 +82,7 @@ try {
       'Uninstall Catfish.exe',
       'resources\app.asar',
       'resources\app-update.yml',
-      'resources\bundled-aioncore\win32-x64\aioncore.exe'
+      'resources\bundled-catfishcore\win32-x64\catfishcore.exe'
     )
     $known = @(
       $knownRelative |

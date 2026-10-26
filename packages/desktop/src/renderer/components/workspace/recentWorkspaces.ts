@@ -7,7 +7,13 @@
 export const DEFAULT_RECENT_WS_KEY = 'aionui:recent-workspaces';
 const MAX_RECENT_WORKSPACES = 5;
 
-export const getRecentWorkspaces = (storageKey: string = DEFAULT_RECENT_WS_KEY): string[] => {
+export const getActiveRecentWorkspaceKey = (): string => {
+  if (typeof window === 'undefined') return DEFAULT_RECENT_WS_KEY;
+  const environment = window.__backendEnvironment;
+  return environment?.type === 'remote' ? `${DEFAULT_RECENT_WS_KEY}:remote:${environment.id}` : DEFAULT_RECENT_WS_KEY;
+};
+
+export const getRecentWorkspaces = (storageKey: string = getActiveRecentWorkspaceKey()): string[] => {
   try {
     return JSON.parse(localStorage.getItem(storageKey) ?? '[]');
   } catch {
@@ -15,7 +21,7 @@ export const getRecentWorkspaces = (storageKey: string = DEFAULT_RECENT_WS_KEY):
   }
 };
 
-export const addRecentWorkspace = (path: string, storageKey: string = DEFAULT_RECENT_WS_KEY): void => {
+export const addRecentWorkspace = (path: string, storageKey: string = getActiveRecentWorkspaceKey()): void => {
   try {
     const prev = getRecentWorkspaces(storageKey);
     const next = [path, ...prev.filter((item) => item !== path)].slice(0, MAX_RECENT_WORKSPACES);

@@ -154,7 +154,7 @@ describe('captureBackendStartupFailure', () => {
     expect(Sentry.flush).toHaveBeenCalledWith(2000);
     expect(Sentry.withScope).toHaveBeenCalledOnce();
     expect(scopeSetContext).toHaveBeenCalledWith(
-      'aioncore_install_diagnostics',
+      'catfishcore_install_diagnostics',
       expect.objectContaining({
         appVersion: '0.0.0-test',
         isPackaged: false,
@@ -215,10 +215,10 @@ describe('captureBackendStartupFailure', () => {
       expect(scopeSetTag).toHaveBeenCalledWith('aionui.backend_startup.seconds_since_quit_and_install', '46');
       expect(scopeSetTag).toHaveBeenCalledWith('aionui.backend_startup.install_path_kind', 'user_local_programs');
       expect(scopeSetContext).toHaveBeenCalledWith(
-        'aioncore_startup_classification',
+        'catfishcore_startup_classification',
         expect.objectContaining({
           incompleteInstallationKind: 'missing_directory_resources',
-          missingBundledAioncoreDir: true,
+          missingBundledCatfishcoreDir: true,
           missingRuntimeDir: true,
           missingBackendBinary: true,
         })

@@ -35,6 +35,15 @@ describe('release packaging configuration', () => {
     expect(config).toContain('      - aionui');
   });
 
+  itWithWorkflow('keeps the CI backend preparation entry on the existing CatfishCore module', () => {
+    const workflow = readProjectFile('.github/workflows/_build-reusable.yml');
+    const prepareScript = readProjectFile('scripts/prepareAioncore.js');
+
+    expect(workflow).toContain('run: node scripts/prepareAioncore.js');
+    expect(prepareScript).toContain("require('../packages/shared-scripts/src/prepare-catfishcore.js')");
+    expect(prepareScript).not.toContain("require('../packages/shared-scripts/src/prepare-aioncore.js')");
+  });
+
   it('keeps mac zip artifacts enabled', () => {
     const config = readProjectFile('packages/desktop/electron-builder.yml');
     const macBlock = yamlBlock(config, 'mac');

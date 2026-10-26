@@ -34,6 +34,7 @@ import { registerWindowMaximizeListeners } from '@process/bridge';
 import { BackendLifecycleManager } from '@aionui/web-host';
 import { resolveBinaryPath } from '@process/backend';
 import './process/bridge/feedbackBridge';
+import { peekRemoteEnvironmentManager } from '@process/remote/remoteEnvironmentRuntime';
 import { wasLaunchedAtLogin } from '@process/bridge/applicationBridge';
 import { onLanguageChanged } from './process/bridge/systemSettingsBridge';
 import { setInitialLanguage } from '@process/services/i18n';
@@ -231,7 +232,11 @@ let backendMigrationsScheduled = false;
 let ensureAdminUserPromise: Promise<void> | null = null;
 
 ipcMain.on('get-backend-port', (event) => {
-  event.returnValue = backendManager.port;
+  event.returnValue = peekRemoteEnvironmentManager()?.port ?? backendManager.port;
+});
+
+ipcMain.on('get-backend-environment', (event) => {
+  event.returnValue = peekRemoteEnvironmentManager()?.active ?? { type: 'local' };
 });
 
 ipcMain.on('get-initial-language', (event) => {
@@ -542,37 +547,8 @@ const createWindow = ({ showOnReady = true }: { showOnReady?: boolean } = {}): v
   registerWindowMaximizeListeners(mainWindow);
   attachWindowBoundsPersistence(mainWindow, (bounds) => ProcessConfig.set('window.bounds', bounds));
 
-  // Initialize auto-updater service (skip when disabled via env, e.g. E2E / CI)
-  // 初始化自动更新服务（通过环境变量禁用时跳过，例如 E2E / CI 场景）
-  const isCiRuntime = process.env.CI === 'true' || process.env.CI === '1' || process.env.GITHUB_ACTIONS === 'true';
-  const disableAutoUpdater =
-    process.env.AIONUI_DISABLE_AUTO_UPDATE === '1' || process.env.AIONUI_E2E_TEST === '1' || isCiRuntime;
-  if (!disableAutoUpdater) {
-    Promise.all([import('./process/services/autoUpdaterService'), import('./process/bridge/updateBridge')])
-      .then(([{ autoUpdaterService }, { createAutoUpdateStatusBroadcast }]) => {
-        // Create status broadcast callback that emits via ipcBridge (pure emitter, no window binding)
-        const statusBroadcast = createAutoUpdateStatusBroadcast();
-        autoUpdaterService.initialize(statusBroadcast);
-        autoUpdaterService.setBeforeQuitAndInstall(async () => {
-          await backendManager.stop();
-        });
-        // Check for updates after 3 seconds delay. Skipped in the discontinued
-        // build: AionUi's final version guides users to the website instead of
-        // auto-checking, so startup stays silent. The flag is a compile-time
-        // literal, so this branch is tree-shaken out of non-discontinued builds.
-        // 3秒后检查更新。停更版启动静默，不做应用内检测。
-        if (!process.env.IS_DISCONTINUED_BUILD) {
-          setTimeout(() => {
-            void autoUpdaterService.checkForUpdatesAndNotify();
-          }, 3000);
-        }
-      })
-      .catch((error) => {
-        console.error('[App] Failed to initialize autoUpdaterService:', error);
-      });
-  } else {
-    console.log('[AionUi] Auto-updater disabled via env/CI guard');
-  }
+  // Auto-update removed: Catfish ships versions manually from its own releases.
+  // No update feed is contacted at startup and no in-app install flow exists.
 
   // Load the renderer: dev server URL in development, built HTML file in production
   const rendererUrl = process.env['ELECTRON_RENDERER_URL'];
@@ -743,10 +719,10 @@ const handleAppReady = async (): Promise<void> => {
    *
    * ⚠️ 必须在 startBackendOrExit() 之前 —— 这是硬顺序，不是风格问题。
    *
-   * 两个值靠进程继承链传给 Agent：aioncore 是本进程的子进程，内置浏览器 MCP 又是
-   * aioncore 的子进程，所以不用落库、不用写配置。但继承是「spawn 那一刻的快照」：
-   * backend-launcher 用 `{ ...process.env }` spawn aioncore，此后我们再改 process.env
-   * 对已经起来的 aioncore 毫无影响。一旦这段挪到 backend 启动之后，aioncore 继承到的
+   * 两个值靠进程继承链传给 Agent：catfishcore 是本进程的子进程，内置浏览器 MCP 又是
+   * catfishcore 的子进程，所以不用落库、不用写配置。但继承是「spawn 那一刻的快照」：
+   * backend-launcher 用 `{ ...process.env }` spawn catfishcore，此后我们再改 process.env
+   * 对已经起来的 catfishcore 毫无影响。一旦这段挪到 backend 启动之后，catfishcore 继承到的
    * 口令就是 undefined，浏览器 MCP 读不到凭证直接 exit(1)，「Agent 可控」这条链就断在
    * 最后一环 —— 而手动浏览、标签、前进后退全都正常，故障看起来跟浏览器无关，极难排查。
    *
@@ -756,11 +732,11 @@ const handleAppReady = async (): Promise<void> => {
    * Start the single-target CDP bridge and publish port/token into our own env.
    *
    * ⚠️ MUST run before startBackendOrExit(). This ordering is a hard requirement, not
-   * style. Both values reach the agent by process inheritance (aioncore is our child; the
-   * in-app browser MCP is aioncore's child), so neither is persisted. But inheritance is a
-   * snapshot taken at spawn time: backend-launcher spawns aioncore with
+   * style. Both values reach the agent by process inheritance (catfishcore is our child; the
+   * in-app browser MCP is catfishcore's child), so neither is persisted. But inheritance is a
+   * snapshot taken at spawn time: backend-launcher spawns catfishcore with
    * `{ ...process.env }`, and any later mutation of our process.env is invisible to the
-   * already-running aioncore. Move this block after backend startup and aioncore inherits
+   * already-running catfishcore. Move this block after backend startup and catfishcore inherits
    * an undefined token, so the browser MCP exits(1) for want of credentials and agent
    * control silently breaks at the last hop — while manual browsing, tabs and history all
    * keep working, making the failure look unrelated to the browser and very hard to trace.
@@ -812,7 +788,7 @@ const handleAppReady = async (): Promise<void> => {
     applyDebugBackendStartupFailure(debugBackendStartupFailure);
     mark(`debugBackendStartupFailure:${debugBackendStartupFailure.reason}`);
   } else {
-    // Start aioncore only after initializeProcess(). initStorage may open
+    // Start catfishcore only after initializeProcess(). initStorage may open
     // the legacy Electron SQLite catalog for a one-shot v26 migration and must
     // close it before the backend touches the same file.
     const backendStartup = await startBackendOrExit({
@@ -967,7 +943,7 @@ const handleAppReady = async (): Promise<void> => {
             // Spawning a second backend here would race the first on SQLite.
             const port = (globalThis as typeof globalThis & { __backendPort?: number }).__backendPort;
             if (!port) {
-              throw new Error('[WebUI] Cannot start: aioncore is not running (globalThis.__backendPort unset)');
+              throw new Error('[WebUI] Cannot start: catfishcore is not running (globalThis.__backendPort unset)');
             }
             return port;
           })(),
@@ -1090,8 +1066,8 @@ app.on('open-url', (event, url) => {
 installGpuCrashHandler();
 
 // Register the backend startup flow only when this process owns the single
-// instance lock. A lock-losing instance must NOT spawn a competing aioncore
-// backend — doing so races the first instance's aioncore over the same data
+// instance lock. A lock-losing instance must NOT spawn a competing catfishcore
+// backend — doing so races the first instance's catfishcore over the same data
 // directory and produced the "local data repair failed" false alarm
 // (Sentry 135525166). Gating here (rather than at the top-level second-instance
 // block) keeps it after handleAppReady is declared.
@@ -1150,9 +1126,10 @@ installQuitCleanup({
     disposeCronResumeListener?.();
     disposeCronResumeListener = null;
   },
-  // Stop aioncore subprocess — backend shutdown kills all agent children
-  // transitively (no separate frontend workerTaskManager remains).
-  stopBackend: () => backendManager.stop(),
+  // Stop local and remote catfishcore processes; each runtime reaps its own agent children.
+  stopBackend: async () => {
+    await Promise.all([backendManager.stop(), peekRemoteEnvironmentManager()?.stop()]);
+  },
   destroyPetWindow: async () => {
     const { destroyPetWindow } = await import('./process/pet/petManager');
     destroyPetWindow();

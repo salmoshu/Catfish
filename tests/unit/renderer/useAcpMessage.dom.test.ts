@@ -146,6 +146,52 @@ describe('useAcpMessage', () => {
     );
   });
 
+  it('completes active thinking and clears the turn clock when reset by stop', async () => {
+    vi.mocked(getConversationOrNull).mockResolvedValue(null);
+
+    const { result } = renderHook(() => useAcpMessage('conv-1'));
+    await waitFor(() => {
+      expect(result.current.hasHydratedRunningState).toBe(true);
+    });
+
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(1_000);
+    act(() => {
+      result.current.setAiProcessing(true);
+      responseStreamHandlerRef.current?.({
+        type: 'thinking',
+        data: {
+          content: 'alpha',
+          status: 'thinking',
+        },
+        msg_id: 'msg-1',
+        conversation_id: 'conv-1',
+        created_at: 1_000,
+      });
+    });
+
+    nowSpy.mockReturnValue(4_200);
+    act(() => {
+      result.current.resetState();
+    });
+
+    expect(addOrUpdateMessageMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'thinking',
+        msg_id: 'msg-1',
+        conversation_id: 'conv-1',
+        content: expect.objectContaining({
+          status: 'done',
+          duration: 3_200,
+        }),
+      })
+    );
+    expect(result.current.running).toBe(false);
+    expect(result.current.aiProcessing).toBe(false);
+    expect(result.current.hasThinkingMessage).toBe(false);
+    expect(result.current.turnStartedAtMs).toBeNull();
+    nowSpy.mockRestore();
+  });
+
   it('completes thinking as soon as the first non-thinking message arrives', async () => {
     vi.mocked(getConversationOrNull).mockResolvedValue(null);
 

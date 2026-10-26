@@ -655,12 +655,8 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
           type='primary'
           loading={loading}
           disabled={isButtonDisabled}
-          className='send-button-custom'
-          style={{
-            backgroundColor: isButtonDisabled ? undefined : '#000000',
-            borderColor: isButtonDisabled ? undefined : '#000000',
-          }}
-          icon={<ArrowUp theme='filled' size='14' fill='white' strokeWidth={5} />}
+          className={`send-button-custom ${isButtonDisabled ? 'send-button-custom--disabled' : 'send-button-custom--enabled'}`}
+          icon={<ArrowUp theme='filled' size='14' fill='currentColor' strokeWidth={5} />}
           onClick={onSend}
           data-testid='guid-send-btn'
         />

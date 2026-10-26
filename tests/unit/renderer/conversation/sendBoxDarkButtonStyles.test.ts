@@ -28,12 +28,12 @@ describe('SendBox action button styles', () => {
     expect(draftBody).toContain('color: var(--text-disabled)');
   });
 
-  it('keeps active send and draft buttons synchronized', () => {
+  it('uses a neutral send action while retaining the brand draft action', () => {
     const sendBody = getRuleBodyContainingSelector('.send-button-custom--enabled.arco-btn');
     const draftBody = getRuleBodyContainingSelector('.sendbox-draft-tool-action--enabled.arco-btn-secondary');
 
-    expect(sendBody).toContain('background-color: rgb(var(--primary-6))');
-    expect(sendBody).toContain('color: var(--text-white)');
+    expect(sendBody).toContain('background-color: var(--send-button-bg)');
+    expect(sendBody).toContain('color: var(--send-button-icon)');
     expect(draftBody).toContain('background-color: rgb(var(--primary-6))');
     expect(draftBody).toContain('color: var(--text-white)');
   });

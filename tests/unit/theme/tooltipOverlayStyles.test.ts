@@ -5,14 +5,12 @@ import { describe, expect, it } from 'vitest';
 const arcoOverridePath = path.resolve(process.cwd(), 'packages/desktop/src/renderer/styles/arco-override.css');
 
 describe('arco tooltip and popover overlay styles', () => {
-  it('defines shared light and dark overlay tokens for tooltip-like surfaces', () => {
+  it('defines shared theme-aware overlay tokens for tooltip-like surfaces', () => {
     const css = fs.readFileSync(arcoOverridePath, 'utf8');
 
-    expect(css).toContain('--aion-overlay-bg: #ffffff;');
-    expect(css).toContain('--aion-overlay-text: #000000e6;');
-    expect(css).toContain("body[arco-theme='dark'] {");
-    expect(css).toContain('--aion-overlay-bg: #1f1f1f;');
-    expect(css).toContain('--aion-overlay-text: #ffffffd6;');
+    expect(css).toContain('--aion-overlay-bg: var(--dialog-fill-0);');
+    expect(css).toContain('--aion-overlay-text: var(--text-primary);');
+    expect(css).toContain('--aion-overlay-border: var(--border-base);');
   });
 
   it('applies the shared overlay tokens to tooltip, popover, and popconfirm surfaces', () => {

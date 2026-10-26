@@ -22,10 +22,10 @@ export const SectionCard: React.FC<SectionCardProps> = ({
   return (
     <section
       data-testid={testId}
-      className='rounded-12px border border-border-2 bg-2 px-[12px] py-[16px] md:rounded-16px md:px-[24px] md:py-[20px]'
+      className='rounded-16px border border-b-light bg-fill-1 px-[12px] py-[16px] md:px-[24px] md:py-[20px]'
     >
       <div className='mb-12px flex items-center gap-8px'>
-        <div className='text-14px font-500 text-t-primary'>{title}</div>
+        <div className='text-16px lh-24px font-500 text-t-primary'>{title}</div>
         {legend ? (
           <span
             className={`rounded-6px px-8px py-2px text-10px font-500 ${

@@ -30,6 +30,18 @@ function createNonImageFile(dir: string, name: string): string {
   return filePath;
 }
 
+function symlinkOrSkip(target: string, linkPath: string, skip: (reason?: string) => void, type?: 'dir'): void {
+  try {
+    symlinkSync(target, linkPath, type);
+  } catch (error) {
+    if (process.platform === 'win32' && (error as NodeJS.ErrnoException).code === 'EPERM') {
+      skip('Creating symlinks requires additional privileges on Windows');
+      return;
+    }
+    throw error;
+  }
+}
+
 afterEach(() => {
   for (const d of cleanupDirs) {
     try {
@@ -140,31 +152,31 @@ describe('processImageUri', () => {
     await expect(processImageUri('nonexistent.png', ws)).rejects.toThrow('Image file not found');
   });
 
-  it('should block a symlink inside the workspace that points outside', async () => {
+  it('should block a symlink inside the workspace that points outside', async ({ skip }) => {
     const ws = createWorkspace();
     // Secret image lives outside the workspace; a symlink inside the workspace
     // points to it. The lexical containment check passes for the link path, but
     // realpath must reveal the escape and block the read.
     const outsideDir = createWorkspace();
     const secretImg = createImageFile(outsideDir, 'secret.png');
-    symlinkSync(secretImg, join(ws, 'linked.png'));
+    symlinkOrSkip(secretImg, join(ws, 'linked.png'), skip);
 
     await expect(processImageUri('linked.png', ws)).rejects.toThrow('Path traversal blocked');
   });
 
-  it('should block a symlinked directory inside the workspace that points outside', async () => {
+  it('should block a symlinked directory inside the workspace that points outside', async ({ skip }) => {
     const ws = createWorkspace();
     const outsideDir = createWorkspace();
     createImageFile(outsideDir, 'secret.png');
-    symlinkSync(outsideDir, join(ws, 'linked-dir'), 'dir');
+    symlinkOrSkip(outsideDir, join(ws, 'linked-dir'), skip, 'dir');
 
     await expect(processImageUri('linked-dir/secret.png', ws)).rejects.toThrow('Path traversal blocked');
   });
 
-  it('should allow a symlink inside the workspace that stays inside', async () => {
+  it('should allow a symlink inside the workspace that stays inside', async ({ skip }) => {
     const ws = createWorkspace();
     const imgPath = createImageFile(ws, 'real.png');
-    symlinkSync(imgPath, join(ws, 'alias.png'));
+    symlinkOrSkip(imgPath, join(ws, 'alias.png'), skip);
 
     const result = await processImageUri('alias.png', ws);
 

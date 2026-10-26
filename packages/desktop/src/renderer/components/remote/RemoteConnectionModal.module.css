@@ -1,0 +1,135 @@
+.modal {
+  max-width: calc(100vw - 32px);
+}
+
+.hostGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 128px;
+  gap: 12px;
+}
+
+.sectionDivider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--color-border-2);
+}
+
+.sectionLabel {
+  padding: 6px 10px 4px;
+  color: var(--color-text-3);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.remoteItemRow {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.remoteItem {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  min-width: 0;
+  height: auto;
+  padding: 7px 10px;
+  color: var(--color-text-1);
+  text-align: start;
+}
+
+.remoteName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remoteKind {
+  color: var(--color-text-3);
+  font-size: 10px;
+}
+
+.removeButton {
+  flex-shrink: 0;
+  width: 26px;
+  color: var(--color-text-3);
+}
+
+.actionItem {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  height: auto;
+  padding: 7px 10px;
+  color: var(--color-text-1);
+}
+
+.stageList {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.stageRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-text-3);
+}
+
+.stageRow[data-active='true'] {
+  color: var(--color-text-1);
+  font-weight: 500;
+}
+
+.stageIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--aou-6);
+}
+
+.pendingDot {
+  width: 6px;
+  height: 6px;
+  background: var(--color-text-4);
+  border-radius: 50%;
+}
+
+.hostKeyDetails {
+  display: grid;
+  grid-template-columns: minmax(90px, auto) minmax(0, 1fr);
+  gap: 10px 16px;
+  margin: 20px 0 0;
+}
+
+.hostKeyDetails dt {
+  color: var(--color-text-3);
+}
+
+.hostKeyDetails dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--color-text-1);
+}
+
+.fingerprint {
+  font-family: monospace;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 560px) {
+  .hostGrid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
