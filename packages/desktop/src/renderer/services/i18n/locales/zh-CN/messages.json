@@ -18,6 +18,42 @@
   "downloadFailed": "下载失败",
   "imageLoadFailed": "图片加载失败",
   "scrollToBottom": "滚动到底部",
+  "toolGroup": {
+    "viewSteps": "查看步骤 · {{count}}",
+    "viewSteps_one": "查看步骤 · {{count}}",
+    "viewSteps_other": "查看步骤 · {{count}}",
+    "input": "输入",
+    "output": "输出",
+    "loadFailed": "加载完整输出失败"
+  },
+  "workbench": {
+    "files": "文件",
+    "changes": "变更",
+    "preview": "预览",
+    "terminal": "终端",
+    "agents": "子 Agent",
+    "tabsLabel": "Workbench 区域",
+    "collapse": "收起 Workbench",
+    "previewEmpty": "从工作区打开文件、diff 或浏览器标签页。",
+    "openBrowser": "新建浏览器标签页",
+    "terminalEmpty": "Agent 执行命令的终端输出将显示在这里。",
+    "agentsEmpty": "Agent 启动子任务后，子 Agent 活动将显示在这里。",
+    "status": {
+      "pending": "待处理",
+      "running": "运行中",
+      "completed": "已完成",
+      "error": "失败",
+      "canceled": "已取消"
+    }
+  },
+  "goal": {
+    "action": "目标",
+    "objective": "目标",
+    "objectivePlaceholder": "Agent 需要完成什么目标？",
+    "completionCriterion": "完成条件",
+    "completionPlaceholder": "如何判断目标已完成？",
+    "start": "启动目标"
+  },
   "anchorRail": {
     "label": "对话消息锚点",
     "tickAria": "跳转到第 {{index}} 条消息",

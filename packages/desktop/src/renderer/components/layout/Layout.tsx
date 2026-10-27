@@ -25,8 +25,6 @@ import { useResizableSplit } from '@renderer/hooks/ui/useResizableSplit';
 import { useProjectPreviewRegionWidth } from '@renderer/hooks/ui/useProjectPreviewRegionWidth';
 import { useProjectPanelCollapse } from '@renderer/hooks/ui/useProjectPanelCollapse';
 import { dispatchWorkspaceToggleEvent } from '@renderer/utils/workspace/workspaceEvents';
-import { MIN_PREVIEW_PANEL_PX } from '@renderer/pages/conversation/utils/layoutCalc';
-import { PreviewPanel } from '@renderer/pages/conversation/Preview';
 import { LayoutContext } from '@renderer/hooks/context/LayoutContext';
 import { NavigationHistoryProvider } from '@renderer/hooks/context/NavigationHistoryContext';
 import { useDeepLink } from '@renderer/hooks/system/useDeepLink';
@@ -192,6 +190,9 @@ const Layout: React.FC<{
   // [content | explorer] row, clamp the explorer width so chat (+ preview) keep
   // their reserve. Active only when a project is bound and on desktop.
   const currentProject = useCurrentProject();
+  const [workbenchSection, setWorkbenchSection] = useState<'files' | 'changes' | 'preview' | 'terminal' | 'agents'>(
+    'files'
+  );
   const { containerRef: mainRowRef, containerWidth: mainRowWidth } = useContainerWidth();
   const explorerActive = Boolean(currentProject) && !isMobile;
   const { widthPx: explorerWidthPx, createDragHandle: createExplorerDragHandle } = useProjectExplorerColumnWidth(
@@ -199,9 +200,9 @@ const Layout: React.FC<{
     isPreviewOpen,
     explorerActive
   );
-  // P3: host-level collapse (project-scoped on desktop; overlay on mobile). The
-  // explorer stays mounted (width 0) on collapse, so it is not remounted.
-  const { collapsed: explorerCollapsed } = useProjectPanelCollapse({
+  // The Workbench stays mounted at width 0 while collapsed, preserving project
+  // subscriptions, editor state and browser pages.
+  const { collapsed: explorerCollapsed, setCollapsed: setExplorerCollapsed } = useProjectPanelCollapse({
     projectId: currentProject,
     isMobile,
     active: Boolean(currentProject),
@@ -209,21 +210,22 @@ const Layout: React.FC<{
   const toggleExplorer = useCallback(() => {
     dispatchWorkspaceToggleEvent();
   }, []);
-  // Mobile overlay width: most of the viewport, capped.
   const explorerMobileWidthPx = Math.min(420, Math.max(280, Math.round(viewportWidth * 0.85)));
-  // P4 (②B): hoist the preview region to the Layout host for project
-  // conversations so it is structurally persistent (no remount on same-project
-  // switches). ChatLayout renders chat only in that case (previewHosted).
-  const previewRegionActive = Boolean(currentProject) && !isMobile && isPreviewOpen;
-  // 最大化：隐藏聊天区、让预览铺满它腾出的空间；左侧边栏与右侧资源管理器列均不动。
-  // Maximized: hide the chat area and let the preview fill the space it vacated;
-  // the left sidebar and the right explorer column are both left untouched.
-  const previewMaximized = previewRegionActive && isPreviewMaximized;
+  const workbenchWide = isPreviewOpen || workbenchSection === 'terminal' || workbenchSection === 'agents';
+  const workbenchResizeActive = Boolean(currentProject) && !isMobile && workbenchWide && !explorerCollapsed;
+  const previewMaximized =
+    Boolean(currentProject) &&
+    !isMobile &&
+    isPreviewOpen &&
+    workbenchSection === 'preview' &&
+    !explorerCollapsed &&
+    isPreviewMaximized;
   const { widthPx: previewWidthPx, createDragHandle: createPreviewRegionDragHandle } = useProjectPreviewRegionWidth(
     mainRowWidth,
-    explorerCollapsed ? 0 : explorerWidthPx,
-    previewRegionActive
+    0,
+    workbenchResizeActive
   );
+  const workbenchWidthPx = workbenchWide ? previewWidthPx : explorerWidthPx;
   const routeLayoutMountedRef = useRef(false);
   useEffect(() => {
     if (!routeLayoutMountedRef.current) {
@@ -509,11 +511,9 @@ const Layout: React.FC<{
                 })}
             </ArcoLayout.Sider>
 
-            {/* Content + project Explorer share one measured flex row (stage3
-                FULL / P2). `mainRowRef` gives the [content|explorer] width for the
-                explorer clamp (independent of the split → non-circular). The
-                explorer column is a sibling of the route content, above the
-                per-conversation subtree → persists across same-project switches. */}
+            {/* Chat and the unified project Workbench share one measured row.
+                The host lives above the conversation subtree, so same-project
+                switches preserve tree subscriptions, editors and browser tabs. */}
             <div ref={mainRowRef} className='flex flex-1 min-h-0 overflow-hidden'>
               <ArcoLayout.Content
                 className={'bg-1 layout-content flex flex-col min-h-0 flex-1'}
@@ -536,57 +536,29 @@ const Layout: React.FC<{
                 <PwaPullToRefresh />
                 {IS_DISCONTINUED_BUILD && <UpdateMigrationDialog />}
               </ArcoLayout.Content>
-              {/* Hoisted preview region (project conversations only). Structurally
-                  persistent: lives above the per-conversation subtree, so a
-                  same-project conversation switch does not remount it. */}
-              {previewRegionActive && (
-                <div
-                  data-project-preview-region
-                  className='preview-panel flex flex-col relative overflow-visible'
-                  style={{
-                    // 最大化时铺满聊天区腾出的空间（explorer 列仍占其固定宽度）；
-                    // 否则用拖拽得到的固定宽度。还原后自动回到该宽度。
-                    // Maximized: fill the space the chat vacated (the explorer column
-                    // keeps its own fixed width); otherwise the dragged fixed width,
-                    // which restoring returns to automatically.
-                    ...(previewMaximized
-                      ? { flexGrow: 1, flexShrink: 1, flexBasis: 0 }
-                      : { width: `${Math.round(previewWidthPx)}px`, flexGrow: 0, flexShrink: 0 }),
-                    // 只保留左边框作为与会话区的分界；上/右/下不留边距，
-                    // 否则窗口底色会从缝隙里透出来（深色模式下尤其突兀）。
-                    // Left border only, as the divider from the chat area. No outer
-                    // margins: any gap would expose the window's own background,
-                    // which is jarring in dark mode.
-                    borderLeft: '1px solid var(--bg-3)',
-                    minWidth: `${MIN_PREVIEW_PANEL_PX}px`,
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  {/* 最大化时聊天区已隐藏，拖拽把手无处可拖，隐藏之。
-                      While maximized the chat is hidden, so the resize handle has
-                      nothing to drag against — hide it. */}
-                  {!previewMaximized &&
-                    createPreviewRegionDragHandle({
-                      className: 'absolute top-0 bottom-0 z-30',
-                      style: { width: '20px', left: '-20px' },
-                      reverse: true,
-                      linePlacement: 'end',
-                      lineClassName: 'opacity-30 group-hover:opacity-100 group-active:opacity-100',
-                      lineStyle: { width: '2px' },
-                    })}
-                  <div className='h-full w-full overflow-hidden'>
-                    <PreviewPanel />
-                  </div>
-                </div>
-              )}
               {!isMobile && (
                 <ProjectPanelHost
-                  widthPx={explorerWidthPx}
+                  widthPx={workbenchWidthPx}
                   collapsed={explorerCollapsed}
-                  dragHandle={createExplorerDragHandle({
-                    className: 'absolute start-0 top-0 bottom-0 z-20',
-                    reverse: true,
-                  })}
+                  maximized={previewMaximized}
+                  onCollapse={() => setExplorerCollapsed(true)}
+                  onExpand={() => setExplorerCollapsed(false)}
+                  onSectionChange={setWorkbenchSection}
+                  dragHandle={
+                    workbenchWide
+                      ? createPreviewRegionDragHandle({
+                          className: 'absolute start-0 top-0 bottom-0 z-20',
+                          style: { width: '20px', left: '-20px' },
+                          reverse: true,
+                          linePlacement: 'end',
+                          lineClassName: 'opacity-30 group-hover:opacity-100 group-active:opacity-100',
+                          lineStyle: { width: '2px' },
+                        })
+                      : createExplorerDragHandle({
+                          className: 'absolute start-0 top-0 bottom-0 z-20',
+                          reverse: true,
+                        })
+                  }
                 />
               )}
             </div>

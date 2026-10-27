@@ -18,6 +18,42 @@
   "downloadFailed": "دانلود ناموفق بود",
   "imageLoadFailed": "بارگذاری تصویر ناموفق بود",
   "scrollToBottom": "اسکرول به انتها",
+  "toolGroup": {
+    "viewSteps": "مشاهده مراحل · {{count}}",
+    "viewSteps_one": "مشاهده مراحل · {{count}}",
+    "viewSteps_other": "مشاهده مراحل · {{count}}",
+    "input": "ورودی",
+    "output": "خروجی",
+    "loadFailed": "بارگیری خروجی کامل ناموفق بود"
+  },
+  "workbench": {
+    "files": "فایل‌ها",
+    "changes": "تغییرات",
+    "preview": "پیش‌نمایش",
+    "terminal": "ترمینال",
+    "agents": "زیرعامل‌ها",
+    "tabsLabel": "بخش‌های Workbench",
+    "collapse": "جمع کردن Workbench",
+    "previewEmpty": "از فضای کاری یک فایل، diff یا برگه مرورگر باز کنید.",
+    "openBrowser": "برگه مرورگر جدید",
+    "terminalEmpty": "خروجی ترمینال دستورهای عامل اینجا نمایش داده می‌شود.",
+    "agentsEmpty": "پس از شروع کار، فعالیت زیرعامل اینجا نمایش داده می‌شود.",
+    "status": {
+      "pending": "در انتظار",
+      "running": "در حال اجرا",
+      "completed": "تکمیل شد",
+      "error": "ناموفق",
+      "canceled": "لغو شد"
+    }
+  },
+  "goal": {
+    "action": "هدف",
+    "objective": "هدف",
+    "objectivePlaceholder": "عامل باید چه کاری انجام دهد؟",
+    "completionCriterion": "شرط تکمیل",
+    "completionPlaceholder": "از کجا می‌دانید هدف کامل شده است؟",
+    "start": "شروع هدف"
+  },
   "anchorRail": {
     "label": "لنگرهای پیام‌های گفتگو",
     "tickAria": "رفتن به پیام {{index}}",

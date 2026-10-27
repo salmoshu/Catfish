@@ -1,0 +1,48 @@
+.bubble {
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 16px;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+
+.user {
+  max-width: min(80%, 640px);
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--color-fill-2);
+}
+
+.assistant {
+  width: 100%;
+  padding-top: 8px;
+}
+
+.teammate {
+  max-width: 100%;
+  padding: 8px 12px;
+  border-radius: 0 12px 12px 12px;
+  background: var(--bg-3);
+}
+
+@media (max-width: 767px) {
+  .bubble {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .user {
+    max-width: 90%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble *,
+  .bubble *::before,
+  .bubble *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -18,6 +18,42 @@
   "downloadFailed": "İndirme başarısız",
   "imageLoadFailed": "Görüntü yüklenemedi",
   "scrollToBottom": "Aşağı kaydır",
+  "toolGroup": {
+    "viewSteps": "Adımları görüntüle · {{count}}",
+    "viewSteps_one": "Adımları görüntüle · {{count}}",
+    "viewSteps_other": "Adımları görüntüle · {{count}}",
+    "input": "Girdi",
+    "output": "Çıktı",
+    "loadFailed": "Tam çıktı yüklenemedi"
+  },
+  "workbench": {
+    "files": "Dosyalar",
+    "changes": "Değişiklikler",
+    "preview": "Önizleme",
+    "terminal": "Terminal",
+    "agents": "Alt ajanlar",
+    "tabsLabel": "Workbench bölümleri",
+    "collapse": "Workbench'ü daralt",
+    "previewEmpty": "Çalışma alanından bir dosya, diff veya tarayıcı sekmesi açın.",
+    "openBrowser": "Yeni tarayıcı sekmesi",
+    "terminalEmpty": "Ajan komutlarının terminal çıktısı burada görünecek.",
+    "agentsEmpty": "Ajan bir görev başlattığında alt ajan etkinliği burada görünecek.",
+    "status": {
+      "pending": "Beklemede",
+      "running": "Çalışıyor",
+      "completed": "Tamamlandı",
+      "error": "Başarısız",
+      "canceled": "İptal edildi"
+    }
+  },
+  "goal": {
+    "action": "Hedef",
+    "objective": "Amaç",
+    "objectivePlaceholder": "Ajan neyi başarmalı?",
+    "completionCriterion": "Tamamlanma ölçütü",
+    "completionPlaceholder": "Hedefin tamamlandığını nasıl anlayacaksınız?",
+    "start": "Hedefi başlat"
+  },
   "anchorRail": {
     "label": "Sohbet mesajı bağlantı noktaları",
     "tickAria": "{{index}}. mesaja git",

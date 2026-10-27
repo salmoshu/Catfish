@@ -18,6 +18,42 @@
   "downloadFailed": "Download fehlgeschlagen",
   "imageLoadFailed": "Bild konnte nicht geladen werden",
   "scrollToBottom": "Nach unten scrollen",
+  "toolGroup": {
+    "viewSteps": "Schritte anzeigen · {{count}}",
+    "viewSteps_one": "Schritte anzeigen · {{count}}",
+    "viewSteps_other": "Schritte anzeigen · {{count}}",
+    "input": "Eingabe",
+    "output": "Ausgabe",
+    "loadFailed": "Vollständige Ausgabe konnte nicht geladen werden"
+  },
+  "workbench": {
+    "files": "Dateien",
+    "changes": "Änderungen",
+    "preview": "Vorschau",
+    "terminal": "Terminal",
+    "agents": "Subagenten",
+    "tabsLabel": "Workbench-Bereiche",
+    "collapse": "Workbench einklappen",
+    "previewEmpty": "Öffnen Sie eine Datei, einen Diff oder einen Browser-Tab aus dem Workspace.",
+    "openBrowser": "Neuer Browser-Tab",
+    "terminalEmpty": "Die Terminalausgabe von Agent-Befehlen erscheint hier.",
+    "agentsEmpty": "Subagent-Aktivität erscheint hier, wenn ein Agent eine Aufgabe startet.",
+    "status": {
+      "pending": "Ausstehend",
+      "running": "Läuft",
+      "completed": "Abgeschlossen",
+      "error": "Fehlgeschlagen",
+      "canceled": "Abgebrochen"
+    }
+  },
+  "goal": {
+    "action": "Ziel",
+    "objective": "Ziel",
+    "objectivePlaceholder": "Was soll der Agent erreichen?",
+    "completionCriterion": "Abschlusskriterium",
+    "completionPlaceholder": "Woran erkennen Sie, dass das Ziel erreicht ist?",
+    "start": "Ziel starten"
+  },
   "anchorRail": {
     "label": "Anker für Unterhaltungsnachrichten",
     "tickAria": "Zu Nachricht {{index}} springen",

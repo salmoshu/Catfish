@@ -18,6 +18,42 @@
   "downloadFailed": "ダウンロードに失敗しました",
   "imageLoadFailed": "画像の読み込みに失敗しました",
   "scrollToBottom": "下にスクロール",
+  "toolGroup": {
+    "viewSteps": "ステップを表示 · {{count}}",
+    "viewSteps_one": "ステップを表示 · {{count}}",
+    "viewSteps_other": "ステップを表示 · {{count}}",
+    "input": "入力",
+    "output": "出力",
+    "loadFailed": "完全な出力の読み込みに失敗しました"
+  },
+  "workbench": {
+    "files": "ファイル",
+    "changes": "変更",
+    "preview": "プレビュー",
+    "terminal": "ターミナル",
+    "agents": "サブエージェント",
+    "tabsLabel": "Workbench セクション",
+    "collapse": "Workbench を折りたたむ",
+    "previewEmpty": "ワークスペースからファイル、diff、ブラウザータブを開きます。",
+    "openBrowser": "新しいブラウザータブ",
+    "terminalEmpty": "エージェントのコマンド出力がここに表示されます。",
+    "agentsEmpty": "タスクを開始すると、サブエージェントの活動がここに表示されます。",
+    "status": {
+      "pending": "待機中",
+      "running": "実行中",
+      "completed": "完了",
+      "error": "失敗",
+      "canceled": "キャンセル"
+    }
+  },
+  "goal": {
+    "action": "ゴール",
+    "objective": "目標",
+    "objectivePlaceholder": "エージェントに達成してほしいことは何ですか？",
+    "completionCriterion": "完了条件",
+    "completionPlaceholder": "ゴールの完了をどのように判断しますか？",
+    "start": "ゴールを開始"
+  },
   "anchorRail": {
     "label": "会話メッセージのアンカー",
     "tickAria": "メッセージ {{index}} へ移動",

@@ -37,6 +37,7 @@ const AcpChat: React.FC<{
   cron_job_id?: string;
   hideSendBox?: boolean;
   emptySlot?: React.ReactNode;
+  composerTools?: React.ReactNode;
   loadedSkills?: string[];
   loadedMcpServers?: string[];
   loadedMcpStatuses?: IConversationMcpStatus[];
@@ -54,6 +55,7 @@ const AcpChat: React.FC<{
   cron_job_id,
   hideSendBox,
   emptySlot,
+  composerTools,
   loadedSkills,
   loadedMcpServers,
   loadedMcpStatuses,
@@ -102,6 +104,7 @@ const AcpChat: React.FC<{
               session_mode={session_mode}
               agent_name={agent_name}
               messageState={messageState}
+              composerTools={composerTools}
               teamSendMessage={teamSendMessage}
               teamRuntime={teamRuntime}
             ></AcpSendBox>

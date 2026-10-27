@@ -8,9 +8,12 @@ import React from 'react';
 import { render, screen, cleanup } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Stub the heavy tree; the column test only covers host chrome (gating, collapse).
-vi.mock('@/renderer/pages/conversation/explorer/ExplorerContainer', () => ({
-  ExplorerContainer: ({ projectId }: { projectId: string }) => <div data-testid='explorer'>{projectId}</div>,
+vi.mock('@/renderer/pages/conversation/Workbench', () => ({
+  WorkbenchPanel: ({ projectId }: { projectId: string }) => <div data-testid='explorer'>{projectId}</div>,
+}));
+
+vi.mock('@/renderer/pages/conversation/Preview', () => ({
+  usePreviewContext: () => ({ isOpen: false }),
 }));
 
 import { ProjectPanelHost } from '@/renderer/components/layout/ProjectPanelHost';

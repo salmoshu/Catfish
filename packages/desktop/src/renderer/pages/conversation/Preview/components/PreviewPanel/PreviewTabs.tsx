@@ -7,6 +7,7 @@
 import { iconColors } from '@/renderer/styles/colors';
 import { Close, Plus } from '@icon-park/react';
 import { IconFullscreen, IconFullscreenExit, IconShrink } from '@arco-design/web-react/icon';
+import { Button } from '@arco-design/web-react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TabFadeState } from '../../hooks/useTabOverflow';
@@ -324,13 +325,16 @@ const PreviewTabs: React.FC<PreviewTabsProps> = ({
               </div>
             )}
             {onClosePanel && (
-              <div
-                className='flex items-center justify-center w-20px h-20px rd-4px cursor-pointer hover:bg-bg-3 transition-colors'
+              <Button
+                type='text'
+                size='mini'
+                className='flex items-center justify-center w-20px h-20px rd-4px hover:bg-bg-3 transition-colors'
                 onClick={onClosePanel}
                 title={t('preview.collapsePanel')}
-              >
-                <IconShrink style={{ fontSize: 14, color: iconColors.secondary }} />
-              </div>
+                aria-label={t('preview.collapsePanel')}
+                data-testid='preview-collapse-panel'
+                icon={<IconShrink style={{ fontSize: 14, color: iconColors.secondary }} />}
+              />
             )}
           </div>
         )}

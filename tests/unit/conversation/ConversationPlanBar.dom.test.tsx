@@ -94,19 +94,16 @@ describe('ConversationPlanBar', () => {
   });
 
   it('uses the same width class as the send box so the bar does not overhang it', () => {
-    // The bar sits directly above the send box. Both must share
-    // `.chat-surface-fluid`, which reserves side gutters once the container is
-    // wide enough — a full-bleed bar visibly overhangs the send box.
+    // The bar sits directly above the send box. Both must share the centered,
+    // bounded `.chat-surface-fluid` content column.
     const { container } = setup({ plan: plan('turn-id-1'), isProcessing: true, activeTurnId: 'turn-id-1' });
     const bar = container.querySelector('[data-testid="conversation-plan-bar"]');
     expect(bar?.className).toContain(getChatSurfaceWidthClass());
   });
 
   it('keeps horizontal padding off the root so it does not overhang the send box', () => {
-    // `.chat-surface-fluid` sets a computed `width`; the root resolves as
-    // content-box, so padding there is ADDED on top. Measured live: the bar came
-    // out 663px against the send box group's 647px — overhanging by exactly
-    // 2x8px. The inset belongs on the children.
+    // Keep horizontal insets on the children so they do not add to the shared
+    // content column's width or make the plan bar overhang the Composer.
     const { container } = setup({ plan: plan('turn-id-1'), isProcessing: true, activeTurnId: 'turn-id-1' });
     const bar = container.querySelector('[data-testid="conversation-plan-bar"]') as HTMLElement;
     expect(bar.className).toContain('chat-surface-fluid');

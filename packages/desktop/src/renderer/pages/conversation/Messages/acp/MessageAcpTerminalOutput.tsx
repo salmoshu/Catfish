@@ -9,6 +9,7 @@ import type { IMessageAcpTerminalOutput } from '@/common/chat/chatLib';
 import { Button, Card, Tag } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { openWorkbenchSection } from '../../Workbench/workbenchActivityStore';
 
 /**
  * Live card for a client-hosted terminal (ACP terminal/*): the delegated
@@ -75,6 +76,14 @@ const MessageAcpTerminalOutput: React.FC<{ message: IMessageAcpTerminalOutput }>
         >
           $ {content.command}
         </code>
+        <Button
+          type='text'
+          size='mini'
+          data-testid='terminal-open-workbench'
+          onClick={() => openWorkbenchSection('terminal')}
+        >
+          {t('messages.workbench.terminal', { defaultValue: 'Terminal' })}
+        </Button>
         {statusTag}
         {running && (
           <Button size='mini' status='danger' loading={killing} onClick={handleStop} data-testid='terminal-card-stop'>

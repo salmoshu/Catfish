@@ -18,6 +18,42 @@
   "downloadFailed": "Falha ao baixar",
   "imageLoadFailed": "Falha ao carregar a imagem",
   "scrollToBottom": "Rolar para o final",
+  "toolGroup": {
+    "viewSteps": "Ver etapas · {{count}}",
+    "viewSteps_one": "Ver etapas · {{count}}",
+    "viewSteps_other": "Ver etapas · {{count}}",
+    "input": "Entrada",
+    "output": "Saída",
+    "loadFailed": "Falha ao carregar a saída completa"
+  },
+  "workbench": {
+    "files": "Arquivos",
+    "changes": "Alterações",
+    "preview": "Pré-visualização",
+    "terminal": "Terminal",
+    "agents": "Subagentes",
+    "tabsLabel": "Seções do Workbench",
+    "collapse": "Recolher Workbench",
+    "previewEmpty": "Abra um arquivo, diff ou guia do navegador no workspace.",
+    "openBrowser": "Nova guia do navegador",
+    "terminalEmpty": "A saída dos comandos do agente aparecerá aqui.",
+    "agentsEmpty": "A atividade do subagente aparecerá aqui quando uma tarefa começar.",
+    "status": {
+      "pending": "Pendente",
+      "running": "Executando",
+      "completed": "Concluído",
+      "error": "Falhou",
+      "canceled": "Cancelado"
+    }
+  },
+  "goal": {
+    "action": "Meta",
+    "objective": "Objetivo",
+    "objectivePlaceholder": "O que o agente deve realizar?",
+    "completionCriterion": "Critério de conclusão",
+    "completionPlaceholder": "Como você saberá que a meta foi concluída?",
+    "start": "Iniciar meta"
+  },
   "anchorRail": {
     "label": "Âncoras das mensagens da conversa",
     "tickAria": "Ir para a mensagem {{index}}",

@@ -8,8 +8,8 @@ import React from 'react';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/renderer/pages/conversation/explorer/ExplorerContainer', () => ({
-  ExplorerContainer: ({ projectId }: { projectId: string }) => <div data-testid='explorer'>{projectId}</div>,
+vi.mock('@/renderer/pages/conversation/Workbench', () => ({
+  WorkbenchPanel: ({ projectId }: { projectId: string }) => <div data-testid='explorer'>{projectId}</div>,
 }));
 
 import { ProjectPanelMobileOverlay } from '@/renderer/components/layout/ProjectPanelMobileOverlay';
@@ -28,7 +28,7 @@ describe('ProjectPanelMobileOverlay (P3 mobile)', () => {
     // Explorer stays mounted (no remount on open/close).
     expect(screen.getByTestId('explorer')).toHaveTextContent('p1');
     // No floating collapse handle when collapsed.
-    expect(screen.queryByLabelText('Collapse explorer')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Collapse Workbench')).not.toBeInTheDocument();
   });
 
   it('open: panel on-screen, backdrop + floating handle present, both fire onCollapse', () => {
@@ -39,7 +39,7 @@ describe('ProjectPanelMobileOverlay (P3 mobile)', () => {
     expect(p.style.transform).toBe('translateX(0)');
     expect(p.style.width).toBe('360px');
 
-    fireEvent.click(screen.getByLabelText('Collapse explorer')); // floating handle
+    fireEvent.click(screen.getByLabelText('Collapse Workbench')); // floating handle
     expect(onCollapse).toHaveBeenCalledTimes(1);
 
     // Backdrop is the fixed full-screen dimmer.

@@ -18,6 +18,42 @@
   "downloadFailed": "Échec du téléchargement",
   "imageLoadFailed": "Échec du chargement de l'image",
   "scrollToBottom": "Défiler vers le bas",
+  "toolGroup": {
+    "viewSteps": "Voir les étapes · {{count}}",
+    "viewSteps_one": "Voir les étapes · {{count}}",
+    "viewSteps_other": "Voir les étapes · {{count}}",
+    "input": "Entrée",
+    "output": "Sortie",
+    "loadFailed": "Impossible de charger la sortie complète"
+  },
+  "workbench": {
+    "files": "Fichiers",
+    "changes": "Modifications",
+    "preview": "Aperçu",
+    "terminal": "Terminal",
+    "agents": "Sous-agents",
+    "tabsLabel": "Sections du Workbench",
+    "collapse": "Réduire le Workbench",
+    "previewEmpty": "Ouvrez un fichier, un diff ou un onglet de navigateur depuis l'espace de travail.",
+    "openBrowser": "Nouvel onglet de navigateur",
+    "terminalEmpty": "La sortie des commandes de l'agent apparaîtra ici.",
+    "agentsEmpty": "L'activité du sous-agent apparaîtra ici au démarrage d'une tâche.",
+    "status": {
+      "pending": "En attente",
+      "running": "En cours",
+      "completed": "Terminé",
+      "error": "Échec",
+      "canceled": "Annulé"
+    }
+  },
+  "goal": {
+    "action": "Objectif",
+    "objective": "Objectif",
+    "objectivePlaceholder": "Que doit accomplir l'agent ?",
+    "completionCriterion": "Critère d'achèvement",
+    "completionPlaceholder": "Comment saurez-vous que l'objectif est atteint ?",
+    "start": "Démarrer l'objectif"
+  },
   "anchorRail": {
     "label": "Ancres des messages de la conversation",
     "tickAria": "Aller au message {{index}}",

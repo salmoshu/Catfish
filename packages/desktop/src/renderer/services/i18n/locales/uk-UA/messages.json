@@ -19,6 +19,44 @@
   "downloadFailed": "Не вдалося завантажити",
   "imageLoadFailed": "Не вдалося завантажити зображення",
   "scrollToBottom": "Прокрутити донизу",
+  "toolGroup": {
+    "viewSteps": "Переглянути кроки · {{count}}",
+    "viewSteps_one": "Переглянути кроки · {{count}}",
+    "viewSteps_other": "Переглянути кроки · {{count}}",
+    "viewSteps_few": "Переглянути кроки · {{count}}",
+    "viewSteps_many": "Переглянути кроки · {{count}}",
+    "input": "Ввід",
+    "output": "Вивід",
+    "loadFailed": "Не вдалося завантажити повний вивід"
+  },
+  "workbench": {
+    "files": "Файли",
+    "changes": "Зміни",
+    "preview": "Перегляд",
+    "terminal": "Термінал",
+    "agents": "Субагенти",
+    "tabsLabel": "Розділи Workbench",
+    "collapse": "Згорнути Workbench",
+    "previewEmpty": "Відкрийте файл, diff або вкладку браузера з робочої області.",
+    "openBrowser": "Нова вкладка браузера",
+    "terminalEmpty": "Тут з'явиться вивід команд агента в терміналі.",
+    "agentsEmpty": "Тут з'явиться активність субагентів після запуску завдання.",
+    "status": {
+      "pending": "Очікує",
+      "running": "Виконується",
+      "completed": "Завершено",
+      "error": "Помилка",
+      "canceled": "Скасовано"
+    }
+  },
+  "goal": {
+    "action": "Мета",
+    "objective": "Завдання",
+    "objectivePlaceholder": "Що має зробити агент?",
+    "completionCriterion": "Умова завершення",
+    "completionPlaceholder": "Як ви зрозумієте, що мету досягнуто?",
+    "start": "Почати мету"
+  },
   "anchorRail": {
     "label": "Якорі повідомлень розмови",
     "tickAria": "Перейти до повідомлення {{index}}",

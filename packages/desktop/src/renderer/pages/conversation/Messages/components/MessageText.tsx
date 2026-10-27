@@ -12,8 +12,9 @@ import { useConversationContextSafe } from '@/renderer/hooks/context/Conversatio
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { iconColors } from '@/renderer/styles/colors';
-import { Alert, Message, Tooltip } from '@arco-design/web-react';
+import { Alert, Button, Message, Tooltip } from '@arco-design/web-react';
 import { Copy } from '@icon-park/react';
+import styles from './MessageText.module.css';
 import classNames from 'classnames';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -197,13 +198,14 @@ const MessageText: React.FC<{
 
   const copyButton = (
     <Tooltip content={t('common.copy', { defaultValue: 'Copy' })}>
-      <div
-        className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
+      <Button
+        type='text'
+        size='mini'
+        aria-label={t('common.copy', { defaultValue: 'Copy' })}
+        className='p-4px rd-4px hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
         onClick={handleCopy}
-        style={{ lineHeight: 0 }}
-      >
-        <Copy theme='outline' size='16' fill={iconColors.secondary} />
-      </div>
+        icon={<Copy theme='outline' size='16' fill={iconColors.secondary} />}
+      />
     </Tooltip>
   );
 
@@ -216,14 +218,15 @@ const MessageText: React.FC<{
   });
   const forkButton = showForkButton ? (
     <Tooltip content={t('messages.fork.action')}>
-      <div
-        className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
+      <Button
+        type='text'
+        size='mini'
+        aria-label={t('messages.fork.action')}
+        className='p-4px rd-4px hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
         onClick={() => void forkConversation(message.msg_id ?? message.id)}
-        style={{ lineHeight: 0 }}
         data-testid='message-fork-button'
-      >
-        <ForkBranchIcon size={16} fill={iconColors.secondary} />
-      </div>
+        icon={<ForkBranchIcon size={16} fill={iconColors.secondary} />}
+      />
     </Tooltip>
   ) : null;
 
@@ -307,21 +310,12 @@ const MessageText: React.FC<{
           </div>
         )}
         <div
-          className={classNames('min-w-0 [&>p:first-child]:mt-0px [&>p:last-child]:mb-0px', {
-            'bg-aou-2 p-6px md:p-8px': isUserMessage || cronMeta,
-            'bg-3 p-6px md:p-8px': isTeammateMessage,
-            'w-full': !(isUserMessage || cronMeta || isTeammateMessage),
+          className={classNames('min-w-0 [&>p:first-child]:mt-0px [&>p:last-child]:mb-0px', styles.bubble, {
+            [styles.user]: isUserMessage || cronMeta,
+            [styles.teammate]: isTeammateMessage,
+            [styles.assistant]: !(isUserMessage || cronMeta || isTeammateMessage),
           })}
-          style={{
-            ...(isUserMessage || cronMeta
-              ? { borderRadius: '8px 0 8px 8px', color: 'var(--text-primary)' }
-              : isTeammateMessage
-                ? {
-                    borderRadius: '0 8px 8px 8px',
-                    ...(teammateColor ? { borderLeft: `3px solid ${teammateColor}` } : {}),
-                  }
-                : undefined),
-          }}
+          style={isTeammateMessage && teammateColor ? { borderLeft: `3px solid ${teammateColor}` } : undefined}
         >
           {/* JSON 内容使用折叠组件 Use CollapsibleContent for JSON content */}
           {shouldRenderPlainText ? (

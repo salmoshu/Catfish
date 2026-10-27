@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { BackendHttpError } from '@/common/adapter/httpBridge';
@@ -309,16 +309,35 @@ vi.mock('@arco-design/web-react', () => ({
   },
   Tag: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
   Popover: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  Input: {
+    TextArea: ({
+      id,
+      value,
+      placeholder,
+      onChange,
+    }: {
+      id?: string;
+      value?: string;
+      placeholder?: string;
+      onChange?: (value: string) => void;
+    }) => (
+      <textarea id={id} value={value} placeholder={placeholder} onChange={(event) => onChange?.(event.target.value)} />
+    ),
+  },
   Button: ({
     children,
     onClick,
     disabled,
+    'data-testid': dataTestId,
+    'aria-expanded': ariaExpanded,
   }: {
     children?: React.ReactNode;
     onClick?: () => void;
     disabled?: boolean;
+    'data-testid'?: string;
+    'aria-expanded'?: boolean;
   }) => (
-    <button type='button' onClick={onClick} disabled={disabled}>
+    <button type='button' onClick={onClick} disabled={disabled} data-testid={dataTestId} aria-expanded={ariaExpanded}>
       {children}
     </button>
   ),
@@ -394,6 +413,36 @@ describe('AcpSendBox', () => {
     await waitFor(() => {
       expect(resetStateMock).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('shows Goal only for a declared capability and sends it through ACP', async () => {
+    const { unmount } = render(
+      <AcpSendBox conversation_id='conv-1' backend='claude' messageState={makeMessageState()} />
+    );
+    expect(screen.queryByTestId('goal-toggle')).not.toBeInTheDocument();
+    unmount();
+
+    const messageState = makeMessageState();
+    messageState.slashCommands = [{ name: 'goal', description: 'Start goal', kind: 'template', source: 'acp' }];
+    sendMessageInvokeMock.mockResolvedValue({ turn_id: 'goal-turn', runtime: {}, msg_id: 'goal-message' });
+    render(<AcpSendBox conversation_id='conv-1' backend='claude' messageState={messageState} />);
+    fireEvent.click(screen.getByTestId('goal-toggle'));
+    const [objective, criterion] = screen.getAllByRole('textbox');
+    fireEvent.change(objective, { target: { value: 'Finish the UI' } });
+    fireEvent.change(criterion, { target: { value: 'Tests pass' } });
+    fireEvent.click(screen.getByTestId('goal-start'));
+
+    await waitFor(() => {
+      expect(sendMessageInvokeMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          conversation_id: 'conv-1',
+          input: '/goal Finish the UI\n\nCompletion criterion: Tests pass',
+          files: [],
+          sessions: undefined,
+        })
+      );
+    });
+    await waitFor(() => expect(screen.queryByTestId('goal-composer')).not.toBeInTheDocument());
   });
 
   it('shows a progress ring with a window size, a hollow ring without one, and nothing without usage', () => {

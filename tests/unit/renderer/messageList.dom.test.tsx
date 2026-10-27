@@ -343,12 +343,9 @@ describe('MessageList', () => {
   });
 
   it('uses the same container-responsive width in team mode', () => {
-    // Team and standalone rows share one class. Width is decided by the column the
-    // rows are given, not by the mode: `.chat-surface-fluid` is full-width until
-    // its container passes the gutter threshold. A team parallel column (~400px)
-    // therefore still renders full width, while team single view — which fills the
-    // chat area — gets the same gutters as a standalone conversation, leaving room
-    // for the anchor rail instead of crowding the text.
+    // Team and standalone rows share one class. Width is decided by the available
+    // column, not by the mode: narrow team parallel columns stay full width, while
+    // wider standalone and team single columns share the same centered 800px cap.
     useTeamPermissionMock.mockReturnValue({
       isTeamMode: true,
       isLeaderAgent: true,

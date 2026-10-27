@@ -18,6 +18,42 @@
   "downloadFailed": "Failed to download",
   "imageLoadFailed": "Failed to load image",
   "scrollToBottom": "Scroll to bottom",
+  "toolGroup": {
+    "viewSteps": "View Steps · {{count}}",
+    "viewSteps_one": "View Steps · {{count}}",
+    "viewSteps_other": "View Steps · {{count}}",
+    "input": "Input",
+    "output": "Output",
+    "loadFailed": "Failed to load full output"
+  },
+  "workbench": {
+    "files": "Files",
+    "changes": "Changes",
+    "preview": "Preview",
+    "terminal": "Terminal",
+    "agents": "Agents",
+    "tabsLabel": "Workbench sections",
+    "collapse": "Collapse Workbench",
+    "previewEmpty": "Open a file, diff or browser tab from the workspace.",
+    "openBrowser": "New browser tab",
+    "terminalEmpty": "Terminal output from agent commands will appear here.",
+    "agentsEmpty": "Subagent activity will appear here when the agent starts a task.",
+    "status": {
+      "pending": "Pending",
+      "running": "Running",
+      "completed": "Completed",
+      "error": "Failed",
+      "canceled": "Canceled"
+    }
+  },
+  "goal": {
+    "action": "Goal",
+    "objective": "Objective",
+    "objectivePlaceholder": "What should the agent accomplish?",
+    "completionCriterion": "Completion criterion",
+    "completionPlaceholder": "How will you know the goal is complete?",
+    "start": "Start goal"
+  },
   "anchorRail": {
     "label": "Conversation message anchors",
     "tickAria": "Jump to message {{index}}",

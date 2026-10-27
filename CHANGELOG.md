@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/salmoshu/Catfish/releases/tag/v0.4.0) (2026-10-27)
+
+### Desktop
+
+#### Features
+
+- **conversation:** restyle the message workspace and Composer with an 800px content column, responsive message bubbles, accessible tool steps and scroll controls
+- **workbench:** unify files, changes, file/diff/browser previews, ACP terminal output and subagent activity in a persistent multi-tab panel
+- **interaction:** add capability-detected Goal composition, refreshed Plan and draft queue controls, mobile and dark-theme accessibility, and Electron visual regression coverage
+
+---
+
 ## [0.3.1](https://github.com/salmoshu/Catfish/releases/tag/v0.3.1) (2026-10-26)
 
 ### Desktop

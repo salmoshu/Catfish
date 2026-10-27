@@ -18,6 +18,42 @@
   "downloadFailed": "下載失敗",
   "imageLoadFailed": "圖片載入失敗",
   "scrollToBottom": "滾動到底部",
+  "toolGroup": {
+    "viewSteps": "檢視步驟 · {{count}}",
+    "viewSteps_one": "檢視步驟 · {{count}}",
+    "viewSteps_other": "檢視步驟 · {{count}}",
+    "input": "輸入",
+    "output": "輸出",
+    "loadFailed": "載入完整輸出失敗"
+  },
+  "workbench": {
+    "files": "檔案",
+    "changes": "變更",
+    "preview": "預覽",
+    "terminal": "終端",
+    "agents": "子 Agent",
+    "tabsLabel": "Workbench 區域",
+    "collapse": "收起 Workbench",
+    "previewEmpty": "從工作區開啟檔案、diff 或瀏覽器分頁。",
+    "openBrowser": "新增瀏覽器分頁",
+    "terminalEmpty": "Agent 執行指令的終端輸出將顯示在這裡。",
+    "agentsEmpty": "Agent 啟動子任務後，子 Agent 活動將顯示在這裡。",
+    "status": {
+      "pending": "待處理",
+      "running": "執行中",
+      "completed": "已完成",
+      "error": "失敗",
+      "canceled": "已取消"
+    }
+  },
+  "goal": {
+    "action": "目標",
+    "objective": "目標",
+    "objectivePlaceholder": "Agent 需要完成什麼目標？",
+    "completionCriterion": "完成條件",
+    "completionPlaceholder": "如何判斷目標已完成？",
+    "start": "啟動目標"
+  },
   "anchorRail": {
     "label": "對話訊息錨點",
     "tickAria": "跳轉到第 {{index}} 則訊息",

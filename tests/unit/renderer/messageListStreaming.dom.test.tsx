@@ -41,6 +41,23 @@ vi.mock('react-router-dom', () => ({
 }));
 
 vi.mock('@arco-design/web-react', () => ({
+  Button: ({
+    children,
+    onClick,
+    title,
+    className,
+    'aria-label': ariaLabel,
+  }: {
+    children?: React.ReactNode;
+    onClick?: () => void;
+    title?: string;
+    className?: string;
+    'aria-label'?: string;
+  }) => (
+    <button type='button' onClick={onClick} title={title} className={className} aria-label={ariaLabel}>
+      {children}
+    </button>
+  ),
   Image: {
     PreviewGroup: ({ children }: PropsWithChildren) => <>{children}</>,
   },

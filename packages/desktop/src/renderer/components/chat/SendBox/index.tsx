@@ -1928,7 +1928,7 @@ const SendBox: React.FC<{
       )}
       <div
         ref={containerRef}
-        className={`sendbox-panel relative p-16px border-3 b bg-dialog-fill-0 b-solid rd-20px flex flex-col ${isOverlayOpen ? 'overflow-visible' : 'overflow-hidden'} ${isFileDragging ? 'b-dashed sendbox-panel--dragging' : ''}`}
+        className={`sendbox-panel relative p-12px border-3 b bg-dialog-fill-0 b-solid rd-20px flex flex-col ${isOverlayOpen ? 'overflow-visible' : 'overflow-hidden'} ${isFileDragging ? 'b-dashed sendbox-panel--dragging' : ''}`}
         style={{
           transition: 'box-shadow 0.25s ease, border-color 0.25s ease',
           ...(isFileDragging

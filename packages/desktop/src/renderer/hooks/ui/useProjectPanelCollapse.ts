@@ -5,15 +5,13 @@
  */
 
 /**
- * Layout-level collapse state for the Project Explorer host column (stage3 FULL /
- * P3). This is the host's own collapse concern — the explorer *component* it hosts
- * stays mounted (the column shrinks to width 0 rather than unmounting), so the WS
- * subscriptions and tree survive collapse just like they survive a same-project
- * conversation switch (no remount).
+ * Layout-level collapse state for the unified project Workbench. The host stays
+ * mounted at width 0, preserving tree subscriptions, editors and browser pages
+ * across collapse and same-project conversation switches.
  *
  * Seam: reuses the existing `WORKSPACE_TOGGLE_EVENT` bus so every toggle
  * affordance already wired for the legacy workspace panel — the mac Titlebar
- * button, the keyboard shortcut, and any platform button — drives the explorer
+ * button, the keyboard shortcut, and any platform button — drives the Workbench
  * too. For a project conversation the legacy ChatLayout handler is inert
  * (`workspaceEnabled === false`, it returns without `preventDefault`), so this
  * host handler is the sole actor; for a non-project conversation `active` is

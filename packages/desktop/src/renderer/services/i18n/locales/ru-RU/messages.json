@@ -20,6 +20,44 @@
   "downloadFailed": "Не удалось скачать",
   "imageLoadFailed": "Не удалось загрузить изображение",
   "scrollToBottom": "Прокрутить вниз",
+  "toolGroup": {
+    "viewSteps": "Показать шаги · {{count}}",
+    "viewSteps_one": "Показать шаги · {{count}}",
+    "viewSteps_other": "Показать шаги · {{count}}",
+    "viewSteps_few": "Показать шаги · {{count}}",
+    "viewSteps_many": "Показать шаги · {{count}}",
+    "input": "Ввод",
+    "output": "Вывод",
+    "loadFailed": "Не удалось загрузить полный вывод"
+  },
+  "workbench": {
+    "files": "Файлы",
+    "changes": "Изменения",
+    "preview": "Просмотр",
+    "terminal": "Терминал",
+    "agents": "Субагенты",
+    "tabsLabel": "Разделы Workbench",
+    "collapse": "Свернуть Workbench",
+    "previewEmpty": "Откройте файл, diff или вкладку браузера из рабочей области.",
+    "openBrowser": "Новая вкладка браузера",
+    "terminalEmpty": "Здесь появится вывод команд агента в терминале.",
+    "agentsEmpty": "Здесь появится активность субагентов после запуска задачи.",
+    "status": {
+      "pending": "Ожидание",
+      "running": "Выполняется",
+      "completed": "Завершено",
+      "error": "Ошибка",
+      "canceled": "Отменено"
+    }
+  },
+  "goal": {
+    "action": "Цель",
+    "objective": "Задача",
+    "objectivePlaceholder": "Что должен сделать агент?",
+    "completionCriterion": "Критерий завершения",
+    "completionPlaceholder": "Как вы поймёте, что цель достигнута?",
+    "start": "Начать цель"
+  },
   "anchorRail": {
     "label": "Якоря сообщений диалога",
     "tickAria": "Перейти к сообщению {{index}}",

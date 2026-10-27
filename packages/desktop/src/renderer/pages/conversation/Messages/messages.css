@@ -1,21 +1,37 @@
-/* Standalone chats keep comfortable side insets only when the chat column itself
-   has enough room. Split preview/project layouts can make the column narrow even
-   on wide screens, so this must key off container width instead of viewport. */
+/* Messages and the Composer share one centered 800px content column. Narrow
+   standalone and team columns keep using all of their available width. */
 .chat-surface-container {
   container-type: inline-size;
 }
 
 .chat-surface-fluid {
+  box-sizing: border-box;
   width: 100%;
-  max-width: 100%;
+  max-width: 800px;
+  margin-inline-start: auto;
+  margin-inline-end: auto;
 }
 
-@container (min-width: 720px) {
-  .chat-surface-fluid {
-    width: calc(100% - clamp(80px, 10cqw, 240px));
-    max-width: none;
-    margin-inline-start: auto;
-    margin-inline-end: auto;
+.message-scroll-bottom {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  padding: 0 !important;
+  border: 1px solid var(--color-border-2) !important;
+  background: color-mix(in srgb, var(--color-bg-1) 88%, transparent) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--color-text-1) 10%, transparent) !important;
+  backdrop-filter: blur(5px);
+}
+
+.message-scroll-bottom:hover,
+.message-scroll-bottom:focus-visible {
+  background: var(--color-bg-1) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .message-scroll-bottom {
+    backdrop-filter: none;
   }
 }
 

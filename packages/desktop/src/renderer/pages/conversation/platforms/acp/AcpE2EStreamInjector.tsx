@@ -25,6 +25,7 @@ type RunScenarioOptions = {
 
 type StreamController = {
   runScenario: (options?: RunScenarioOptions) => Promise<void>;
+  emitWorkbenchActivity: () => Promise<void>;
   emitInfoTip: (code: string, content: string) => Promise<void>;
   emitErrorTip: (content: string, error?: Record<string, unknown>) => Promise<void>;
   emitToolError: (toolName: string, description: string) => Promise<void>;
@@ -195,6 +196,61 @@ const AcpE2EStreamInjector: React.FC<{ conversationId: string }> = ({ conversati
 
           pushNextChunk();
         });
+      },
+      emitWorkbenchActivity: async () => {
+        addOrUpdateMessage(
+          {
+            id: 'e2e-workbench-agent',
+            msg_id: 'e2e-workbench-agent',
+            conversation_id: conversationId,
+            type: 'acp_tool_call',
+            position: 'left',
+            status: 'finish',
+            created_at: Date.now(),
+            content: {
+              session_id: 'e2e-session',
+              update: {
+                sessionUpdate: 'tool_call_update',
+                tool_call_id: 'e2e-task-call',
+                status: 'completed',
+                title: 'Task',
+                kind: 'execute',
+                rawInput: {
+                  command: 'Review the workspace',
+                  description: 'Review the workspace',
+                  prompt: 'Inspect the project structure and report the UI entry point.',
+                },
+                content: [
+                  {
+                    type: 'content',
+                    content: { type: 'text', text: 'Inspected 4 files and found the UI entry point.' },
+                  },
+                ],
+              },
+            },
+          } as TMessage,
+          true
+        );
+        addOrUpdateMessage(
+          {
+            id: 'e2e-workbench-terminal',
+            msg_id: 'e2e-workbench-terminal',
+            conversation_id: conversationId,
+            type: 'acp_terminal_output',
+            position: 'left',
+            status: 'finish',
+            created_at: Date.now(),
+            content: {
+              terminal_id: 'e2e-terminal',
+              command: 'bun run test',
+              output: '67 tests passed',
+              truncated: false,
+              exit_status: { exit_code: 0, signaled: false },
+            },
+          } as TMessage,
+          true
+        );
+        await new Promise<void>((resolve) => window.setTimeout(resolve, STREAM_TICK_MS));
       },
       emitInfoTip: async (code: string, content: string) => {
         const msgId = `e2e-info-tip-${Date.now()}`;

@@ -141,6 +141,24 @@ vi.mock('@/renderer/utils/ui/clipboard', () => ({
 
 vi.mock('@arco-design/web-react', () => ({
   Alert: () => null,
+  Button: ({
+    children,
+    icon,
+    onClick,
+    'aria-label': ariaLabel,
+    'data-testid': dataTestId,
+  }: {
+    children?: React.ReactNode;
+    icon?: React.ReactNode;
+    onClick?: () => void;
+    'aria-label'?: string;
+    'data-testid'?: string;
+  }) => (
+    <button type='button' onClick={onClick} aria-label={ariaLabel} data-testid={dataTestId}>
+      {icon}
+      {children}
+    </button>
+  ),
   Message: {
     error: vi.fn(),
   },

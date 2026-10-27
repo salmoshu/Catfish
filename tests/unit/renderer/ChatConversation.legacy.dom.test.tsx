@@ -6,7 +6,12 @@ import type { TChatConversation } from '@/common/config/storage';
 import ChatConversation from '@/renderer/pages/conversation/components/ChatConversation';
 
 const usePresetAssistantInfoMock = vi.fn();
-const acpChatMock = vi.fn(() => <div data-testid='mock-acp-chat'>acp chat</div>);
+const acpChatMock = vi.fn(({ composerTools }: { composerTools?: React.ReactNode }) => (
+  <div data-testid='mock-acp-chat'>
+    acp chat
+    {composerTools}
+  </div>
+));
 const acpModelSelectorMock = vi.fn(() => <div data-testid='mock-acp-model-selector'>model selector</div>);
 
 vi.mock('@/renderer/pages/conversation/Messages/MessageList', () => ({

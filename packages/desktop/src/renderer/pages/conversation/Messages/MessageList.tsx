@@ -9,10 +9,9 @@ import type { IMessageAcpToolCall, IMessageToolCall, IMessageToolGroup, TMessage
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import { useConversationRuntimeView } from '@/renderer/pages/conversation/runtime/useConversationRuntimeView';
 import { getChatSurfaceWidthClass } from '@/renderer/pages/conversation/utils/chatSurfaceWidth';
-import { iconColors } from '@/renderer/styles/colors';
 import { CHAT_MESSAGE_JUMP_EVENT, type ChatMessageJumpDetail } from '@/renderer/utils/chat/chatMinimapEvents';
 import { collectAiCopyRows, type TurnCopyItem } from '@/renderer/utils/chat/turnCopy';
-import { Image } from '@arco-design/web-react';
+import { Button, Image } from '@arco-design/web-react';
 import { Down } from '@icon-park/react';
 import MessageAcpPermission from '@renderer/pages/conversation/Messages/acp/MessageAcpPermission';
 import MessageQuestion from './MessageQuestion';
@@ -49,6 +48,7 @@ import MessageThinking from './components/MessageThinking';
 import type { WriteFileResult } from './types';
 import { useAutoScroll } from './useAutoScroll';
 import SelectionReplyButton from './components/SelectionReplyButton';
+import { publishWorkbenchActivity } from '../Workbench/workbenchActivityStore';
 
 type IMessageVO =
   | TMessage
@@ -353,6 +353,12 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
   const loadingTargetKeyRef = useRef<string>('');
   const scrollerElementRef = useRef<HTMLDivElement | null>(null);
   const contentElementRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (conversationContext?.conversation_id) {
+      publishWorkbenchActivity(conversationContext.conversation_id, list);
+    }
+  }, [conversationContext?.conversation_id, list]);
 
   // Pre-process message list to group tool outputs into summary cards
   const processedList = useMemo(() => {
@@ -774,14 +780,15 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
           <div className='absolute bottom-0 start-0 end-0 h-100px pointer-events-none' />
           {/* Scroll button */}
           <div className='absolute bottom-20px left-50% transform -translate-x-50% z-100'>
-            <div
-              className='flex items-center justify-center w-40px h-40px rd-full bg-base shadow-lg cursor-pointer hover:bg-1 transition-all hover:scale-110 border-1 border-solid border-3'
+            <Button
+              type='secondary'
+              shape='circle'
+              className='message-scroll-bottom'
               onClick={handleScrollButtonClick}
               title={t('messages.scrollToBottom')}
-              style={{ lineHeight: 0 }}
-            >
-              <Down theme='filled' size='20' fill={iconColors.secondary} style={{ display: 'block' }} />
-            </div>
+              aria-label={t('messages.scrollToBottom')}
+              icon={<Down theme='filled' size='20' fill='currentColor' style={{ display: 'block' }} />}
+            />
           </div>
         </>
       )}

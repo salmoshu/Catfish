@@ -18,6 +18,42 @@
   "downloadFailed": "다운로드 실패",
   "imageLoadFailed": "이미지 로드 실패",
   "scrollToBottom": "맨 아래로 스크롤",
+  "toolGroup": {
+    "viewSteps": "단계 보기 · {{count}}",
+    "viewSteps_one": "단계 보기 · {{count}}",
+    "viewSteps_other": "단계 보기 · {{count}}",
+    "input": "입력",
+    "output": "출력",
+    "loadFailed": "전체 출력을 불러오지 못했습니다"
+  },
+  "workbench": {
+    "files": "파일",
+    "changes": "변경 사항",
+    "preview": "미리 보기",
+    "terminal": "터미널",
+    "agents": "하위 에이전트",
+    "tabsLabel": "Workbench 섹션",
+    "collapse": "Workbench 접기",
+    "previewEmpty": "작업 공간에서 파일, diff 또는 브라우저 탭을 여세요.",
+    "openBrowser": "새 브라우저 탭",
+    "terminalEmpty": "에이전트 명령의 터미널 출력이 여기에 표시됩니다.",
+    "agentsEmpty": "작업이 시작되면 하위 에이전트 활동이 여기에 표시됩니다.",
+    "status": {
+      "pending": "대기 중",
+      "running": "실행 중",
+      "completed": "완료됨",
+      "error": "실패",
+      "canceled": "취소됨"
+    }
+  },
+  "goal": {
+    "action": "목표",
+    "objective": "목표",
+    "objectivePlaceholder": "에이전트가 무엇을 달성해야 하나요?",
+    "completionCriterion": "완료 조건",
+    "completionPlaceholder": "목표 완료를 어떻게 확인하나요?",
+    "start": "목표 시작"
+  },
   "anchorRail": {
     "label": "대화 메시지 앵커",
     "tickAria": "{{index}}번째 메시지로 이동",

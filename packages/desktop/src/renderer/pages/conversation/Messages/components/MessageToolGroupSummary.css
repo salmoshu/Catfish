@@ -13,22 +13,28 @@
 }
 
 .tool-group-summary {
+  min-width: 0;
   margin: 4px 0;
 }
 
-.tool-group-summary__header {
+.tool-group-summary__header.arco-btn {
   display: inline-flex;
+  width: auto;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 0;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--aou-6);
-  cursor: pointer;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 20px;
   user-select: none;
-  line-height: 1;
 }
 
-.tool-group-summary__header:hover {
-  color: var(--aou-7);
+.tool-group-summary__header.arco-btn:hover,
+.tool-group-summary__header.arco-btn:focus-visible {
+  background: transparent;
+  color: var(--text-primary);
 }
 
 .tool-group-summary__icon {
@@ -36,13 +42,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 14px;
-  height: 14px;
-  color: var(--aou-5);
-}
-
-.tool-group-summary__header:hover .tool-group-summary__icon {
-  color: var(--aou-6);
+  width: 20px;
+  height: 20px;
 }
 
 .tool-group-summary__label {
@@ -53,8 +54,8 @@
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
-  color: var(--aou-4);
-  transition: transform 0.2s ease;
+  color: var(--text-tertiary);
+  transition: transform 0.15s ease;
 }
 
 .tool-group-summary__arrow--open {
@@ -64,45 +65,132 @@
 .tool-group-summary__body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 10px 14px;
-  margin-top: 6px;
-  margin-inline-start: 20px;
-  background: color-mix(in srgb, var(--aou-1) 50%, #fff);
-  border-radius: 8px;
+  margin-top: 8px;
 }
 
-[data-theme='dark'] .tool-group-summary__body {
-  background: var(--aou-1);
+.tool-row {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.tool-row:not(:last-child) {
+  padding-bottom: 12px;
+}
+
+.tool-row__button.arco-btn,
+.tool-row__button--static {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 24px;
+  padding: 0;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  text-align: start;
+}
+
+.tool-row__button.arco-btn:hover,
+.tool-row__button.arco-btn:focus-visible {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.tool-row__rail {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-row__heading {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+}
+
+.tool-row__name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tool-row__description {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tool-row__chevron {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  color: var(--text-tertiary);
+  transition: transform 0.15s ease;
+}
+
+.tool-row__chevron--open {
+  transform: rotate(180deg);
 }
 
 .tool-detail-panel {
-  border-inline-start: 2px solid var(--color-border-2, #e5e6eb);
-  padding-inline-start: 10px;
-  margin-bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 4px 28px;
 }
 
 .tool-detail-section {
-  margin-bottom: 4px;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--color-fill-1);
 }
 
 .tool-detail-label {
-  font-size: 11px;
-  color: var(--color-text-3, #86909c);
+  color: var(--text-tertiary);
+  font-size: 12px;
   font-weight: 500;
-  margin-bottom: 2px;
+  line-height: 18px;
 }
 
 .tool-detail-content {
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--color-text-2, #4e5969);
-  background: var(--color-fill-1, #f7f8fa);
-  border-radius: 4px;
-  padding: 6px 8px;
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-all;
   max-height: 200px;
-  overflow-y: auto;
+  margin: 0;
+  overflow: auto;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badge-breathing .arco-badge-status-dot {
+    animation: none;
+  }
+
+  .tool-group-summary__arrow,
+  .tool-row__chevron {
+    transition: none;
+  }
 }

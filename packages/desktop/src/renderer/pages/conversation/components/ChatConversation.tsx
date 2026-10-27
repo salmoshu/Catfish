@@ -297,6 +297,30 @@ const ChatConversation: React.FC<{
   const conversationAgentName = (conversation?.extra as { agent_name?: string } | undefined)?.agent_name;
   const assistantDisplayName = presetAssistantInfo?.name || conversationAgentName;
 
+  // Desktop model selection mounts in the Composer. Mobile keeps it in the
+  // sendbox `+` action sheet; other conversation types retain the fallback.
+  const modelSelector = useMemo(() => {
+    if (!conversation || isAionrsConversation) return undefined;
+    if (isMobile) return undefined;
+    if (isLegacyReadOnlyConversation) return undefined;
+    // Antigravity included: the backend discovers agy's model list and writes it
+    // into the same catalog the ACP picker reads, so it must not fall through to
+    // the disabled selector below.
+    if (conversation.type === 'acp' || conversation.type === 'antigravity') {
+      const extra = conversation.extra as { current_model_id?: string };
+      return (
+        <AcpModelSelector
+          conversation_id={conversation.id}
+          backend={resolvedConversationBackend}
+          initialModelId={extra.current_model_id}
+          onRuntimeReadyChange={handleRuntimeReadyChange}
+          waitForWarmup
+        />
+      );
+    }
+    return <GoogleModelSelector disabled={true} />;
+  }, [conversation, isAionrsConversation, isMobile, isLegacyReadOnlyConversation, resolvedConversationBackend]);
+
   const conversationNode = useMemo(() => {
     if (!conversation || isAionrsConversation) return null;
     // Greeting shown while the conversation has no messages yet (freshly created
@@ -330,6 +354,7 @@ const ChatConversation: React.FC<{
             cron_job_id={cronJobId}
             hideSendBox={resolvedHideSendBox}
             emptySlot={emptySlot}
+            composerTools={modelSelector}
             loadedSkills={(conversation.extra as { skills?: string[] } | undefined)?.skills}
             loadedMcpServers={(conversation.extra as { mcp_servers?: string[] } | undefined)?.mcp_servers}
             loadedMcpStatuses={
@@ -352,6 +377,7 @@ const ChatConversation: React.FC<{
     cronJobId,
     resolvedHideSendBox,
     acpAssistantId,
+    modelSelector,
   ]);
 
   const sliderTitle = useMemo(() => {
@@ -361,32 +387,6 @@ const ChatConversation: React.FC<{
       </div>
     );
   }, [t]);
-
-  // For ACP/Codex conversations, use AcpModelSelector that can show/switch models.
-  // For other conversations, show disabled model selector.
-  // Mobile: model selection moves into the sendbox `+` action sheet, so the
-  // header selector is suppressed to free up vertical space.
-  const modelSelector = useMemo(() => {
-    if (!conversation || isAionrsConversation) return undefined;
-    if (isMobile) return undefined;
-    if (isLegacyReadOnlyConversation) return undefined;
-    // Antigravity included: the backend discovers agy's model list and writes it
-    // into the same catalog the ACP picker reads, so it must not fall through to
-    // the disabled selector below.
-    if (conversation.type === 'acp' || conversation.type === 'antigravity') {
-      const extra = conversation.extra as { current_model_id?: string };
-      return (
-        <AcpModelSelector
-          conversation_id={conversation.id}
-          backend={resolvedConversationBackend}
-          initialModelId={extra.current_model_id}
-          onRuntimeReadyChange={handleRuntimeReadyChange}
-          waitForWarmup
-        />
-      );
-    }
-    return <GoogleModelSelector disabled={true} />;
-  }, [conversation, isAionrsConversation, isMobile, isLegacyReadOnlyConversation, resolvedConversationBackend]);
 
   if (conversation && conversation.type === 'aionrs') {
     return <AionrsConversationPanel key={conversation.id} conversation={conversation} sliderTitle={sliderTitle} />;
@@ -412,7 +412,6 @@ const ChatConversation: React.FC<{
           <CronJobManager conversation_id={conversation.id} cron_job_id={cronJobId} />
         </div>
       )}
-      {modelSelector && <div className='shrink-0'>{modelSelector}</div>}
       {conversation && conversation.type === 'acp' && !isMobile && !isLegacyReadOnlyConversation && (
         <div className='shrink-0'>
           <AcpRuntimeRestartButton
