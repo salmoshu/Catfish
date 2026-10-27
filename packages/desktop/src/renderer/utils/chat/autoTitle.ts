@@ -2,7 +2,13 @@ import type { TMessage } from '@/common/chat/chatLib';
 import { readMessageContent } from '@/renderer/utils/chat/conversationExport';
 import { hasThinkTags, stripThinkTags } from '@/renderer/utils/chat/thinkTagFilter';
 
+/** Returns true when content starts with an Assistant Rules marker. */
+export const hasAssistantRulesPrefix = (content: string): boolean => /^\s*\[Assistant Rules](?=\s|$)/i.test(content);
+
 export const buildAutoTitleFromContent = (content: string): string | null => {
+  if (hasAssistantRulesPrefix(content) && !/\[\/Assistant Rules]/i.test(content)) {
+    return null;
+  }
   const withoutAssistantRules = content.replace(/^\s*\[Assistant Rules\][\s\S]*?\[\/Assistant Rules\]\s*/i, '');
   const withoutThinkTags = hasThinkTags(withoutAssistantRules)
     ? stripThinkTags(withoutAssistantRules)

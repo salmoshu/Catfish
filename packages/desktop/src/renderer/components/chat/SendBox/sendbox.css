@@ -413,13 +413,7 @@ body[arco-theme='dark'] .sendbox-panel .send-button-custom--disabled svg * {
 }
 
 .speech-loader-spinner {
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  border: 1.75px solid color-mix(in srgb, currentColor 22%, transparent);
-  border-top-color: currentColor;
   display: block;
-  box-sizing: border-box;
   animation: speech-loader-spin 0.9s linear infinite;
 }
 

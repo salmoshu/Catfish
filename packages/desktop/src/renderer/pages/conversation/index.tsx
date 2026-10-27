@@ -10,6 +10,7 @@ import { previewScopeKey } from '@/renderer/pages/conversation/Preview/context/p
 import { setCurrentProject } from '@/renderer/pages/conversation/explorer/currentProjectStore';
 import { setCurrentConversation } from '@/renderer/pages/conversation/explorer/currentConversationStore';
 import { useAutoTitle } from '@/renderer/hooks/chat/useAutoTitle';
+import { hasAssistantRulesPrefix } from '@/renderer/utils/chat/autoTitle';
 import { getConversationOrNull } from '@/renderer/pages/conversation/utils/conversationCache';
 import { getSnapshotConversationProjectId } from '@/renderer/pages/conversation/GroupedHistory/hooks/useConversationListSync';
 
@@ -87,7 +88,7 @@ const ChatConversationIndex: React.FC = () => {
   }, [id, mutate]);
 
   useEffect(() => {
-    if (!data || data.name !== defaultConversationTitle) {
+    if (!data || (data.name !== defaultConversationTitle && !hasAssistantRulesPrefix(data.name))) {
       return;
     }
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button, Typography, Tooltip, Link } from '@arco-design/web-react';
-import { IconDownload, IconRefresh } from '@arco-design/web-react/icon';
+import KimiIcon from '@renderer/components/base/KimiIcon';
 import { useTranslation } from 'react-i18next';
 import AionModal from '@/renderer/components/base/AionModal';
 import { useHubAgents } from '@/renderer/hooks/agent/useHubAgents';
@@ -32,7 +32,7 @@ export const AgentHubModal: React.FC<AgentHubModalProps> = ({ visible, onCancel 
           <Button
             type='primary'
             size='small'
-            icon={<IconDownload />}
+            icon={<KimiIcon name='download' />}
             className={actionButtonClassName}
             onClick={() => install(agent.name)}
           >
@@ -58,7 +58,7 @@ export const AgentHubModal: React.FC<AgentHubModalProps> = ({ visible, onCancel 
             <Button
               status='danger'
               size='small'
-              icon={<IconRefresh />}
+              icon={<KimiIcon name='refresh' />}
               className={actionButtonClassName}
               onClick={() => retryInstall(agent.name)}
             >
@@ -71,7 +71,7 @@ export const AgentHubModal: React.FC<AgentHubModalProps> = ({ visible, onCancel 
           <Button
             type='primary'
             size='small'
-            icon={<IconDownload />}
+            icon={<KimiIcon name='download' />}
             className={actionButtonClassName}
             onClick={() => update(agent.name)}
           >

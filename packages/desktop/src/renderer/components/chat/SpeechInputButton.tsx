@@ -14,6 +14,7 @@ import {
   useSpeechInput,
   type SpeechInputAvailability,
 } from '@/renderer/hooks/system/useSpeechInput';
+import KimiIcon from '@renderer/components/base/KimiIcon';
 
 type SpeechInputButtonProps = {
   /** Live transcript of the active streaming session; `null` clears it. */
@@ -23,21 +24,11 @@ type SpeechInputButtonProps = {
 
 let activeSpeechInputOwner: symbol | null = null;
 
-const SpeechMicIcon = () => (
-  <svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' aria-hidden='true'>
-    <path d='M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3Z' />
-    <path d='M19 10v2a7 7 0 0 1-14 0v-2' />
-    <path d='M12 19v3' />
-  </svg>
-);
+const SpeechMicIcon = () => <KimiIcon name='microphone' size={18} />;
 
-const SpeechStopIcon = () => (
-  <svg width='18' height='18' viewBox='0 0 24 24' fill='currentColor' aria-hidden='true'>
-    <rect x='6' y='6' width='12' height='12' rx='2.5' />
-  </svg>
-);
+const SpeechStopIcon = () => <KimiIcon name='stop' size={18} />;
 
-const SpeechLoaderIcon = () => <span className='speech-loader-spinner' aria-hidden='true' />;
+const SpeechLoaderIcon = () => <KimiIcon name='refresh' size={16} className='speech-loader-spinner' />;
 
 const getAvailabilityMessageKey = (availability: SpeechInputAvailability) => {
   switch (availability) {

@@ -6,7 +6,7 @@
 
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import { dispatchChatMessageJump, dispatchChatSearchPanelOpen } from '@/renderer/utils/chat/chatMinimapEvents';
-import { IconSearch } from '@arco-design/web-react/icon';
+import KimiIcon from '@renderer/components/base/KimiIcon';
 import classNames from 'classnames';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -314,7 +314,7 @@ const MessageAnchorRail: React.FC = () => {
         title={t('messages.anchorRail.searchAria')}
         onClick={openSearchPanel}
       >
-        <IconSearch className={styles.searchIcon} />
+        <KimiIcon name='search' className={styles.searchIcon} />
       </button>
 
       {activeAnchor && (

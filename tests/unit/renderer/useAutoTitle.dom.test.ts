@@ -91,4 +91,114 @@ describe('useAutoTitle', () => {
     });
     expect(emit).toHaveBeenCalledWith('chat.history.refresh');
   });
+
+  it('repairs a late agent title derived from Assistant Rules', async () => {
+    getConversation.mockResolvedValue({
+      id: 'conversation-1',
+      name: '[Assistant Rules] ## Available Skills - **aionui-config**',
+      name_source: 'agent',
+    } as Awaited<ReturnType<typeof getConversationOrNull>>);
+    loadLatestMessages.mockResolvedValue({
+      items: [
+        {
+          id: 'message-1',
+          type: 'text',
+          position: 'right',
+          content: '[Assistant Rules]\n## Available Skills\n[/Assistant Rules]\n\n使用agent新建会话',
+        },
+      ],
+      oldest_cursor: null,
+      newest_cursor: null,
+      has_more_before: false,
+      has_more_after: false,
+    } as never);
+    const { result } = renderHook(() => useAutoTitle());
+
+    await act(async () => {
+      await result.current.syncTitleFromHistory('conversation-1');
+    });
+
+    expect(loadAllMessages).not.toHaveBeenCalled();
+    expect(updateConversation).toHaveBeenCalledWith({
+      id: 'conversation-1',
+      updates: { name: '使用agent新建会话', name_source: 'auto' },
+    });
+  });
+
+  it('looks beyond the latest page when repairing a contaminated title', async () => {
+    getConversation.mockResolvedValue({
+      id: 'conversation-1',
+      name: '[Assistant Rules] ## Available Skills',
+      name_source: 'agent',
+    } as Awaited<ReturnType<typeof getConversationOrNull>>);
+    loadAllMessages.mockResolvedValue([
+      {
+        id: 'message-1',
+        type: 'text',
+        position: 'right',
+        content: '[Assistant Rules]\n## Available Skills\n[/Assistant Rules]\n\nFix the sidebar title',
+      },
+    ] as never);
+    const { result } = renderHook(() => useAutoTitle());
+
+    await act(async () => {
+      await result.current.syncTitleFromHistory('conversation-1');
+    });
+
+    expect(loadAllMessages).toHaveBeenCalledWith('conversation-1', { contentMode: 'compact' });
+    expect(updateConversation).toHaveBeenCalledWith({
+      id: 'conversation-1',
+      updates: { name: 'Fix the sidebar title', name_source: 'auto' },
+    });
+  });
+
+  it('uses the localized default when a contaminated title has no usable prompt', async () => {
+    getConversation.mockResolvedValue({
+      id: 'conversation-1',
+      name: '[Assistant Rules] ## Available Skills',
+      name_source: 'agent',
+    } as Awaited<ReturnType<typeof getConversationOrNull>>);
+    const { result } = renderHook(() => useAutoTitle());
+
+    await act(async () => {
+      await result.current.syncTitleFromHistory('conversation-1');
+    });
+
+    expect(updateConversation).toHaveBeenCalledWith({
+      id: 'conversation-1',
+      updates: { name: 'conversation.welcome.newConversation', name_source: 'auto' },
+    });
+  });
+
+  it('preserves a user rename even when it starts with Assistant Rules', async () => {
+    getConversation.mockResolvedValue({
+      id: 'conversation-1',
+      name: '[Assistant Rules] custom title',
+      name_source: 'user',
+    } as Awaited<ReturnType<typeof getConversationOrNull>>);
+    const { result } = renderHook(() => useAutoTitle());
+
+    await act(async () => {
+      await result.current.syncTitleFromHistory('conversation-1');
+    });
+
+    expect(loadLatestMessages).not.toHaveBeenCalled();
+    expect(updateConversation).not.toHaveBeenCalled();
+  });
+
+  it('leaves a normal agent-generated title unchanged', async () => {
+    getConversation.mockResolvedValue({
+      id: 'conversation-1',
+      name: 'Refactor agent sessions',
+      name_source: 'agent',
+    } as Awaited<ReturnType<typeof getConversationOrNull>>);
+    const { result } = renderHook(() => useAutoTitle());
+
+    await act(async () => {
+      await result.current.syncTitleFromHistory('conversation-1');
+    });
+
+    expect(loadLatestMessages).not.toHaveBeenCalled();
+    expect(updateConversation).not.toHaveBeenCalled();
+  });
 });

@@ -8,6 +8,7 @@ import { Message } from '@arco-design/web-react';
 import MonacoEditor from '@monaco-editor/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import KimiIcon from '@renderer/components/base/KimiIcon';
 
 interface HTMLPreviewProps {
   content: string;
@@ -325,18 +326,20 @@ const HTMLPreview: React.FC<HTMLPreviewProps> = ({ content, file_path, hideToolb
             {/* 编辑按钮 */}
             <button
               onClick={handleToggleEdit}
-              className={`px-12px py-4px rd-4px text-12px transition-colors ${editMode ? 'bg-primary text-white' : 'bg-bg-3 text-t-primary hover:bg-bg-4'}`}
+              className={`flex items-center gap-4px px-12px py-4px rd-4px text-12px transition-colors ${editMode ? 'bg-primary text-white' : 'bg-bg-3 text-t-primary hover:bg-bg-4'}`}
             >
-              {editMode ? `💾 ${t('common.save')}` : `✏️ ${t('common.edit')}`}
+              <KimiIcon name={editMode ? 'download' : 'pencil'} size={14} />
+              <span>{editMode ? t('common.save') : t('common.edit')}</span>
             </button>
 
             {/* 元素选择器按钮 */}
             <button
               onClick={handleToggleInspector}
-              className={`px-12px py-4px rd-4px text-12px transition-colors ${inspectorMode ? 'bg-primary text-white' : 'bg-bg-3 text-t-primary hover:bg-bg-4'}`}
+              className={`flex items-center gap-4px px-12px py-4px rd-4px text-12px transition-colors ${inspectorMode ? 'bg-primary text-white' : 'bg-bg-3 text-t-primary hover:bg-bg-4'}`}
               title={t('preview.html.inspectorTooltip')}
             >
-              🔍 {inspectorMode ? t('preview.html.inspecting') : t('preview.html.inspectorButton')}
+              <KimiIcon name='pointer' size={14} />
+              <span>{inspectorMode ? t('preview.html.inspecting') : t('preview.html.inspectorButton')}</span>
             </button>
 
             {/* 选中的元素路径 */}
@@ -354,19 +357,7 @@ const HTMLPreview: React.FC<HTMLPreviewProps> = ({ content, file_path, hideToolb
               className='flex items-center gap-4px px-8px py-4px rd-4px cursor-pointer hover:bg-bg-3 transition-colors'
               title={t('preview.html.downloadHtml')}
             >
-              <svg
-                width='14'
-                height='14'
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='2'
-                className='text-t-secondary'
-              >
-                <path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' />
-                <polyline points='7 10 12 15 17 10' />
-                <line x1='12' y1='15' x2='12' y2='3' />
-              </svg>
+              <KimiIcon name='download' size={14} className='text-t-secondary' />
               <span className='text-12px text-t-secondary'>{t('common.download')}</span>
             </button>
           </div>
@@ -420,20 +411,22 @@ const HTMLPreview: React.FC<HTMLPreviewProps> = ({ content, file_path, hideToolb
           onClick={(e) => e.stopPropagation()}
         >
           <div
-            className='px-12px py-6px text-13px text-t-primary hover:bg-bg-2 cursor-pointer transition-colors'
+            className='flex items-center gap-4px px-12px py-6px text-13px text-t-primary hover:bg-bg-2 cursor-pointer transition-colors'
             onClick={() => handleCopyHTML(contextMenu.element.html)}
           >
-            📋 {t('preview.html.copyElementHtml')}
+            <KimiIcon name='copy' size={14} />
+            <span>{t('preview.html.copyElementHtml')}</span>
           </div>
           <div
-            className='px-12px py-6px text-13px text-t-primary hover:bg-bg-2 cursor-pointer transition-colors'
+            className='flex items-center gap-4px px-12px py-6px text-13px text-t-primary hover:bg-bg-2 cursor-pointer transition-colors'
             onClick={() => {
               console.log('[HTMLPreview] Element info:', contextMenu.element);
               messageApi.info(t('preview.html.printedToConsole'));
               setContextMenu(null);
             }}
           >
-            🔍 {t('preview.html.viewElementInfo')}
+            <KimiIcon name='search' size={14} />
+            <span>{t('preview.html.viewElementInfo')}</span>
           </div>
         </div>
       )}

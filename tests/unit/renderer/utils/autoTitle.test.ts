@@ -122,10 +122,16 @@ describe('autoTitle', () => {
       expect(deriveAutoTitleFromMessages(messages, 'Actual prompt')).toBe('Actual prompt');
     });
 
-    it('does not remove an unclosed Assistant Rules prefix', () => {
+    it('rejects an unclosed Assistant Rules prefix', () => {
       const messages = [mockUserMessage('[Assistant Rules]\nActual prompt')];
 
-      expect(deriveAutoTitleFromMessages(messages)).toBe('[Assistant Rules]');
+      expect(deriveAutoTitleFromMessages(messages)).toBeNull();
+    });
+
+    it('does not mistake a rule mention in an ordinary prompt for an injected prefix', () => {
+      const messages = [mockUserMessage('Explain [Assistant Rules] in a title')];
+
+      expect(deriveAutoTitleFromMessages(messages)).toBe('Explain [Assistant Rules] in a title');
     });
 
     it('skips assistant messages', () => {

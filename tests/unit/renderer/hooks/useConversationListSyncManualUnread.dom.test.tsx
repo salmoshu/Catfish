@@ -21,6 +21,7 @@ vi.mock('@/common', () => ({
     },
     conversation: {
       listChanged: { on: vi.fn() },
+      nameUpdated: { on: vi.fn() },
       responseStream: { on: vi.fn() },
       turnCompleted: { on: vi.fn() },
       confirmation: { remove: { on: vi.fn() } },

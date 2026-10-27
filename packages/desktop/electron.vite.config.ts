@@ -24,8 +24,8 @@ function buildMcpServersPlugin() {
   };
 }
 
-// Icon Park transform plugin (replaces webpack icon-park-loader)
-function iconParkPlugin() {
+// Icon Park transform plugin with Kimi icon mappings
+export function iconParkPlugin() {
   return {
     name: 'vite-plugin-icon-park',
     enforce: 'pre' as const,
@@ -42,7 +42,7 @@ function iconParkPlugin() {
             components.map((key: string) => `${key} as _${key.trim()}`).join(', ')
           );
           const hoc = `import IconParkHOC from '@renderer/components/IconParkHOC';
-          ${components.map((key: string) => `const ${key.trim()} = IconParkHOC(_${key.trim()})`).join(';\n')}`;
+          ${components.map((key: string) => `const ${key.trim()} = IconParkHOC(_${key.trim()}, '${key.trim()}')`).join(';\n')}`;
           return importComponent + ';' + hoc;
         }
       );

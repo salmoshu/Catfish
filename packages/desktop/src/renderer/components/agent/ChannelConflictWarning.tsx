@@ -5,7 +5,7 @@
  */
 
 import { Alert, Button, Link, Space, Typography } from '@arco-design/web-react';
-import { IconExclamationCircle } from '@arco-design/web-react/icon';
+import KimiIcon from '@renderer/components/base/KimiIcon';
 import React from 'react';
 
 const { Paragraph, Text } = Typography;
@@ -32,7 +32,7 @@ export const ChannelConflictWarning: React.FC<ChannelConflictWarningProps> = ({
   return (
     <Alert
       type='warning'
-      icon={<IconExclamationCircle />}
+      icon={<KimiIcon name='alert-triangle' />}
       title={`${platformName} Channel Conflict Detected`}
       content={
         <Space direction='vertical' size='medium' style={{ width: '100%' }}>

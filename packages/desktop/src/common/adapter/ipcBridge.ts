@@ -497,6 +497,7 @@ export const conversation = {
     };
   }),
   listChanged: wsEmitter<IConversationListChangedEvent>('conversation.listChanged'),
+  nameUpdated: wsEmitter<{ conversation_id: string; name: string }>('conversation.nameUpdated'),
   // Uses httpRequest directly (instead of httpGet + withResponseMap) because the
   // response mapper needs `workspace` from params to build fullPath/relativePath,
   // and withResponseMap's map function does not receive the original params.

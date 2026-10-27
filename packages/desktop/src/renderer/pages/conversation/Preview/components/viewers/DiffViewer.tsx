@@ -16,6 +16,7 @@ import SyntaxHighlighter from 'react-syntax-highlighter';
 import { vs, vs2015 } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import SelectionToolbar from '../renderers/SelectionToolbar';
 import { useTranslation } from 'react-i18next';
+import KimiIcon from '@renderer/components/base/KimiIcon';
 
 interface DiffPreviewProps {
   content: string; // Diff content
@@ -152,19 +153,7 @@ const DiffPreview: React.FC<DiffPreviewProps> = ({
               onClick={handleDownload}
               title={t('preview.downloadDiff')}
             >
-              <svg
-                width='14'
-                height='14'
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='2'
-                className='text-t-secondary'
-              >
-                <path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' />
-                <polyline points='7 10 12 15 17 10' />
-                <line x1='12' y1='15' x2='12' y2='3' />
-              </svg>
+              <KimiIcon name='download' size={14} className='text-t-secondary' />
               <span className='text-12px text-t-secondary'>{t('common.download')}</span>
             </div>
           </div>

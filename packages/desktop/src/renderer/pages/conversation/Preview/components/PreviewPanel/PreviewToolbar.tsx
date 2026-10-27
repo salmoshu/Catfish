@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { iconColors } from '@/renderer/styles/colors';
-import { Close } from '@icon-park/react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { shouldShowDownload } from './previewToolbarUtils';
+import KimiIcon from '@renderer/components/base/KimiIcon';
 
 /**
  * PreviewToolbar 组件属性
@@ -254,17 +253,7 @@ const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
                   }}
                   title={isSplitScreenEnabled ? t('preview.closeSplitScreen') : t('preview.openSplitScreen')}
                 >
-                  <svg
-                    width={toolbarIconSize}
-                    height={toolbarIconSize}
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeWidth='2'
-                  >
-                    <rect x='3' y='3' width='18' height='18' rx='2' />
-                    <line x1='12' y1='3' x2='12' y2='21' />
-                  </svg>
+                  <KimiIcon name='pip' size={toolbarIconSize} />
                 </div>
               )}
             </>
@@ -272,37 +261,13 @@ const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
 
           {preferActionButtonsInFront && showOpenInSystemButton && (
             <div className={toolbarBtn} onClick={onOpenInSystem} title={t('preview.openInSystemApp')}>
-              <svg
-                width={toolbarIconSize}
-                height={toolbarIconSize}
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='2'
-                className='text-t-secondary'
-              >
-                <path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' />
-                <polyline points='15 3 21 3 21 9' />
-                <line x1='10' y1='14' x2='21' y2='3' />
-              </svg>
+              <KimiIcon name='external-link' size={toolbarIconSize} className='text-t-secondary' />
               <span>{t('preview.openInSystemApp')}</span>
             </div>
           )}
           {preferActionButtonsInFront && showDownload && (
             <div className={toolbarBtn} onClick={() => void onDownload()} title={t('preview.downloadFile')}>
-              <svg
-                width={toolbarIconSize}
-                height={toolbarIconSize}
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='2'
-                className='text-t-secondary'
-              >
-                <path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' />
-                <polyline points='7 10 12 15 17 10' />
-                <line x1='12' y1='15' x2='12' y2='3' />
-              </svg>
+              <KimiIcon name='download' size={toolbarIconSize} className='text-t-secondary' />
               <span>{t('common.download')}</span>
             </div>
           )}
@@ -335,17 +300,7 @@ const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
                       : t('preview.refresh.tooltip')
               }
             >
-              <svg
-                width={toolbarIconSize}
-                height={toolbarIconSize}
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='2'
-              >
-                <path d='M21 12a9 9 0 1 1-3-6.7' />
-                <polyline points='21 3 21 9 15 9' />
-              </svg>
+              <KimiIcon name='refresh' size={toolbarIconSize} />
               <span>{t('preview.refresh.label')}</span>
             </div>
           )}
@@ -354,38 +309,14 @@ const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
 
           {!preferActionButtonsInFront && showOpenInSystemButton && (
             <div className={toolbarBtn} onClick={onOpenInSystem} title={t('preview.openInSystemApp')}>
-              <svg
-                width={toolbarIconSize}
-                height={toolbarIconSize}
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='2'
-                className='text-t-secondary'
-              >
-                <path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' />
-                <polyline points='15 3 21 3 21 9' />
-                <line x1='10' y1='14' x2='21' y2='3' />
-              </svg>
+              <KimiIcon name='external-link' size={toolbarIconSize} className='text-t-secondary' />
               <span>{t('preview.openInSystemApp')}</span>
             </div>
           )}
 
           {!preferActionButtonsInFront && showDownload && (
             <div className={toolbarBtn} onClick={() => void onDownload()} title={t('preview.downloadFile')}>
-              <svg
-                width={toolbarIconSize}
-                height={toolbarIconSize}
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='2'
-                className='text-t-secondary'
-              >
-                <path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' />
-                <polyline points='7 10 12 15 17 10' />
-                <line x1='12' y1='15' x2='12' y2='3' />
-              </svg>
+              <KimiIcon name='download' size={toolbarIconSize} className='text-t-secondary' />
               <span>{t('common.download')}</span>
             </div>
           )}
@@ -396,20 +327,11 @@ const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
               onClick={onInspectModeToggle}
               title={inspectMode ? t('preview.html.inspectElementDisable') : t('preview.html.inspectElementEnable')}
             >
-              <svg
-                width={toolbarIconSize}
-                height={toolbarIconSize}
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='2'
-                strokeLinecap='round'
-                strokeLinejoin='round'
+              <KimiIcon
+                name='pointer'
+                size={toolbarIconSize}
                 className={inspectMode ? 'text-white' : 'text-t-secondary'}
-              >
-                <path d='M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z' />
-                <path d='M13 13l6 6' />
-              </svg>
+              />
               <span>{inspectMode ? t('preview.html.inspecting') : t('preview.html.inspectElement')}</span>
             </div>
           )}
@@ -424,20 +346,7 @@ const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
               onClick={saveActionable ? onSave : undefined}
               title={saveActionable ? t('preview.save.tooltip') : t('preview.save.clean')}
             >
-              <svg
-                width={toolbarIconSize}
-                height={toolbarIconSize}
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='2'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-              >
-                <path d='M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z' />
-                <polyline points='17 21 17 13 7 13 7 21' />
-                <polyline points='7 3 7 8 15 8' />
-              </svg>
+              <KimiIcon name='download' size={toolbarIconSize} />
               <span>{t('common.save')}</span>
             </div>
           )}

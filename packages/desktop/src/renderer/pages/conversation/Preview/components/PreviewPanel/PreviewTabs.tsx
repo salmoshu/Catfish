@@ -6,7 +6,7 @@
 
 import { iconColors } from '@/renderer/styles/colors';
 import { Close, Plus } from '@icon-park/react';
-import { IconFullscreen, IconFullscreenExit, IconShrink } from '@arco-design/web-react/icon';
+import KimiIcon from '@renderer/components/base/KimiIcon';
 import { Button } from '@arco-design/web-react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -318,9 +318,9 @@ const PreviewTabs: React.FC<PreviewTabsProps> = ({
                 title={isMaximized ? t('preview.restorePanel') : t('preview.maximizePanel')}
               >
                 {isMaximized ? (
-                  <IconFullscreenExit style={{ fontSize: 14, color: iconColors.secondary }} />
+                  <KimiIcon name='collapse' size='14' fill={iconColors.secondary} />
                 ) : (
-                  <IconFullscreen style={{ fontSize: 14, color: iconColors.secondary }} />
+                  <KimiIcon name='expand' size='14' fill={iconColors.secondary} />
                 )}
               </div>
             )}
@@ -333,7 +333,7 @@ const PreviewTabs: React.FC<PreviewTabsProps> = ({
                 title={t('preview.collapsePanel')}
                 aria-label={t('preview.collapsePanel')}
                 data-testid='preview-collapse-panel'
-                icon={<IconShrink style={{ fontSize: 14, color: iconColors.secondary }} />}
+                icon={<KimiIcon name='collapse' size='14' fill={iconColors.secondary} />}
               />
             )}
           </div>

@@ -11,7 +11,7 @@ import FileChangesPanel from '@/renderer/components/base/FileChangesPanel';
 import { useDiffPreviewHandlers } from '@/renderer/hooks/file/useDiffPreviewHandlers';
 import { parseDiff } from '@/renderer/utils/file/diffUtils';
 import { Badge } from '@arco-design/web-react';
-import { IconDown, IconRight } from '@arco-design/web-react/icon';
+import KimiIcon from '@renderer/components/base/KimiIcon';
 import { createTwoFilesPatch } from 'diff';
 import React, { useMemo, useState } from 'react';
 import type { BadgeProps } from '@arco-design/web-react';
@@ -92,7 +92,7 @@ const MessageToolCall: React.FC<{ message: IMessageToolCall }> = ({ message }) =
             className='flex-shrink-0 cursor-pointer hover:color-#4E5969 transition-colors'
             onClick={() => setExpanded(!expanded)}
           >
-            {expanded ? <IconDown style={{ fontSize: 12 }} /> : <IconRight style={{ fontSize: 12 }} />}
+            {expanded ? <KimiIcon name='chevron-down' size='12' /> : <KimiIcon name='chevron-right' size='12' />}
           </span>
         )}
       </div>

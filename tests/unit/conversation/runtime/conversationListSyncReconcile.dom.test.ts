@@ -14,6 +14,9 @@
 
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { ipcBridge } from '@/common';
+
+const syncTitleFromHistory = vi.hoisted(() => vi.fn());
 
 vi.mock('@/common', () => ({
   ipcBridge: {
@@ -22,6 +25,7 @@ vi.mock('@/common', () => ({
     },
     conversation: {
       listChanged: { on: () => () => {} },
+      nameUpdated: { on: vi.fn(() => () => {}) },
       responseStream: { on: () => () => {} },
       turnCompleted: { on: () => () => {} },
       confirmation: { remove: { on: () => () => {} } },
@@ -30,6 +34,10 @@ vi.mock('@/common', () => ({
       writeRendererLog: { invoke: vi.fn().mockResolvedValue(undefined) },
     },
   },
+}));
+
+vi.mock('@/renderer/hooks/chat/useAutoTitle', () => ({
+  useAutoTitle: () => ({ syncTitleFromHistory }),
 }));
 
 vi.mock('@/renderer/utils/emitter', () => ({ addEventListener: () => () => {} }));
@@ -72,5 +80,26 @@ describe('reconcileGeneratingFromRuntime', () => {
     });
 
     expect(result.current.isConversationGenerating('conv-d')).toBe(false);
+  });
+});
+
+describe('agent title updates', () => {
+  it('repairs only titles with an Assistant Rules prefix', () => {
+    syncTitleFromHistory.mockClear();
+    renderHook(() => useConversationListSync());
+    const nameUpdated = vi.mocked(ipcBridge.conversation.nameUpdated.on);
+    const listener = nameUpdated.mock.calls.at(-1)?.[0];
+    if (!listener) throw new Error('Agent title listener was not registered');
+
+    act(() => {
+      listener({ conversation_id: 'conv-title', name: 'Refactor agent sessions' });
+      listener({
+        conversation_id: 'conv-title',
+        name: '[Assistant Rules] ## Available Skills - **aionui-config**: Configure AionUi itself',
+      });
+    });
+
+    expect(syncTitleFromHistory).toHaveBeenCalledTimes(1);
+    expect(syncTitleFromHistory).toHaveBeenCalledWith('conv-title');
   });
 });

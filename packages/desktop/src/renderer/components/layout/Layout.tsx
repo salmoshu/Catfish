@@ -36,25 +36,12 @@ import { useConversationShortcuts } from '@renderer/hooks/ui/useConversationShor
 import { isElectronDesktop } from '@renderer/utils/platform';
 import { IS_DISCONTINUED_BUILD } from '@/renderer/utils/discontinuedBuild';
 import UpdateMigrationDialog from '@/renderer/components/settings/UpdateMigrationDialog';
+import KimiIcon from '@renderer/components/base/KimiIcon';
+import brandLogo from '@renderer/assets/logo.svg';
 import '@renderer/styles/layout.css';
 
-const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 18, strokeWidth = 4 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox='0 0 48 48'
-    fill='none'
-    stroke='currentColor'
-    strokeWidth={strokeWidth}
-    strokeLinecap='round'
-    strokeLinejoin='round'
-    aria-hidden='true'
-    focusable='false'
-    style={{ display: 'inline-block', verticalAlign: 'middle' }}
-  >
-    <rect x='6' y='10' width='36' height='28' rx='5' />
-    <line x1='18' y1='10' x2='18' y2='38' />
-  </svg>
+const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 18, strokeWidth: _strokeWidth }) => (
+  <KimiIcon name='panel-collapse' size={size} style={{ display: 'inline-block', verticalAlign: 'middle' }} />
 );
 
 const useDebug = () => {
@@ -413,50 +400,12 @@ const Layout: React.FC<{
                 )}
               >
                 <div
-                  className={classNames('bg-black shrink-0 size-32px relative rd-0.5rem', {
+                  className={classNames('shrink-0 size-32px relative rd-0.5rem overflow-hidden', {
                     '!size-24px': collapsed,
                   })}
                   onClick={onClick}
                 >
-                  <svg
-                    className={classNames('w-5.5 h-5.5 absolute inset-0 m-auto', {
-                      'scale-140': !collapsed,
-                    })}
-                    viewBox='0 0 1024 1024'
-                    fill='none'
-                  >
-                    <g fill='#f5f5f4'>
-                      <path d='M 420 397 C 462 318, 548 267, 646 250 C 607 304, 582 355, 574 414 Z' />
-                      <path d='M 326 584 C 354 653, 411 699, 482 712 C 449 666, 425 621, 414 574 Z' />
-                      <path d='M 560 618 C 592 677, 645 713, 705 722 C 679 673, 650 629, 626 594 Z' />
-                      <path d='M 826 456 C 873 432, 919 407, 956 380 C 944 429, 941 474, 948 520 C 952 548, 960 575, 970 600 C 925 573, 879 550, 830 538 Z' />
-                      <path d='M 178 502 C 184 438, 282 385, 414 379 C 535 374, 641 413, 756 450 C 808 467, 849 465, 889 443 L 913 500 C 861 534, 798 564, 724 590 C 599 633, 454 651, 334 624 C 231 601, 165 560, 178 502 Z' />
-                    </g>
-                    <g fill='none' stroke='#121318' strokeWidth='11' strokeLinecap='round' opacity='0.72'>
-                      <path d='M 454 383 C 493 333, 535 300, 593 276' />
-                      <path d='M 487 392 C 524 349, 559 321, 610 296' />
-                      <path d='M 355 602 C 380 641, 408 666, 446 685' />
-                      <path d='M 382 589 C 405 625, 429 649, 458 665' />
-                      <path d='M 592 625 C 616 660, 642 683, 671 698' />
-                      <path d='M 855 477 C 886 461, 912 445, 936 426' />
-                      <path d='M 860 509 C 893 518, 920 532, 944 549' />
-                    </g>
-                    <path
-                      d='M 334 449 C 305 484, 305 540, 338 575'
-                      fill='none'
-                      stroke='#121318'
-                      strokeWidth='17'
-                      strokeLinecap='round'
-                      opacity='0.78'
-                    />
-                    <g fill='none' stroke='#f5f5f4' strokeWidth='23' strokeLinecap='round'>
-                      <path d='M 238 454 C 181 389, 157 287, 221 197' />
-                      <path d='M 215 521 C 158 614, 197 746, 337 806' />
-                      <path d='M 193 493 C 119 474, 65 505, 43 566' />
-                      <path d='M 241 548 C 224 609, 260 655, 307 672' />
-                    </g>
-                    <circle cx='283' cy='463' r='25' fill='#1783ff' />
-                  </svg>
+                  <img src={brandLogo} alt='' className='absolute inset-0 size-full object-cover' />
                 </div>
                 {isSettingsRoute ? (
                   <Tooltip content={t('common.back', { defaultValue: 'Back to Chat' })} position='bottom'>

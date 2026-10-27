@@ -17,6 +17,7 @@ import RemoteConnectionModal from '@/renderer/components/remote/RemoteConnection
 import type { RemoteEnvironmentSummary } from '@/common/types/remote';
 import { isElectronDesktop } from '@/renderer/utils/platform';
 import styles from '../index.module.css';
+import KimiIcon from '@renderer/components/base/KimiIcon';
 
 type GuidWorkspaceFootnoteProps = {
   workspaceDir: string;
@@ -25,32 +26,10 @@ type GuidWorkspaceFootnoteProps = {
 };
 
 const FolderIcon = ({ size = 12 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    fill='none'
-    stroke='currentColor'
-    strokeWidth='1.8'
-    viewBox='0 0 24 24'
-    style={{ lineHeight: 0, flexShrink: 0 }}
-  >
-    <path d='M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z' />
-  </svg>
+  <KimiIcon name='folder' size={size} style={{ lineHeight: 0, flexShrink: 0 }} />
 );
 
-const PlusIcon = () => (
-  <svg
-    width='13'
-    height='13'
-    fill='none'
-    stroke='currentColor'
-    strokeWidth='1.8'
-    viewBox='0 0 24 24'
-    style={{ flexShrink: 0 }}
-  >
-    <path d='M12 5v14M5 12h14' />
-  </svg>
-);
+const PlusIcon = () => <KimiIcon name='plus' size={13} style={{ flexShrink: 0 }} />;
 
 const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
   workspaceDir,
@@ -173,19 +152,7 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
               >
                 <FolderIcon size={13} />
                 <span className={styles.wsDropdownItemName}>{name}</span>
-                {isActive && (
-                  <svg
-                    width='12'
-                    height='12'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeWidth='2.5'
-                    viewBox='0 0 24 24'
-                    style={{ marginInlineStart: 'auto', flexShrink: 0 }}
-                  >
-                    <path d='M20 6L9 17l-5-5' />
-                  </svg>
-                )}
+                {isActive && <KimiIcon name='check' size={12} style={{ marginInlineStart: 'auto', flexShrink: 0 }} />}
               </div>
             );
           })}
@@ -217,18 +184,7 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
                 closeDropdown();
               }}
             >
-              <svg
-                width='13'
-                height='13'
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='1.8'
-                viewBox='0 0 24 24'
-                style={{ flexShrink: 0 }}
-              >
-                <path d='M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z' />
-                <line x1='2' y1='2' x2='22' y2='22' strokeWidth='1.5' />
-              </svg>
+              <KimiIcon name='folder-closed' size={13} style={{ flexShrink: 0 }} />
               <span>{t('guid.workspace.noProject')}</span>
             </div>
           </>

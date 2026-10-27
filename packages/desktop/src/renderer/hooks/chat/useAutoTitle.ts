@@ -1,8 +1,12 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
-import { deriveAutoTitleFromMessages } from '@/renderer/utils/chat/autoTitle';
-import { DEFAULT_MESSAGE_PAGE_LIMIT, loadLatestConversationMessages } from '@/renderer/utils/chat/messagePagination';
+import { deriveAutoTitleFromMessages, hasAssistantRulesPrefix } from '@/renderer/utils/chat/autoTitle';
+import {
+  DEFAULT_MESSAGE_PAGE_LIMIT,
+  loadAllConversationMessagesPaged,
+  loadLatestConversationMessages,
+} from '@/renderer/utils/chat/messagePagination';
 import { emitter } from '@/renderer/utils/emitter';
 import { getConversationOrNull } from '@/renderer/pages/conversation/utils/conversationCache';
 
@@ -14,7 +18,11 @@ export const useAutoTitle = () => {
       const defaultTitle = t('conversation.welcome.newConversation');
       try {
         const conversation = await getConversationOrNull(conversation_id);
-        if (!conversation || conversation.name !== defaultTitle) {
+        if (!conversation || conversation.name_source === 'user') {
+          return;
+        }
+        const shouldRepair = hasAssistantRulesPrefix(conversation.name);
+        if (conversation.name !== defaultTitle && !shouldRepair) {
           return;
         }
 
@@ -22,9 +30,16 @@ export const useAutoTitle = () => {
           limit: DEFAULT_MESSAGE_PAGE_LIMIT,
           contentMode: 'compact',
         });
-        const newTitle = deriveAutoTitleFromMessages(messages.items, fallbackContent);
-        if (!newTitle) {
-          return;
+        let newTitle = deriveAutoTitleFromMessages(messages.items, fallbackContent);
+        if (shouldRepair && (!newTitle || hasAssistantRulesPrefix(newTitle))) {
+          const allMessages = await loadAllConversationMessagesPaged(conversation_id, { contentMode: 'compact' });
+          newTitle = deriveAutoTitleFromMessages(allMessages, fallbackContent);
+        }
+        if (!newTitle || hasAssistantRulesPrefix(newTitle)) {
+          if (!shouldRepair) {
+            return;
+          }
+          newTitle = defaultTitle;
         }
 
         const success = await ipcBridge.conversation.update.invoke({

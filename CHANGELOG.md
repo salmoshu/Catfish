@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.4.1](https://github.com/salmoshu/Catfish/releases/tag/v0.4.1) (2026-10-27)
+
+### Desktop
+
+#### Features
+
+- **branding:** adopt the simplified animated Catfish logo across desktop and web assets
+- **interaction:** align window, navigation, composer and preview controls with Kimi Code SVG icons while preserving their behavior
+
+#### Bug Fixes
+
+- **conversation:** keep injected Assistant Rules out of automatic titles and protect user-named conversations from automatic replacement
+
+---
+
 ## [0.4.0](https://github.com/salmoshu/Catfish/releases/tag/v0.4.0) (2026-10-27)
 
 ### Desktop

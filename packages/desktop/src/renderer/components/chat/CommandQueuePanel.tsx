@@ -18,26 +18,12 @@ import { Button, Dropdown, Menu, Modal, Tooltip, Typography } from '@arco-design
 import { CornerDownRight, Delete, Drag, Edit, MoreOne, SendOne, SortTwo } from '@icon-park/react';
 import React, { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import KimiIcon from '@renderer/components/base/KimiIcon';
 
 const getCommandPreview = (input: string): string => input.replace(/\s+/g, ' ').trim();
 
 const DraftBoxActionIcon: React.FC<{ size?: number; color?: string }> = ({ size = 16, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox='0 0 24 24' fill='none' aria-hidden='true'>
-    <path
-      d='M7 4.5h10l2 7.5v5.2A2.8 2.8 0 0 1 16.2 20H7.8A2.8 2.8 0 0 1 5 17.2V12l2-7.5Z'
-      stroke={color}
-      strokeWidth='2'
-      strokeLinejoin='round'
-    />
-    <path d='M5.4 12h4l1.4 2h2.4l1.4-2h4' stroke={color} strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' />
-    <path
-      d='M12 5.5v6.2m0 0 2.5-2.5M12 11.7 9.5 9.2'
-      stroke={color}
-      strokeWidth='2'
-      strokeLinecap='round'
-      strokeLinejoin='round'
-    />
-  </svg>
+  <KimiIcon name='archive' size={size} fill={color} />
 );
 
 const createRestrictToQueueContainerModifier = (

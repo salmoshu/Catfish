@@ -7,6 +7,8 @@
 import { ipcBridge } from '@/common';
 import type { TChatConversation } from '@/common/config/storage';
 import { addEventListener } from '@/renderer/utils/emitter';
+import { useAutoTitle } from '@/renderer/hooks/chat/useAutoTitle';
+import { hasAssistantRulesPrefix } from '@/renderer/utils/chat/autoTitle';
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
 /**
@@ -664,9 +666,20 @@ const initializeConversationListSyncStore = () => {
 };
 
 export const useConversationListSync = () => {
+  const { syncTitleFromHistory } = useAutoTitle();
+
   useEffect(() => {
     initializeConversationListSyncStore();
   }, []);
+
+  useEffect(() => {
+    return ipcBridge.conversation.nameUpdated.on((event) => {
+      if (!hasAssistantRulesPrefix(event.name)) {
+        return;
+      }
+      void syncTitleFromHistory(event.conversation_id);
+    });
+  }, [syncTitleFromHistory]);
 
   const {
     conversations,

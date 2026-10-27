@@ -70,6 +70,7 @@ import { appendSpeechTranscript } from '@/renderer/hooks/system/useSpeechInput';
 import { createChainedDispatch, useLiveTranscriptInsertion } from '@/renderer/hooks/system/useLiveTranscriptInsertion';
 import { getConversationInputHistory, isCaretOnFirstLine } from '@/renderer/utils/chat/messageHistory';
 import './sendbox.css';
+import KimiIcon from '@renderer/components/base/KimiIcon';
 
 const constVoid = (): void => undefined;
 // 临界值：超过该字符数直接切换至多行模式，避免为超长文本做昂贵的宽度测量
@@ -84,41 +85,13 @@ const MENTION_HIGHLIGHT_COLOR = 'var(--primary)';
 // is unbounded (streaming append) — this caps only the inline mention menu.
 const AT_FILE_MENTION_LIMIT = 8;
 
-const SendArrowIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox='0 0 24 24' fill='none' stroke='currentColor' aria-hidden='true'>
-    <path d='M12 19V5' strokeWidth='2.7' strokeLinecap='round' />
-    <path d='M6.5 10.5 12 5l5.5 5.5' strokeWidth='2.7' strokeLinecap='round' strokeLinejoin='round' />
-  </svg>
-);
+const SendArrowIcon: React.FC<{ size?: number }> = ({ size = 16 }) => <KimiIcon name='send' size={size} />;
 
 const DraftBoxActionIcon: React.FC<{ size?: number; color?: string; strokeWidth?: number }> = ({
   size = 16,
   color = 'currentColor',
-  strokeWidth = 1.3,
-}) => (
-  <svg width={size} height={size} viewBox='0 0 24 24' fill='none' aria-hidden='true'>
-    <path
-      d='M8.2 6.2h7.6l1.45 5.55v4.45A2.45 2.45 0 0 1 14.8 18.65H9.2a2.45 2.45 0 0 1-2.45-2.45v-4.45L8.2 6.2Z'
-      stroke={color}
-      strokeWidth={strokeWidth}
-      strokeLinejoin='round'
-    />
-    <path
-      d='M7 11.75h3.2l1.05 1.55h1.5l1.05-1.55H17'
-      stroke={color}
-      strokeWidth={strokeWidth}
-      strokeLinecap='round'
-      strokeLinejoin='round'
-    />
-    <path
-      d='M12 7.35v4.15m0 0 1.65-1.65M12 11.5l-1.65-1.65'
-      stroke={color}
-      strokeWidth={strokeWidth}
-      strokeLinecap='round'
-      strokeLinejoin='round'
-    />
-  </svg>
-);
+  strokeWidth: _strokeWidth,
+}) => <KimiIcon name='archive' size={size} fill={color} />;
 
 const getSelectedItemMatchKeys = (item: FileSelectionItem): string[] => {
   if (typeof item === 'string') {

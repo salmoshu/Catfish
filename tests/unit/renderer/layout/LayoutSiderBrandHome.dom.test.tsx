@@ -7,6 +7,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
+import brandLogo from '@renderer/assets/logo.svg';
 
 // Mirror the project convention: t() echoes the key so labels/tooltips are assertable.
 vi.mock('react-i18next', () => ({
@@ -201,13 +202,10 @@ describe('Layout sider brand Home button', () => {
     sessionStorage.setItem('aion:last-non-settings-path', '/conversation/abc');
     const { container } = renderLayout();
 
-    // The icon is the SVG-wrapping div (bg-black), separate from the wordmark.
-    const icon = container.querySelector('.bg-black') as HTMLElement;
-    expect(icon).toBeTruthy();
-    const logo = icon.querySelector('svg');
-    expect(logo).toHaveAttribute('viewBox', '0 0 1024 1024');
-    expect(logo?.querySelector('circle')).toHaveAttribute('fill', '#1783ff');
-    for (let i = 0; i < 4; i++) fireEvent.click(icon);
+    const logo = container.querySelector('.layout-sider-header img') as HTMLImageElement;
+    expect(logo).toBeTruthy();
+    expect(logo).toHaveAttribute('src', brandLogo);
+    for (let i = 0; i < 4; i++) fireEvent.click(logo.parentElement as HTMLElement);
     expect(openDevTools).toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalled();
   });

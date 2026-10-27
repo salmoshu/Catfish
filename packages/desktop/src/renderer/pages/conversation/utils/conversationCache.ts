@@ -9,7 +9,9 @@ import { isBackendHttpError } from '@/common/adapter/httpBridge';
 import type { TChatConversation } from '@/common/config/storage';
 import { mutate } from 'swr';
 
-export async function getConversationOrNull(conversation_id: string): Promise<TChatConversation | null> {
+export async function getConversationOrNull(
+  conversation_id: string
+): Promise<(TChatConversation & { name_source?: 'user' | 'agent' | 'auto' }) | null> {
   try {
     return await ipcBridge.conversation.get.invoke({ id: conversation_id });
   } catch (error) {
