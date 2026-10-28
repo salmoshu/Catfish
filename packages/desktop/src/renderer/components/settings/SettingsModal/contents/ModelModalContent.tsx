@@ -33,6 +33,7 @@ import { useSettingsViewMode } from '../settingsViewContext';
 import SettingsPageHeader from '@/renderer/pages/settings/components/SettingsPageHeader';
 import { consumePendingDeepLink } from '@/renderer/hooks/system/useDeepLink';
 import '../model-provider.css';
+import KimiIcon from '@renderer/components/base/KimiIcon';
 
 /**
  * 获取协议显示标签颜色
@@ -530,7 +531,11 @@ const ModelModalContent: React.FC = () => {
                                   content={
                                     <div>
                                       <div className='flex items-center gap-4px'>
-                                        <span>{healthStatus === 'healthy' ? '✅' : '❌'}</span>
+                                        <KimiIcon
+                                          name={healthStatus === 'healthy' ? 'check' : 'close'}
+                                          size={14}
+                                          className={healthStatus === 'healthy' ? 'text-success' : 'text-t-error'}
+                                        />
                                         <span>
                                           {healthStatus === 'healthy' ? t('common.success') : t('common.failed')}
                                         </span>

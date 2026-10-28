@@ -9,6 +9,7 @@ import type { TChatConversation } from '@/common/config/storage';
 import { addEventListener } from '@/renderer/utils/emitter';
 import { useAutoTitle } from '@/renderer/hooks/chat/useAutoTitle';
 import { hasAssistantRulesPrefix } from '@/renderer/utils/chat/autoTitle';
+import { recordEnvironmentProjects } from '@/renderer/utils/workspace/environmentProjects';
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
 /**
@@ -347,6 +348,7 @@ const refreshConversations = () => {
           return extra?.is_health_check !== true && !extra?.team_id && !extra?.teamId;
         });
         conversationsState = filteredData;
+        recordEnvironmentProjects(filteredData);
         // Use ALL conversation IDs (including team/legacy health-check rows) so the
         // responseStream listener recognises them as known and doesn't
         // trigger an infinite refreshConversations loop.

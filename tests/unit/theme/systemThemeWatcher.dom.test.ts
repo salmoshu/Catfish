@@ -6,7 +6,7 @@ const { setActiveTheme, configGet } = vi.hoisted(() => ({
   configGet: vi.fn(),
 }));
 
-vi.mock('@/renderer/utils/theme/applyTheme', () => ({ setActiveTheme }));
+vi.mock('@/renderer/utils/theme/applyTheme', () => ({ setActiveTheme, getCachedActiveThemeId: () => null }));
 vi.mock('@/common/config/configService', () => ({ configService: { get: configGet } }));
 
 import { startSystemThemeWatcher } from '@renderer/utils/theme/systemThemeWatcher';

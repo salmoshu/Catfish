@@ -1,5 +1,6 @@
 import React from 'react';
-import { KIMI_ICON_SVG, type KimiIconName } from './kimiIconDefinitions';
+import { KIMI_ICON_SVG, type KimiIconName } from '../kimiIconDefinitions';
+import styles from './KimiIcon.module.css';
 
 type KimiIconProps = Omit<React.SVGProps<SVGSVGElement>, 'name'> & {
   name: KimiIconName;
@@ -24,12 +25,13 @@ export const KimiIcon: React.FC<KimiIconProps> = ({
   return (
     <svg
       {...props}
-      className={className}
+      className={[styles.icon, className].filter(Boolean).join(' ')}
+      data-kimi-icon={name}
       width={size}
       height={size}
       viewBox='0 0 24 24'
       fill='none'
-      stroke='currentColor'
+      stroke='none'
       strokeWidth={2}
       strokeLinecap='round'
       strokeLinejoin='round'

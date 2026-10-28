@@ -101,7 +101,11 @@ export function fromApiConversation<T>(raw: T): T {
   }
 
   const extra = r.extra;
-  if (extra && typeof extra === 'object' && !('custom_workspace' in extra)) {
+  if (
+    extra &&
+    typeof extra === 'object' &&
+    (typeof extra.custom_workspace !== 'boolean' || typeof extra.is_temporary_workspace === 'boolean')
+  ) {
     const workspace = typeof extra.workspace === 'string' ? extra.workspace : '';
     const isTemporary = extra.is_temporary_workspace === true;
     next.extra = {

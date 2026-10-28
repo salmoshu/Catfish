@@ -64,7 +64,8 @@
       "stageStarting": "Iniciando e verificando compatibilidade",
       "installHint": "O Catfish Server é instalado em ~/.catfish no ambiente remoto para acesso a arquivos e agentes.",
       "unexpectedDisconnect": "Conexão remota perdida. Retornando ao ambiente local.",
-      "agentHint": "Projetos e agentes serão executados neste ambiente remoto"
+      "agentHint": "Projetos e agentes serão executados neste ambiente remoto",
+      "local": "Local"
     }
   }
 }

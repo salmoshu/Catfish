@@ -303,6 +303,8 @@ const guidInputCardProps = {
 describe('GuidPage', () => {
   beforeEach(() => {
     locationMock.state = null;
+    locationMock.search = '';
+    guidInputMock.setDir.mockClear();
     locationMock.key = 'guid-location';
     navigateMock.mockReset();
     swrMock.useSWRMock.mockReturnValue({ data: null });
@@ -645,6 +647,22 @@ describe('GuidPage', () => {
     expect(agentSelectionMock.setSelectedAcpModel).not.toHaveBeenCalledWith('default', {
       persistPreference: false,
     });
+  });
+
+  it('retains the workspace when consuming an assistant selection navigation', () => {
+    locationMock.state = { selectedAssistantId: 'bare-aionrs', workspace: '/home/user/RemoteProject' };
+    render(<GuidPage />);
+    expect(navigateMock).toHaveBeenCalledWith('/guid', {
+      replace: true,
+      state: { workspace: '/home/user/RemoteProject' },
+    });
+    expect(guidInputMock.setDir).not.toHaveBeenCalledWith('');
+  });
+
+  it('does not clear a workspace carried through a backend-switch reload', () => {
+    locationMock.search = '?workspace=%2Fhome%2Fuser%2FRemoteProject';
+    render(<GuidPage />);
+    expect(guidInputMock.setDir).not.toHaveBeenCalledWith('');
   });
 
   it('sends on Enter with empty input (empty-input start), matching the button', () => {

@@ -5,6 +5,7 @@ import ThemedLogo from '@/renderer/components/agent/ThemedLogo';
 import { usePresetAssistantInfo } from '@renderer/hooks/agent/usePresetAssistantInfo';
 import { getConversationOrNull } from '@/renderer/pages/conversation/utils/conversationCache';
 import { Robot } from '@icon-park/react';
+import KimiIcon from '@renderer/components/base/KimiIcon';
 
 type Props = {
   assistant_name: string;
@@ -83,23 +84,13 @@ const TeamAgentIdentity: React.FC<Props> = ({
   };
 
   const crownIcon = (
-    <svg
-      data-testid='team-leader-crown-icon'
-      width='15'
-      height='15'
-      viewBox='0 0 16 16'
-      fill='none'
-      aria-hidden='true'
+    <KimiIcon
+      name='leader-crown'
+      size={15}
+      fill='var(--warning)'
       className='block'
-    >
-      <path
-        d='M2.3 13L1.2 4.7L4.8 6.5L8 2.1L11.2 6.5L14.8 4.7L13.7 13H2.3Z'
-        strokeWidth='1.25'
-        strokeLinejoin='round'
-        style={{ fill: 'var(--warning)', stroke: 'var(--text-primary)' }}
-      />
-      <path d='M5 10.1H11' strokeWidth='1.1' strokeLinecap='round' style={{ stroke: 'var(--text-primary)' }} />
-    </svg>
+      data-testid='team-leader-crown-icon'
+    />
   );
 
   return (

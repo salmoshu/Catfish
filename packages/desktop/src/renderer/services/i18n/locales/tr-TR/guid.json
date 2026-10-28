@@ -64,7 +64,8 @@
       "stageStarting": "Başlatılıyor ve uyumluluk denetleniyor",
       "installHint": "Dosya erişimi ve aracılar için Catfish Server uzak ortamda ~/.catfish altına yüklenir.",
       "unexpectedDisconnect": "Uzak bağlantı kesildi. Yerel ortama dönülüyor.",
-      "agentHint": "Projeler ve aracılar bu uzak ortamda çalışacak"
+      "agentHint": "Projeler ve aracılar bu uzak ortamda çalışacak",
+      "local": "Yerel"
     }
   }
 }

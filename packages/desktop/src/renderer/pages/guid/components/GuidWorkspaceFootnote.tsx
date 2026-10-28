@@ -8,7 +8,7 @@ import { ipcBridge } from '@/common';
 import { addRecentWorkspace, getRecentWorkspaces } from '@/renderer/components/workspace';
 import { AionInlineSearchInput } from '@/renderer/components/base';
 import { Tooltip } from '@arco-design/web-react';
-import { Close, Down, Link } from '@icon-park/react';
+import { Close, Down } from '@icon-park/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +18,19 @@ import type { RemoteEnvironmentSummary } from '@/common/types/remote';
 import { isElectronDesktop } from '@/renderer/utils/platform';
 import styles from '../index.module.css';
 import KimiIcon from '@renderer/components/base/KimiIcon';
+
+const REMOTE_WORKSPACE_PICKER_PENDING_KEY = 'aionui:remote-workspace-picker:pending';
+
+const consumeRemoteWorkspacePickerRequest = (): boolean => {
+  if (window.__backendEnvironment?.type !== 'remote') return false;
+  try {
+    if (sessionStorage.getItem(REMOTE_WORKSPACE_PICKER_PENDING_KEY) !== '1') return false;
+    sessionStorage.removeItem(REMOTE_WORKSPACE_PICKER_PENDING_KEY);
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 type GuidWorkspaceFootnoteProps = {
   workspaceDir: string;
@@ -62,6 +75,10 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
         console.error('Failed to open directory dialog:', error);
       });
   }, [onSelectWorkspace]);
+
+  useEffect(() => {
+    if (consumeRemoteWorkspacePickerRequest()) handleBrowseWorkspace();
+  }, [handleBrowseWorkspace]);
 
   const handleSelectPath = useCallback(
     (path: string) => {
@@ -172,6 +189,7 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
                 closeDropdown();
                 setConnectionModal({ open: true, environment });
               }}
+              onRequestWorkspace={handleBrowseWorkspace}
             />
           )}
 
@@ -195,11 +213,23 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
 
   return (
     <div className={styles.workspaceFootnote}>
-      {backendEnvironment?.type === 'remote' && (
-        <Tooltip content={`${backendEnvironment.kind.toUpperCase()} · ${backendEnvironment.name}`} position='top'>
-          <span className='inline-flex max-w-160px items-center gap-4px rounded-6px bg-aou-1 px-6px py-3px text-11px text-aou-6'>
-            <Link size={12} />
-            <span className='truncate'>{backendEnvironment.name}</span>
+      {backendEnvironment && (
+        <Tooltip
+          content={
+            backendEnvironment.type === 'remote'
+              ? `${backendEnvironment.kind.toUpperCase()} · ${backendEnvironment.name}`
+              : t('guid.workspace.remote.local')
+          }
+          position='top'
+        >
+          <span
+            role='img'
+            aria-label={
+              backendEnvironment.type === 'remote' ? backendEnvironment.name : t('guid.workspace.remote.local')
+            }
+            className='inline-flex items-center justify-center rounded-6px bg-aou-1 p-4px text-aou-6'
+          >
+            <KimiIcon name={backendEnvironment.type === 'remote' ? 'globe' : 'device-desktop'} size={14} />
           </span>
         </Tooltip>
       )}
@@ -261,7 +291,14 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
           visible
           environment={connectionModal.environment}
           onClose={() => setConnectionModal({ open: false })}
-          onConnected={() => window.location.reload()}
+          onConnected={() => {
+            try {
+              sessionStorage.setItem(REMOTE_WORKSPACE_PICKER_PENDING_KEY, '1');
+            } catch {
+              // Storage can be unavailable in hardened browser contexts.
+            }
+            window.location.reload();
+          }}
         />
       )}
     </div>

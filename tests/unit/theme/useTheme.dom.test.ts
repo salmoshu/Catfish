@@ -23,7 +23,8 @@ vi.mock('@/common', () => ({
   },
 }));
 
-vi.mock('@/renderer/utils/theme/applyTheme', () => ({
+vi.mock('@/renderer/utils/theme/applyTheme', async (original) => ({
+  ...(await original<typeof import('@/renderer/utils/theme/applyTheme')>()),
   applyTheme: vi.fn(),
   seedElectronTheme: vi.fn().mockResolvedValue(undefined),
   setActiveTheme: setActiveThemeMock,
@@ -52,6 +53,7 @@ describe('useTheme selection', () => {
       return undefined;
     });
     setActiveThemeMock.mockReset();
+    localStorage.clear();
   });
 
   it('updates local theme state without waiting for a cross-window event', async () => {
@@ -74,5 +76,15 @@ describe('useTheme selection', () => {
     await expect(act(async () => result.current[1]('dark'))).rejects.toThrow('save failed');
 
     expect(result.current[0]?.appearance).toBe('light');
+  });
+
+  it('prefers the locally cached theme over the remote backend default', async () => {
+    localStorage.setItem('__aionui_theme_id', 'dark');
+    vi.resetModules();
+    const { default: usePreferredTheme } = await import('@/renderer/hooks/system/useTheme');
+    const { result } = renderHook(() => usePreferredTheme());
+
+    await waitFor(() => expect(result.current[0]?.appearance).toBe('dark'));
+    expect(result.current[2]).toBe('dark');
   });
 });

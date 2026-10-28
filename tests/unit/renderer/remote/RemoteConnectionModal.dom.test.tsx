@@ -1,5 +1,7 @@
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { Modal } from '@arco-design/web-react';
+import '@arco-design/web-react/lib/_util/react-19-adapter';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   RemoteEnvironmentDiscovery,
@@ -140,6 +142,26 @@ beforeEach(() => {
 });
 
 describe('RemoteConnectionModal', () => {
+  it('closes the project picker before showing a deletion confirmation that survives its unmount', async () => {
+    const Picker = () => {
+      const [visible, setVisible] = React.useState(true);
+      return visible ? (
+        <div data-testid='workspace-popover' style={{ zIndex: 9999 }}>
+          <RemoteEnvironmentMenu
+            searchQuery=''
+            onClose={() => setVisible(false)}
+            onRequestConnection={vi.fn()}
+            onRequestWorkspace={vi.fn()}
+          />
+        </div>
+      ) : null;
+    };
+    render(<Picker />);
+    fireEvent.click(await screen.findByRole('button', { name: 'guid.workspace.remote.remove' }));
+    expect(screen.queryByTestId('workspace-popover')).not.toBeInTheDocument();
+    expect(await screen.findByText('guid.workspace.remote.removeConfirmContent')).toBeInTheDocument();
+    act(() => Modal.destroyAll());
+  });
   it('saves an SSH connection and connects with the entered credentials', async () => {
     const onConnected = vi.fn();
     render(<RemoteConnectionModal visible onClose={vi.fn()} onConnected={onConnected} />);
@@ -214,7 +236,14 @@ describe('RemoteConnectionModal', () => {
       return () => {};
     });
     const onRequestConnection = vi.fn();
-    render(<RemoteEnvironmentMenu searchQuery='' onClose={vi.fn()} onRequestConnection={onRequestConnection} />);
+    render(
+      <RemoteEnvironmentMenu
+        searchQuery=''
+        onClose={vi.fn()}
+        onRequestConnection={onRequestConnection}
+        onRequestWorkspace={vi.fn()}
+      />
+    );
 
     fireEvent.click(await screen.findByRole('button', { name: /Ubuntu/ }));
     await waitFor(() => expect(onRequestConnection).toHaveBeenCalledTimes(1));
@@ -228,5 +257,28 @@ describe('RemoteConnectionModal', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: /Ubuntu/ })).toBeInTheDocument());
     expect(onRequestConnection).toHaveBeenCalledTimes(1);
+  });
+
+  it('requests a workspace for the active environment without reconnecting', async () => {
+    remoteMocks.state.mockResolvedValue({
+      active: { type: 'remote', id: wslEnvironment.id, name: wslEnvironment.name, kind: 'wsl' },
+    });
+    const onRequestConnection = vi.fn();
+    const onRequestWorkspace = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <RemoteEnvironmentMenu
+        searchQuery=''
+        onClose={onClose}
+        onRequestConnection={onRequestConnection}
+        onRequestWorkspace={onRequestWorkspace}
+      />
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: /Ubuntu/ }));
+
+    await waitFor(() => expect(onRequestWorkspace).toHaveBeenCalledWith(wslEnvironment));
+    expect(onRequestConnection).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });

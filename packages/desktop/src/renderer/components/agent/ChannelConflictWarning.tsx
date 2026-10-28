@@ -115,7 +115,12 @@ export const ChannelConflictBanner: React.FC<{ platform: 'lark' | 'telegram'; on
       type='warning'
       content={
         <Space>
-          <Text>⚠️ OpenClaw {platformName} conflict detected - Agent switching won't work.</Text>
+          <Text>
+            <span className='inline-flex items-center gap-4px'>
+              <KimiIcon name='alert-triangle' size={14} />
+              <span>OpenClaw {platformName} conflict detected - Agent switching won't work.</span>
+            </span>
+          </Text>
           <Link onClick={onLearnMore}>Learn more</Link>
         </Space>
       }

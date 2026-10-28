@@ -18,6 +18,7 @@ import { createRoot } from 'react-dom/client';
 import { useTranslation } from 'react-i18next';
 import type { PickerEntry as Entry } from './webFsPickerUtils';
 import { matchesFilters, normalizeEntry, parentOf, sortEntries } from './webFsPickerUtils';
+import KimiIcon from '@renderer/components/base/KimiIcon';
 
 const getLastDirKey = (): string => {
   const environment = window.__backendEnvironment;
@@ -229,7 +230,9 @@ export const WebFsPicker: React.FC<PickerProps> = ({ options, onDone }) => {
                   background: isSelected ? 'var(--color-fill-2)' : 'transparent',
                 }}
               >
-                <span style={{ flexShrink: 0 }}>{entry.isDir ? '📁' : '📄'}</span>
+                <span style={{ flexShrink: 0 }}>
+                  <KimiIcon name={entry.isDir ? 'folder' : 'file'} size={16} />
+                </span>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.name}</span>
               </div>
             );

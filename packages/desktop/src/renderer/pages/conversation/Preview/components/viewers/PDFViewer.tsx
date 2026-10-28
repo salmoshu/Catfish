@@ -130,7 +130,10 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ tabId, fileRef, file_path, cont
     toolbarExtrasContext.setExtras({
       left: (
         <div className='flex items-center gap-8px'>
-          <span className='text-13px text-t-secondary'>📄 {t('preview.pdf.title')}</span>
+          <span className='inline-flex items-center gap-4px text-13px text-t-secondary'>
+            <KimiIcon name='file' size={14} />
+            <span>{t('preview.pdf.title')}</span>
+          </span>
           <span className='text-11px text-t-tertiary'>{t('preview.readOnlyLabel')}</span>
         </div>
       ),
@@ -148,7 +151,10 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ tabId, fileRef, file_path, cont
       <div className='flex items-center justify-center h-full'>
         {messageContextHolder}
         <div className='text-center'>
-          <div className='text-16px text-t-error mb-8px'>❌ {error}</div>
+          <div className='flex items-center justify-center gap-4px text-16px text-t-error mb-8px'>
+            <KimiIcon name='alert-triangle' size={16} />
+            <span>{error}</span>
+          </div>
           <div className='text-12px text-t-secondary'>{t('preview.pdf.unableDisplay')}</div>
         </div>
       </div>
@@ -170,7 +176,10 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ tabId, fileRef, file_path, cont
       {!usePortalToolbar && !hideToolbar && (
         <div className='flex items-center justify-between h-40px px-12px bg-bg-2 flex-shrink-0'>
           <div className='flex items-center gap-8px'>
-            <span className='text-13px text-t-secondary'>📄 {t('preview.pdf.title')}</span>
+            <span className='inline-flex items-center gap-4px text-13px text-t-secondary'>
+              <KimiIcon name='file' size={14} />
+              <span>{t('preview.pdf.title')}</span>
+            </span>
             <span className='text-11px text-t-tertiary'>{t('preview.readOnlyLabel')}</span>
           </div>
           {file_path && (

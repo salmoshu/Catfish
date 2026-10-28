@@ -64,7 +64,8 @@
       "stageStarting": "正在啟動並檢查相容性",
       "installHint": "Catfish Server 將安裝到遠端 ~/.catfish，用於檔案存取和 Agent 執行。",
       "unexpectedDisconnect": "遠端連線已中斷，正在返回本機環境。",
-      "agentHint": "專案和 Agent 將在此遠端環境中執行"
+      "agentHint": "專案和 Agent 將在此遠端環境中執行",
+      "local": "本機"
     }
   }
 }

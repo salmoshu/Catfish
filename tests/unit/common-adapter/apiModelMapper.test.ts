@@ -341,6 +341,15 @@ describe('apiModelMapper', () => {
   });
 
   describe('fromApiPaginatedConversations', () => {
+    it('normalizes legacy remote workspace flags from the authoritative temporary flag', () => {
+      const items = [
+        { extra: { workspace: '/home/user/project', custom_workspace: false, is_temporary_workspace: false } },
+        { extra: { workspace: '/home/user/temp', custom_workspace: true, is_temporary_workspace: true } },
+        { extra: { workspace: '/home/user/other', custom_workspace: null } },
+      ];
+      const result = fromApiPaginatedConversations({ items, total: 3, has_more: false });
+      expect(result.items.map((item) => item.extra.custom_workspace)).toEqual([true, false, true]);
+    });
     it('maps items through fromApiConversation and preserves total/has_more', () => {
       const input = {
         items: [

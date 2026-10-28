@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.2](https://github.com/salmoshu/Catfish/releases/tag/v0.4.2) (2026-10-28)
+
+### Desktop
+
+#### Features
+
+- **workspace:** distinguish local and remote projects with icons and preserve the selected project when switching environments
+- **remote:** choose an actual remote directory after connecting and start new chats locally unless a remote project is explicitly selected
+- **interaction:** align window, sidebar, file and status icons with Kimi Code, with matching custom glyphs where needed
+
+#### Bug Fixes
+
+- **remote:** keep the local language and theme preferences when connecting to a backend with different defaults
+- **remote:** resume the directory picker after connecting and avoid writing a workspace when selection is cancelled
+
+---
+
 ## [0.4.1](https://github.com/salmoshu/Catfish/releases/tag/v0.4.1) (2026-10-27)
 
 ### Desktop

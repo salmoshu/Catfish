@@ -3,6 +3,7 @@ import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const platform = vi.hoisted(() => ({ desktop: true, mac: false }));
+const sidebar = vi.hoisted(() => ({ collapsed: undefined as boolean | undefined }));
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -21,7 +22,11 @@ vi.mock('@/renderer/components/layout/WindowControls', () => ({
   default: () => <div data-testid='window-controls' />,
 }));
 vi.mock('@/renderer/hooks/context/LayoutContext', () => ({
-  useLayoutContext: () => ({ isMobile: false }),
+  useLayoutContext: () => ({
+    isMobile: false,
+    siderCollapsed: sidebar.collapsed,
+    setSiderCollapsed: sidebar.collapsed === undefined ? undefined : vi.fn(),
+  }),
 }));
 vi.mock('@/renderer/hooks/context/NavigationHistoryContext', () => ({
   useNavigationHistory: () => null,
@@ -44,6 +49,7 @@ describe('Titlebar workspace toggle', () => {
   beforeEach(() => {
     platform.desktop = true;
     platform.mac = false;
+    sidebar.collapsed = undefined;
   });
 
   it('places the Windows workspace toggle directly after Bug Report', () => {
@@ -79,6 +85,7 @@ describe('Titlebar workspace toggle', () => {
     });
 
     expect(screen.getByRole('button', { name: 'common.collapse' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'common.collapse' }).querySelector('#rbar-arrow')).not.toBeNull();
   });
 
   it('omits the workspace toggle when no workspace is available', () => {
@@ -86,5 +93,16 @@ describe('Titlebar workspace toggle', () => {
 
     expect(screen.queryByRole('button', { name: 'common.expandMore' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'common.collapse' })).not.toBeInTheDocument();
+  });
+
+  it('switches the sidebar icon between collapse and expand variants', () => {
+    sidebar.collapsed = false;
+    const { rerender } = render(<Titlebar workspaceAvailable />);
+    expect(screen.getByRole('button', { name: 'common.collapse' }).querySelector('#bar-arrow')).not.toBeNull();
+
+    sidebar.collapsed = true;
+    rerender(<Titlebar workspaceAvailable />);
+    const sidebarButton = screen.getAllByRole('button', { name: 'common.expandMore' })[0];
+    expect(sidebarButton.querySelector('#bar-arrow-expand')).not.toBeNull();
   });
 });

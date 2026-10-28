@@ -1,0 +1,135 @@
+.icon {
+  flex-shrink: 0;
+}
+
+.icon :global(#bar-divider),
+.icon :global(#rbar-divider) {
+  transform-box: view-box;
+  transition: transform 0.2s linear;
+}
+
+.icon :global(#bar-divider) {
+  transform-origin: 9.3px 12px;
+}
+
+.icon :global(#rbar-divider) {
+  transform-origin: 14.7px 12px;
+}
+
+.icon :global(#bar-arrow),
+.icon :global(#bar-arrow-expand),
+.icon :global(#rbar-arrow),
+.icon :global(#rbar-arrow-expand) {
+  transform-box: view-box;
+  transform-origin: 0 0;
+  transform: scale(0);
+}
+
+.icon:hover :global(#bar-divider),
+:global(button:is(:hover, :focus-visible)) .icon :global(#bar-divider) {
+  transform: translateX(-1.5px) scaleY(0.5);
+}
+
+.icon:hover :global(#rbar-divider),
+:global(button:is(:hover, :focus-visible)) .icon :global(#rbar-divider) {
+  transform: translateX(1.5px) scaleY(0.5);
+}
+
+.icon:hover :global(#bar-arrow),
+:global(button:is(:hover, :focus-visible)) .icon :global(#bar-arrow) {
+  animation: collapse-left 0.5333s linear forwards;
+}
+
+.icon:hover :global(#bar-arrow-expand),
+:global(button:is(:hover, :focus-visible)) .icon :global(#bar-arrow-expand) {
+  animation: expand-left 0.5333s linear forwards;
+}
+
+.icon:hover :global(#rbar-arrow),
+:global(button:is(:hover, :focus-visible)) .icon :global(#rbar-arrow) {
+  animation: collapse-right 0.5333s linear forwards;
+}
+
+.icon:hover :global(#rbar-arrow-expand),
+:global(button:is(:hover, :focus-visible)) .icon :global(#rbar-arrow-expand) {
+  animation: expand-right 0.5333s linear forwards;
+}
+
+@keyframes collapse-left {
+  0% {
+    transform: translate(62.97083%, 50.625%) scale(-0.6);
+    opacity: 0;
+  }
+  3.125% {
+    transform: translate(62.97083%, 50.625%) scale(-0.6);
+    opacity: 1;
+  }
+  15.625% {
+    transform: translate(59.0125%, 50.625%) scale(-1);
+  }
+  37.5%,
+  100% {
+    transform: translate(52.08333%, 50.625%) scale(-1);
+  }
+}
+
+@keyframes expand-left {
+  0% {
+    transform: translate(37.02917%, 50.625%) scale(0.6);
+    opacity: 0;
+  }
+  3.125% {
+    transform: translate(37.02917%, 50.625%) scale(0.6);
+    opacity: 1;
+  }
+  15.625% {
+    transform: translate(40.9875%, 50.625%) scale(1);
+  }
+  37.5%,
+  100% {
+    transform: translate(52.08333%, 50.625%) scale(1);
+  }
+}
+
+@keyframes collapse-right {
+  0% {
+    transform: translate(37.02917%, 50.625%) scale(0.6);
+    opacity: 0;
+  }
+  3.125% {
+    transform: translate(37.02917%, 50.625%) scale(0.6);
+    opacity: 1;
+  }
+  15.625% {
+    transform: translate(40.9875%, 50.625%) scale(1);
+  }
+  37.5%,
+  100% {
+    transform: translate(47.91667%, 50.625%) scale(1);
+  }
+}
+
+@keyframes expand-right {
+  0% {
+    transform: translate(62.97083%, 50.625%) scale(-0.6);
+    opacity: 0;
+  }
+  3.125% {
+    transform: translate(62.97083%, 50.625%) scale(-0.6);
+    opacity: 1;
+  }
+  15.625% {
+    transform: translate(59.0125%, 50.625%) scale(-1);
+  }
+  37.5%,
+  100% {
+    transform: translate(47.91667%, 50.625%) scale(-1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon :global(path) {
+    transition: none;
+    animation-duration: 0.001ms !important;
+  }
+}

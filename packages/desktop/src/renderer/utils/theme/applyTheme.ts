@@ -15,6 +15,24 @@ import { getSystemPrefersDark } from './systemAppearance';
 
 const TOKENS_STYLE_ID = 'theme-tokens';
 const DECORATION_STYLE_ID = 'theme-decoration';
+const ACTIVE_THEME_ID_CACHE_KEY = '__aionui_theme_id';
+
+export function getCachedActiveThemeId(): string | null {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    return localStorage.getItem(ACTIVE_THEME_ID_CACHE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function cacheActiveThemeId(activeId: string): void {
+  try {
+    localStorage.setItem(ACTIVE_THEME_ID_CACHE_KEY, activeId);
+  } catch {
+    // Keep theme selection available when browser storage is unavailable.
+  }
+}
 
 function upsertStyle(id: string, css: string | null, root: Document = document): void {
   const existing = root.getElementById(id);
@@ -77,6 +95,7 @@ export async function setActiveTheme(activeId: string): Promise<Theme> {
   const resolved = resolveActiveTheme(activeId, [...BUILTIN_THEMES, ...userThemes], getSystemPrefersDark());
   applyTheme(resolved);
   await configService.set('theme.activeId', activeId);
+  cacheActiveThemeId(activeId);
   await publishThemeToElectron(resolved);
   return resolved;
 }

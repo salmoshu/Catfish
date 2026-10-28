@@ -1,4 +1,6 @@
 import classNames from 'classnames';
+import { Message } from '@arco-design/web-react';
+import { ipcBridge } from '@/common';
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { usePreviewContext } from '@renderer/pages/conversation/Preview/context/PreviewContext';
@@ -42,16 +44,30 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
     }
   }, [pathname, search, hash]);
 
-  const handleNewChat = () => {
+  const handleNewChat = async () => {
     cleanupSiderTooltips();
     blurActiveElement();
     closePreview();
     setIsBatchMode(false);
-    Promise.resolve(navigate('/guid', { state: { resetAssistant: true } })).catch((error) => {
+    try {
+      const shouldReload = window.__backendEnvironment?.type === 'remote';
+      if (shouldReload) {
+        const result = await ipcBridge.remoteEnvironment.disconnect.invoke();
+        if (result.ok === false) {
+          Message.error(result.message);
+          return;
+        }
+      }
+      await Promise.resolve(navigate('/guid', { state: { resetAssistant: true } }));
+      if (onSessionClick) {
+        onSessionClick();
+      }
+      if (shouldReload) {
+        window.location.reload();
+      }
+    } catch (error) {
       console.error('Navigation failed:', error);
-    });
-    if (onSessionClick) {
-      onSessionClick();
+      Message.error(error instanceof Error ? error.message : String(error));
     }
   };
 

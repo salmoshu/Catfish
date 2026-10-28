@@ -72,7 +72,8 @@
       "stageStarting": "Start und Kompatibilitätsprüfung",
       "installHint": "Catfish Server wird für Dateizugriff und Agenten unter ~/.catfish in der Remote-Umgebung installiert.",
       "unexpectedDisconnect": "Remote-Verbindung verloren. Rückkehr zur lokalen Umgebung.",
-      "agentHint": "Projekte und Agenten laufen in dieser Remote-Umgebung"
+      "agentHint": "Projekte und Agenten laufen in dieser Remote-Umgebung",
+      "local": "Lokal"
     }
   },
   "scanning": {

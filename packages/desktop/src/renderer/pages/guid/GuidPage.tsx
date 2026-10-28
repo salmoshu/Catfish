@@ -137,6 +137,11 @@ const GuidPage: React.FC = () => {
   const navState = location.state as GuidNavigationState | null;
   const resetAssistantRequested = navState?.resetAssistant === true;
   const preselectAssistantId = navState?.selectedAssistantId;
+  const navigationWorkspace = navState?.workspace || new URLSearchParams(location.search).get('workspace') || undefined;
+  const workspaceState = useMemo(
+    () => (navigationWorkspace ? { workspace: navigationWorkspace } : null),
+    [navigationWorkspace]
+  );
   const agentSelection = useGuidAssistantSelection({
     resetAssistant: resetAssistantRequested,
     preselectAssistantId,
@@ -144,7 +149,7 @@ const GuidPage: React.FC = () => {
   });
 
   const guidInput = useGuidInput({
-    locationState: location.state as { workspace?: string } | null,
+    locationState: workspaceState,
   });
   // The `/open` builtin + attach picker browse the backend machine's filesystem
   // (native dialog / server-fs) → `local` refs, not uploads.
@@ -545,10 +550,18 @@ const GuidPage: React.FC = () => {
       guidInput.setFiles([]);
     }
     guidInput.setLoading(false);
-    if (!preserveCurrentDraft && !(location.state as { workspace?: string } | null)?.workspace) {
+    if (!preserveCurrentDraft && !navigationWorkspace) {
       guidInput.setDir('');
     }
-  }, [guidInput.setDir, guidInput.setFiles, guidInput.setInput, guidInput.setLoading, location.key, location.state]);
+  }, [
+    guidInput.setDir,
+    guidInput.setFiles,
+    guidInput.setInput,
+    guidInput.setLoading,
+    location.key,
+    location.state,
+    navigationWorkspace,
+  ]);
 
   // A draft-preserving prefill is an action, not durable navigation state.
   // Strip it after consumption so browser history or a remount cannot replay it.
@@ -579,8 +592,24 @@ const GuidPage: React.FC = () => {
   // the dev server (which has no SPA fallback) and 404.
   useEffect(() => {
     if (!resetAssistantRequested && !preselectAssistantId) return;
-    navigate(`${location.pathname}${location.search}${location.hash}`, { replace: true, state: null });
-  }, [resetAssistantRequested, preselectAssistantId, location.pathname, location.search, location.hash, navigate]);
+    const {
+      resetAssistant: _resetAssistant,
+      selectedAssistantId: _selectedAssistantId,
+      ...remainingState
+    } = navState ?? {};
+    navigate(`${location.pathname}${location.search}${location.hash}`, {
+      replace: true,
+      state: Object.keys(remainingState).length > 0 ? remainingState : null,
+    });
+  }, [
+    resetAssistantRequested,
+    preselectAssistantId,
+    location.pathname,
+    location.search,
+    location.hash,
+    navigate,
+    navState,
+  ]);
 
   // Agents that use configured model providers instead of ACP probe-based models.
   // Only aionrs now — Gemini runs as a regular ACP backend with ACP-cached models.

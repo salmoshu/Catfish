@@ -1,13 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Minus, CloseSmall } from '@icon-park/react';
+import { Button } from '@arco-design/web-react';
+import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
 import KimiIcon from '@renderer/components/base/KimiIcon';
+import styles from './WindowControls.module.css';
 
 const WindowMaximizeIcon: React.FC<{ size?: number }> = ({ size = 14 }) => <KimiIcon name='shape-square' size={size} />;
 
-const WindowRestoreIcon: React.FC<{ size?: number }> = ({ size = 14 }) => <KimiIcon name='copy' size={size} />;
+const WindowRestoreIcon: React.FC<{ size?: number }> = ({ size = 14 }) => (
+  <KimiIcon name='window-restore' size={size} />
+);
 
 const WindowControls: React.FC = () => {
+  const { t } = useTranslation();
   const [isMaximized, setIsMaximized] = useState(false);
   const [available, setAvailable] = useState(true);
 
@@ -65,26 +70,26 @@ const WindowControls: React.FC = () => {
   };
 
   return (
-    <div className='app-window-controls'>
-      <button type='button' className='app-window-controls__button' onClick={handleMinimize} aria-label='Minimize'>
-        <Minus theme='outline' size='14' fill='currentColor' strokeWidth={4} />
-      </button>
-      <button
-        type='button'
-        className='app-window-controls__button'
+    <div className={styles.controls}>
+      <Button type='text' className={styles.button} onClick={handleMinimize} aria-label={t('common.windowMinimize')}>
+        <KimiIcon name='minus' size={14} />
+      </Button>
+      <Button
+        type='text'
+        className={styles.button}
         onClick={handleToggleMaximize}
-        aria-label={isMaximized ? 'Restore' : 'Maximize'}
+        aria-label={isMaximized ? t('common.windowRestore') : t('common.windowMaximize')}
       >
         {isMaximized ? <WindowRestoreIcon size={14} /> : <WindowMaximizeIcon size={14} />}
-      </button>
-      <button
-        type='button'
-        className='app-window-controls__button app-window-controls__button--close'
+      </Button>
+      <Button
+        type='text'
+        className={`${styles.button} ${styles.closeButton}`}
         onClick={handleClose}
-        aria-label='Close'
+        aria-label={t('common.close')}
       >
-        <CloseSmall theme='outline' size='16' fill='currentColor' strokeWidth={3} />
-      </button>
+        <KimiIcon name='close' size={16} />
+      </Button>
     </div>
   );
 };

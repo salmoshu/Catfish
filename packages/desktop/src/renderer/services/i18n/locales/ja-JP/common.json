@@ -202,5 +202,8 @@
   },
   "selectedCount": "選択済み {{count}}",
   "selectedSkills": "選択済みスキル",
-  "aiAssistant": "AI アシスタント"
+  "aiAssistant": "AI アシスタント",
+  "windowMinimize": "最小化",
+  "windowMaximize": "最大化",
+  "windowRestore": "元に戻す"
 }

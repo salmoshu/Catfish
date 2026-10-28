@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
-import { ArrowCircleLeft, ArrowLeft, ArrowRight, ExpandLeft, ExpandRight, Peoples, Search } from '@icon-park/react';
+import { ArrowCircleLeft, ArrowLeft, ArrowRight, Peoples, Search } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -29,9 +29,11 @@ const FeedbackIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size 
   <KimiIcon name='help-circle' size={size} />
 );
 
-const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 18, strokeWidth: _strokeWidth }) => (
-  <KimiIcon name='panel-collapse' size={size} />
-);
+const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number; collapsed?: boolean }> = ({
+  size = 18,
+  strokeWidth: _strokeWidth,
+  collapsed = false,
+}) => <KimiIcon name={collapsed ? 'panel-expand' : 'panel-collapse'} size={size} />;
 
 const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
   const { t } = useTranslation();
@@ -267,7 +269,7 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
             onClick={handleSiderToggle}
             aria-label={siderTooltip}
           >
-            <SidebarIcon size={iconSize} strokeWidth={desktopIconStroke} />
+            <SidebarIcon collapsed={Boolean(layout?.siderCollapsed)} size={iconSize} strokeWidth={desktopIconStroke} />
           </button>
         )}
         {showSearchButton && (
@@ -363,11 +365,7 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
             onClick={handleWorkspaceToggle}
             aria-label={workspaceTooltip}
           >
-            {workspaceCollapsed ? (
-              <ExpandRight theme='outline' size={iconSize} fill='currentColor' />
-            ) : (
-              <ExpandLeft theme='outline' size={iconSize} fill='currentColor' />
-            )}
+            <KimiIcon name={workspaceCollapsed ? 'panel-expand-right' : 'panel-collapse-right'} size={iconSize} />
           </button>
         )}
         {showWindowControls && <WindowControls />}

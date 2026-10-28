@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import WorkspaceCollapse from '../components/WorkspaceCollapse';
+import EnvironmentProjects from '@/renderer/components/remote/EnvironmentProjects';
 import ConversationRow from './ConversationRow';
 import SortableConversationRow from './SortableConversationRow';
 import { useBatchSelection } from './hooks/useBatchSelection';
@@ -254,9 +255,18 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
     return (
       <>
         {afterPinnedContent}
-        <div className='py-48px flex-center'>
-          <Empty description={t('conversation.history.noHistory')} />
-        </div>
+        <EnvironmentProjects
+          collapsed={collapsed}
+          heading={
+            !collapsed && <SectionLabel sectionKey='projects' label={t('conversation.history.projectsSection')} />
+          }
+          hidden={collapsedSections.has('projects')}
+          emptyContent={
+            <div className='py-48px flex-center'>
+              <Empty description={t('conversation.history.noHistory')} />
+            </div>
+          }
+        />
       </>
     );
   }
@@ -504,6 +514,15 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
               })}
           </div>
         )}
+
+        <EnvironmentProjects
+          collapsed={collapsed}
+          heading={
+            projectGroups.length === 0 &&
+            !collapsed && <SectionLabel sectionKey='projects' label={t('conversation.history.projectsSection')} />
+          }
+          hidden={collapsedSections.has('projects')}
+        />
 
         {/* L1: Conversations section — peer to projects, internally split by timeline */}
         {conversationOnlySections.length > 0 && (

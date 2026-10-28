@@ -64,7 +64,8 @@
       "stageStarting": "起動して互換性を確認しています",
       "installHint": "ファイルアクセスとエージェントのため、リモート環境の ~/.catfish に Catfish Server をインストールします。",
       "unexpectedDisconnect": "リモート接続が切断されました。ローカル環境に戻ります。",
-      "agentHint": "プロジェクトとエージェントはこのリモート環境で実行されます"
+      "agentHint": "プロジェクトとエージェントはこのリモート環境で実行されます",
+      "local": "ローカル"
     }
   }
 }

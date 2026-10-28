@@ -202,5 +202,8 @@
   },
   "selectedCount": "{{count}} انتخاب‌شده",
   "selectedSkills": "مهارت‌های انتخاب‌شده",
-  "aiAssistant": "دستیار هوش مصنوعی"
+  "aiAssistant": "دستیار هوش مصنوعی",
+  "windowMinimize": "کمینه کردن",
+  "windowMaximize": "بیشینه کردن",
+  "windowRestore": "بازگردانی"
 }

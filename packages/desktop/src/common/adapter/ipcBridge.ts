@@ -1330,6 +1330,7 @@ export const remoteAgent = {
 };
 
 export const remoteEnvironment = {
+  localConversations: bridge.buildProvider<TChatConversation[], void>('remote-environment.local-conversations'),
   list: bridge.buildProvider<import('@/common/types/remote').RemoteEnvironmentSummary[], void>(
     'remote-environment.list'
   ),

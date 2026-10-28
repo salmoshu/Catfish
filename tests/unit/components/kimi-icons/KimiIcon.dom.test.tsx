@@ -1,7 +1,7 @@
 import React from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Github, Plus } from '@icon-park/react';
+import { ExpandRight, Github, Plus } from '@icon-park/react';
 import IconParkHOC from '@/renderer/components/IconParkHOC';
 import KimiIcon from '@/renderer/components/base/KimiIcon';
 import WindowControls from '@/renderer/components/layout/WindowControls';
@@ -45,6 +45,7 @@ describe('Kimi icons', () => {
     expect(svg).toHaveAttribute('width', '18');
     expect(svg).toHaveAttribute('height', '18');
     expect(svg).toHaveAttribute('stroke-width', '2');
+    expect(svg).toHaveAttribute('stroke', 'none');
     expect(svg?.querySelector('path')).toHaveAttribute('d', expect.stringMatching(/^M12\.0684 2\.03418/));
 
     rerender(<KimiIcon name='close' />);
@@ -55,20 +56,38 @@ describe('Kimi icons', () => {
 
     rerender(<KimiIcon name='copy' />);
     expect(container.querySelector('path')).toHaveAttribute('d', expect.stringMatching(/^M17 7\.09961/));
+
+    rerender(<KimiIcon name='file' />);
+    expect(container.querySelector('path')).toHaveAttribute('d', expect.stringMatching(/^M13\.1723 2\.1001/));
+
+    rerender(<KimiIcon name='leader-crown' fill='var(--warning)' />);
+    expect(container.querySelector('path')).toHaveAttribute('fill', 'currentColor');
+    expect(container.querySelector('path')).toHaveAttribute('fill-opacity', '0.18');
   });
 
   it('retains both sidebar variants and original IconPark fallbacks', () => {
     const { container, rerender } = render(<KimiIcon name='panel-collapse' />);
     expect(container.querySelector('#bar-divider')).not.toBeNull();
     expect(container.querySelector('#bar-box')).not.toBeNull();
+    expect(container.querySelector('#bar-arrow')).not.toBeNull();
+
+    rerender(<KimiIcon name='panel-expand' />);
+    expect(container.querySelector('#bar-arrow-expand')).not.toBeNull();
 
     rerender(<KimiIcon name='panel-collapse-right' />);
     expect(container.querySelector('#rbar-divider')).not.toBeNull();
+
+    rerender(<KimiIcon name='panel-expand-right' />);
+    expect(container.querySelector('#rbar-arrow-expand')).not.toBeNull();
 
     const WrappedPlus = IconParkHOC(Plus, 'Plus');
     rerender(<WrappedPlus size={17} strokeWidth={5} />);
     expect(container.querySelector('path')).toHaveAttribute('d', expect.stringMatching(/^M12\.0684 2\.03418/));
     expect(container.querySelector('svg')).toHaveAttribute('stroke-width', '2');
+
+    const WrappedExpandRight = IconParkHOC(ExpandRight, 'ExpandRight');
+    rerender(<WrappedExpandRight />);
+    expect(container.querySelector('#rbar-arrow-expand')).not.toBeNull();
 
     const WrappedGithub = IconParkHOC(Github, 'Github');
     const { container: original } = render(<Github />);
@@ -98,22 +117,33 @@ describe('icon interactions', () => {
     const { unmount } = render(<WindowControls />);
     await waitFor(() => expect(windowControlMocks.isMaximized).toHaveBeenCalledOnce());
 
-    fireEvent.click(screen.getByRole('button', { name: 'Minimize' }));
+    fireEvent.click(screen.getByRole('button', { name: 'common.windowMinimize' }));
     expect(windowControlMocks.minimize).toHaveBeenCalledOnce();
-    expect(screen.getByRole('button', { name: 'Maximize' }).querySelector('path')).toHaveAttribute('d', MAXIMIZE_PATH);
-    fireEvent.click(screen.getByRole('button', { name: 'Maximize' }));
+    expect(screen.getByRole('button', { name: 'common.windowMaximize' }).querySelector('path')).toHaveAttribute(
+      'd',
+      MAXIMIZE_PATH
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'common.windowMaximize' }));
     expect(windowControlMocks.maximize).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(screen.getByRole('button', { name: 'common.close' }));
     expect(windowControlMocks.close).toHaveBeenCalledOnce();
 
     act(() => updateMaximized?.({ is_maximized: true }));
-    const restoreButton = screen.getByRole('button', { name: 'Restore' });
-    expect(restoreButton.querySelector('path')).toHaveAttribute('d', expect.stringMatching(/^M17 7\.09961/));
+    const restoreButton = screen.getByRole('button', { name: 'common.windowRestore' });
+    expect(restoreButton.querySelector('path')).toHaveAttribute('d', 'M8 8h12v12H8z');
+    expect(restoreButton.querySelectorAll('path')[1]).toHaveAttribute('d', 'M4 16V4h12v4');
     fireEvent.click(restoreButton);
     expect(windowControlMocks.unmaximize).toHaveBeenCalledOnce();
 
     unmount();
     expect(windowControlMocks.unsubscribe).toHaveBeenCalledOnce();
+  });
+
+  it('hides window controls when the desktop bridge is unavailable', async () => {
+    windowControlMocks.isMaximized.mockRejectedValue(new Error('Desktop bridge unavailable'));
+    const { container } = render(<WindowControls />);
+
+    await waitFor(() => expect(container.querySelector('button')).toBeNull());
   });
 
   it('keeps preview maximize and close callbacks', () => {

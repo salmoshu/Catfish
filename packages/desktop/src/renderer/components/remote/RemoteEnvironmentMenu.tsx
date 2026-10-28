@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
 import type { RemoteEnvironmentState, RemoteEnvironmentSummary } from '@/common/types/remote';
 import styles from './RemoteConnectionModal.module.css';
+import { forgetEnvironmentProjects } from '@/renderer/utils/workspace/environmentProjects';
 
 type RemoteEnvironmentMenuProps = {
   searchQuery: string;
@@ -18,9 +19,15 @@ type RemoteEnvironmentMenuProps = {
   // The connection modal must be owned OUTSIDE the dropdown that renders this
   // menu — closing the dropdown unmounts this subtree, and the modal with it.
   onRequestConnection: (environment?: RemoteEnvironmentSummary) => void;
+  onRequestWorkspace: (environment: RemoteEnvironmentSummary) => void;
 };
 
-const RemoteEnvironmentMenu: React.FC<RemoteEnvironmentMenuProps> = ({ searchQuery, onClose, onRequestConnection }) => {
+const RemoteEnvironmentMenu: React.FC<RemoteEnvironmentMenuProps> = ({
+  searchQuery,
+  onClose,
+  onRequestConnection,
+  onRequestWorkspace,
+}) => {
   const { t } = useTranslation();
   const [environments, setEnvironments] = useState<RemoteEnvironmentSummary[]>([]);
   const [state, setState] = useState<RemoteEnvironmentState>({
@@ -64,6 +71,7 @@ const RemoteEnvironmentMenu: React.FC<RemoteEnvironmentMenuProps> = ({ searchQue
   };
 
   const remove = (environment: RemoteEnvironmentSummary) => {
+    onClose();
     Modal.confirm({
       title: t('guid.workspace.remote.removeConfirm'),
       content: t('guid.workspace.remote.removeConfirmContent'),
@@ -73,6 +81,7 @@ const RemoteEnvironmentMenu: React.FC<RemoteEnvironmentMenuProps> = ({ searchQue
           Message.error(result.message);
           return;
         }
+        forgetEnvironmentProjects(environment.id);
         if (state.active.type === 'remote' && state.active.id === environment.id) window.location.reload();
         else await refresh();
       },
@@ -82,6 +91,7 @@ const RemoteEnvironmentMenu: React.FC<RemoteEnvironmentMenuProps> = ({ searchQue
   const openConnection = (environment?: RemoteEnvironmentSummary) => {
     if (environment && state.active.type === 'remote' && state.active.id === environment.id) {
       onClose();
+      onRequestWorkspace(environment);
       return;
     }
     onRequestConnection(environment);

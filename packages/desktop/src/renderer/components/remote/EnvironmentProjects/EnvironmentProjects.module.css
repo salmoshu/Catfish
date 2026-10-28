@@ -1,0 +1,34 @@
+.projectName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.environment {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.conversation:global(.arco-btn) {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  height: 34px;
+  padding-inline: 36px 10px;
+  gap: 8px;
+  color: var(--text-secondary);
+  border-radius: 8px;
+}
+
+.conversationName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

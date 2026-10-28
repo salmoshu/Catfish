@@ -4,14 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const pickerMocks = vi.hoisted(() => ({ systemInfo: vi.fn(), getFilesByDir: vi.fn() }));
 
 vi.mock('@/common', () => ({
   ipcBridge: {
-    application: { systemInfo: { invoke: vi.fn().mockResolvedValue({ workDir: '/' }) } },
-    fs: { getFilesByDir: { invoke: vi.fn().mockResolvedValue([]) } },
+    application: { systemInfo: { invoke: pickerMocks.systemInfo } },
+    fs: { getFilesByDir: { invoke: pickerMocks.getFilesByDir } },
   },
 }));
 
@@ -23,7 +25,20 @@ vi.mock('react-i18next', () => ({
 
 import { WebFsPicker } from '@/renderer/components/workspace/webFsPicker';
 
-afterEach(() => cleanup());
+beforeEach(() => {
+  pickerMocks.systemInfo.mockReset().mockResolvedValue({ workDir: '/home/winchell' });
+  pickerMocks.getFilesByDir.mockReset().mockImplementation(({ dir }: { dir: string }) => {
+    if (dir === '/home/winchell') {
+      return Promise.resolve([{ name: 'CatfishCore', full_path: '/home/winchell/CatfishCore', is_dir: true }]);
+    }
+    return Promise.resolve([{ name: 'src', full_path: `${dir}/src`, is_dir: true }]);
+  });
+});
+
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+});
 
 describe('WebFsPicker responsive dialog', () => {
   it('keeps the picker inside a narrow WebUI viewport', async () => {
@@ -34,5 +49,20 @@ describe('WebFsPicker responsive dialog', () => {
 
     expect(modal?.style.width).toBe('calc(100vw - 32px)');
     expect(modal?.style.maxWidth).toBe('640px');
+  });
+
+  it('browses remote directories and returns the selected remote path', async () => {
+    const onDone = vi.fn();
+    render(<WebFsPicker options={{ properties: ['openDirectory'] }} onDone={onDone} />);
+
+    fireEvent.click(await screen.findByText('CatfishCore'));
+    expect(await screen.findByText('src')).toBeInTheDocument();
+    expect(pickerMocks.getFilesByDir).toHaveBeenLastCalledWith({
+      dir: '/home/winchell/CatfishCore',
+      root: '/home/winchell/CatfishCore',
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+    await waitFor(() => expect(onDone).toHaveBeenCalledWith(['/home/winchell/CatfishCore']));
   });
 });

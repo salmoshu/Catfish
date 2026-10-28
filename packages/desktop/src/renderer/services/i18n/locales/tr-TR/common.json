@@ -202,5 +202,8 @@
   },
   "selectedCount": "{{count}} seçili",
   "selectedSkills": "Seçili beceriler",
-  "aiAssistant": "Yapay Zekâ Asistanı"
+  "aiAssistant": "Yapay Zekâ Asistanı",
+  "windowMinimize": "Simge durumuna küçült",
+  "windowMaximize": "Ekranı kapla",
+  "windowRestore": "Geri yükle"
 }

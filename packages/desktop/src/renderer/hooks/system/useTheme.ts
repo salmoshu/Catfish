@@ -7,7 +7,13 @@
 import { configService } from '@/common/config/configService';
 import { ipcBridge } from '@/common';
 import { resolveActiveTheme } from '@/common/theme/resolveTheme';
-import { applyTheme, seedElectronTheme, setActiveTheme } from '@/renderer/utils/theme/applyTheme';
+import {
+  applyTheme,
+  cacheActiveThemeId,
+  getCachedActiveThemeId,
+  seedElectronTheme,
+  setActiveTheme,
+} from '@/renderer/utils/theme/applyTheme';
 import { getSystemPrefersDark } from '@/renderer/utils/theme/systemAppearance';
 import { startSystemThemeWatcher } from '@/renderer/utils/theme/systemThemeWatcher';
 import { BUILTIN_THEMES } from '@renderer/theme/builtinThemes';
@@ -26,7 +32,7 @@ function cacheAppearance(theme: Theme): void {
 }
 
 function getPersistedActiveId(): string {
-  return (configService.get('theme.activeId') as string) || LIGHT_THEME_ID;
+  return getCachedActiveThemeId() || (configService.get('theme.activeId') as string) || LIGHT_THEME_ID;
 }
 
 async function initActiveTheme(): Promise<Theme> {
@@ -37,6 +43,7 @@ async function initActiveTheme(): Promise<Theme> {
     const resolved = resolveActiveTheme(activeId, [...BUILTIN_THEMES, ...userThemes], getSystemPrefersDark());
     applyTheme(resolved);
     cacheAppearance(resolved);
+    cacheActiveThemeId(activeId);
     // Seed the main-process relay so other surfaces (markdown shadow DOM, pet windows) can pull it.
     void seedElectronTheme(resolved).catch(() => {});
     return resolved;
@@ -76,6 +83,7 @@ const useTheme = (): [Theme | null, (activeId: string) => Promise<void>, string 
         setActive((prev) => (prev?.id === t.id ? prev : t));
         // Best-effort: config was persisted before the broadcast, fall back to the resolved id.
         setActiveId((configService.get('theme.activeId') as string) || t.id);
+        cacheActiveThemeId((configService.get('theme.activeId') as string) || t.id);
       }
       cacheAppearance(t);
     });

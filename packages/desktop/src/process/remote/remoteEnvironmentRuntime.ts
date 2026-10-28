@@ -13,6 +13,9 @@ import packageManifest from '../../../../../package.json';
 import { RemoteEnvironmentStore } from './remoteEnvironmentStore';
 import { RemotePackageManager } from './remotePackageManager';
 import { RemoteEnvironmentManager } from './remoteEnvironmentManager';
+import { httpRequest } from '@/common/adapter/httpBridge';
+import { fromApiConversation } from '@/common/adapter/apiModelMapper';
+import type { TChatConversation } from '@/common/config/storage';
 
 let manager: RemoteEnvironmentManager | undefined;
 
@@ -39,6 +42,10 @@ export function peekRemoteEnvironmentManager(): RemoteEnvironmentManager | undef
 
 export function initRemoteEnvironmentBridge(): void {
   const remote = ipcBridge.remoteEnvironment;
+  remote.localConversations.provider(async () => {
+    const result = await httpRequest<{ items: TChatConversation[] }>('GET', '/api/conversations?limit=10000');
+    return result.items.map(fromApiConversation);
+  });
   let subscribed = false;
   const getManager = () => {
     const instance = getRemoteEnvironmentManager();

@@ -1,4 +1,4 @@
-// Generated from the installed Kimi Code icon pack.
+// Generated from the installed Kimi Code icon pack; window-restore and leader-crown are matching custom glyphs.
 export type KimiIconName =
   | 'alert-triangle'
   | 'archive'
@@ -29,6 +29,7 @@ export type KimiIconName =
   | 'external-link'
   | 'eye'
   | 'eye-off'
+  | 'file'
   | 'folder'
   | 'folder-closed'
   | 'folder-plus'
@@ -42,6 +43,7 @@ export type KimiIconName =
   | 'history'
   | 'info'
   | 'key-command'
+  | 'leader-crown'
   | 'light-mode'
   | 'link'
   | 'list'
@@ -52,6 +54,8 @@ export type KimiIconName =
   | 'minus'
   | 'panel-collapse'
   | 'panel-collapse-right'
+  | 'panel-expand'
+  | 'panel-expand-right'
   | 'pause'
   | 'pencil'
   | 'pin'
@@ -77,6 +81,7 @@ export type KimiIconName =
   | 'tree-view'
   | 'undo'
   | 'user'
+  | 'window-restore'
   | 'zoom-scan';
 
 export const KIMI_ICON_SVG: Readonly<Record<KimiIconName, string>> = {
@@ -149,6 +154,15 @@ export const KIMI_ICON_SVG: Readonly<Record<KimiIconName, string>> = {
     '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">\\r\n  <path id="bar-divider" d="M 9.3 18.951 L 9.3 4.3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>\\r\n  <path id="bar-box" d="M -7.9 -4.8 C -7.9 -6.512 -6.512 -7.9 -4.8 -7.9 L 4.8 -7.9 C 6.512 -7.9 7.9 -6.512 7.9 -4.8 L 7.9 4.8 C 7.9 6.512 6.512 7.9 4.8 7.9 L -4.8 7.9 C -6.512 7.9 -7.9 6.512 -7.9 4.8 L -7.9 -4.8 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter" transform="matrix(1 0 0 1 11.8 11.8)"/>\\r\n  <path id="bar-arrow" d="M -1.25 -2.5 L 1.25 0 L -1.25 2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>\\r\n</svg>\\r\n',
   'panel-collapse-right':
     '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">\\r\n  <path id="rbar-divider" d="M 14.7 18.951 L 14.7 4.3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>\\r\n  <path id="rbar-box" d="M -7.9 -4.8 C -7.9 -6.512 -6.512 -7.9 -4.8 -7.9 L 4.8 -7.9 C 6.512 -7.9 7.9 -6.512 7.9 -4.8 L 7.9 4.8 C 7.9 6.512 6.512 7.9 4.8 7.9 L -4.8 7.9 C -6.512 7.9 -7.9 6.512 -7.9 4.8 L -7.9 -4.8 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter" transform="matrix(1 0 0 1 11.8 11.8)"/>\\r\n  <path id="rbar-arrow" d="M -1.25 -2.5 L 1.25 0 L -1.25 2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>\\r\n</svg>\\r\n',
+  'panel-expand':
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">\\r\n  <path id="bar-divider" d="M 9.3 18.951 L 9.3 4.3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>\\r\n  <path id="bar-box" d="M -7.9 -4.8 C -7.9 -6.512 -6.512 -7.9 -4.8 -7.9 L 4.8 -7.9 C 6.512 -7.9 7.9 -6.512 7.9 -4.8 L 7.9 4.8 C 7.9 6.512 6.512 7.9 4.8 7.9 L -4.8 7.9 C -6.512 7.9 -7.9 6.512 -7.9 4.8 L -7.9 -4.8 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter" transform="matrix(1 0 0 1 11.8 11.8)"/>\\r\n  <path id="bar-arrow-expand" d="M -1.25 -2.5 L 1.25 0 L -1.25 2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>\\r\n</svg>\\r\n',
+  'panel-expand-right':
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">\\r\n  <path id="rbar-divider" d="M 14.7 18.951 L 14.7 4.3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>\\r\n  <path id="rbar-box" d="M -7.9 -4.8 C -7.9 -6.512 -6.512 -7.9 -4.8 -7.9 L 4.8 -7.9 C 6.512 -7.9 7.9 -6.512 7.9 -4.8 L 7.9 4.8 C 7.9 6.512 6.512 7.9 4.8 7.9 L -4.8 7.9 C -6.512 7.9 -7.9 6.512 -7.9 4.8 L -7.9 -4.8 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter" transform="matrix(1 0 0 1 11.8 11.8)"/>\\r\n  <path id="rbar-arrow-expand" d="M -1.25 -2.5 L 1.25 0 L -1.25 2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>\\r\n</svg>\\r\n',
+  'window-restore':
+    '<svg viewBox="0 0 24 24" width="1.2em" height="1.2em" ><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 8h12v12H8z"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16V4h12v4"/></svg>',
+  file: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">\\r\n<g>\\r\n<path fill-rule="evenodd" clip-rule="evenodd" d="M13.1723 2.1001C13.9413 2.10018 14.6793 2.40592 15.2231 2.94971L19.0512 6.77783C19.595 7.32162 19.9007 8.0596 19.9008 8.82861V18.0005C19.9008 20.1544 18.1543 21.9009 16.0004 21.9009H8.0004C5.84649 21.9009 4.10001 20.1544 4.10001 18.0005V6.00049C4.10001 3.84658 5.84649 2.1001 8.0004 2.1001H13.1723ZM8.0004 3.90088C6.8406 3.90088 5.90079 4.84069 5.90079 6.00049V18.0005C5.90079 19.1603 6.8406 20.1001 8.0004 20.1001H16.0004C17.1602 20.1001 18.1 19.1603 18.1 18.0005V9.90088H15.0004C13.3988 9.90088 12.1 8.60211 12.1 7.00049V3.90088H8.0004ZM13.9008 7.00049C13.9008 7.608 14.3929 8.1001 15.0004 8.1001H17.8217C17.8072 8.08375 17.7933 8.06681 17.7777 8.05127L13.9496 4.22314C13.9339 4.20745 13.9173 4.19286 13.9008 4.17822V7.00049Z" fill="currentColor"/>\\r\n</g>\\r\n</svg>\\r\n',
+  'leader-crown':
+    '<svg viewBox="0 0 24 24" width="1.2em" height="1.2em" ><path d="M3 19L2 7l5 3l5-7l5 7l5-3l-1 12z" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 15h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   expand:
     '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">\\r\n<path d="M5 11.0996C5.49693 11.0996 5.90018 11.5031 5.90039 12V18C5.90039 18.0552 5.94477 18.0996 6 18.0996H12C12.4969 18.0996 12.9002 18.5031 12.9004 19C12.9004 19.4971 12.4971 19.9004 12 19.9004H6C4.95066 19.9004 4.09961 19.0493 4.09961 18V12C4.09982 11.5031 4.50307 11.0996 5 11.0996ZM18 4.09961C19.0492 4.09961 19.9002 4.95084 19.9004 6V12C19.9004 12.4971 19.4971 12.9004 19 12.9004C18.5029 12.9004 18.0996 12.4971 18.0996 12V6C18.0994 5.94495 18.0551 5.90039 18 5.90039H12C11.5029 5.90039 11.0996 5.49706 11.0996 5C11.0998 4.50312 11.5031 4.09961 12 4.09961H18Z" fill="currentColor"/>\\r\n</svg>\\r\n',
   collapse:

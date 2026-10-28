@@ -205,5 +205,8 @@
   },
   "selectedCount": "Вибрано {{count}}",
   "selectedSkills": "Вибрані навички",
-  "aiAssistant": "ШІ-асистент"
+  "aiAssistant": "ШІ-асистент",
+  "windowMinimize": "Згорнути",
+  "windowMaximize": "Розгорнути",
+  "windowRestore": "Відновити"
 }

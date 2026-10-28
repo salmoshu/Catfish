@@ -75,6 +75,19 @@ const createDeps = (): GuidSendDeps => ({
 });
 
 describe('useGuidSend', () => {
+  it('creates a remote project conversation with the exact selected directory', async () => {
+    const deps = createDeps();
+    deps.dir = '/home/user/Remote Project';
+    const { result } = renderHook(() => useGuidSend(deps));
+    await act(async () => {
+      await result.current.handleSend();
+    });
+    expect(createConversationInvokeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        extra: expect.objectContaining({ workspace: '/home/user/Remote Project', custom_workspace: true }),
+      })
+    );
+  });
   beforeEach(() => {
     createConversationInvokeMock.mockReset();
     createConversationInvokeMock.mockResolvedValue({ id: 'conv-1' });

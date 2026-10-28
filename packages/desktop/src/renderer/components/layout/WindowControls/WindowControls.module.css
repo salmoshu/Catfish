@@ -1,0 +1,38 @@
+.controls {
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
+  -webkit-app-region: no-drag;
+}
+
+.button:global(.arco-btn) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  width: 40px;
+  min-width: 40px;
+  height: 100%;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-primary);
+  box-shadow: none;
+  transition: background-color 0.18s ease;
+}
+
+.button:global(.arco-btn):hover {
+  background: var(--bg-3);
+  color: var(--text-primary);
+}
+
+.button:global(.arco-btn):active {
+  background: var(--bg-4);
+}
+
+.closeButton:global(.arco-btn):hover,
+.closeButton:global(.arco-btn):active {
+  background: var(--danger);
+  color: var(--text-white);
+}

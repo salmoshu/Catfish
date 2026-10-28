@@ -71,4 +71,35 @@ describe('buildGroupedHistory', () => {
 
     expect(result.timelineSections).toEqual([]);
   });
+
+  it('groups remote project conversations using the authoritative workspace flag', () => {
+    const remote = conversation(
+      'remote-project',
+      {
+        backend: 'kimi',
+        workspace: '/home/user/project',
+        custom_workspace: false,
+        is_temporary_workspace: false,
+      } as TChatConversation['extra'],
+      100
+    );
+    expect(buildGroupedHistory([remote], t).timelineSections[0].items[0]).toMatchObject({
+      type: 'workspace',
+      workspaceGroup: { workspace: '/home/user/project' },
+    });
+  });
+
+  it('keeps temporary workspaces out of projects even with a stale custom flag', () => {
+    const temporary = conversation(
+      'temporary',
+      {
+        backend: 'kimi',
+        workspace: '/home/user/work/temp',
+        custom_workspace: true,
+        is_temporary_workspace: true,
+      } as TChatConversation['extra'],
+      100
+    );
+    expect(buildGroupedHistory([temporary], t).timelineSections[0].items[0].type).toBe('conversation');
+  });
 });

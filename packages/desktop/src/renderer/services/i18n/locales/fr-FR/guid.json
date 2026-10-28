@@ -64,7 +64,8 @@
       "stageStarting": "Démarrage et vérification de compatibilité",
       "installHint": "Catfish Server est installé sous ~/.catfish dans l'environnement distant pour l'accès aux fichiers et les agents.",
       "unexpectedDisconnect": "Connexion distante perdue. Retour à l'environnement local.",
-      "agentHint": "Les projets et agents s'exécuteront dans cet environnement distant"
+      "agentHint": "Les projets et agents s'exécuteront dans cet environnement distant",
+      "local": "Local"
     }
   }
 }

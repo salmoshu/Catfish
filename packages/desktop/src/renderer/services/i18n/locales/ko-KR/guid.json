@@ -64,7 +64,8 @@
       "stageStarting": "시작하고 호환성을 확인하는 중",
       "installHint": "파일 접근과 에이전트 실행을 위해 원격 환경의 ~/.catfish에 Catfish Server를 설치합니다.",
       "unexpectedDisconnect": "원격 연결이 끊어졌습니다. 로컬 환경으로 돌아갑니다.",
-      "agentHint": "프로젝트와 에이전트가 이 원격 환경에서 실행됩니다"
+      "agentHint": "프로젝트와 에이전트가 이 원격 환경에서 실행됩니다",
+      "local": "로컬"
     }
   }
 }
