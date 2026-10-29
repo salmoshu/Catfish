@@ -54,8 +54,6 @@ const SiderFooter: React.FC<SiderFooterProps> = ({
       style={{ lineHeight: 0 }}
     />
   );
-  const showThemeToggle = isSettings && !collapsed;
-  const themeTooltip = theme === 'dark' ? t('settings.lightMode') : t('settings.darkMode');
 
   return (
     <div className='shrink-0 sider-footer mt-auto pt-8px pb-8px border-t border-solid border-[var(--color-border-2)] border-s-0 border-e-0 border-b-0'>
@@ -100,28 +98,6 @@ const SiderFooter: React.FC<SiderFooterProps> = ({
               </span>
               <span className='collapsed-hidden text-t-primary text-14px font-[500] leading-24px truncate'>
                 {t('settings.googleLogout')}
-              </span>
-            </div>
-          </Tooltip>
-        )}
-        {/* Theme toggle — lightweight icon button, only while inside Settings page (not in collapsed mode) */}
-        {showThemeToggle && (
-          <Tooltip {...siderTooltipProps} content={themeTooltip} position='right'>
-            <div
-              onClick={onThemeToggle}
-              data-testid='theme-toggle'
-              className={classNames(
-                'h-32px w-40px shrink-0 flex items-center justify-center cursor-pointer rd-0.5rem transition-colors text-t-secondary hover:bg-fill-2 hover:text-t-primary active:bg-fill-3',
-                isMobile && 'sider-footer-btn-mobile'
-              )}
-              aria-label={themeTooltip}
-            >
-              <span className='w-28px h-28px flex items-center justify-center shrink-0'>
-                {theme === 'dark' ? (
-                  <SunOne theme='outline' size='18' fill='currentColor' className='block leading-none' />
-                ) : (
-                  <Moon theme='outline' size='18' fill='currentColor' className='block leading-none' />
-                )}
               </span>
             </div>
           </Tooltip>

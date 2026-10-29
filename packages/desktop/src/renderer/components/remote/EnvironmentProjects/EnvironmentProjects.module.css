@@ -1,14 +1,3 @@
-.projectName {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text-primary);
-}
-
 .environment {
   display: inline-flex;
   align-items: center;

@@ -7,7 +7,6 @@
 import { ipcBridge } from '@/common';
 import type { TChatConversation } from '@/common/config/storage';
 import { requestConversationSendBoxPrefill } from '@/renderer/hooks/chat/useSendBoxDraft';
-import { refreshConversationCache } from '@/renderer/pages/conversation/utils/conversationCache';
 import { isLegacyReadOnlyConversationType } from '@/renderer/pages/conversation/utils/conversationRuntime';
 import { emitter } from '@/renderer/utils/emitter';
 import { blockMobileInputFocus, blurActiveElement } from '@/renderer/utils/ui/focus';
@@ -43,10 +42,6 @@ export const useConversationActions = ({
   clearManualUnread,
   isManualUnread,
 }: UseConversationActionsParams) => {
-  const [renameModalVisible, setRenameModalVisible] = useState(false);
-  const [renameModalName, setRenameModalName] = useState<string>('');
-  const [renameModalId, setRenameModalId] = useState<string | null>(null);
-  const [renameLoading, setRenameLoading] = useState(false);
   const [dropdownVisibleId, setDropdownVisibleId] = useState<string | null>(null);
   const { id } = useParams();
   const { t } = useTranslation();
@@ -135,46 +130,6 @@ export const useConversationActions = ({
       getPopupContainer: () => document.body,
     });
   }, [onBatchModeChange, selectedConversationIds, t, setSelectedConversationIds]);
-
-  const handleEditStart = useCallback((conversation: TChatConversation) => {
-    setRenameModalId(conversation.id);
-    setRenameModalName(conversation.name);
-    setRenameModalVisible(true);
-  }, []);
-
-  const handleRenameConfirm = useCallback(async () => {
-    if (!renameModalId || !renameModalName.trim()) return;
-
-    setRenameLoading(true);
-    try {
-      const success = await ipcBridge.conversation.update.invoke({
-        id: renameModalId,
-        updates: { name: renameModalName.trim() },
-      });
-
-      if (success) {
-        await refreshConversationCache(renameModalId);
-        emitter.emit('chat.history.refresh');
-        setRenameModalVisible(false);
-        setRenameModalId(null);
-        setRenameModalName('');
-        Message.success(t('conversation.history.renameSuccess'));
-      } else {
-        Message.error(t('conversation.history.renameFailed'));
-      }
-    } catch (error) {
-      console.error('Failed to update conversation name:', error);
-      Message.error(t('conversation.history.renameFailed'));
-    } finally {
-      setRenameLoading(false);
-    }
-  }, [renameModalId, renameModalName, t]);
-
-  const handleRenameCancel = useCallback(() => {
-    setRenameModalVisible(false);
-    setRenameModalId(null);
-    setRenameModalName('');
-  }, []);
 
   const handleTogglePin = useCallback(
     async (conversation: TChatConversation) => {
@@ -317,17 +272,10 @@ export const useConversationActions = ({
   );
 
   return {
-    renameModalVisible,
-    renameModalName,
-    setRenameModalName,
-    renameLoading,
     dropdownVisibleId,
     handleConversationClick,
     handleBatchArchive,
     handleArchive,
-    handleEditStart,
-    handleRenameConfirm,
-    handleRenameCancel,
     handleTogglePin,
     handleMenuVisibleChange,
     handleOpenMenu,

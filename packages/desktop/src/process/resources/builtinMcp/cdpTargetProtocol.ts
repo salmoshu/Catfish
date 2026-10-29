@@ -240,19 +240,19 @@ export const decideCdpCommand = (req: CdpRequest, getTargetInfo: () => TargetInf
     case 'Target.createTarget':
       return {
         kind: 'error',
-        message: 'AionUi in-app browser exposes a single fixed tab; Target.createTarget is not supported.',
+        message: 'Catfish in-app browser exposes a single fixed tab; Target.createTarget is not supported.',
       };
 
     case 'Target.createBrowserContext':
     case 'Target.disposeBrowserContext':
-      return { kind: 'error', message: 'AionUi in-app browser does not support multiple browser contexts.' };
+      return { kind: 'error', message: 'Catfish in-app browser does not support multiple browser contexts.' };
 
     /**
      * Browser.close 会关掉整个应用 —— 绝不能让 Agent 触发。
      * Browser.close would terminate the whole app; never let the agent reach it.
      */
     case 'Browser.close':
-      return { kind: 'error', message: 'Browser.close is not permitted against the AionUi in-app browser.' };
+      return { kind: 'error', message: 'Browser.close is not permitted against the Catfish in-app browser.' };
 
     default:
       return { kind: 'forward' };

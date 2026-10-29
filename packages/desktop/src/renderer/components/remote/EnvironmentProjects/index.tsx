@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Dropdown, Menu, Message, Tooltip } from '@arco-design/web-react';
-import { Link, MoreOne, Plus } from '@icon-park/react';
+import { Button, Message, Tooltip } from '@arco-design/web-react';
+import { Plus, Refresh } from '@icon-park/react';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
@@ -102,50 +102,45 @@ const EnvironmentProjects: React.FC<Props> = ({ collapsed, heading, hidden, empt
             const key = `${environmentKey(entry.environment)}:${project.workspace}`;
             const isRemote = entry.environment.type === 'remote';
             const name = getLastDirectoryName(project.workspace);
-            const projectMenu = isRemote ? (
-              <Menu
-                onClickMenuItem={(menuKey) => {
-                  if (menuKey === 'connect') void open(entry, project.workspace);
-                }}
-              >
-                <Menu.Item key='connect'>
-                  <span className='flex items-center gap-8px'>
-                    <Link theme='outline' size='14' />
-                    {t('mcp.connect')}
-                  </span>
-                </Menu.Item>
-              </Menu>
-            ) : undefined;
+            const actionLabel = isRemote ? t('mcp.connect') : t('conversation.history.newConversationInProject');
             return (
               <WorkspaceCollapse
                 key={key}
                 expanded={expanded.has(key)}
                 siderCollapsed={collapsed}
-                onToggle={() =>
+                stickyHeader
+                stickyTop={28}
+                onToggle={() => {
+                  if (isRemote) {
+                    void open(entry, project.workspace);
+                    return;
+                  }
                   setExpanded((previous) => {
                     const next = new Set(previous);
                     if (next.has(key)) next.delete(key);
                     else next.add(key);
                     return next;
-                  })
-                }
+                  });
+                }}
                 leadingIcon={
-                  <span role='img' aria-label={name} className={styles.environment}>
-                    <KimiIcon name={isRemote ? 'globe' : 'device-desktop'} size={16} />
-                  </span>
+                  isRemote ? (
+                    <span role='img' aria-label={name} className={styles.environment}>
+                      <KimiIcon name='globe' size={16} />
+                    </span>
+                  ) : undefined
                 }
                 header={
                   <Tooltip content={name}>
-                    <span className={styles.projectName}>{name}</span>
+                    <span className='text-14px font-[500] truncate flex-1 text-t-primary min-w-0'>{name}</span>
                   </Tooltip>
                 }
                 trailing={
                   <span className='flex items-center gap-6px'>
-                    <Tooltip content={t('conversation.history.newConversationInProject')} position='top'>
+                    <Tooltip content={actionLabel} position='top'>
                       <span
                         role='button'
                         tabIndex={0}
-                        aria-label={t('conversation.history.newConversationInProject')}
+                        aria-label={actionLabel}
                         aria-disabled={switching}
                         className={classNames(
                           'flex-center cursor-pointer transition-colors text-t-secondary hover:text-t-primary size-20px rd-4px sider-action-btn',
@@ -163,26 +158,13 @@ const EnvironmentProjects: React.FC<Props> = ({ collapsed, heading, hidden, empt
                           }
                         }}
                       >
-                        <Plus theme='outline' size='14' fill='currentColor' className='block leading-none' />
+                        {isRemote ? (
+                          <Refresh theme='outline' size='14' fill='currentColor' className='block leading-none' />
+                        ) : (
+                          <Plus theme='outline' size='14' fill='currentColor' className='block leading-none' />
+                        )}
                       </span>
                     </Tooltip>
-                    {projectMenu && (
-                      <Dropdown
-                        droplist={projectMenu}
-                        trigger='click'
-                        position='br'
-                        getPopupContainer={() => document.body}
-                        unmountOnExit={false}
-                      >
-                        <span
-                          aria-label={t('common.more')}
-                          className='flex-center cursor-pointer transition-colors text-t-secondary hover:text-t-primary size-20px rd-4px sider-action-btn hidden group-hover:flex'
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <MoreOne theme='outline' size='14' fill='currentColor' className='block leading-none' />
-                        </span>
-                      </Dropdown>
-                    )}
                   </span>
                 }
               >

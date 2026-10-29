@@ -61,7 +61,6 @@ export type ConversationRowProps = {
   onConversationClick: (conversation: TChatConversation) => void;
   onOpenMenu: (conversation: TChatConversation) => void;
   onMenuVisibleChange: (conversation_id: string, visible: boolean) => void;
-  onEditStart: (conversation: TChatConversation) => void;
   onCreateCronTask: (conversation: TChatConversation) => void;
   onArchive: (conversation: TChatConversation) => void;
   onExport?: (conversation: TChatConversation) => void;

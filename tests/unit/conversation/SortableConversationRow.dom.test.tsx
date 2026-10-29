@@ -59,7 +59,6 @@ const rowProps: ConversationRowProps = {
   onConversationClick,
   onOpenMenu: vi.fn(),
   onMenuVisibleChange: vi.fn(),
-  onEditStart: vi.fn(),
   onCreateCronTask: vi.fn(),
   onDelete: vi.fn(),
   onTogglePin: vi.fn(),

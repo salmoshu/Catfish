@@ -34,7 +34,7 @@ const {
     selectedAssistant: {
       id: 'bare-aionrs',
       source: 'generated',
-      name: 'Aion CLI',
+      name: 'Catfish CLI',
       name_i18n: {},
       description_i18n: {},
       enabled: true,
@@ -55,7 +55,7 @@ const {
       {
         id: 'bare-aionrs',
         source: 'generated',
-        name: 'Aion CLI',
+        name: 'Catfish CLI',
         name_i18n: {},
         description_i18n: {},
         enabled: true,
@@ -322,7 +322,7 @@ describe('GuidPage', () => {
       {
         id: 'bare-aionrs',
         source: 'generated',
-        name: 'Aion CLI',
+        name: 'Catfish CLI',
         name_i18n: {},
         description_i18n: {},
         enabled: true,
@@ -466,7 +466,7 @@ describe('GuidPage', () => {
       {
         id: 'bare-aionrs',
         source: 'generated',
-        name: 'Aion CLI',
+        name: 'Catfish CLI',
         name_i18n: {},
         description_i18n: {},
         enabled: true,
@@ -521,7 +521,7 @@ describe('GuidPage', () => {
       {
         id: 'bare-aionrs',
         source: 'generated',
-        name: 'Aion CLI',
+        name: 'Catfish CLI',
         name_i18n: {},
         description_i18n: {},
         enabled: true,

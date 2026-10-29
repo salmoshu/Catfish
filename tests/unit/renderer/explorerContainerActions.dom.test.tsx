@@ -460,7 +460,6 @@ describe('ExplorerContainer A-paste import', () => {
 
 describe('ExplorerContainer new file / new folder', () => {
   const nameInput = () => screen.findByPlaceholderText('conversation.explorer.namePlaceholder');
-  // Create-mode dialog OK button label is common.create (rename uses common.save).
   const clickCreate = () => fireEvent.click(screen.getByRole('button', { name: 'common.create' }));
   const type = (input: HTMLElement, value: string) => fireEvent.change(input, { target: { value } });
 

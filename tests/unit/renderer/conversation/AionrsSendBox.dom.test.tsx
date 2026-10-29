@@ -122,7 +122,11 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
   },
 }));
 
-vi.mock('@/renderer/components/agent/AgentModeSelector', () => ({ default: () => null }));
+vi.mock('@/renderer/components/agent/AgentModeSelector', () => ({
+  default: ({ modeLabelFormatter }: { modeLabelFormatter: (mode: { value: string; label: string }) => string }) => (
+    <div data-testid='aionrs-mode-label'>{modeLabelFormatter({ value: 'auto_edit', label: '自动接受编辑' })}</div>
+  ),
+}));
 vi.mock('@/renderer/components/chat/CommandQueuePanel', () => ({ default: () => null }));
 vi.mock('@/renderer/components/chat/MobileActionSheet', () => ({
   default: () => null,
@@ -309,6 +313,13 @@ describe('AionrsSendBox', () => {
     useTeamPermissionMock.mockReturnValue(null);
     draftContentRef.current = '';
     runtimeViewIsProcessingRef.current = false;
+  });
+
+  it('uses raw English backend values for authorization mode labels', () => {
+    render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+
+    expect(screen.getByTestId('aionrs-mode-label')).toHaveTextContent('auto_edit');
+    expect(screen.getByTestId('aionrs-mode-label')).not.toHaveTextContent('自动接受编辑');
   });
 
   it('does not warm up team session when draft content changes', async () => {

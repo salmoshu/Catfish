@@ -560,7 +560,7 @@ Please check your local CLI tool authentication status`,
       })) ?? [];
     const modeOptions: MobileActionSheetOption[] = availableModes.map((mode) => ({
       key: mode.value,
-      label: t(`agentMode.${mode.value}`, { defaultValue: mode.label }),
+      label: mode.value,
       description: mode.description,
       active: (runtimeMode?.currentValue ?? currentMode) === mode.value,
     }));
@@ -905,7 +905,7 @@ Please check your local CLI tool authentication status`,
                 compact
                 initialMode={session_mode}
                 compactLeadingIcon={<Shield theme='outline' size='14' fill={iconColors.secondary} />}
-                modeLabelFormatter={(mode) => t(`agentMode.${mode.value}`, { defaultValue: mode.label })}
+                modeLabelFormatter={(mode) => mode.value}
                 compactLabelPrefix={t('agentMode.permission')}
                 hideCompactLabelPrefixOnMobile
                 onModeChanged={isLeaderInTeam ? teamPermission?.propagateMode : undefined}

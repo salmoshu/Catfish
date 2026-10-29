@@ -22,7 +22,7 @@ const INSTALLER_ERROR_SCENARIOS = [
     defineName: 'AIONUI_E_UNINSTALLER_COPY_OR_REBUILD_FAILED',
     code: 'E1001',
     message: 'Catfish could not repair the installed uninstaller.',
-    action: 'Close AionUi, restart Windows if needed, then run this installer again.',
+    action: 'Close Catfish, restart Windows if needed, then run this installer again.',
     diagnostics:
       'scenario=uninstaller-copy-or-rebuild-failed phase=uninstaller-repair result=copy-failed-retry-bundled-missing',
   },

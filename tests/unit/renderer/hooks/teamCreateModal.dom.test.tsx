@@ -135,7 +135,7 @@ describe('TeamCreateModal', () => {
 
     expect(screen.getByTestId('team-create-agent-option-bare-aionrs')).toBeInTheDocument();
     expect(screen.getByText('Aion 命令行')).toBeInTheDocument();
-    expect(screen.queryByText('Aion CLI')).not.toBeInTheDocument();
+    expect(screen.queryByText('Catfish CLI')).not.toBeInTheDocument();
     expect(screen.getByTestId('team-create-agent-option-blocked-reviewer')).toBeInTheDocument();
     expect(screen.getByTestId('team-create-agent-option-remote-runner')).toBeInTheDocument();
     expect(screen.queryByText('Agent internal error (code -32603)')).not.toBeInTheDocument();
@@ -437,7 +437,7 @@ function assistants(): Assistant[] {
   return [
     assistant({
       id: 'bare-aionrs',
-      name: 'Aion CLI',
+      name: 'Catfish CLI',
       name_i18n: { 'zh-CN': 'Aion 命令行' },
       source: 'generated',
       agent_id: 'agent-aionrs',

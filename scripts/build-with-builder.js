@@ -119,7 +119,7 @@ function patchElectronBuilderNsisInstaller() {
   ].join('\n');
   const bundledUninstallerOverride = [
     '  ${if} ${FileExists} "$PLUGINSDIR\\AionUi-fixed-uninstaller.exe"',
-    '    DetailPrint `AionUi-bundled-uninstaller override source.`',
+    '    DetailPrint `Catfish-bundled-uninstaller override source.`',
     '    StrCpy $uninstallerFileName "$PLUGINSDIR\\AionUi-fixed-uninstaller.exe"',
     '  ${endIf}',
   ].join('\n');

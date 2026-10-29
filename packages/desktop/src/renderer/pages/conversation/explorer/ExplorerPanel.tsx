@@ -12,7 +12,7 @@
  * a right-click "Remove from project" action; the workspace root is immutable.
  */
 
-import { Button, Dropdown, Menu, Tree } from '@arco-design/web-react';
+import { Button, Dropdown, Input, Menu, Message, Tree } from '@arco-design/web-react';
 import { isElectronDesktop } from '@/renderer/utils/platform';
 import type { TreeProps } from '@arco-design/web-react';
 import { Caution, MoreOne } from '@icon-park/react';
@@ -24,9 +24,18 @@ import FileTypeIcon from './fileIcon/FileTypeIcon';
 
 import { getFilesFromDropEvent } from '@/renderer/services/FileService';
 import { isMacOS } from '@/renderer/utils/platform';
-import type { DragPeRef, ExplorerMenuCaps, ExplorerMenuItemKey, RootRef, TransferOp, TreeNode } from './explorerModel';
+import type {
+  DragPeRef,
+  ExplorerMenuCaps,
+  ExplorerMenuItemKey,
+  RenameRequest,
+  RootRef,
+  TransferOp,
+  TreeNode,
+} from './explorerModel';
 import {
   PE_REF_DRAG_MIME,
+  buildRenameRequest,
   canRemoveRoot,
   explorerContextMenuSections,
   isCopyModifierPressed,
@@ -50,9 +59,7 @@ export type ExplorerPanelProps = {
   onRemoveRoot?: (peId: string) => void;
   /** Open a file (leaf) in the preview panel. Called when a file node is selected. */
   onOpenFile?: (peId: string, relativePath: string) => void;
-  /** File operations (A): rename + delete on an entry, create-file / create-dir
-   * inside a directory. Omit to hide the corresponding context-menu item. */
-  onRename?: (peId: string, relativePath: string, name: string) => void;
+  /** Delete an entry. Omit to hide the corresponding context-menu item. */
   onDelete?: (peId: string, relativePath: string, name: string) => void;
   /** Create a new empty file inside the directory `dirRelativePath` (a pe root
    * uses `''`). The name is collected in a dialog by the handler. Only offered on
@@ -94,7 +101,6 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
   workspacePeId,
   onRemoveRoot,
   onOpenFile,
-  onRename,
   onDelete,
   onNewFile,
   onNewDir,
@@ -107,6 +113,10 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
 }) => {
   const view = useExplorerView();
   const { t } = useTranslation();
+  const [renameTarget, setRenameTarget] = useState<(RenameRequest & { key: string }) | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [renameSubmitting, setRenameSubmitting] = useState(false);
+  const renameSubmittingRef = useRef(false);
   // Key of the node currently under a drag (for the drop highlight).
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
   // The node being dragged internally (set on dragStart, cleared on dragEnd).
@@ -151,7 +161,39 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
     openProject(projectId, roots);
   }, [projectId, roots]);
 
+  const startRename = useCallback((key: string, peId: string, rel: string, name: string) => {
+    setRenameTarget({ key, peId, targetDir: parentRel(rel), origRel: rel });
+    setRenameValue(name);
+  }, []);
+
+  const cancelRename = useCallback(() => {
+    if (renameSubmittingRef.current) return;
+    setRenameTarget(null);
+  }, []);
+
+  const submitRename = useCallback(async () => {
+    if (!renameTarget || renameSubmittingRef.current) return;
+    const request = buildRenameRequest(renameTarget, renameValue);
+    if (!request) {
+      setRenameTarget(null);
+      return;
+    }
+
+    renameSubmittingRef.current = true;
+    setRenameSubmitting(true);
+    try {
+      await initExplorerRuntime().request(request.method, request.params);
+      setRenameTarget(null);
+    } catch {
+      Message.error(t('conversation.explorer.renameFailed'));
+    } finally {
+      renameSubmittingRef.current = false;
+      setRenameSubmitting(false);
+    }
+  }, [renameTarget, renameValue, t]);
+
   const handleExpand: TreeProps['onExpand'] = (expandedKeys) => {
+    if (renameTarget) return;
     setExpandedKeys(expandedKeys.map(String));
   };
 
@@ -163,6 +205,7 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
   // loadMore node), so the key is added here → subscribe → snapshot → the reactive
   // treeData fills the node's children.
   const handleLoadMore: TreeProps['loadMore'] = (node) => {
+    if (renameTarget) return Promise.resolve();
     const n = node as unknown as { props?: { dataRef?: { key?: string }; _key?: string } };
     const key = n.props?.dataRef?.key ?? n.props?._key;
     // Only add a key that is NOT already expanded. arco fires loadMore for any
@@ -179,6 +222,7 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
   };
 
   const handleSelect: TreeProps['onSelect'] = (selectedKeys, extra) => {
+    if (renameTarget) return;
     const key = selectedKeys.length > 0 ? String(selectedKeys[0]) : null;
     select(key);
     // Selecting a file (leaf) opens it in the preview panel. Folders are expanded
@@ -200,6 +244,7 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
       const name = String(node.title);
       const isFile = Boolean(data?.isLeaf);
       const isExpanded = view.expanded.includes(key);
+      const isRenaming = renameTarget?.key === key;
 
       // Right-click file operations: non-root nodes get rename + delete; pe roots
       // (role set) get "remove from project" (they are pe bindings, not
@@ -293,10 +338,41 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
           {...dropProps}
         >
           <FileTypeIcon node={{ name, relativePath: keyToRef(key).relative_path, isFile }} expanded={isExpanded} />
-          {/* File names are code-like; bidi-neutral leading dots (.claude) must not flip under RTL. */}
-          <span dir='ltr' className='overflow-hidden text-ellipsis whitespace-nowrap'>
-            {name}
-          </span>
+          {isRenaming ? (
+            <Input
+              autoFocus
+              dir='ltr'
+              value={renameValue}
+              disabled={renameSubmitting}
+              aria-label={t('conversation.explorer.contextMenu.rename')}
+              className='min-w-0 flex-1 [&_.arco-input-inner-wrapper]:h-24px [&_.arco-input-inner-wrapper]:px-0 [&_.arco-input-inner-wrapper]:bg-transparent [&_.arco-input-inner-wrapper]:shadow-none'
+              size='mini'
+              onChange={setRenameValue}
+              onFocus={(event) => event.target.select()}
+              onPressEnter={() => {
+                void submitRename();
+              }}
+              onBlur={() => {
+                void submitRename();
+              }}
+              onClick={(event) => event.stopPropagation()}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onContextMenu={(event) => event.stopPropagation()}
+              onKeyDown={(event) => {
+                event.stopPropagation();
+                if (event.key === 'Escape') {
+                  event.preventDefault();
+                  cancelRename();
+                }
+              }}
+              placeholder={t('conversation.explorer.namePlaceholder')}
+            />
+          ) : (
+            // File names are code-like; bidi-neutral leading dots (.claude) must not flip under RTL.
+            <span dir='ltr' className='overflow-hidden text-ellipsis whitespace-nowrap'>
+              {name}
+            </span>
+          )}
           {degraded && <Caution theme='outline' size='14' className='flex-shrink-0' />}
         </span>
       );
@@ -324,7 +400,7 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
         copyAbsolutePath: canCopyAbsolutePath,
         newFile: !isFile && Boolean(onNewFile),
         newDir: !isFile && Boolean(onNewDir),
-        rename: !isRoot && Boolean(onRename),
+        rename: !isRoot,
         delete: !isRoot && Boolean(onDelete),
         remove: isRoot && Boolean(onRemoveRoot),
       };
@@ -347,7 +423,7 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
         if (menuKey === 'addToChat') onAddToChat?.(peId, rel, name, isFile);
         else if (menuKey === 'newFile') onNewFile?.(peId, rel);
         else if (menuKey === 'newDir') onNewDir?.(peId, rel);
-        else if (menuKey === 'rename') onRename?.(peId, rel, name);
+        else if (menuKey === 'rename') startRename(key, peId, rel, name);
         else if (menuKey === 'delete') onDelete?.(peId, rel, name);
         else if (menuKey === 'remove' && removable) onRemoveRoot?.(peId);
         else if (menuKey === 'revealInFolder') onRevealInFolder?.(peId, rel);
@@ -436,7 +512,6 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
     },
     [
       onRemoveRoot,
-      onRename,
       onDelete,
       onNewFile,
       onNewDir,
@@ -447,6 +522,12 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
       workspacePeId,
       t,
       view.expanded,
+      renameTarget,
+      renameValue,
+      renameSubmitting,
+      startRename,
+      cancelRename,
+      submitRename,
     ]
   );
 

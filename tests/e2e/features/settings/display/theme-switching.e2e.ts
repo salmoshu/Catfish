@@ -48,29 +48,8 @@ test.describe('Theme Switching', () => {
     expect(restoredTheme).toBe(initialTheme);
   });
 
-  test('quick toggle updates its action immediately and can switch back', async ({ page }) => {
-    const toggle = page.getByTestId('theme-toggle');
-    await expect(toggle).toBeVisible();
-
-    const initialTheme = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
-    const initialLabel = await toggle.getAttribute('aria-label');
-    const targetTheme = initialTheme === 'light' ? 'dark' : 'light';
-
-    await toggle.click();
-    await page.waitForFunction(
-      (expected) => document.documentElement.getAttribute('data-theme') === expected,
-      targetTheme,
-      { timeout: 5_000 }
-    );
-    await expect(toggle).not.toHaveAttribute('aria-label', initialLabel ?? '');
-
-    await toggle.click();
-    await page.waitForFunction(
-      (expected) => document.documentElement.getAttribute('data-theme') === expected,
-      initialTheme,
-      { timeout: 5_000 }
-    );
-    await expect(toggle).toHaveAttribute('aria-label', initialLabel ?? '');
+  test('does not show the settings quick theme toggle', async ({ page }) => {
+    await expect(page.getByTestId('theme-toggle')).toHaveCount(0);
   });
 
   test('dark button sets data-theme to dark', async ({ page }) => {

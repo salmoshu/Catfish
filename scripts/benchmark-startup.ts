@@ -181,7 +181,7 @@ function readNewLogLines(logPath: string, offset: number): string[] {
 // Matches: [AionUi:ready] <label> +<ms>ms
 // Matches: [AionUi:init]  <label> +<ms>ms
 // Matches: [AionUi:process] <label> +<ms>ms
-const MARK_REGEX = /\[AionUi:(ready|init|process)\]\s+([^+]+?)\s+\+(\d+)ms/;
+const MARK_REGEX = /\[Catfish:(ready|init|process)\]\s+([^+]+?)\s+\+(\d+)ms/;
 
 type ParsedMarks = {
   ready: Map<string, number>;
@@ -210,9 +210,9 @@ function parseStartupLog(lines: string[]): ParsedMarks {
       continue;
     }
 
-    if (line.includes('[AionUi] Renderer did-finish-load')) marks.logs.rendererDidFinishLoad = true;
-    else if (line.includes('[AionUi] Window ready-to-show')) marks.logs.windowReadyToShow = true;
-    else if (line.includes('[AionUi] Showing main window')) marks.logs.showingMainWindow = true;
+    if (line.includes('[Catfish] Renderer did-finish-load')) marks.logs.rendererDidFinishLoad = true;
+    else if (line.includes('[Catfish] Window ready-to-show')) marks.logs.windowReadyToShow = true;
+    else if (line.includes('[Catfish] Showing main window')) marks.logs.showingMainWindow = true;
   }
 
   return marks;

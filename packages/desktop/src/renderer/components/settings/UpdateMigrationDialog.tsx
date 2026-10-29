@@ -97,7 +97,7 @@ const UpdateMigrationDialog: React.FC = () => {
 
   const gotoWebsite = () => {
     void openExternalUrl(CATFISH_PROJECT_URL).catch((error) => {
-      console.error('Failed to open AionUi Pro website:', error);
+      console.error('Failed to open Catfish Pro website:', error);
     });
     close();
   };

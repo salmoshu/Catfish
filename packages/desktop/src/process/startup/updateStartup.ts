@@ -39,7 +39,7 @@ export const scheduleStartupUpdateCheck = (window: StartupUpdateWindow, options:
         return autoUpdaterService;
       })
       .catch((error: unknown): null => {
-        logError('[AionUi] Failed to initialize auto-updater:', error);
+        logError('[Catfish] Failed to initialize auto-updater:', error);
         return null;
       });
   }
@@ -51,7 +51,7 @@ export const scheduleStartupUpdateCheck = (window: StartupUpdateWindow, options:
         return autoUpdaterService.checkForUpdatesAndNotify();
       })
       .catch((error: unknown) => {
-        logError('[AionUi] Startup update check failed:', error);
+        logError('[Catfish] Startup update check failed:', error);
       });
   });
 };

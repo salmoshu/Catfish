@@ -66,7 +66,6 @@ const makeProps = (overrides: Partial<ConversationRowProps> = {}): ConversationR
   onConversationClick: vi.fn(),
   onOpenMenu: vi.fn(),
   onMenuVisibleChange: vi.fn(),
-  onEditStart: vi.fn(),
   onCreateCronTask: vi.fn(),
   onDelete: vi.fn(),
   onTogglePin: vi.fn(),

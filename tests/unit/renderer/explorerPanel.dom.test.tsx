@@ -13,11 +13,16 @@
  */
 
 import React from 'react';
-import { act, fireEvent, render, screen, cleanup } from '@testing-library/react';
+import { Message } from '@arco-design/web-react';
+import { act, fireEvent, render, screen, cleanup, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const mocks = vi.hoisted(() => ({ request: vi.fn() }));
+
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }) }));
-vi.mock('@/renderer/pages/conversation/explorer/monitorTransport', () => ({ initExplorerRuntime: () => ({}) }));
+vi.mock('@/renderer/pages/conversation/explorer/monitorTransport', () => ({
+  initExplorerRuntime: () => ({ request: mocks.request }),
+}));
 // Pin platform so the modifier→op mapping is deterministic: macOS ⇒ Option (Alt)
 // is the copy modifier. isElectronDesktop is false here (jsdom, no shell).
 vi.mock('@/renderer/utils/platform', () => ({ isMacOS: () => true, isElectronDesktop: () => false }));
@@ -54,8 +59,13 @@ const makePort = (snapshots: Record<PeKey, Entry[]>): MonitorPort => ({
 beforeEach(() => {
   resetExplorerStoreForTest();
   localStorage.clear();
+  mocks.request.mockReset().mockResolvedValue({});
+  vi.spyOn(Message, 'error').mockImplementation(() => '' as never);
 });
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 describe('ExplorerPanel arco expand roundtrip', () => {
   it('renders a directory as a non-leaf expandable node (loadMore regression) and expands it via the controlled expandedKeys roundtrip', async () => {
@@ -347,5 +357,138 @@ describe('ExplorerPanel OS-external import (source A / Finder drag)', () => {
     fireDrag(screen.getByText('sub'), 'drop', { dataTransfer: dt });
 
     expect(onImportFiles).not.toHaveBeenCalled();
+  });
+});
+
+describe('ExplorerPanel inline rename', () => {
+  const renderRenameTree = (onOpenFile = vi.fn()) => {
+    configureExplorerStore(
+      makePort({
+        [peKey('pe1', '')]: [dir('docs'), file('a.ts'), file('b.ts')],
+        [peKey('pe1', 'docs')]: [file('old.md')],
+      })
+    );
+    render(
+      <ExplorerPanel
+        projectId='p1'
+        roots={[{ pe_id: 'pe1', title: 'app', role: 'workspace' }]}
+        onOpenFile={onOpenFile}
+      />
+    );
+    return onOpenFile;
+  };
+
+  const openRename = async (name: string) => {
+    fireEvent.contextMenu(await screen.findByText(name));
+    fireEvent.click(await screen.findByText('conversation.explorer.contextMenu.rename'));
+    return (await screen.findByRole('textbox', {
+      name: 'conversation.explorer.contextMenu.rename',
+    })) as HTMLInputElement;
+  };
+
+  it('commits a trimmed top-level name on Enter through fs/rename', async () => {
+    renderRenameTree();
+    const input = await openRename('a.ts');
+
+    expect(input).toHaveValue('a.ts');
+    expect(input).toHaveFocus();
+    expect(input.selectionStart).toBe(0);
+    expect(input.selectionEnd).toBe(4);
+    fireEvent.change(input, { target: { value: '  renamed.ts  ' } });
+    fireEvent.keyDown(input, { key: 'Enter', code: 'Enter', keyCode: 13 });
+
+    await waitFor(() =>
+      expect(mocks.request).toHaveBeenCalledWith('fs/rename', {
+        from: { pe_id: 'pe1', relative_path: 'a.ts' },
+        to: { pe_id: 'pe1', relative_path: 'renamed.ts' },
+      })
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('textbox', { name: 'conversation.explorer.contextMenu.rename' })
+      ).not.toBeInTheDocument()
+    );
+  });
+
+  it('commits a nested name on blur without changing its parent directory', async () => {
+    renderRenameTree();
+    await screen.findByText('docs');
+    await act(async () => {
+      setExpandedKeys([peKey('pe1', ''), peKey('pe1', 'docs')]);
+      await flush();
+    });
+    const input = await openRename('old.md');
+    fireEvent.change(input, { target: { value: 'new.md' } });
+    fireEvent.blur(input);
+
+    await waitFor(() =>
+      expect(mocks.request).toHaveBeenCalledWith('fs/rename', {
+        from: { pe_id: 'pe1', relative_path: 'docs/old.md' },
+        to: { pe_id: 'pe1', relative_path: 'docs/new.md' },
+      })
+    );
+  });
+
+  it('cancels on Escape without a request or file preview', async () => {
+    const onOpenFile = renderRenameTree();
+    const input = await openRename('a.ts');
+    fireEvent.change(input, { target: { value: 'discard.ts' } });
+    fireEvent.keyDown(input, { key: 'Escape', code: 'Escape' });
+
+    expect(screen.queryByRole('textbox', { name: 'conversation.explorer.contextMenu.rename' })).not.toBeInTheDocument();
+    expect(mocks.request).not.toHaveBeenCalled();
+    expect(onOpenFile).not.toHaveBeenCalled();
+    expect(screen.getByText('a.ts')).toBeInTheDocument();
+  });
+
+  it.each(['   ', 'a.ts'])('closes a blank or unchanged draft on blur without a request', async (value) => {
+    renderRenameTree();
+    const input = await openRename('a.ts');
+    fireEvent.change(input, { target: { value } });
+    fireEvent.blur(input);
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('textbox', { name: 'conversation.explorer.contextMenu.rename' })
+      ).not.toBeInTheDocument()
+    );
+    expect(mocks.request).not.toHaveBeenCalled();
+  });
+
+  it('keeps the editor open with the draft after a failed request', async () => {
+    mocks.request.mockRejectedValueOnce(new Error('exists'));
+    renderRenameTree();
+    const input = await openRename('a.ts');
+    fireEvent.change(input, { target: { value: 'taken.ts' } });
+    fireEvent.keyDown(input, { key: 'Enter', code: 'Enter', keyCode: 13 });
+
+    await waitFor(() => expect(Message.error).toHaveBeenCalledWith('conversation.explorer.renameFailed'));
+    expect(screen.getByRole('textbox', { name: 'conversation.explorer.contextMenu.rename' })).toHaveValue('taken.ts');
+  });
+
+  it('prevents tree selection and preview while editing', async () => {
+    const onOpenFile = renderRenameTree();
+    const input = await openRename('a.ts');
+    fireEvent.click(input);
+    fireEvent.click(screen.getByText('b.ts'));
+
+    expect(onOpenFile).not.toHaveBeenCalled();
+    expect(screen.getByText('b.ts').closest('.arco-tree-node')?.className).not.toContain('arco-tree-node-selected');
+  });
+
+  it('does not expand a directory from clicks in its inline editor', async () => {
+    renderRenameTree();
+    const input = await openRename('docs');
+    fireEvent.click(input);
+
+    expect(screen.queryByText('old.md')).not.toBeInTheDocument();
+    expect(mocks.request).not.toHaveBeenCalled();
+  });
+
+  it('does not offer rename on a pe root', async () => {
+    renderRenameTree();
+    fireEvent.contextMenu(await screen.findByText('app'));
+
+    expect(screen.queryByText('conversation.explorer.contextMenu.rename')).not.toBeInTheDocument();
   });
 });

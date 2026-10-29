@@ -15,7 +15,7 @@ describe('assistantSelectUtils', () => {
   it('localizes assistant option names for the active locale', () => {
     const bareAssistant = makeAssistant({
       id: 'bare-aionrs',
-      name: 'Aion CLI',
+      name: 'Catfish CLI',
       name_i18n: { 'zh-CN': 'Aion 命令行' },
       source: 'generated',
       preset_agent_type: 'aionrs',

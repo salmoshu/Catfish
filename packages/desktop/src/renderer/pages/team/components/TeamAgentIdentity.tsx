@@ -4,6 +4,7 @@ import { resolveAgentAvatar, useAgentLogos } from '@renderer/utils/model/agentLo
 import ThemedLogo from '@/renderer/components/agent/ThemedLogo';
 import { usePresetAssistantInfo } from '@renderer/hooks/agent/usePresetAssistantInfo';
 import { getConversationOrNull } from '@/renderer/pages/conversation/utils/conversationCache';
+import { normalizeAssistantDisplayName } from '@renderer/utils/model/assistantDisplay';
 import { Robot } from '@icon-park/react';
 import KimiIcon from '@renderer/components/base/KimiIcon';
 
@@ -47,7 +48,7 @@ const TeamAgentIdentity: React.FC<Props> = ({
     getConversationOrNull(conversation_id!)
   );
   const { info: presetInfo } = usePresetAssistantInfo(conversation ?? undefined);
-  const displayName = assistant_name || presetInfo?.name || 'Assistant';
+  const displayName = normalizeAssistantDisplayName(assistant_name || presetInfo?.name) || 'Assistant';
   const agentAvatar = resolveAgentAvatar(logos, { icon, backend: assistant_backend });
 
   const defaultLogoClassName = 'w-16px h-16px object-contain rounded-2px opacity-80';

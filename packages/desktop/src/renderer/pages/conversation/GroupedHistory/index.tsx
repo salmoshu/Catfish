@@ -12,7 +12,7 @@ import { useCronJobsMap } from '@/renderer/pages/cron';
 import { restrictToVerticalAxis } from '@/renderer/utils/ui/dndModifiers';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Button, Dropdown, Empty, Input, Menu, Modal, Tooltip } from '@arco-design/web-react';
+import { Button, Dropdown, Empty, Menu, Spin, Tooltip } from '@arco-design/web-react';
 import { FolderClose, MoreOne, Plus, Right } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useCallback, useEffect, useMemo } from 'react';
@@ -107,17 +107,10 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
   } = useBatchSelection(batchMode, conversations);
 
   const {
-    renameModalVisible,
-    renameModalName,
-    setRenameModalName,
-    renameLoading,
     dropdownVisibleId,
     handleConversationClick,
     handleArchive,
     handleBatchArchive,
-    handleEditStart,
-    handleRenameConfirm,
-    handleRenameCancel,
     handleTogglePin,
     handleMenuVisibleChange,
     handleOpenMenu,
@@ -179,7 +172,6 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
       onConversationClick: handleConversationClick,
       onOpenMenu: handleOpenMenu,
       onMenuVisibleChange: handleMenuVisibleChange,
-      onEditStart: handleEditStart,
       onCreateCronTask: handleCreateCronTask,
       onArchive: handleArchive,
       onTogglePin: handleTogglePin,
@@ -202,7 +194,6 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
       handleConversationClick,
       handleOpenMenu,
       handleMenuVisibleChange,
-      handleEditStart,
       handleCreateCronTask,
       handleArchive,
       handleTogglePin,
@@ -274,29 +265,6 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
 
   return (
     <>
-      <Modal
-        title={t('conversation.history.renameTitle')}
-        visible={renameModalVisible}
-        onOk={handleRenameConfirm}
-        onCancel={handleRenameCancel}
-        okText={t('conversation.history.saveName')}
-        cancelText={t('conversation.history.cancelEdit')}
-        confirmLoading={renameLoading}
-        okButtonProps={{ disabled: !renameModalName.trim() }}
-        style={{ borderRadius: '12px' }}
-        alignCenter
-        getPopupContainer={() => document.body}
-      >
-        <Input
-          autoFocus
-          value={renameModalName}
-          onChange={setRenameModalName}
-          onPressEnter={handleRenameConfirm}
-          placeholder={t('conversation.history.renamePlaceholder')}
-          allowClear
-        />
-      </Modal>
-
       {batchMode && !collapsed && (
         <div className='px-12px pb-8px pt-2px sticky top-0 z-20 bg-[var(--bg-2)]'>
           <div className='rd-8px bg-fill-1 p-10px flex flex-col gap-8px border border-solid border-[rgba(var(--primary-6),0.08)]'>
@@ -430,6 +398,10 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
             {!collapsed && <SectionLabel sectionKey='projects' label={t('conversation.history.projectsSection')} />}
             {!collapsedSections.has('projects') &&
               projectGroups.map((group) => {
+                const projectExpanded = expandedWorkspaces.includes(group.workspace);
+                const showProjectActivity =
+                  !projectExpanded &&
+                  group.conversations.some((conversation) => isConversationGenerating(conversation.id));
                 const projectMenu = (
                   <Menu
                     onClickMenuItem={(key) => {
@@ -449,13 +421,15 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
                 return (
                   <div key={group.workspace} className='min-w-0'>
                     <WorkspaceCollapse
-                      expanded={expandedWorkspaces.includes(group.workspace)}
+                      expanded={projectExpanded}
                       onToggle={() => handleToggleWorkspace(group.workspace)}
                       siderCollapsed={collapsed}
                       stickyHeader
                       stickyTop={28}
                       leadingIcon={
-                        window.__backendEnvironment?.type === 'remote' ? (
+                        showProjectActivity ? (
+                          <Spin size={16} />
+                        ) : window.__backendEnvironment?.type === 'remote' ? (
                           <span role='img' aria-label={group.displayName} className='inline-flex items-center'>
                             <KimiIcon name='globe' size={16} />
                           </span>

@@ -184,7 +184,7 @@ Run multiple AI agents as an organized team: a **Leader** agent receives your in
 </p>
 
 - **Parallel multi-agent execution** — Leader breaks tasks into subtasks and delegates to Teammate agents running in parallel; each Teammate uses its own model through the selected backend. External agents connect through ACP (Agent Client Protocol), while AionUi coordinates the team
-- **Leader orchestration** — Leader assigns, tracks, and aggregates results; supported backends include Claude Code, Codex, Hermes Agent, Gemini, Snow CLI, and Aion CLI
+- **Leader orchestration** — Leader assigns, tracks, and aggregates results; supported backends include Claude Code, Codex, Hermes Agent, Gemini, Snow CLI, and Catfish CLI
 - **Team-isolated workspace** — all agents share the same folder; each has its own permission dialog with sidebar badge for pending approvals
 
 <details>
@@ -193,7 +193,7 @@ Run multiple AI agents as an organized team: a **Leader** agent receives your in
 <br>
 
 - **Shared Workspace** — all agents read/write the same folder; the file panel stays visible throughout
-- **Supported backends** — Claude Code, Codex, Gemini, Snow CLI, Aion CLI (aionrs); other ACP backends with `mcpCapabilities.stdio` are auto-supported
+- **Supported backends** — Claude Code, Codex, Gemini, Snow CLI, Catfish CLI (aionrs); other ACP backends with `mcpCapabilities.stdio` are auto-supported
 - **Dynamic scaling** — add or remove Teammates while the team is running; silent agents auto-escalate to failed with one-click removal
 - **Granular permissions** — each agent has its own permission confirmation dialog; sidebar badge shows pending approvals
 - **File sharing** — Leader can pass file attachments to Teammates
@@ -206,14 +206,14 @@ Run multiple AI agents as an organized team: a **Leader** agent receives your in
 
 Other AI apps give you a chatbox with your API key. **AionUi gives you a full Cowork agent.**
 
-| Your API Key               | What You Get                                |
-| :------------------------- | :------------------------------------------ |
-| Gemini API Key             | Gemini-powered Cowork Agent                 |
-| OpenAI API Key             | GPT-powered Cowork Agent                    |
-| Anthropic API Key          | Claude-powered Cowork Agent                 |
-| AWS Bedrock credentials    | Bedrock-powered Agent via Aion CLI (aionrs) |
-| Ollama / LM Studio (local) | Local model Cowork Agent                    |
-| NewAPI Gateway             | Unified access to 20+ models                |
+| Your API Key               | What You Get                                   |
+| :------------------------- | :--------------------------------------------- |
+| Gemini API Key             | Gemini-powered Cowork Agent                    |
+| OpenAI API Key             | GPT-powered Cowork Agent                       |
+| Anthropic API Key          | Claude-powered Cowork Agent                    |
+| AWS Bedrock credentials    | Bedrock-powered Agent via Catfish CLI (aionrs) |
+| Ollama / LM Studio (local) | Local model Cowork Agent                       |
+| NewAPI Gateway             | Unified access to 20+ models                   |
 
 Same agent capabilities — file read/write, web search, image generation, tool use — regardless of which model powers it. AionUi supports **30+ AI platforms** including cloud services and local deployments.
 
@@ -279,7 +279,7 @@ AionUi includes **21 professional assistants** with predefined capabilities, ext
 - **📈 Beautiful Mermaid** — Flowcharts, sequence diagrams, and more
 - **🔧 OpenClaw Setup** — Setup and configuration assistant for OpenClaw integration
 - **📖 Story Roleplay** — Immersive story roleplay with character cards and world info (SillyTavern compatible)
-- **🧭 AionUi Butler** — Product guidance, setup help, and troubleshooting inside AionUi
+- **🧭 Catfish Butler** — Product guidance, setup help, and troubleshooting inside AionUi
 
 **Custom Skills**: Import or create skills from **Settings → Skills**, then attach them to assistants as needed. Skills come from three sources: built-in (shipped with AionUi), custom (your own), and Extension (contributed via the Extension SDK). Built-in skills include `pptx`, `docx`, `pdf`, `xlsx`, `mermaid`, and more.
 

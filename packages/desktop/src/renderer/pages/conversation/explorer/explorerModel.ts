@@ -374,7 +374,7 @@ export function buildTreeData(cache: FactCache, expanded: ReadonlySet<PeKey>, ro
 // plus create-file / create-dir inside a directory node. Builders are pure so
 // the path math + no-op detection can be unit-tested away from the UI.
 
-/** A rename dialog request. `origRel` is the full pe-relative path being renamed. */
+/** An inline rename request. `origRel` is the full pe-relative path being renamed. */
 export type RenameRequest = {
   peId: string;
   /** Target parent dir (pe-relative) — the renamed entry stays in place. */

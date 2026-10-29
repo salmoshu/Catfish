@@ -170,7 +170,11 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
   },
 }));
 
-vi.mock('@/renderer/components/agent/AgentModeSelector', () => ({ default: () => null }));
+vi.mock('@/renderer/components/agent/AgentModeSelector', () => ({
+  default: ({ modeLabelFormatter }: { modeLabelFormatter: (mode: { value: string; label: string }) => string }) => (
+    <div data-testid='acp-mode-label'>{modeLabelFormatter({ value: 'bypassPermissions', label: '全自动' })}</div>
+  ),
+}));
 vi.mock('@/renderer/components/chat/CommandQueuePanel', () => ({
   default: (props: { onSendNow: (item: unknown) => void }) => {
     commandQueuePanelPropsSpy(props);
@@ -183,7 +187,9 @@ vi.mock('@/renderer/components/chat/MobileActionSheet', () => ({
   }: {
     entries?: Array<{
       key: string;
+      meta?: string;
       submenu?: {
+        options?: Array<{ label: string }>;
         onSelect?: (value: string) => void;
       };
     }>;
@@ -380,6 +386,35 @@ describe('AcpSendBox', () => {
       reload: vi.fn(),
       setConfigOption: vi.fn(),
     });
+  });
+
+  it('uses raw English backend values for authorization mode labels', () => {
+    isMobileMock.current = true;
+    useAcpConfigOptionsMock.mockReturnValue({
+      setStatus: { state: 'idle' },
+      mode: {
+        id: 'mode',
+        category: 'mode',
+        currentValue: 'default',
+        options: [
+          { value: 'default', label: '默认' },
+          { value: 'bypassPermissions', label: '全自动' },
+        ],
+      },
+      model: null,
+      thoughtLevel: null,
+      reload: vi.fn(),
+      setConfigOption: vi.fn(),
+    });
+
+    render(<AcpSendBox conversation_id='conv-1' backend='claude' messageState={makeMessageState()} />);
+
+    expect(screen.getByTestId('acp-mode-label')).toHaveTextContent('bypassPermissions');
+    const permission = mobileActionSheetEntries.current.find((entry) => entry.key === 'permission') as
+      | { meta?: string; submenu?: { options?: Array<{ label: string }> } }
+      | undefined;
+    expect(permission?.meta).toBe('default');
+    expect(permission?.submenu?.options?.map((option) => option.label)).toEqual(['default', 'bypassPermissions']);
   });
 
   it('resets ACP loading state when sendMessage fails before any stream error arrives', async () => {

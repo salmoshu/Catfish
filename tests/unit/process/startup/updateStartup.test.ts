@@ -85,7 +85,7 @@ describe('startup update check', () => {
     finishRendererLoad();
 
     await vi.waitFor(() =>
-      expect(logError).toHaveBeenCalledWith('[AionUi] Failed to initialize auto-updater:', importError)
+      expect(logError).toHaveBeenCalledWith('[Catfish] Failed to initialize auto-updater:', importError)
     );
     expect(appMock.quit).not.toHaveBeenCalled();
     expect(appMock.exit).not.toHaveBeenCalled();
@@ -106,7 +106,7 @@ describe('startup update check', () => {
     });
     finishRendererLoad();
 
-    await vi.waitFor(() => expect(logError).toHaveBeenCalledWith('[AionUi] Startup update check failed:', feedError));
+    await vi.waitFor(() => expect(logError).toHaveBeenCalledWith('[Catfish] Startup update check failed:', feedError));
     expect(appMock.quit).not.toHaveBeenCalled();
     expect(appMock.exit).not.toHaveBeenCalled();
   });

@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.4](https://github.com/salmoshu/Catfish/releases/tag/v0.4.4) (2026-10-30)
+
+### Desktop
+
+#### Features
+
+- **remote:** show only reconnect for inactive remote projects and reveal project actions after a successful connection, without changing local row styling
+- **conversation:** rename conversations and file-tree entries inline, and show activity on collapsed project headers
+- **branding:** rename AionCli to Catfish Cli and keep authorization mode labels in English
+- **interaction:** simplify the settings back action, remove its theme toggle, and use inline rename for files and sessions
+
+#### Bug Fixes
+
+- **interaction:** center the scroll-to-bottom arrow and prevent composer label and textarea glyph clipping
+
+---
+
 ## [0.4.3](https://github.com/salmoshu/Catfish/releases/tag/v0.4.3) (2026-10-29)
 
 ### Desktop

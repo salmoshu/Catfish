@@ -6,6 +6,7 @@
 
 import styles from '../index.module.css';
 import { assistantRuntimeKey, type Assistant } from '@/common/types/agent/assistantTypes';
+import { normalizeAssistantDisplayName } from '@renderer/utils/model/assistantDisplay';
 import { Down, Robot } from '@icon-park/react';
 import { Button } from '@arco-design/web-react';
 import { AionSearchInput } from '@/renderer/components/base';
@@ -224,7 +225,7 @@ const AssistantSelectionArea: React.FC<AssistantSelectionAreaProps> = ({
   const renderAssistantPill = (assistant: Assistant, testId: string, fullWidth = false) => {
     const avatar = resolveAssistantAvatar(assistant.avatar);
     const isSelected = selectedId === assistant.id;
-    const label = assistant.name_i18n?.[localeKey] || assistant.name;
+    const label = normalizeAssistantDisplayName(assistant.name_i18n?.[localeKey] || assistant.name);
 
     return (
       <Button

@@ -191,9 +191,6 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
     [onFilesUploaded, t]
   );
 
-  const getModeDisplayLabel = (mode: AgentModeOption): string =>
-    t(`agentMode.${mode.value}`, { defaultValue: mode.label });
-
   const isWebUI = !isElectronDesktop();
 
   const isSkillChecked = (skill: { name: string; isAuto: boolean }) =>
@@ -299,7 +296,7 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
     if (dynamicModes.length > 0) {
       const modeOptions: MobileActionSheetOption[] = dynamicModes.map((mode) => ({
         key: mode.value,
-        label: t(`agentMode.${mode.value}`, { defaultValue: mode.label }),
+        label: mode.value,
         description: mode.description,
         active: mode.value === selectedMode,
       }));
@@ -643,7 +640,7 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
                 onModeSelect={onModeSelect}
                 dynamicModes={dynamicModes}
                 compactLeadingIcon={<Shield theme='outline' size='14' fill={iconColors.secondary} />}
-                modeLabelFormatter={getModeDisplayLabel}
+                modeLabelFormatter={(mode) => mode.value}
               />
             )}
           </div>

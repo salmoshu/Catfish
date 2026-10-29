@@ -464,7 +464,7 @@ describe('useGuidAssistantSelection', () => {
       {
         id: 'bare:632f31d2',
         source: 'generated',
-        name: 'Aion CLI',
+        name: 'Catfish CLI',
         name_i18n: {},
         description_i18n: {},
         enabled: true,

@@ -9,10 +9,11 @@ import ThemedLogo from '@/renderer/components/agent/ThemedLogo';
 import FlexFullContainer from '@/renderer/components/layout/FlexFullContainer';
 import { usePresetAssistantInfo } from '@/renderer/hooks/agent/usePresetAssistantInfo';
 import { CronJobIndicator } from '@/renderer/pages/cron';
+import { useTitleRename } from '@/renderer/pages/conversation/hooks/useTitleRename';
 import { resolveConversationLeadingMark } from '@/renderer/pages/conversation/utils/conversationAssistantIdentity';
 import { cleanupSiderTooltips, getSiderTooltipProps } from '@/renderer/utils/ui/siderTooltip';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
-import { Checkbox, Dropdown, Menu, Spin, Tooltip } from '@arco-design/web-react';
+import { Checkbox, Dropdown, Input, Menu, Spin, Tooltip } from '@arco-design/web-react';
 import {
   Attention,
   EditOne,
@@ -56,7 +57,6 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
     onConversationClick,
     onOpenMenu,
     onMenuVisibleChange,
-    onEditStart,
     onCreateCronTask,
     onArchive,
     onExport,
@@ -66,6 +66,12 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
     getJobStatus,
   } = props;
   const { t } = useTranslation();
+  const { editingTitle, setEditingTitle, titleDraft, setTitleDraft, renameLoading, submitTitleRename } = useTitleRename(
+    {
+      title: conversation.name,
+      conversation_id: conversation.id,
+    }
+  );
   const { info: assistantInfo } = usePresetAssistantInfo(conversation);
   const isPinned = isConversationPinned(conversation);
   // Fork-lineage badge: present only on forked conversations (extra.fork is
@@ -125,6 +131,7 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
   };
 
   const handleRowClick = () => {
+    if (editingTitle) return;
     cleanupSiderTooltips();
     if (batchMode) {
       onToggleChecked(conversation);
@@ -223,37 +230,70 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
             ))}
         </span>
         <FlexFullContainer className='h-24px min-w-0 flex-1 collapsed-hidden'>
-          <Tooltip
-            content={conversation.name}
-            disabled={!inlineNameTooltipEnabled}
-            trigger='hover'
-            popupVisible={inlineNameTooltipEnabled ? undefined : false}
-            unmountOnExit
-            popupHoverStay={false}
-            position='top'
-          >
-            <div className='chat-history__item-name overflow-hidden text-ellipsis flex items-center gap-4px w-full text-14px font-[500] lh-24px whitespace-nowrap min-w-0 text-t-primary'>
-              <span className='block overflow-hidden text-ellipsis whitespace-nowrap min-w-0'>{conversation.name}</span>
-              {forkLineage && (
-                <Tooltip
-                  content={
-                    forkParentName
-                      ? t('conversation.history.forkedFrom', { name: forkParentName })
-                      : t('conversation.history.forkedConversation')
-                  }
-                  position='top'
-                >
-                  <span className='flex-shrink-0 line-height-0 text-t-tertiary' data-testid='conversation-fork-badge'>
-                    <ForkBranchIcon size={12} />
-                  </span>
-                </Tooltip>
-              )}
-            </div>
-          </Tooltip>
+          {editingTitle ? (
+            <Input
+              autoFocus
+              value={titleDraft}
+              disabled={renameLoading}
+              aria-label={t('conversation.history.rename')}
+              className='w-full min-w-0 [&_.arco-input-inner-wrapper]:h-24px [&_.arco-input-inner-wrapper]:px-0 [&_.arco-input-inner-wrapper]:bg-transparent [&_.arco-input-inner-wrapper]:shadow-none [&_.arco-input]:text-14px'
+              maxLength={120}
+              onChange={setTitleDraft}
+              onFocus={(event) => event.target.select()}
+              onPressEnter={() => {
+                void submitTitleRename();
+              }}
+              onBlur={() => {
+                void submitTitleRename();
+              }}
+              onClick={(event) => event.stopPropagation()}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => {
+                event.stopPropagation();
+                if (event.key === 'Escape') {
+                  event.preventDefault();
+                  setTitleDraft(conversation.name);
+                  setEditingTitle(false);
+                }
+              }}
+              placeholder={t('conversation.history.renamePlaceholder')}
+              size='mini'
+            />
+          ) : (
+            <Tooltip
+              content={conversation.name}
+              disabled={!inlineNameTooltipEnabled}
+              trigger='hover'
+              popupVisible={inlineNameTooltipEnabled ? undefined : false}
+              unmountOnExit
+              popupHoverStay={false}
+              position='top'
+            >
+              <div className='chat-history__item-name overflow-hidden text-ellipsis flex items-center gap-4px w-full text-14px font-[500] lh-24px whitespace-nowrap min-w-0 text-t-primary'>
+                <span className='block overflow-hidden text-ellipsis whitespace-nowrap min-w-0'>
+                  {conversation.name}
+                </span>
+                {forkLineage && (
+                  <Tooltip
+                    content={
+                      forkParentName
+                        ? t('conversation.history.forkedFrom', { name: forkParentName })
+                        : t('conversation.history.forkedConversation')
+                    }
+                    position='top'
+                  >
+                    <span className='flex-shrink-0 line-height-0 text-t-tertiary' data-testid='conversation-fork-badge'>
+                      <ForkBranchIcon size={12} />
+                    </span>
+                  </Tooltip>
+                )}
+              </div>
+            </Tooltip>
+          )}
         </FlexFullContainer>
 
         {renderCompletionUnreadDot()}
-        {!batchMode && (
+        {!batchMode && !editingTitle && (
           <div
             className={classNames(
               'absolute end-8px top-1/2 -translate-y-1/2 items-center justify-end !collapsed-hidden',
@@ -279,7 +319,9 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
                       return;
                     }
                     if (key === 'rename') {
-                      onEditStart(conversation);
+                      setTitleDraft(conversation.name);
+                      setEditingTitle(true);
+                      onMenuVisibleChange(conversation.id, false);
                       return;
                     }
                     if (key === 'createCronTask') {

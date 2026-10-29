@@ -530,7 +530,7 @@ const AionrsSendBox: React.FC<{
           ]);
     const modeOptions: MobileActionSheetOption[] = availableModes.map((mode) => ({
       key: mode.value,
-      label: t(`agentMode.${mode.value}`, { defaultValue: mode.label }),
+      label: mode.value,
       description: mode.description,
       active: (runtimeMode?.currentValue ?? currentMode) === mode.value,
     }));
@@ -782,7 +782,7 @@ const AionrsSendBox: React.FC<{
         placeholder={
           current_model?.use_model
             ? t('acp.sendbox.placeholder', {
-                backend: agent_name || 'AionCLI',
+                backend: agent_name || 'Catfish CLI',
                 defaultValue: `Send message to {{backend}}...`,
               })
             : t('conversation.chat.noModelSelected')
@@ -810,7 +810,7 @@ const AionrsSendBox: React.FC<{
               initialMode={session_mode}
               dynamicModes={dynamicModes}
               compactLeadingIcon={<Shield theme='outline' size='14' fill={iconColors.secondary} />}
-              modeLabelFormatter={(mode) => t(`agentMode.${mode.value}`, { defaultValue: mode.label })}
+              modeLabelFormatter={(mode) => mode.value}
               compactLabelPrefix={t('agentMode.permission')}
               hideCompactLabelPrefixOnMobile
               onModeChanged={propagateMode}

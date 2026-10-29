@@ -52,7 +52,7 @@ describe('startBackendOrExit', () => {
     });
 
     expect(result).toEqual({ ok: false });
-    expect(logError).toHaveBeenCalledWith('[AionUi] Failed to start catfishcore:', error);
+    expect(logError).toHaveBeenCalledWith('[Catfish] Failed to start catfishcore:', error);
     expect(captureFailure).toHaveBeenCalledWith(error);
     expect(exitApp).toHaveBeenCalledWith(1);
     expect(calls).toEqual(['capture-start', 'capture-end', 'exit']);
@@ -78,7 +78,7 @@ describe('startBackendOrExit', () => {
     });
 
     expect(result).toEqual({ ok: false });
-    expect(logError).toHaveBeenCalledWith('[AionUi] Failed to start catfishcore:', error);
+    expect(logError).toHaveBeenCalledWith('[Catfish] Failed to start catfishcore:', error);
     expect(captureFailure).toHaveBeenCalledWith(error);
     expect(exitApp).not.toHaveBeenCalled();
     expect(onStarted).not.toHaveBeenCalled();

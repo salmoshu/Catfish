@@ -61,7 +61,7 @@ describe('buildAssistantEditorBackends', () => {
         id: 'agent-aionrs',
         backend: undefined,
         agent_type: 'aionrs',
-        name: 'Aion CLI',
+        name: 'Catfish CLI',
         name_i18n: { 'zh-CN': 'Aion 命令行' },
         status: 'online',
       }),

@@ -32,15 +32,24 @@ vi.mock('@/renderer/hooks/context/LayoutContext', () => ({
 }));
 
 vi.mock('@/renderer/components/agent/AgentModeSelector', () => ({
-  default: () => <div data-testid='agent-mode-selector' />,
+  default: ({
+    dynamicModes,
+    modeLabelFormatter,
+  }: {
+    dynamicModes: Array<{ value: string; label: string }>;
+    modeLabelFormatter: (mode: { value: string; label: string }) => string;
+  }) => (
+    <div data-testid='agent-mode-selector'>{dynamicModes.length > 0 ? modeLabelFormatter(dynamicModes[0]) : null}</div>
+  ),
 }));
 
 vi.mock('@/renderer/components/chat/MobileActionSheet', () => ({
-  default: ({ entries }: { entries: Array<{ key: string; label: string; onClick?: () => void }> }) => (
+  default: ({ entries }: { entries: Array<{ key: string; label: string; meta?: string; onClick?: () => void }> }) => (
     <div data-testid='mobile-action-sheet'>
       {entries.map((entry) => (
         <button key={entry.key} type='button' data-testid={entry.key} onClick={entry.onClick}>
           {entry.label}
+          {entry.meta ? ` · ${entry.meta}` : ''}
         </button>
       ))}
     </div>
@@ -184,6 +193,26 @@ describe('GuidActionRow skill/MCP submenu search', () => {
     vi.clearAllMocks();
     environment.isMobile = false;
     environment.isDesktop = true;
+  });
+
+  it('uses raw English backend values for authorization mode labels', () => {
+    const dynamicModes = [{ value: 'bypassPermissions', label: '全自动' }];
+    const { unmount } = renderActionRow({
+      dynamicModes,
+      selectedMode: 'bypassPermissions',
+      allSkills: [],
+      mcpServers: [],
+    });
+
+    expect(screen.getByTestId('agent-mode-selector')).toHaveTextContent('bypassPermissions');
+    expect(screen.getByTestId('agent-mode-selector')).not.toHaveTextContent('全自动');
+    unmount();
+
+    environment.isMobile = true;
+    renderActionRow({ dynamicModes, selectedMode: 'bypassPermissions', allSkills: [], mcpServers: [] });
+
+    expect(screen.getByTestId('permission')).toHaveTextContent('bypassPermissions');
+    expect(screen.getByTestId('permission')).not.toHaveTextContent('全自动');
   });
 
   it('offers both host files and device upload in the mobile WebUI action sheet', () => {

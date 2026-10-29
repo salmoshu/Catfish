@@ -17,6 +17,7 @@ import { Down } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import RuntimeSelectorPill from './RuntimeSelectorPill';
+import { normalizeAssistantDisplayName } from '@renderer/utils/model/assistantDisplay';
 
 const configErrorMessageKey = (error: unknown) => {
   const errorKind = classifyConfigSetError(error);
@@ -230,6 +231,8 @@ const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
     />
   );
 
+  const displayAgentName = normalizeAssistantDisplayName(agent_name) || normalizeAssistantDisplayName(backend) || 'Agent';
+
   // Get display label for current mode. When the current value matches no option
   // (e.g. backend mode-vocabulary drift), surface the raw value instead of an empty
   // string so the compact pill never renders a bare "prefix · " with nothing after it.
@@ -275,12 +278,7 @@ const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
   if (compact) {
     const isSetting = isLoading || runtimeConfig.setStatus.state === 'setting';
     const legacyCompactBehavior = !showLogoInCompact && compactLabelType === 'mode';
-    const baseCompactLabel =
-      compactLabelType === 'agent'
-        ? agent_name || backend || 'Agent'
-        : can_switchMode
-          ? getCurrentModeLabel()
-          : agent_name || backend || 'Agent';
+    const baseCompactLabel = compactLabelType === 'agent' ? displayAgentName : can_switchMode ? getCurrentModeLabel() : displayAgentName;
     // With a pending target the pill has to say two things in the width of one. The
     // "权限 · " prefix is what gives: the shield icon already marks this as the
     // permission pill, so the prefix is the least informative part at that moment, and
@@ -349,7 +347,7 @@ const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
       }}
     >
       {renderLogo()}
-      <span className='text-sm text-t-primary'>{agent_name || backend}</span>
+      <span className='text-sm text-t-primary'>{displayAgentName}</span>
       {canInteract && (
         <>
           {current_mode !== defaultMode && <span className='text-xs text-t-tertiary'>({getCurrentModeLabel()})</span>}
