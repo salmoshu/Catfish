@@ -209,14 +209,6 @@ vi.mock('@/renderer/pages/guid/components/GuidModelSelector', () => ({
   default: () => <div data-testid='guid-model-selector' />,
 }));
 
-vi.mock('@/renderer/pages/guid/components/QuickActionButtons', () => ({
-  default: () => <div data-testid='guid-quick-actions' />,
-}));
-
-vi.mock('@/renderer/components/settings/SettingsModal/contents/FeedbackReportModal', () => ({
-  default: () => null,
-}));
-
 vi.mock('@/renderer/components/chat/SpeechInputButton', () => ({
   default: () => null,
 }));
@@ -516,12 +508,12 @@ describe('GuidPage', () => {
     expect(promptButton.className).toContain('!break-words');
   });
 
-  it('falls back to default instruction prompts when the selected assistant has no recommendations', () => {
+  it('does not fall back to default instruction prompts when the selected assistant has no recommendations', () => {
     render(<GuidPage />);
 
-    expect(screen.getByRole('button', { name: 'guid.defaultPrompts.understand' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'guid.defaultPrompts.cleanup' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'guid.defaultPrompts.create' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'guid.defaultPrompts.understand' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'guid.defaultPrompts.cleanup' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'guid.defaultPrompts.create' })).not.toBeInTheDocument();
   });
 
   it('does not seed skill defaults from the assistant list while detail is loading', async () => {

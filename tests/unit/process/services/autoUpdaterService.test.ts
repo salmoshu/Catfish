@@ -87,6 +87,7 @@ describe('AutoUpdaterService', () => {
     autoUpdaterMock.allowPrerelease = false;
     autoUpdaterMock.allowDowngrade = false;
     autoUpdaterMock.channel = undefined;
+    appMock.getVersion.mockReturnValue('2.1.13');
     appMock.getPath.mockImplementation(() => '/tmp/aionui-test');
     delete (autoUpdaterMock as { updateInfoAndProvider?: unknown }).updateInfoAndProvider;
     appMock.isPackaged = false;
@@ -129,14 +130,18 @@ describe('AutoUpdaterService', () => {
     expect(autoUpdaterMock.checkForUpdates).not.toHaveBeenCalled();
   });
 
-  it('ignores a feed version that is not newer than the installed build', async () => {
-    appMock.getVersion.mockReturnValue('2.1.54');
+  it.each(['0.1.1', 'not-a-version'])('ignores an invalid or older feed version: %s', async (version) => {
+    appMock.getVersion.mockReturnValue('0.4.2');
+    Object.defineProperty(autoUpdaterMock, 'currentVersion', {
+      configurable: true,
+      value: { version: '0.4.2' },
+    });
     autoUpdaterMock.checkForUpdates.mockResolvedValue({
       isUpdateAvailable: true,
       updateInfo: {
-        version: '2.1.53',
-        files: [{ url: 'Catfish-2.1.53-mac-arm64.dmg', sha512: 'sha512-value' }],
-        path: 'Catfish-2.1.53-mac-arm64.dmg',
+        version,
+        files: [{ url: `Catfish-${version}-mac-arm64.dmg`, sha512: 'sha512-value' }],
+        path: `Catfish-${version}-mac-arm64.dmg`,
         sha512: 'sha512-value',
         releaseDate: '2026-06-08T00:00:00.000Z',
       },
@@ -180,6 +185,8 @@ describe('AutoUpdaterService', () => {
       owner: 'salmoshu',
       repo: 'Catfish',
     });
+    expect(autoUpdaterMock.allowDowngrade).toBe(false);
+    expect(autoUpdaterMock.autoInstallOnAppQuit).toBe(false);
   });
 
   it('enables forced updater checks in unpacked dev builds when requested', async () => {
@@ -216,10 +223,25 @@ describe('AutoUpdaterService', () => {
     return entry[1] as (error: Error) => void;
   };
 
+  const getUpdateAvailableHandler = (): ((info: { version: string }) => void) => {
+    const entry = autoUpdaterMock.on.mock.calls.find(([event]) => event === 'update-available');
+    if (!entry) throw new Error('update-available handler not registered');
+    return entry[1] as (info: { version: string }) => void;
+  };
+
   const getUpdateDownloadedHandler = (): ((info: { version: string }) => void) => {
     const entry = autoUpdaterMock.on.mock.calls.find(([event]) => event === 'update-downloaded');
     if (!entry) throw new Error('update-downloaded handler not registered');
     return entry[1] as (info: { version: string }) => void;
+  };
+
+  const offerUpdate = (version = '2.2.0'): void => {
+    getUpdateAvailableHandler()({ version });
+  };
+
+  const completeValidatedDownload = (version = '2.2.0'): void => {
+    offerUpdate(version);
+    getUpdateDownloadedHandler()({ version });
   };
 
   const getNativeUpdateDownloadedHandler = (): (() => void) => {
@@ -269,6 +291,38 @@ describe('AutoUpdaterService', () => {
     expect(errorStatus?.error).toBe('network timeout');
   });
 
+  it.each(['0.1.1', 'not-a-version'])('rejects an invalid update-available event: %s', async (version) => {
+    appMock.getVersion.mockReturnValue('0.4.2');
+    Object.defineProperty(autoUpdaterMock, 'currentVersion', {
+      configurable: true,
+      value: { version: '0.4.2' },
+    });
+    const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');
+    autoUpdaterService.initialize();
+    const statuses: Array<{ status: string }> = [];
+    autoUpdaterService.on('update-status', (status: { status: string }) => statuses.push(status));
+
+    getUpdateAvailableHandler()({ version });
+
+    expect(statuses.some((status) => status.status === 'available')).toBe(false);
+    await expect(autoUpdaterService.downloadUpdate()).resolves.toEqual({
+      success: false,
+      error: 'update.errors.downloadStartFailed',
+    });
+    expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
+  });
+
+  it('rejects a download without a validated newer candidate', async () => {
+    const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');
+    autoUpdaterService.initialize();
+
+    await expect(autoUpdaterService.downloadUpdate()).resolves.toEqual({
+      success: false,
+      error: 'update.errors.downloadStartFailed',
+    });
+    expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
+  });
+
   it('reuses the active auto-update download promise', async () => {
     let resolveDownload!: () => void;
     autoUpdaterMock.downloadUpdate.mockImplementation(
@@ -280,6 +334,7 @@ describe('AutoUpdaterService', () => {
 
     const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');
     autoUpdaterService.initialize();
+    offerUpdate();
 
     const first = autoUpdaterService.downloadUpdate();
     const second = autoUpdaterService.downloadUpdate();
@@ -296,6 +351,7 @@ describe('AutoUpdaterService', () => {
 
     const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');
     autoUpdaterService.initialize();
+    offerUpdate();
 
     await expect(autoUpdaterService.downloadUpdate()).resolves.toEqual({ success: true });
     getUpdateDownloadedHandler()({ version: '2.2.0' });
@@ -315,6 +371,7 @@ describe('AutoUpdaterService', () => {
 
     const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');
     autoUpdaterService.initialize();
+    offerUpdate();
 
     const download = autoUpdaterService.downloadUpdate();
 
@@ -412,6 +469,57 @@ describe('AutoUpdaterService', () => {
     expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
   });
 
+  it('does not restore cached metadata that differs from the validated feed candidate', async () => {
+    const updateInfo = {
+      version: '2.1.14',
+      files: [{ url: 'Catfish-2.1.14-mac.zip', sha512: 'sha512-value' }],
+      path: 'Catfish-2.1.14-mac.zip',
+      sha512: 'sha512-value',
+      releaseDate: '2026-06-08T00:00:00.000Z',
+    };
+    const cachedInfo = { ...updateInfo, version: '0.1.1' };
+
+    autoUpdaterMock.checkForUpdates.mockImplementation(async () => {
+      (autoUpdaterMock as { updateInfoAndProvider?: unknown }).updateInfoAndProvider = {
+        info: cachedInfo,
+        provider: { resolveFiles: vi.fn(() => []) },
+      };
+      return { isUpdateAvailable: true, updateInfo };
+    });
+
+    const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');
+    autoUpdaterService.initialize();
+
+    await expect(autoUpdaterService.restoreDownloadedUpdateIfAvailable()).resolves.toEqual({
+      success: true,
+      data: { ready: false },
+    });
+    expect(autoUpdaterMock.getOrCreateDownloadHelper).not.toHaveBeenCalled();
+    expect(autoUpdaterMock.downloadUpdate).not.toHaveBeenCalled();
+  });
+
+  it('deduplicates startup and cached-restore update checks', async () => {
+    let resolveCheck!: (value: { isUpdateAvailable: boolean; updateInfo: { version: string } }) => void;
+    autoUpdaterMock.checkForUpdates.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveCheck = resolve;
+        })
+    );
+
+    const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');
+    autoUpdaterService.initialize();
+
+    const startupCheck = autoUpdaterService.checkForUpdatesAndNotify();
+    const cachedRestore = autoUpdaterService.restoreDownloadedUpdateIfAvailable();
+
+    expect(autoUpdaterMock.checkForUpdates).toHaveBeenCalledTimes(1);
+    resolveCheck({ isUpdateAvailable: false, updateInfo: { version: '2.1.13' } });
+
+    await expect(startupCheck).resolves.toBeUndefined();
+    await expect(cachedRestore).resolves.toEqual({ success: true, data: { ready: false } });
+  });
+
   it('waits on macOS when service downloaded but native install readiness has not arrived', async () => {
     setPlatform('darwin');
     const cleanup = vi.fn();
@@ -421,7 +529,7 @@ describe('AutoUpdaterService', () => {
     autoUpdaterService.initialize();
     autoUpdaterService.setBeforeQuitAndInstall(cleanup);
     autoUpdaterService.on('update-status', (status: { status: string; error?: string }) => statuses.push(status));
-    getUpdateDownloadedHandler()({ version: '2.2.0' });
+    completeValidatedDownload('2.2.0');
 
     const installPromise = autoUpdaterService.quitAndInstall();
     await Promise.resolve();
@@ -444,7 +552,7 @@ describe('AutoUpdaterService', () => {
 
     autoUpdaterService.initialize();
     autoUpdaterService.on('update-status', (status: { status: string; error?: string }) => statuses.push(status));
-    getUpdateDownloadedHandler()({ version: '2.2.0' });
+    completeValidatedDownload('2.2.0');
 
     const installPromise = autoUpdaterService.quitAndInstall();
     await Promise.resolve();
@@ -466,7 +574,7 @@ describe('AutoUpdaterService', () => {
 
     autoUpdaterService.initialize();
     autoUpdaterService.on('update-status', (status: { status: string; error?: string }) => statuses.push(status));
-    getUpdateDownloadedHandler()({ version: '2.2.0' });
+    completeValidatedDownload('2.2.0');
 
     const installPromise = autoUpdaterService.quitAndInstall();
     await Promise.resolve();
@@ -488,10 +596,10 @@ describe('AutoUpdaterService', () => {
 
     autoUpdaterService.initialize();
     autoUpdaterService.setBeforeQuitAndInstall(cleanup);
-    getUpdateDownloadedHandler()({ version: '2.2.0' });
+    completeValidatedDownload('2.2.0');
     getNativeUpdateDownloadedHandler()();
     getCheckingForUpdateHandler()();
-    getUpdateDownloadedHandler()({ version: '2.3.0' });
+    completeValidatedDownload('2.3.0');
 
     const installPromise = autoUpdaterService.quitAndInstall();
     await Promise.resolve();
@@ -511,7 +619,7 @@ describe('AutoUpdaterService', () => {
     const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');
 
     autoUpdaterService.initialize();
-    getUpdateDownloadedHandler()({ version: '2.2.0' });
+    completeValidatedDownload('2.2.0');
 
     const installPromise = autoUpdaterService.quitAndInstall();
     await Promise.resolve();
@@ -534,7 +642,7 @@ describe('AutoUpdaterService', () => {
       throw cleanupError;
     });
     autoUpdaterService.on('update-status', (status: { status: string; error?: string }) => statuses.push(status));
-    getUpdateDownloadedHandler()({ version: '2.2.0' });
+    completeValidatedDownload('2.2.0');
 
     const installPromise = autoUpdaterService.quitAndInstall();
     await Promise.resolve();
@@ -558,7 +666,7 @@ describe('AutoUpdaterService', () => {
     });
     autoUpdaterService.initialize();
     autoUpdaterService.on('update-status', (status: { status: string; error?: string }) => statuses.push(status));
-    getUpdateDownloadedHandler()({ version: '2.2.0' });
+    completeValidatedDownload('2.2.0');
     getNativeUpdateDownloadedHandler()();
 
     await expect(autoUpdaterService.quitAndInstall()).rejects.toThrow('update.errors.prepareInstallFailed');
@@ -570,33 +678,63 @@ describe('AutoUpdaterService', () => {
     });
   });
 
-  it('keeps non-macOS quitAndInstall behavior immediate', async () => {
+  it('rejects installation without a validated downloaded update', async () => {
+    const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');
+    autoUpdaterService.initialize();
+
+    await expect(autoUpdaterService.quitAndInstall()).rejects.toThrow('update.errors.prepareInstallFailed');
+    expect(autoUpdaterMock.quitAndInstall).not.toHaveBeenCalled();
+    expect(appMock.exit).not.toHaveBeenCalled();
+  });
+
+  it('rejects an older downloaded version even after a newer candidate was offered', async () => {
+    appMock.getVersion.mockReturnValue('0.4.2');
+    Object.defineProperty(autoUpdaterMock, 'currentVersion', {
+      configurable: true,
+      value: { version: '0.4.2' },
+    });
+    const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');
+    autoUpdaterService.initialize();
+    offerUpdate('0.4.3');
+    getUpdateDownloadedHandler()({ version: '0.1.1' });
+
+    await expect(autoUpdaterService.quitAndInstall()).rejects.toThrow('update.errors.prepareInstallFailed');
+    expect(autoUpdaterMock.quitAndInstall).not.toHaveBeenCalled();
+    expect(appMock.exit).not.toHaveBeenCalled();
+  });
+
+  it('keeps non-macOS quitAndInstall immediate without a delayed forced exit', async () => {
     setPlatform('win32');
+    vi.useFakeTimers();
     const cleanup = vi.fn();
     const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');
 
     autoUpdaterService.initialize();
     autoUpdaterService.setBeforeQuitAndInstall(cleanup);
+    completeValidatedDownload();
 
     await autoUpdaterService.quitAndInstall();
+    await vi.advanceTimersByTimeAsync(1000);
 
     expect(cleanup).toHaveBeenCalledTimes(1);
     expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(false, true);
     expect(nativeAutoUpdaterMock.on).not.toHaveBeenCalled();
+    expect(appMock.exit).not.toHaveBeenCalled();
   });
 
-  it('uses a non-silent handoff for user-initiated Windows installs without changing app-quit installs', async () => {
+  it('uses a non-silent handoff for user-initiated Windows installs with app-quit installs disabled', async () => {
     setPlatform('win32');
     const cleanup = vi.fn();
     const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');
 
     autoUpdaterService.initialize();
     autoUpdaterService.setBeforeQuitAndInstall(cleanup);
+    completeValidatedDownload();
 
     await autoUpdaterService.quitAndInstall();
 
     expect(cleanup).toHaveBeenCalledTimes(1);
-    expect(autoUpdaterMock.autoInstallOnAppQuit).toBe(true);
+    expect(autoUpdaterMock.autoInstallOnAppQuit).toBe(false);
     expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(false, true);
   });
 
@@ -610,6 +748,7 @@ describe('AutoUpdaterService', () => {
     try {
       const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');
       autoUpdaterService.initialize();
+      completeValidatedDownload();
 
       await autoUpdaterService.quitAndInstall();
 

@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.4.3](https://github.com/salmoshu/Catfish/releases/tag/v0.4.3) (2026-10-29)
+
+### Desktop
+
+#### Features
+
+- **branding:** show the app version beside the sidebar title and add a manual update check in Settings > About
+- **updates:** check once after window startup with interactive download and install, while preventing downgrades and forced installs
+- **remote:** use globe icons for remote projects, reconnect saved connections in one click, and load agents and sessions from the connected backend
+- **interaction:** remove home-page quick actions and built-in prompt suggestions
+
+#### Bug Fixes
+
+- **startup:** wait for a quitting instance to release the single-instance lock and honor pre-ready second-instance window requests
+- **remote:** hide distro names and cached sessions until reconnection, matching local project hover actions and session rows
+
+---
+
 ## [0.4.2](https://github.com/salmoshu/Catfish/releases/tag/v0.4.2) (2026-10-28)
 
 ### Desktop

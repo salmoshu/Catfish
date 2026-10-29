@@ -364,7 +364,6 @@
   .guidLayout {
     width: clamp(var(--app-min-width, 360px), calc(100% - 24px), 100%);
     padding: 0 12px;
-    padding-bottom: 100px; /* 为底部快捷按钮留出空间 */
     box-sizing: border-box;
   }
 
@@ -484,11 +483,6 @@
 :global([data-theme='dark']) .assistantSelectorInactive {
   opacity: 1;
   color: var(--aou-9) !important;
-}
-
-/* 底部快捷按钮：基础间距 + 安全区 */
-.guidQuickActions {
-  bottom: calc(32px + env(safe-area-inset-bottom, 0px));
 }
 
 @media (max-width: 768px) {

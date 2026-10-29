@@ -23,6 +23,8 @@ interface WorkspaceCollapseProps {
   siderCollapsed?: boolean;
   /** 标题尾部插槽 - 例如 hover 显示的菜单按钮，点击不会触发 onToggle */
   trailing?: React.ReactNode;
+  /** 自定义标题图标，默认使用文件夹展开/收起图标 */
+  leadingIcon?: React.ReactNode;
   /** 让头部在滚动时吸顶常驻 - 用于会话过长的项目组，下滑时逐个切换项目标题 */
   stickyHeader?: boolean;
   /** 吸顶时距滚动容器顶部的偏移(px)，用于让位给上方常驻的分区标题 */
@@ -40,6 +42,7 @@ const WorkspaceCollapse: React.FC<WorkspaceCollapseProps> = ({
   className,
   siderCollapsed = false,
   trailing,
+  leadingIcon,
   stickyHeader = false,
   stickyTop,
 }) => {
@@ -62,11 +65,12 @@ const WorkspaceCollapse: React.FC<WorkspaceCollapseProps> = ({
             onClick={onToggle}
           >
             <span className='size-22px flex items-center justify-center shrink-0 text-t-primary'>
-              {expanded ? (
-                <FolderOpen theme='outline' size={16} fill='currentColor' className='line-height-0' />
-              ) : (
-                <FolderClose theme='outline' size={16} fill='currentColor' className='line-height-0' />
-              )}
+              {leadingIcon ??
+                (expanded ? (
+                  <FolderOpen theme='outline' size={16} fill='currentColor' className='line-height-0' />
+                ) : (
+                  <FolderClose theme='outline' size={16} fill='currentColor' className='line-height-0' />
+                ))}
             </span>
 
             {/* 标题内容 — flex 容器让内部 header span 的 truncate 生效 */}

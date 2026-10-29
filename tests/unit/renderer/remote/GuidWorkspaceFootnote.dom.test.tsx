@@ -58,9 +58,15 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-const renderFootnote = () => {
+const renderFootnote = (workspaceDir = '') => {
   const onSelectWorkspace = vi.fn();
-  render(<GuidWorkspaceFootnote workspaceDir='' onSelectWorkspace={onSelectWorkspace} onClearWorkspace={vi.fn()} />);
+  render(
+    <GuidWorkspaceFootnote
+      workspaceDir={workspaceDir}
+      onSelectWorkspace={onSelectWorkspace}
+      onClearWorkspace={vi.fn()}
+    />
+  );
   return onSelectWorkspace;
 };
 
@@ -129,7 +135,22 @@ describe('GuidWorkspaceFootnote remote directory selection', () => {
     expect(remoteMocks.showOpen).toHaveBeenCalledOnce();
     expect(reloadMock).not.toHaveBeenCalled();
     expect(screen.queryByText('mock-connected')).toBeNull();
-    expect(screen.getByRole('img', { name: environment.name })).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: environment.name })).not.toBeInTheDocument();
     expect(screen.queryByText(environment.name)).not.toBeInTheDocument();
+  });
+
+  it('uses only the workspace basename in remote tooltips and accessible labels', async () => {
+    window.__backendEnvironment = { type: 'remote', id: environment.id, name: environment.name, kind: 'wsl' };
+    const workspaceDir = '\\\\wsl$\\Ubuntu-20.04\\home\\winchell\\CatfishCore';
+    renderFootnote(workspaceDir);
+
+    const icon = screen.getByRole('img', { name: 'CatfishCore' });
+    expect(document.querySelectorAll('[data-kimi-icon="globe"]')).toHaveLength(2);
+    expect(document.querySelector('[data-kimi-icon="folder"]')).not.toBeInTheDocument();
+    fireEvent.mouseOver(icon);
+    expect((await screen.findAllByText('CatfishCore')).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('img', { name: /Ubuntu/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Ubuntu/)).not.toBeInTheDocument();
+    expect(screen.queryByText(workspaceDir)).not.toBeInTheDocument();
   });
 });

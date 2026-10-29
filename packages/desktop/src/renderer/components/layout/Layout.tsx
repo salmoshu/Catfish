@@ -36,9 +36,12 @@ import { useConversationShortcuts } from '@renderer/hooks/ui/useConversationShor
 import { isElectronDesktop } from '@renderer/utils/platform';
 import { IS_DISCONTINUED_BUILD } from '@/renderer/utils/discontinuedBuild';
 import UpdateMigrationDialog from '@/renderer/components/settings/UpdateMigrationDialog';
+import UpdateModal from '@/renderer/components/settings/UpdateModal';
 import KimiIcon from '@renderer/components/base/KimiIcon';
 import brandLogo from '@renderer/assets/logo.svg';
 import '@renderer/styles/layout.css';
+
+declare const __APP_VERSION__: string;
 
 const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 18, strokeWidth: _strokeWidth }) => (
   <KimiIcon name='panel-collapse' size={size} style={{ display: 'inline-block', verticalAlign: 'middle' }} />
@@ -407,27 +410,32 @@ const Layout: React.FC<{
                 >
                   <img src={brandLogo} alt='' className='absolute inset-0 size-full object-cover' />
                 </div>
-                {isSettingsRoute ? (
-                  <Tooltip content={t('common.back', { defaultValue: 'Back to Chat' })} position='bottom'>
-                    <div
-                      className='text-16px text-t-primary collapsed-hidden font-semibold cursor-pointer'
-                      role='button'
-                      tabIndex={0}
-                      aria-label={t('common.back', { defaultValue: 'Back to Chat' })}
-                      onClick={handleBrandHome}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          handleBrandHome();
-                        }
-                      }}
-                    >
-                      Catfish
-                    </div>
-                  </Tooltip>
-                ) : (
-                  <div className='text-16px text-t-primary collapsed-hidden font-semibold'>Catfish</div>
-                )}
+                <div className='flex items-center gap-6px collapsed-hidden'>
+                  {isSettingsRoute ? (
+                    <Tooltip content={t('common.back', { defaultValue: 'Back to Chat' })} position='bottom'>
+                      <div
+                        className='text-16px text-t-primary font-semibold cursor-pointer'
+                        role='button'
+                        tabIndex={0}
+                        aria-label={t('common.back', { defaultValue: 'Back to Chat' })}
+                        onClick={handleBrandHome}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            handleBrandHome();
+                          }
+                        }}
+                      >
+                        Catfish
+                      </div>
+                    </Tooltip>
+                  ) : (
+                    <div className='text-16px text-t-primary font-semibold'>Catfish</div>
+                  )}
+                  <span className='px-4px py-1px rd-4px text-10px leading-14px bg-fill-2 text-t-secondary select-none'>
+                    v{__APP_VERSION__}
+                  </span>
+                </div>
                 {isMobile && !collapsed && (
                   <button
                     type='button'
@@ -483,6 +491,7 @@ const Layout: React.FC<{
               >
                 <Outlet />
                 <PwaPullToRefresh />
+                <UpdateModal />
                 {IS_DISCONTINUED_BUILD && <UpdateMigrationDialog />}
               </ArcoLayout.Content>
               {!isMobile && (

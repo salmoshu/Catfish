@@ -6,6 +6,7 @@
 
 import type { TChatConversation } from '@/common/config/storage';
 import AionModal from '@/renderer/components/base/AionModal';
+import KimiIcon from '@/renderer/components/base/KimiIcon';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useCronJobsMap } from '@/renderer/pages/cron';
 import { restrictToVerticalAxis } from '@/renderer/utils/ui/dndModifiers';
@@ -453,6 +454,13 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
                       siderCollapsed={collapsed}
                       stickyHeader
                       stickyTop={28}
+                      leadingIcon={
+                        window.__backendEnvironment?.type === 'remote' ? (
+                          <span role='img' aria-label={group.displayName} className='inline-flex items-center'>
+                            <KimiIcon name='globe' size={16} />
+                          </span>
+                        ) : undefined
+                      }
                       header={
                         <span className='text-14px font-[500] truncate flex-1 text-t-primary min-w-0'>
                           {group.displayName}

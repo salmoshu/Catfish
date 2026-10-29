@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Message, Tooltip } from '@arco-design/web-react';
-import { Plus } from '@icon-park/react';
+import { Button, Dropdown, Menu, Message, Tooltip } from '@arco-design/web-react';
+import { Link, MoreOne, Plus } from '@icon-park/react';
+import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
 import type { RemoteEnvironmentSummary } from '@/common/types/remote';
@@ -13,6 +14,7 @@ import {
   recordEnvironmentProjects,
   type EnvironmentProjects as History,
 } from '@/renderer/utils/workspace/environmentProjects';
+import { getLastDirectoryName } from '@/renderer/utils/workspace/workspace';
 import RemoteConnectionModal from '../RemoteConnectionModal';
 import styles from './EnvironmentProjects.module.css';
 
@@ -73,6 +75,11 @@ const EnvironmentProjects: React.FC<Props> = ({ collapsed, heading, hidden, empt
         reloadRoute(route);
       } else {
         const id = entry.environment.id;
+        const result = await ipcBridge.remoteEnvironment.connect.invoke({ id });
+        if (result.ok === true) {
+          reloadRoute(route);
+          return;
+        }
         const environments = await ipcBridge.remoteEnvironment.list.invoke();
         const environment = environments.find((item) => item.id === id);
         if (!environment) throw new Error(t('guid.workspace.remote.connectFailed'));
@@ -93,9 +100,22 @@ const EnvironmentProjects: React.FC<Props> = ({ collapsed, heading, hidden, empt
         otherHistory.map((entry) =>
           entry.projects.map((project) => {
             const key = `${environmentKey(entry.environment)}:${project.workspace}`;
-            const environmentName =
-              entry.environment.type === 'remote' ? entry.environment.name : t('guid.workspace.remote.local');
-            const name = project.workspace.split(/[\\/]/).filter(Boolean).pop() || project.workspace;
+            const isRemote = entry.environment.type === 'remote';
+            const name = getLastDirectoryName(project.workspace);
+            const projectMenu = isRemote ? (
+              <Menu
+                onClickMenuItem={(menuKey) => {
+                  if (menuKey === 'connect') void open(entry, project.workspace);
+                }}
+              >
+                <Menu.Item key='connect'>
+                  <span className='flex items-center gap-8px'>
+                    <Link theme='outline' size='14' />
+                    {t('mcp.connect')}
+                  </span>
+                </Menu.Item>
+              </Menu>
+            ) : undefined;
             return (
               <WorkspaceCollapse
                 key={key}
@@ -109,43 +129,77 @@ const EnvironmentProjects: React.FC<Props> = ({ collapsed, heading, hidden, empt
                     return next;
                   })
                 }
+                leadingIcon={
+                  <span role='img' aria-label={name} className={styles.environment}>
+                    <KimiIcon name={isRemote ? 'globe' : 'device-desktop'} size={16} />
+                  </span>
+                }
                 header={
-                  <Tooltip content={`${environmentName} · ${project.workspace}`}>
-                    <span className={styles.projectName}>
-                      <span role='img' aria-label={environmentName} className={styles.environment}>
-                        <KimiIcon name={entry.environment.type === 'remote' ? 'globe' : 'device-desktop'} size={14} />
-                      </span>
-                      {name}
-                    </span>
+                  <Tooltip content={name}>
+                    <span className={styles.projectName}>{name}</span>
                   </Tooltip>
                 }
                 trailing={
-                  <Tooltip content={t('conversation.history.newConversationInProject')}>
-                    <Button
-                      type='text'
-                      size='mini'
-                      disabled={switching}
-                      aria-label={t('conversation.history.newConversationInProject')}
-                      onClick={() => void open(entry, project.workspace)}
-                    >
-                      <Plus size={14} />
-                    </Button>
-                  </Tooltip>
+                  <span className='flex items-center gap-6px'>
+                    <Tooltip content={t('conversation.history.newConversationInProject')} position='top'>
+                      <span
+                        role='button'
+                        tabIndex={0}
+                        aria-label={t('conversation.history.newConversationInProject')}
+                        aria-disabled={switching}
+                        className={classNames(
+                          'flex-center cursor-pointer transition-colors text-t-secondary hover:text-t-primary size-20px rd-4px sider-action-btn',
+                          'hidden group-hover:flex'
+                        )}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void open(entry, project.workspace);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            void open(entry, project.workspace);
+                          }
+                        }}
+                      >
+                        <Plus theme='outline' size='14' fill='currentColor' className='block leading-none' />
+                      </span>
+                    </Tooltip>
+                    {projectMenu && (
+                      <Dropdown
+                        droplist={projectMenu}
+                        trigger='click'
+                        position='br'
+                        getPopupContainer={() => document.body}
+                        unmountOnExit={false}
+                      >
+                        <span
+                          aria-label={t('common.more')}
+                          className='flex-center cursor-pointer transition-colors text-t-secondary hover:text-t-primary size-20px rd-4px sider-action-btn hidden group-hover:flex'
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <MoreOne theme='outline' size='14' fill='currentColor' className='block leading-none' />
+                        </span>
+                      </Dropdown>
+                    )}
+                  </span>
                 }
               >
-                {project.conversations.map((conversation) => (
-                  <Button
-                    key={conversation.id}
-                    type='text'
-                    className={styles.conversation}
-                    disabled={switching}
-                    title={conversation.name}
-                    onClick={() => void open(entry, project.workspace, conversation.id)}
-                  >
-                    <KimiIcon name='message' size={15} />
-                    <span className={styles.conversationName}>{conversation.name}</span>
-                  </Button>
-                ))}
+                {entry.environment.type === 'local' &&
+                  project.conversations.map((conversation) => (
+                    <Button
+                      key={conversation.id}
+                      type='text'
+                      className={styles.conversation}
+                      disabled={switching}
+                      title={conversation.name}
+                      onClick={() => void open(entry, project.workspace, conversation.id)}
+                    >
+                      <KimiIcon name='message' size={15} />
+                      <span className={styles.conversationName}>{conversation.name}</span>
+                    </Button>
+                  ))}
               </WorkspaceCollapse>
             );
           })

@@ -16,7 +16,7 @@ import log from 'electron-log';
 import { EventEmitter } from 'events';
 import fs from 'fs';
 import path from 'path';
-import { gt, parse } from 'semver';
+import { gt, parse, valid } from 'semver';
 import {
   recordAutoUpdateNativeInstallError,
   recordAutoUpdateNativeInstallReady,
@@ -105,9 +105,11 @@ class AutoUpdaterService extends EventEmitter {
   private _allowPrerelease = false;
   private _statusBroadcastCallback: StatusBroadcastCallback | null = null;
   private _beforeQuitAndInstallCallback: BeforeQuitAndInstallCallback | null = null;
+  private _activeCheckPromise: Promise<{ success: boolean; updateInfo?: UpdateInfo; error?: string }> | null = null;
   private _activeDownloadPromise: Promise<{ success: boolean; error?: string }> | null = null;
   private _activeDownloadCancellationToken: CancellationToken | null = null;
   private _ignoreActiveDownloadEvents = false;
+  private _validatedUpdateVersion: string | undefined;
   private _nativeInstallReady = process.platform !== 'darwin';
   private _nativeInstallReadyWait: {
     promise: Promise<void>;
@@ -127,9 +129,10 @@ class AutoUpdaterService extends EventEmitter {
     autoUpdater.logger = log;
     (autoUpdater.logger as typeof log).transports.file.level = 'debug';
 
-    // Disable auto-download for manual control
+    // Downloads and installs are explicit, validated user actions only.
     autoUpdater.autoDownload = false;
-    autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.autoInstallOnAppQuit = false;
+    autoUpdater.allowDowngrade = false;
     this.configureDevAutoUpdateDebug();
     const githubFeedOptions = buildGitHubFeedOptions();
 
@@ -268,9 +271,11 @@ class AutoUpdaterService extends EventEmitter {
     this._allowPrerelease = false;
     this._statusBroadcastCallback = null;
     this._beforeQuitAndInstallCallback = null;
+    this._activeCheckPromise = null;
     this._activeDownloadPromise = null;
     this._activeDownloadCancellationToken = null;
     this._ignoreActiveDownloadEvents = false;
+    this._validatedUpdateVersion = undefined;
     this.clearNativeInstallReadyWait();
     this._nativeInstallReady = process.platform !== 'darwin';
     this._downloadedUpdateVersion = undefined;
@@ -286,9 +291,11 @@ class AutoUpdaterService extends EventEmitter {
     this._allowPrerelease = false;
     this._statusBroadcastCallback = null;
     this._beforeQuitAndInstallCallback = null;
+    this._activeCheckPromise = null;
     this._activeDownloadPromise = null;
     this._activeDownloadCancellationToken = null;
     this._ignoreActiveDownloadEvents = false;
+    this._validatedUpdateVersion = undefined;
     this.clearNativeInstallReadyWait();
     this._nativeInstallReady = process.platform !== 'darwin';
     this._downloadedUpdateVersion = undefined;
@@ -379,14 +386,24 @@ class AutoUpdaterService extends EventEmitter {
     });
 
     register('update-available', (info: UpdateInfo) => {
-      log.info(`Update available: ${info.version}`);
-      this.resetNativeInstallReady(info.version);
+      const validatedVersion = this.getValidatedNewerVersion(info.version);
+      if (!validatedVersion) {
+        log.warn('[auto-update] Ignoring invalid or non-newer update-available event', {
+          version: info.version,
+          currentVersion: this.getCurrentVersion(),
+        });
+        this.resetNativeInstallReady();
+        return;
+      }
+      log.info(`Update available: ${validatedVersion}`);
+      this.resetNativeInstallReady();
+      this._validatedUpdateVersion = validatedVersion;
       this.broadcastStatus({
         status: 'available',
-        version: info.version,
+        version: validatedVersion,
         // Reflects the dev debug override (autoUpdater.currentVersion) when set,
         // so the "current → new" display matches the version used for comparison.
-        currentVersion: autoUpdater.currentVersion?.version,
+        currentVersion: this.getCurrentVersion(),
         releaseDate: info.releaseDate,
         releaseNotes: typeof info.releaseNotes === 'string' ? info.releaseNotes : undefined,
       });
@@ -394,6 +411,8 @@ class AutoUpdaterService extends EventEmitter {
 
     register('update-not-available', () => {
       log.info('Application is up to date');
+      this._validatedUpdateVersion = undefined;
+      this._downloadedUpdateVersion = undefined;
       this.broadcastStatus({ status: 'not-available' });
     });
 
@@ -419,18 +438,28 @@ class AutoUpdaterService extends EventEmitter {
         log.debug('[auto-update] Ignoring update-downloaded after cancellation');
         return;
       }
-      log.info('Update downloaded');
       this._activeDownloadPromise = null;
       this._activeDownloadCancellationToken = null;
-      this._downloadedUpdateVersion = info.version;
+      const downloadedVersion = this.getValidatedNewerVersion(info.version);
+      if (!downloadedVersion || downloadedVersion !== this._validatedUpdateVersion) {
+        log.warn('[auto-update] Ignoring unvalidated or non-newer downloaded update', {
+          version: info.version,
+          validatedVersion: this._validatedUpdateVersion,
+          currentVersion: this.getCurrentVersion(),
+        });
+        this._downloadedUpdateVersion = undefined;
+        return;
+      }
+      log.info('Update downloaded');
+      this._downloadedUpdateVersion = downloadedVersion;
       if (process.platform === 'darwin' && !this._nativeInstallReady) {
         log.debug('[auto-update] macOS service-level update-downloaded received before native install readiness', {
-          version: info.version,
+          version: downloadedVersion,
         });
       }
       this.broadcastStatus({
         status: 'downloaded',
-        version: info.version,
+        version: downloadedVersion,
       });
     });
 
@@ -472,10 +501,25 @@ class AutoUpdaterService extends EventEmitter {
     return message;
   }
 
-  private resetNativeInstallReady(version?: string): void {
+  private resetNativeInstallReady(): void {
     void this.rejectNativeInstallReadyWaitWithLocalizedError('update.errors.prepareInstallFailed');
     this._nativeInstallReady = process.platform !== 'darwin';
-    this._downloadedUpdateVersion = version;
+    this._validatedUpdateVersion = undefined;
+    this._downloadedUpdateVersion = undefined;
+  }
+
+  private getCurrentVersion(): string {
+    return autoUpdater.currentVersion?.version ?? app.getVersion();
+  }
+
+  private getValidatedNewerVersion(version: unknown): string | null {
+    if (typeof version !== 'string') return null;
+    const candidateVersion = valid(version);
+    const installedVersion = valid(this.getCurrentVersion());
+    if (!candidateVersion || !installedVersion || !gt(candidateVersion, installedVersion)) {
+      return null;
+    }
+    return candidateVersion;
   }
 
   private getAutoUpdateDiagnosticOptions() {
@@ -604,15 +648,34 @@ class AutoUpdaterService extends EventEmitter {
   }
 
   async checkForUpdates(): Promise<{ success: boolean; updateInfo?: UpdateInfo; error?: string }> {
+    if (this._activeCheckPromise) {
+      log.debug('[auto-update] Reusing active update check');
+      return this._activeCheckPromise;
+    }
+
+    const checkPromise = this.performCheckForUpdates();
+    this._activeCheckPromise = checkPromise;
+    try {
+      return await checkPromise;
+    } finally {
+      if (this._activeCheckPromise === checkPromise) {
+        this._activeCheckPromise = null;
+      }
+    }
+  }
+
+  private async performCheckForUpdates(): Promise<{ success: boolean; updateInfo?: UpdateInfo; error?: string }> {
     try {
       if (!this._isInitialized) {
         throw new Error('AutoUpdaterService not initialized');
       }
 
+      this._validatedUpdateVersion = undefined;
+      this._downloadedUpdateVersion = undefined;
       log.debug('[auto-update] checkForUpdates requested', {
         allowPrerelease: this._allowPrerelease,
         channel: autoUpdater.channel ?? 'latest',
-        currentVersion: app.getVersion(),
+        currentVersion: this.getCurrentVersion(),
         appIsPackaged: app.isPackaged,
       });
 
@@ -625,6 +688,7 @@ class AutoUpdaterService extends EventEmitter {
       const result = await autoUpdater.checkForUpdates();
       if (!result) {
         const { default: i18n } = await import('./i18n');
+        this._validatedUpdateVersion = undefined;
         log.debug('[auto-update] checkForUpdates returned null');
         return { success: false, error: i18n.t('update.errors.checkReturnedNull') };
       }
@@ -632,27 +696,25 @@ class AutoUpdaterService extends EventEmitter {
       // When isUpdateAvailable is false, updateInfoAndProvider is NOT set internally,
       // so a subsequent downloadUpdate() call would fail with "Please check update first".
       if (!result.isUpdateAvailable) {
+        this._validatedUpdateVersion = undefined;
         log.debug('[auto-update] no update available from GitHub feed', {
           version: result.updateInfo.version,
         });
         return { success: true };
       }
 
-      // Defense-in-depth: never surface a same-or-older feed version as an update.
-      // electron-updater's isUpdateAvailable can be true for a downgrade when a
-      // channel is rolled back or allowDowngrade drifts on; require strict semver
-      // greater-than against the installed version before reporting it.
-      const feedVersion = parse(result.updateInfo.version);
-      const installedVersion = parse(app.getVersion());
-      if (feedVersion && installedVersion && !gt(feedVersion, installedVersion)) {
-        log.debug('[auto-update] feed version not newer than installed; ignoring', {
-          feedVersion: feedVersion.version,
-          installedVersion: installedVersion.version,
+      const feedVersion = this.getValidatedNewerVersion(result.updateInfo.version);
+      if (!feedVersion) {
+        log.warn('[auto-update] Feed version is invalid or not newer than installed; ignoring', {
+          feedVersion: result.updateInfo.version,
+          installedVersion: this.getCurrentVersion(),
         });
+        this._validatedUpdateVersion = undefined;
         return { success: true };
       }
+      this._validatedUpdateVersion = feedVersion;
       log.debug('[auto-update] update available from GitHub feed', {
-        version: result.updateInfo.version,
+        version: feedVersion,
         releaseDate: result.updateInfo.releaseDate,
       });
       return {
@@ -660,6 +722,8 @@ class AutoUpdaterService extends EventEmitter {
         updateInfo: result.updateInfo,
       };
     } catch (error) {
+      this._validatedUpdateVersion = undefined;
+      this._downloadedUpdateVersion = undefined;
       const message = error instanceof Error ? error.message : String(error);
       log.error('Check for updates failed:', message);
       return {
@@ -688,7 +752,11 @@ class AutoUpdaterService extends EventEmitter {
         };
       }
 
-      const cachedUpdate = await this.getValidCachedDownloadedUpdate();
+      const validatedVersion = this._validatedUpdateVersion;
+      if (!validatedVersion) {
+        return { success: true, data: { ready: false } };
+      }
+      const cachedUpdate = await this.getValidCachedDownloadedUpdate(validatedVersion);
       if (!cachedUpdate) {
         return { success: true, data: { ready: false } };
       }
@@ -701,11 +769,12 @@ class AutoUpdaterService extends EventEmitter {
           error: downloadResult.error,
         };
       }
+      this._downloadedUpdateVersion = validatedVersion;
 
       const data: AutoUpdateReadyResult = {
         ready: true,
-        version: checkResult.updateInfo.version,
-        currentVersion: autoUpdater.currentVersion?.version,
+        version: validatedVersion,
+        currentVersion: this.getCurrentVersion(),
         filePath: cachedUpdate.filePath,
       };
       if (typeof checkResult.updateInfo.releaseNotes === 'string') {
@@ -730,13 +799,21 @@ class AutoUpdaterService extends EventEmitter {
     }
   }
 
-  private async getValidCachedDownloadedUpdate(): Promise<{
+  private async getValidCachedDownloadedUpdate(expectedVersion: string): Promise<{
     filePath: string;
     fileInfo: ResolvedUpdateFileInfo;
   } | null> {
     const updater = autoUpdater as unknown as AutoUpdaterCacheAccess;
     const updateInfoAndProvider = updater.updateInfoAndProvider;
     if (!updateInfoAndProvider || !updater.getOrCreateDownloadHelper) {
+      return null;
+    }
+    const cachedVersion = this.getValidatedNewerVersion(updateInfoAndProvider.info.version);
+    if (!cachedVersion || cachedVersion !== expectedVersion || cachedVersion !== this._validatedUpdateVersion) {
+      log.warn('[auto-update] Cached update does not match the validated newer candidate', {
+        cachedVersion: updateInfoAndProvider.info.version,
+        expectedVersion,
+      });
       return null;
     }
 
@@ -802,8 +879,12 @@ class AutoUpdaterService extends EventEmitter {
         if (!this._isInitialized) {
           throw new Error('AutoUpdaterService not initialized');
         }
+        if (!this._validatedUpdateVersion) {
+          const { default: i18n } = await import('./i18n');
+          throw new Error(i18n.t('update.errors.downloadStartFailed'));
+        }
 
-        log.debug('[auto-update] downloadUpdate requested');
+        log.debug('[auto-update] downloadUpdate requested', { version: this._validatedUpdateVersion });
         this._ignoreActiveDownloadEvents = false;
         await autoUpdater.downloadUpdate(cancellationToken);
         log.debug('[auto-update] downloadUpdate started');
@@ -841,8 +922,27 @@ class AutoUpdaterService extends EventEmitter {
     return { success: true };
   }
 
+  private async assertValidatedDownloadedUpdate(): Promise<void> {
+    const downloadedVersion = this.getValidatedNewerVersion(this._downloadedUpdateVersion);
+    if (downloadedVersion && downloadedVersion === this._validatedUpdateVersion) {
+      return;
+    }
+
+    const { default: i18n } = await import('./i18n');
+    const userMessage = i18n.t('update.errors.prepareInstallFailed');
+    log.warn('[auto-update] Install rejected without a validated newer downloaded candidate', {
+      downloadedVersion: this._downloadedUpdateVersion,
+      validatedVersion: this._validatedUpdateVersion,
+      currentVersion: this.getCurrentVersion(),
+    });
+    this.broadcastStatus({ status: 'error', error: userMessage });
+    throw new Error(userMessage);
+  }
+
   async quitAndInstall(): Promise<void> {
+    await this.assertValidatedDownloadedUpdate();
     await this.waitForNativeInstallReady();
+    await this.assertValidatedDownloadedUpdate();
 
     if (this._beforeQuitAndInstallCallback) {
       log.info('Running pre-install cleanup before quitAndInstall...');
@@ -871,7 +971,7 @@ class AutoUpdaterService extends EventEmitter {
       this.moveCwdOutOfInstallDirForWindowsHandoff();
       // The first argument maps to electron-updater's silent installer flag.
       // User-clicked "install now" should show NSIS progress/completion pages;
-      // autoInstallOnAppQuit remains true for background app-quit installs.
+      // automatic installation on ordinary app quit remains disabled.
       autoUpdater.quitAndInstall(false, true);
       recordAutoUpdateQuitAndInstall(this.getAutoUpdateDiagnosticOptions());
     } catch (error) {
@@ -889,14 +989,13 @@ class AutoUpdaterService extends EventEmitter {
       });
       throw new Error(userMessage, { cause: error });
     }
-    // On macOS, autoUpdater.quitAndInstall() closes all windows but the
-    // 'window-all-closed' handler does NOT call app.quit() (standard macOS
-    // behavior + close-to-tray). This leaves the process alive and Squirrel
-    // cannot finish replacing the app bundle. Force-exit after a short delay
-    // to let Squirrel receive the install signal.
-    setTimeout(() => {
-      app.exit(0);
-    }, 1000);
+    if (process.platform === 'darwin') {
+      // Squirrel cannot replace the app bundle while the process remains alive
+      // after all windows close. Let the install handoff arrive before exiting.
+      setTimeout(() => {
+        app.exit(0);
+      }, 1000);
+    }
   }
 
   /**
@@ -904,9 +1003,8 @@ class AutoUpdaterService extends EventEmitter {
    */
   async checkForUpdatesAndNotify(): Promise<void> {
     try {
-      // Ensure clean state: prevent stale allowDowngrade=true from prior setAllowPrerelease(true) calls
       autoUpdater.allowDowngrade = false;
-      await autoUpdater.checkForUpdatesAndNotify();
+      await this.checkForUpdates();
     } catch (error) {
       log.error('Auto-update check failed:', error);
     }

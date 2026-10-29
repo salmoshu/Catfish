@@ -4,14 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Divider, Typography } from '@arco-design/web-react';
+import { Button, Divider, Message, Typography } from '@arco-design/web-react';
 import { Github, Right } from '@icon-park/react';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
 import { useSettingsViewMode } from '../settingsViewContext';
-import { openExternalUrl } from '@/renderer/utils/platform';
+import { isElectronDesktop, openExternalUrl } from '@/renderer/utils/platform';
 import FeedbackReportModal from './FeedbackReportModal';
+import { getIncludePrerelease, runUpdateCheck } from '@/renderer/components/settings/checkForUpdatesShared';
+import { UPDATE_AVAILABLE_EVENT } from '@/renderer/components/settings/useUpdateNotificationController';
 
 // __APP_VERSION__ is injected by electron.vite.config.ts `define:` from the
 // repo-root package.json. The previous `import packageJson from
@@ -27,14 +29,37 @@ const AboutModalContent: React.FC = () => {
   const { t } = useTranslation();
   const viewMode = useSettingsViewMode();
   const isPageMode = viewMode === 'page';
+  const isElectron = isElectronDesktop();
 
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   const openLink = async (url: string) => {
     try {
       await openExternalUrl(url);
     } catch (error) {
       console.log('Failed to open link:', error);
+    }
+  };
+
+  const checkUpdate = async () => {
+    if (checking) return;
+    setChecking(true);
+    try {
+      const outcome = await runUpdateCheck({
+        includePrerelease: getIncludePrerelease(),
+        fallbackVersion: __APP_VERSION__,
+        checkFailedLabel: t('update.checkFailed'),
+      });
+      if (outcome.kind === 'available') {
+        window.dispatchEvent(new CustomEvent(UPDATE_AVAILABLE_EVENT, { detail: outcome }));
+      } else if (outcome.kind === 'upToDate') {
+        Message.info(t('update.alreadyLatest'));
+      } else {
+        Message.error(outcome.message || t('update.checkFailed'));
+      }
+    } finally {
+      setChecking(false);
     }
   };
 
@@ -84,6 +109,11 @@ const AboutModalContent: React.FC = () => {
                 <Github theme='outline' size='20' />
               </div>
             </div>
+            {isElectron && (
+              <Button type='primary' loading={checking} onClick={() => void checkUpdate()}>
+                {checking ? t('settings.checkingForUpdates') : t('settings.checkForUpdates')}
+              </Button>
+            )}
           </div>
 
           {/* Divider */}

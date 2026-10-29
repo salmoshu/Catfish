@@ -88,6 +88,15 @@ const makeDeferred = () => {
   return { promise, resolve, reject };
 };
 
+const prepareValidDownload = (autoUpdaterService: {
+  initialize: () => void;
+  triggerEventForTest: (event: string, ...args: unknown[]) => void;
+}): void => {
+  autoUpdaterService.initialize();
+  autoUpdaterService.triggerEventForTest('update-available', { version: '1.0.1' });
+  autoUpdaterService.triggerEventForTest('update-downloaded', { version: '1.0.1' });
+};
+
 describe('updateBridge download allowlist', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -186,6 +195,7 @@ describe('autoUpdate quitAndInstall lifecycle', () => {
     const { autoUpdater } = await import('electron-updater');
 
     autoUpdaterService.resetForTest();
+    prepareValidDownload(autoUpdaterService);
     autoUpdaterService.setBeforeQuitAndInstall(async () => cleanup.promise);
 
     const installPromise = autoUpdaterService.quitAndInstall();
@@ -205,6 +215,7 @@ describe('autoUpdate quitAndInstall lifecycle', () => {
     const { autoUpdater } = await import('electron-updater');
 
     autoUpdaterService.resetForTest();
+    prepareValidDownload(autoUpdaterService);
     autoUpdaterService.setBeforeQuitAndInstall(async () => {
       throw cleanupError;
     });
@@ -218,6 +229,7 @@ describe('autoUpdate quitAndInstall lifecycle', () => {
     const { autoUpdaterService } = await import('@process/services/autoUpdaterService');
 
     autoUpdaterService.resetForTest();
+    prepareValidDownload(autoUpdaterService);
     autoUpdaterService.setBeforeQuitAndInstall(async () => cleanup.promise);
 
     const handler = await getAutoUpdateQuitAndInstallHandler();
@@ -241,6 +253,7 @@ describe('autoUpdate quitAndInstall lifecycle', () => {
     const { autoUpdaterService } = await import('@process/services/autoUpdaterService');
 
     autoUpdaterService.resetForTest();
+    prepareValidDownload(autoUpdaterService);
     autoUpdaterService.setBeforeQuitAndInstall(async () => {
       throw cleanupError;
     });

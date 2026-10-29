@@ -167,7 +167,11 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
                 className={`${styles.wsDropdownItem} ${isActive ? styles.wsDropdownItemActive : ''}`}
                 onClick={() => handleSelectPath(path)}
               >
-                <FolderIcon size={13} />
+                <KimiIcon
+                  name={backendEnvironment?.type === 'remote' ? 'globe' : 'folder'}
+                  size={13}
+                  style={{ lineHeight: 0, flexShrink: 0 }}
+                />
                 <span className={styles.wsDropdownItemName}>{name}</span>
                 {isActive && <KimiIcon name='check' size={12} style={{ marginInlineStart: 'auto', flexShrink: 0 }} />}
               </div>
@@ -213,20 +217,14 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
 
   return (
     <div className={styles.workspaceFootnote}>
-      {backendEnvironment && (
+      {backendEnvironment && (backendEnvironment.type !== 'remote' || workspaceName) && (
         <Tooltip
-          content={
-            backendEnvironment.type === 'remote'
-              ? `${backendEnvironment.kind.toUpperCase()} · ${backendEnvironment.name}`
-              : t('guid.workspace.remote.local')
-          }
+          content={backendEnvironment.type === 'remote' ? workspaceName : t('guid.workspace.remote.local')}
           position='top'
         >
           <span
             role='img'
-            aria-label={
-              backendEnvironment.type === 'remote' ? backendEnvironment.name : t('guid.workspace.remote.local')
-            }
+            aria-label={backendEnvironment.type === 'remote' ? workspaceName : t('guid.workspace.remote.local')}
             className='inline-flex items-center justify-center rounded-6px bg-aou-1 p-4px text-aou-6'
           >
             <KimiIcon name={backendEnvironment.type === 'remote' ? 'globe' : 'device-desktop'} size={14} />
@@ -235,14 +233,18 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
       )}
       {workspaceDir ? (
         <>
-          <Tooltip content={workspaceDir} position='top'>
+          <Tooltip content={workspaceName} position='top'>
             <div className={styles.workspacePill}>
               <button
                 ref={triggerRef as React.RefObject<HTMLButtonElement>}
                 className={styles.workspacePillMain}
                 onClick={toggleOpen}
               >
-                <FolderIcon size={14} />
+                <KimiIcon
+                  name={backendEnvironment?.type === 'remote' ? 'globe' : 'folder'}
+                  size={14}
+                  style={{ lineHeight: 0, flexShrink: 0 }}
+                />
                 <span className={styles.workspacePillName}>{workspaceName}</span>
                 <Down
                   theme='outline'

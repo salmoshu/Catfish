@@ -27,7 +27,11 @@ import { startBackendOrExit } from './process/startup/backendStartup';
 import { assertStartupArchitectureCompatible } from './process/startup/architectureCompatibility';
 import { classifyBackendStartupFailure } from './process/startup/backendStartupFailure';
 import { installQuitCleanup } from './process/startup/quitCleanup';
-import { shouldRegisterBackendStartup } from './process/startup/singleInstanceGating';
+import { scheduleStartupUpdateCheck } from './process/startup/updateStartup';
+import {
+  acquireSingleInstanceLockWithRetry,
+  shouldShowMainWindowOnReady,
+} from './process/startup/singleInstanceGating';
 import { ProcessConfig } from './process/utils/initStorage';
 import type { BackendStartupFailureInfo } from './common/types/platform/electron';
 import { registerWindowMaximizeListeners } from '@process/bridge';
@@ -81,44 +85,52 @@ import { readCloseToTraySetting } from './process/utils/closeToTraySetting';
 import electronSquirrelStartup from 'electron-squirrel-startup';
 
 // ============ Single Instance Lock ============
-// Acquire lock early so the second instance quits before doing unnecessary work.
-// When a second instance starts (e.g. from protocol URL), it sends its data
-// to the first instance via second-instance event, then quits.
+// When another instance is shutting down, its lock may still be held briefly.
+// Wait for it rather than making the user's next launch silently disappear.
 const isE2ETestMode = process.env.AIONUI_E2E_TEST === '1';
 const skipSingleInstanceLock = isE2ETestMode || process.env.AIONUI_MULTI_INSTANCE === '1';
 const deepLinkFromArgv = process.argv.find((arg) => arg.startsWith(`${PROTOCOL_SCHEME}://`));
-const gotTheLock = skipSingleInstanceLock ? true : app.requestSingleInstanceLock({ deepLinkUrl: deepLinkFromArgv });
-if (!gotTheLock) {
-  console.warn('[AionUi] Another instance is already running; current process will exit.');
-  app.quit();
-} else {
-  app.on('second-instance', (_event, argv, _workingDirectory, additionalData) => {
-    // Prefer additionalData (reliable on all platforms), fallback to argv scan
-    const deepLinkUrl =
-      (additionalData as { deepLinkUrl?: string })?.deepLinkUrl ||
-      argv.find((arg) => arg.startsWith(`${PROTOCOL_SCHEME}://`));
-    if (deepLinkUrl) {
-      handleDeepLinkUrl(deepLinkUrl);
-    }
-    // Focus existing window or recreate one if needed.
-    if (isWebUIMode || isResetPasswordMode) {
-      return;
-    }
-
-    // Skip window creation if app hasn't finished initializing
-    if (!appReadyDone) return;
-
-    if (app.isReady()) {
-      showOrCreateMainWindow({
-        mainWindow,
-        createWindow: () => {
-          console.log('[AionUi] second-instance received with no active main window, recreating main window');
-          createWindow();
-        },
-      });
-    }
-  });
+const initialLockAcquired = skipSingleInstanceLock
+  ? true
+  : app.requestSingleInstanceLock({ deepLinkUrl: deepLinkFromArgv });
+const singleInstanceLock = initialLockAcquired
+  ? Promise.resolve(true)
+  : acquireSingleInstanceLockWithRetry({
+      requestLock: () => app.requestSingleInstanceLock({ deepLinkUrl: deepLinkFromArgv }),
+    });
+let showMainWindowOnSecondInstance = false;
+if (!initialLockAcquired) {
+  console.warn('[AionUi] Another instance is running; waiting for it to release the single-instance lock.');
 }
+app.on('second-instance', (_event, argv, _workingDirectory, additionalData) => {
+  // Prefer additionalData (reliable on all platforms), fallback to argv scan
+  const deepLinkUrl =
+    (additionalData as { deepLinkUrl?: string })?.deepLinkUrl ||
+    argv.find((arg) => arg.startsWith(`${PROTOCOL_SCHEME}://`));
+  if (deepLinkUrl) {
+    handleDeepLinkUrl(deepLinkUrl);
+  }
+  // Focus existing window or recreate one if needed.
+  if (isWebUIMode || isResetPasswordMode) {
+    return;
+  }
+
+  // Remember pre-ready launches so the window is still shown after init.
+  if (!appReadyDone) {
+    showMainWindowOnSecondInstance = true;
+    return;
+  }
+
+  if (app.isReady()) {
+    showOrCreateMainWindow({
+      mainWindow,
+      createWindow: () => {
+        console.log('[AionUi] second-instance received with no active main window, recreating main window');
+        createWindow();
+      },
+    });
+  }
+});
 
 // Align GUI-launched PATH with what local CLIs expect on each desktop OS.
 if (process.platform === 'darwin' || process.platform === 'linux') {
@@ -547,8 +559,15 @@ const createWindow = ({ showOnReady = true }: { showOnReady?: boolean } = {}): v
   registerWindowMaximizeListeners(mainWindow);
   attachWindowBoundsPersistence(mainWindow, (bounds) => ProcessConfig.set('window.bounds', bounds));
 
-  // Auto-update removed: Catfish ships versions manually from its own releases.
-  // No update feed is contacted at startup and no in-app install flow exists.
+  const isCiRuntime = process.env.CI === 'true' || process.env.CI === '1' || process.env.GITHUB_ACTIONS === 'true';
+  const disableAutoUpdater = process.env.AIONUI_DISABLE_AUTO_UPDATE === '1' || isE2ETestMode || isCiRuntime;
+  if (!disableAutoUpdater) {
+    scheduleStartupUpdateCheck(mainWindow, {
+      beforeQuitAndInstall: async () => {
+        await backendManager.stop();
+      },
+    });
+  }
 
   // Load the renderer: dev server URL in development, built HTML file in production
   const rendererUrl = process.env['ELECTRON_RENDERER_URL'];
@@ -983,7 +1002,12 @@ const handleAppReady = async (): Promise<void> => {
       }
     }
 
-    const showMainWindowOnReady = !(wasLaunchedAtLogin() && getCloseToTrayEnabled());
+    const showMainWindowOnReady = shouldShowMainWindowOnReady(
+      showMainWindowOnSecondInstance,
+      wasLaunchedAtLogin(),
+      getCloseToTrayEnabled()
+    );
+    showMainWindowOnSecondInstance = false;
 
     createWindow({ showOnReady: showMainWindowOnReady });
     appReadyDone = true;
@@ -1065,22 +1089,23 @@ app.on('open-url', (event, url) => {
 // 监听 GPU 子进程崩溃，连续多次后下次启动自动关闭硬件加速（参见 ELECTRON-9A / ELECTRON-9D）。
 installGpuCrashHandler();
 
-// Register the backend startup flow only when this process owns the single
-// instance lock. A lock-losing instance must NOT spawn a competing catfishcore
-// backend — doing so races the first instance's catfishcore over the same data
-// directory and produced the "local data repair failed" false alarm
-// (Sentry 135525166). Gating here (rather than at the top-level second-instance
-// block) keeps it after handleAppReady is declared.
-if (shouldRegisterBackendStartup(gotTheLock)) {
-  void app
-    .whenReady()
-    .then(handleAppReady)
-    .catch((error) => {
-      // App initialization failed
-      console.error('[AionUi] App initialization failed:', error);
+// Start only after the single-instance lock is acquired. A lock-losing
+// instance must NOT spawn a competing catfishcore backend. The bounded retry
+// lets a previous instance finish quitting before this one gives up.
+void singleInstanceLock
+  .then((ownsLock) => {
+    if (!ownsLock) {
+      console.warn('[AionUi] Another instance is already running; current process will exit.');
       app.quit();
-    });
-}
+      return;
+    }
+    return app.whenReady().then(handleAppReady);
+  })
+  .catch((error) => {
+    // App initialization failed
+    console.error('[AionUi] App initialization failed:', error);
+    app.quit();
+  });
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits

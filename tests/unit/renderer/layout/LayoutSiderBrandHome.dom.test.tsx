@@ -79,6 +79,7 @@ const BACK_KEY = 'common.back';
 
 describe('Layout sider brand Home button', () => {
   beforeEach(() => {
+    vi.stubGlobal('__APP_VERSION__', '0.4.2');
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
       value: (query: string) => ({
@@ -103,6 +104,18 @@ describe('Layout sider brand Home button', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it.each(['/guid', '/settings/about'])('shows a noninteractive version badge on %s', (pathname) => {
+    currentPathname = pathname;
+    renderLayout();
+
+    const badge = screen.getByText('v0.4.2');
+    expect(badge).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'v0.4.2' })).not.toBeInTheDocument();
+    fireEvent.click(badge);
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('navigates to the recorded last non-settings path when clicked in a settings route', () => {
