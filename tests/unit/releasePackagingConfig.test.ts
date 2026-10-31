@@ -61,6 +61,13 @@ describe('release packaging configuration', () => {
     expect(manifest.trustedDependencies).toContain('cpu-features');
   });
 
+  itWithWorkflow('skips source map validation when Sentry credentials are absent', () => {
+    const workflow = readProjectFile('.github/workflows/_build-reusable.yml');
+
+    expect(workflow).toContain('if [[ "${{ matrix.platform }}" == "linux-x64" && -n "${SENTRY_AUTH_TOKEN:-}" ]]');
+    expect(workflow).toContain("if: matrix.platform == 'linux-x64' && env.SENTRY_UPLOAD_SOURCE_MAPS == 'true'");
+  });
+
   it('keeps mac zip artifacts enabled', () => {
     const config = readProjectFile('packages/desktop/electron-builder.yml');
     const macBlock = yamlBlock(config, 'mac');

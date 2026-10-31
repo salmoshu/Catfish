@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.11](https://github.com/salmoshu/Catfish/releases/tag/v0.4.11) (2026-10-31)
+
+### Build
+
+- **ci:** skip optional Sentry source map uploads when credentials are not configured
+
+---
+
 ## [0.4.10](https://github.com/salmoshu/Catfish/releases/tag/v0.4.10) (2026-10-31)
 
 ### Build
