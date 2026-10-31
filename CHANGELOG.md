@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.6](https://github.com/salmoshu/Catfish/releases/tag/v0.4.6) (2026-10-31)
+
+### Desktop
+
+#### Bug Fixes
+
+- **updates:** report a failed check when no published release is available instead of claiming the app is up to date
+
+### Build
+
+- **release:** build release assets for stable tags and publish them as public releases instead of asset-free drafts
+
+---
+
 ## [0.4.5](https://github.com/salmoshu/Catfish/releases/tag/v0.4.5) (2026-10-31)
 
 ### Desktop

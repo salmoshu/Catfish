@@ -78,6 +78,10 @@ export const runUpdateCheck = async (opts: {
       throw new Error(res?.msg || opts.checkFailedLabel);
     }
 
+    if (!res.data?.latest && !autoUpdateInfo) {
+      throw new Error(opts.checkFailedLabel);
+    }
+
     const currentVersion = res.data?.currentVersion || opts.fallbackVersion;
     const latest = res.data?.latest ?? null;
     const releasePageUrl = latest?.htmlUrl || '';

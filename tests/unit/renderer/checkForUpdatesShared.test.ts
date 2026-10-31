@@ -51,6 +51,18 @@ describe('runUpdateCheck downgrade guard', () => {
     expect(outcome.kind).toBe('upToDate');
   });
 
+  it('reports a failed check instead of up to date when no release is available', async () => {
+    autoCheck.mockResolvedValue({ success: false });
+    manualCheck.mockResolvedValue({
+      success: true,
+      data: { currentVersion: '0.4.4', updateAvailable: false, latest: null },
+    });
+
+    const outcome = await runUpdateCheck(opts);
+
+    expect(outcome).toEqual({ kind: 'error', message: 'failed' });
+  });
+
   it('offers a strictly newer version as available', async () => {
     autoCheck.mockResolvedValue({ success: true, data: { updateInfo: { version: '2.1.55' } } });
     manualCheck.mockResolvedValue({

@@ -161,10 +161,22 @@ describe('AboutModalContent', () => {
   });
 
   it('shows an up-to-date message when no newer release exists', async () => {
+    mocks.updateCheckMock.mockResolvedValue({
+      success: true,
+      data: { currentVersion: '2.2.2', updateAvailable: false, latest: { version: '2.2.2', htmlUrl: '' } },
+    });
+
     render(<AboutModalContent />);
     fireEvent.click(screen.getByRole('button', { name: 'settings.checkForUpdates' }));
 
     await waitFor(() => expect(mocks.messageInfoMock).toHaveBeenCalledWith('update.alreadyLatest'));
+  });
+
+  it('shows a failed check when no published release is available', async () => {
+    render(<AboutModalContent />);
+    fireEvent.click(screen.getByRole('button', { name: 'settings.checkForUpdates' }));
+
+    await waitFor(() => expect(mocks.messageErrorMock).toHaveBeenCalledWith('update.checkFailed'));
   });
 
   it('shows the check error when the update feed fails', async () => {
