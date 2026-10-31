@@ -76,6 +76,14 @@ describe('release packaging configuration', () => {
     expect(workflow).not.toContain('bun x --yes prebuild-install');
   });
 
+  it('retires only the CI transition release when republishing 0.4.5', () => {
+    const workflow = readProjectFile('.github/workflows/build-and-release.yml');
+
+    expect(workflow).toContain("if: github.ref == 'refs/tags/v0.4.5'");
+    expect(workflow).toContain("tag: 'v0.4.12'");
+    expect(workflow).toContain('draft: true');
+  });
+
   it('keeps mac zip artifacts enabled', () => {
     const config = readProjectFile('packages/desktop/electron-builder.yml');
     const macBlock = yamlBlock(config, 'mac');

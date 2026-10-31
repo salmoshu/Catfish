@@ -303,6 +303,26 @@ jobs:
         shell: bash
         run: bash scripts/prepare-release-assets.sh build-artifacts release-assets
 
+      - name: Retire CI transition release
+        if: github.ref == 'refs/tags/v0.4.5'
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: release } = await github.rest.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag: 'v0.4.12',
+            });
+            if (!release.draft) {
+              await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.id,
+                draft: true,
+              });
+            }
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:

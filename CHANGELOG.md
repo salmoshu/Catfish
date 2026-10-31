@@ -1,45 +1,5 @@
 # Changelog
 
-## [0.4.12](https://github.com/salmoshu/Catfish/releases/tag/v0.4.12) (2026-10-31)
-
-### Build
-
-- **native:** use electron-builder with explicit target architectures for Windows native rebuilds
-
----
-
-## [0.4.11](https://github.com/salmoshu/Catfish/releases/tag/v0.4.11) (2026-10-31)
-
-### Build
-
-- **ci:** skip optional Sentry source map uploads when credentials are not configured
-
----
-
-## [0.4.10](https://github.com/salmoshu/Catfish/releases/tag/v0.4.10) (2026-10-31)
-
-### Build
-
-- **native:** declare and trust cpu-features so its required buildcheck runs before Electron rebuilds
-
----
-
-## [0.4.9](https://github.com/salmoshu/Catfish/releases/tag/v0.4.9) (2026-10-31)
-
-### Desktop
-
-#### Bug Fixes
-
-- **updates:** report a failed check when no published release is available instead of claiming the app is up to date
-
-### Build
-
-- **release:** build release assets for stable tags and publish them as public releases instead of asset-free drafts
-- **web-cli:** check the renamed Catfish Core binary in packaged smoke tests
-- **ci:** surface native rebuild and automatic retry failures in the workflow summary
-
----
-
 ## [0.4.5](https://github.com/salmoshu/Catfish/releases/tag/v0.4.5) (2026-10-31)
 
 ### Desktop
@@ -52,6 +12,14 @@
 #### Bug Fixes
 
 - **chat:** tolerate live tool calls without titles instead of unmounting the entire renderer
+- **updates:** report a failed check when no published release is available instead of claiming the app is up to date
+
+### Build
+
+- **release:** build and publish stable-tag installers and updater metadata as public releases
+- **native:** declare and trust cpu-features, and use electron-builder with explicit target architectures
+- **web-cli:** check the renamed Catfish Core binary in packaged smoke tests
+- **ci:** skip optional Sentry source map uploads without credentials and surface native build failures in public annotations
 
 ---
 
