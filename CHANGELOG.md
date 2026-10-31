@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.12](https://github.com/salmoshu/Catfish/releases/tag/v0.4.12) (2026-10-31)
+
+### Build
+
+- **native:** use electron-builder with explicit target architectures for Windows native rebuilds
+
+---
+
 ## [0.4.11](https://github.com/salmoshu/Catfish/releases/tag/v0.4.11) (2026-10-31)
 
 ### Build

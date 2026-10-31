@@ -68,6 +68,14 @@ describe('release packaging configuration', () => {
     expect(workflow).toContain("if: matrix.platform == 'linux-x64' && env.SENTRY_UPLOAD_SOURCE_MAPS == 'true'");
   });
 
+  itWithWorkflow('uses explicit target architectures for native rebuilds', () => {
+    const workflow = readProjectFile('.github/workflows/_build-reusable.yml');
+
+    expect(workflow).toContain('bunx electron-builder install-app-deps --arch=${{ matrix.arch }}');
+    expect(workflow).toContain('Tee-Object -FilePath "$env:RUNNER_TEMP/native-rebuild.log"');
+    expect(workflow).not.toContain('bun x --yes prebuild-install');
+  });
+
   it('keeps mac zip artifacts enabled', () => {
     const config = readProjectFile('packages/desktop/electron-builder.yml');
     const macBlock = yamlBlock(config, 'mac');
