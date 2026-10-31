@@ -72,12 +72,12 @@ echo "✓ Version: $VERSION"
 echo ""
 echo "5. Checking backend binary..."
 BACKEND_DIR="bundled-catfishcore/$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/aarch64/arm64/; s/x86_64/x64/')"
-BACKEND_BINARY="$BACKEND_DIR/aioncore"
+BACKEND_BINARY="$BACKEND_DIR/catfishcore"
 if [ ! -x "$BACKEND_BINARY" ]; then
   echo "❌ Backend binary missing or not executable: $BACKEND_BINARY"
   exit 1
 fi
-# aioncore has no --version flag. Read the pinned version from manifest.json
+# catfishcore has no --version flag. Read the pinned version from manifest.json
 # (which prepareAioncore writes at pack time) and use --help to confirm the
 # binary loads successfully on this platform's GLIBC / libstdc++ / etc.
 if [ -f "$BACKEND_DIR/manifest.json" ]; then

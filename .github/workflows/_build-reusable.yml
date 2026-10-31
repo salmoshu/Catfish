@@ -180,12 +180,28 @@ jobs:
 
       - name: Rebuild native modules for Electron
         if: "!startsWith(matrix.platform, 'windows')"
-        run: bunx electron-builder install-app-deps
+        shell: bash
+        run: |
+          set -o pipefail
+          bunx electron-builder install-app-deps 2>&1 | tee "$RUNNER_TEMP/native-rebuild.log"
         env:
           npm_config_runtime: electron
           npm_config_disturl: https://electronjs.org/headers
           ELECTRON_CACHE: ${{ runner.temp }}/.cache/electron
           ELECTRON_BUILDER_CACHE: ${{ runner.temp }}/.cache/electron-builder
+
+      - name: Report native rebuild failure
+        if: failure() && !startsWith(matrix.platform, 'windows')
+        shell: bash
+        run: |
+          if [ -f "$RUNNER_TEMP/native-rebuild.log" ]; then
+            {
+              echo '### Native rebuild failure'
+              echo '```text'
+              tail -n 120 "$RUNNER_TEMP/native-rebuild.log"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Print build configuration
         shell: bash
@@ -301,6 +317,8 @@ jobs:
         run: |
           $arch = "${{ matrix.arch }}"
           $electronVer = (node -p "require('./package.json').devDependencies.electron.replace(/[\^~]/g, '')").Trim()
+          $nativeLog = Join-Path $env:RUNNER_TEMP 'native-rebuild.log'
+          Start-Transcript -Path $nativeLog | Out-Null
 
           Write-Host "=========================================="
           Write-Host "Rebuilding native modules for Electron $electronVer ($arch)"
@@ -366,6 +384,18 @@ jobs:
           # Don't force build_from_source - let prebuild-install try first
           MSVS_VERSION: 2022
           GYP_MSVS_VERSION: 2022
+
+      - name: Report native rebuild failure (Windows)
+        if: failure() && startsWith(matrix.platform, 'windows')
+        shell: pwsh
+        run: |
+          $nativeLog = Join-Path $env:RUNNER_TEMP 'native-rebuild.log'
+          if (Test-Path $nativeLog) {
+            '### Native rebuild failure' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+            '```text' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+            Get-Content $nativeLog -Tail 120 | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+            '```' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          }
 
       - name: Prepare CatfishCore binary
         shell: bash

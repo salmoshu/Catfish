@@ -139,6 +139,12 @@ jobs:
             echo "❌ Retry trigger failed, HTTP status: $http_code"
             echo "Response:"
             echo "$response" | head -n-1
+            {
+              echo '### Auto retry failed'
+              echo '```text'
+              echo "$response" | head -n-1
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
 

@@ -44,6 +44,13 @@ describe('release packaging configuration', () => {
     expect(prepareScript).not.toContain("require('../packages/shared-scripts/src/prepare-aioncore.js')");
   });
 
+  it('checks the Catfish Core binary in web CLI smoke tests', () => {
+    const script = readProjectFile('scripts/smoke-test-web-cli.sh');
+
+    expect(script).toContain('BACKEND_BINARY="$BACKEND_DIR/catfishcore"');
+    expect(script).not.toContain('BACKEND_BINARY="$BACKEND_DIR/aioncore"');
+  });
+
   it('keeps mac zip artifacts enabled', () => {
     const config = readProjectFile('packages/desktop/electron-builder.yml');
     const macBlock = yamlBlock(config, 'mac');

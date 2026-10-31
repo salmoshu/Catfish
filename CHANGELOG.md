@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.4.7](https://github.com/salmoshu/Catfish/releases/tag/v0.4.7) (2026-10-31)
+## [0.4.8](https://github.com/salmoshu/Catfish/releases/tag/v0.4.8) (2026-10-31)
 
 ### Desktop
 
@@ -11,6 +11,8 @@
 ### Build
 
 - **release:** build release assets for stable tags and publish them as public releases instead of asset-free drafts
+- **web-cli:** check the renamed Catfish Core binary in packaged smoke tests
+- **ci:** surface native rebuild and automatic retry failures in the workflow summary
 
 ---
 
