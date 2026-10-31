@@ -51,6 +51,16 @@ describe('release packaging configuration', () => {
     expect(script).not.toContain('BACKEND_BINARY="$BACKEND_DIR/aioncore"');
   });
 
+  it('allows the cpu-features buildcheck required for Electron rebuilds', () => {
+    const manifest = JSON.parse(readProjectFile('package.json')) as {
+      dependencies?: Record<string, string>;
+      trustedDependencies?: string[];
+    };
+
+    expect(manifest.dependencies?.['cpu-features']).toBe('0.0.10');
+    expect(manifest.trustedDependencies).toContain('cpu-features');
+  });
+
   it('keeps mac zip artifacts enabled', () => {
     const config = readProjectFile('packages/desktop/electron-builder.yml');
     const macBlock = yamlBlock(config, 'mac');

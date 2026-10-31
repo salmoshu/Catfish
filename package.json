@@ -1,6 +1,6 @@
 {
   "name": "catfish",
-  "version": "0.4.9",
+  "version": "0.4.10",
   "description": "Transform your command-line AI agent into a modern, efficient AI Chat interface.",
   "keywords": [],
   "license": "Apache-2.0",
@@ -118,6 +118,7 @@
     "cookie": "^1.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "cpu-features": "0.0.10",
     "croner": "^9.1.0",
     "dayjs": "^1.11.18",
     "diff": "^8.0.3",
@@ -270,5 +271,8 @@
   "patchedDependencies": {
     "7zip-bin@5.2.0": "patches/7zip-bin@5.2.0.patch"
   },
-  "productName": "Catfish"
+  "productName": "Catfish",
+  "trustedDependencies": [
+    "cpu-features"
+  ]
 }

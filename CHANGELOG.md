@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.10](https://github.com/salmoshu/Catfish/releases/tag/v0.4.10) (2026-10-31)
+
+### Build
+
+- **native:** declare and trust cpu-features so its required buildcheck runs before Electron rebuilds
+
+---
+
 ## [0.4.9](https://github.com/salmoshu/Catfish/releases/tag/v0.4.9) (2026-10-31)
 
 ### Desktop
