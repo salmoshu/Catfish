@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.4.8](https://github.com/salmoshu/Catfish/releases/tag/v0.4.8) (2026-10-31)
+## [0.4.9](https://github.com/salmoshu/Catfish/releases/tag/v0.4.9) (2026-10-31)
 
 ### Desktop
 

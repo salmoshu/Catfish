@@ -201,6 +201,7 @@ jobs:
               tail -n 120 "$RUNNER_TEMP/native-rebuild.log"
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
+            tail -n 50 "$RUNNER_TEMP/native-rebuild.log" | awk '{ gsub(/%/, "%25"); gsub(/\r/, "%0D"); print "::error ::" $0 }'
           fi
 
       - name: Print build configuration
@@ -395,6 +396,10 @@ jobs:
             '```text' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
             Get-Content $nativeLog -Tail 120 | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
             '```' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+            Get-Content $nativeLog -Tail 50 | ForEach-Object {
+              $escaped = $_.Replace('%', '%25').Replace("`r", '%0D')
+              Write-Host "::error ::$escaped"
+            }
           }
 
       - name: Prepare CatfishCore binary

@@ -145,6 +145,7 @@ jobs:
               echo "$response" | head -n-1
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
+            echo "$response" | head -n-1 | awk '{ gsub(/%/, "%25"); gsub(/\r/, "%0D"); print "::error ::" $0 }'
             exit 1
           fi
 
