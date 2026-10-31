@@ -170,7 +170,7 @@ export function normalizeAcpToolCall(message: IMessageAcpToolCall): NormalizedTo
 
   return {
     key: update.tool_call_id,
-    name: update.title,
+    name: update.title || update.kind || 'Tool',
     status: normalizeAcpStatus(update.status),
     description: keyParam || (rawInput?.command as string) || update.kind,
     input,

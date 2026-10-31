@@ -5,6 +5,7 @@ import { isSideQuestionSupported } from '@/common/chat/sideQuestion';
 import { parseError, uuid } from '@/common/utils';
 import AgentModeSelector from '@/renderer/components/agent/AgentModeSelector';
 import ContextUsageIndicator from '@/renderer/components/agent/ContextUsageIndicator';
+import { formatThoughtLevelLabel } from '@/renderer/components/agent/runtimeSelectorOptions';
 import CommandQueuePanel from '@/renderer/components/chat/CommandQueuePanel';
 import MobileActionSheet, {
   type MobileActionSheetEntry,
@@ -253,6 +254,7 @@ const AcpSendBox: React.FC<{
     uploadFile,
     setAtPath,
     setUploadFile,
+    conversation_id,
   });
   const commandQueueRuntimeGate = teamRuntime?.runtimeGate ?? {
     hydrated: runtimeView.hydrated,
@@ -602,15 +604,16 @@ Please check your local CLI tool authentication status`,
         key: 'thought-level',
         icon: <Brain theme='outline' size='16' />,
         label: t('agent.thoughtLevel.label'),
-        meta:
+        meta: formatThoughtLevelLabel(
           runtimeThoughtLevel.options.find((item) => item.value === runtimeThoughtLevel.currentValue)?.label ||
-          runtimeThoughtLevel.currentValue ||
-          '',
+            runtimeThoughtLevel.currentValue ||
+            ''
+        ),
         submenu: {
           title: t('agent.thoughtLevel.label'),
           options: runtimeThoughtLevel.options.map((item) => ({
             key: item.value,
-            label: item.label,
+            label: formatThoughtLevelLabel(item.label),
             description: item.description ?? undefined,
             active: runtimeThoughtLevel.currentValue === item.value,
           })),

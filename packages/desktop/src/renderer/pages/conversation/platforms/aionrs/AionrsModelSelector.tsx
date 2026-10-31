@@ -8,6 +8,7 @@ import type { AionrsModelSelection } from './useAionrsModelSelection';
 import type { AcpConfigSetStatus, AcpDerivedOption } from '@/renderer/hooks/agent/useAcpConfigOptions';
 import {
   composeRuntimeSelectorLabel,
+  formatThoughtLevelLabel,
   getCurrentThoughtLevelLabel,
   RUNTIME_SUBMENU_TRIGGER_PROPS,
   RuntimeSelectorCheckedItem,
@@ -149,7 +150,7 @@ const AionrsModelSelector: React.FC<{
                       selected={item.value === thoughtLevel.currentValue}
                       description={item.description}
                     >
-                      {item.label}
+                      {formatThoughtLevelLabel(item.label)}
                     </RuntimeSelectorCheckedItem>
                   </Menu.Item>
                 ))}

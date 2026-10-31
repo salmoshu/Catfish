@@ -327,7 +327,34 @@ describe('AgentModeSelector', () => {
     await waitFor(() =>
       expect(screen.getByTestId('mode-selector')).toHaveAttribute('data-current-mode', 'agent-full-access')
     );
-    expect(screen.getByTestId('agent-mode-selector-codex')).toHaveTextContent('权限 · agent-full-access');
+    expect(screen.getByTestId('agent-mode-selector-codex')).toHaveTextContent('权限 · Agent-full-access');
+  });
+
+  it('capitalizes the first letter of displayed authorization modes', async () => {
+    useAcpConfigOptionsMock.mockImplementation(() => ({
+      setStatus: { state: 'idle' },
+      isLoading: false,
+      mode: null,
+      model: null,
+      thoughtLevel: null,
+      reload: vi.fn(),
+      setConfigOption: vi.fn(),
+    }));
+
+    render(
+      <AgentModeSelector
+        compact
+        initialMode='auto'
+        dynamicModes={[
+          { value: 'auto', label: 'auto' },
+          { value: 'default', label: 'default' },
+        ]}
+        onModeSelect={vi.fn()}
+      />
+    );
+
+    await waitFor(() => expect(screen.getAllByText('Auto').length).toBeGreaterThan(0));
+    expect(screen.getAllByText('Default').length).toBeGreaterThan(0);
   });
 
   it('shows runtime mode descriptions in option tooltips', () => {

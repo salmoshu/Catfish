@@ -46,4 +46,23 @@ describe('normalizeAcpToolCall', () => {
       '/Users/test/.codex/generated_images/session/ig_test_image.png'
     );
   });
+
+  it('falls back to the tool kind before a live tool title arrives', () => {
+    const message = {
+      id: 'pending-tool',
+      conversation_id: 'conv-1',
+      type: 'acp_tool_call',
+      content: {
+        session_id: 'sess-1',
+        update: {
+          sessionUpdate: 'tool_call',
+          tool_call_id: 'pending-tool',
+          status: 'pending',
+          kind: 'execute',
+        },
+      },
+    } as unknown as IMessageAcpToolCall;
+
+    expect(normalizeAcpToolCall(message)?.name).toBe('execute');
+  });
 });

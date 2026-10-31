@@ -7,8 +7,9 @@
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import { dispatchChatMessageJump, dispatchChatSearchPanelOpen } from '@/renderer/utils/chat/chatMinimapEvents';
 import KimiIcon from '@renderer/components/base/KimiIcon';
+import { Button } from '@arco-design/web-react';
 import classNames from 'classnames';
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMessageList } from '../hooks';
 import type { MessageAnchorItem } from './anchors';
@@ -21,13 +22,10 @@ import {
   resolveTickIndexAtOffset,
   resolveViewportHeight,
   TICK_GAP,
-  tickCenterOffset,
   tickStackHeight,
 } from './geometry';
 import styles from './MessageAnchorRail.module.css';
 
-const CARD_EDGE_INSET = 8;
-const FALLBACK_CARD_HEIGHT = 96;
 /**
  * Gap between the tick viewport's edge and a "more this way" hint. Small enough
  * that the hint reads as belonging to the stack, large enough that it does not
@@ -36,9 +34,8 @@ const FALLBACK_CARD_HEIGHT = 96;
 const SCROLL_HINT_OFFSET = 7;
 
 /**
- * Distance from the hovered tick decides how far a tick is pulled out, so the
- * selection reads as one lifted line with its neighbours trailing off. Anything
- * further away stays at rest.
+ * The nearest tick gets the strongest colour and a taller vertical mark; the
+ * two neighbours stay visible at a lower emphasis.
  */
 const tickToneFor = (distance: number): string | undefined => {
   if (distance === 0) return styles.tickActive;
@@ -50,7 +47,7 @@ const tickToneFor = (distance: number): string | undefined => {
 /**
  * A vertical rail of ticks pinned to the chat area's left edge — one tick per
  * user message. The whole rail is a single hover target: wherever the pointer
- * lands, the closest tick is selected, so users never have to aim at a 2px line.
+ * lands, the closest tick is selected, so users never have to aim at a 3px line.
  * Clicking scrolls the chat to the selected message.
  *
  * The rail is a jump target, not a map of the conversation: tick spacing is fixed
@@ -74,9 +71,7 @@ const MessageAnchorRail: React.FC = () => {
   // Keying the observer on the node makes it attach the moment the rail appears.
   const [railNode, setRailNode] = useState<HTMLDivElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
-  const cardRef = useRef<HTMLDivElement | null>(null);
   const [railHeight, setRailHeight] = useState(0);
-  const [cardHeight, setCardHeight] = useState(FALLBACK_CARD_HEIGHT);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   // Mirrors the viewport's scrollTop. Hover maths runs against the *stack*, so it
   // has to add back however far the viewport has been scrolled.
@@ -99,13 +94,8 @@ const MessageAnchorRail: React.FC = () => {
     return () => observer.disconnect();
   }, [railNode]);
 
-  useLayoutEffect(() => {
-    const card = cardRef.current;
-    if (card) setCardHeight(card.getBoundingClientRect().height);
-  }, [activeIndex]);
-
   // Anchors shrink when a conversation is trimmed or switched; drop a stale
-  // selection so the preview card can't point at a message that no longer exists.
+  // selection so it can't point at a message that no longer exists.
   useEffect(() => {
     setActiveIndex((current) => (current !== null && current >= anchors.length ? null : current));
   }, [anchors.length]);
@@ -202,13 +192,6 @@ const MessageAnchorRail: React.FC = () => {
   if (anchors.length < 2) return null;
 
   const activeAnchor = activeIndex === null ? undefined : anchors[activeIndex];
-  // The card is positioned against the rail, so the tick's offset within the
-  // stack has to be shifted by the viewport's own position and scroll.
-  const activeCenter = activeIndex === null ? 0 : stackTop + tickCenterOffset(activeIndex) - scrollTop;
-  const cardTop = Math.min(
-    Math.max(activeCenter - cardHeight / 2, CARD_EDGE_INSET),
-    Math.max(CARD_EDGE_INSET, railHeight - cardHeight - CARD_EDGE_INSET)
-  );
 
   // "There is more this way" affordances. Without them a scrolled rail looks
   // identical to a complete one, so the hidden anchors are undiscoverable. Each
@@ -245,30 +228,35 @@ const MessageAnchorRail: React.FC = () => {
       >
         <div className={styles.ticks} style={{ height: stackHeight, rowGap: TICK_GAP }}>
           {anchors.map((anchor, index) => (
-            <span
+            <Button
               key={anchor.messageId}
-              role='button'
-              tabIndex={0}
+              type='text'
+              size='mini'
+              htmlType='button'
               data-testid='message-anchor-tick'
               data-anchor-index={anchor.index}
               data-anchor-active={activeIndex === index ? 'true' : undefined}
               aria-label={t('messages.anchorRail.tickAria', { index: anchor.index })}
+              aria-current={activeIndex === index ? 'location' : undefined}
               className={classNames(
                 styles.tick,
                 activeIndex === null ? undefined : tickToneFor(Math.abs(index - activeIndex))
               )}
+              onClick={(event) => {
+                event.stopPropagation();
+                jumpToAnchor(anchor);
+              }}
               onFocus={() => {
                 setActiveIndex(index);
                 revealIndex(index);
               }}
               onBlur={() => setActiveIndex((current) => (current === index ? null : current))}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  jumpToAnchor(anchor);
-                }
-              }}
-            />
+            >
+              <span className={styles.tickMark} data-testid='message-anchor-tick-mark' aria-hidden='true' />
+              <span className={styles.tickLabel} data-testid='message-anchor-label'>
+                {anchor.question}
+              </span>
+            </Button>
           ))}
         </div>
       </div>
@@ -305,36 +293,18 @@ const MessageAnchorRail: React.FC = () => {
       {/* Search entry, sitting at the head of the stack so it reads as the first
           anchor. Lives outside the hover zone so hovering it cannot
           magnet-select a tick, and so a click never doubles as a jump. */}
-      <button
-        type='button'
+      <Button
+        type='text'
+        size='mini'
+        htmlType='button'
         className={styles.searchButton}
         style={{ top: searchTop }}
         data-testid='message-anchor-rail-search'
         aria-label={t('messages.anchorRail.searchAria')}
         title={t('messages.anchorRail.searchAria')}
         onClick={openSearchPanel}
-      >
-        <KimiIcon name='search' className={styles.searchIcon} />
-      </button>
-
-      {activeAnchor && (
-        <div
-          ref={cardRef}
-          className={styles.card}
-          style={{ top: cardTop }}
-          data-testid='message-anchor-preview'
-          onClick={() => jumpToAnchor(activeAnchor)}
-        >
-          <div className={classNames(styles.cardQuestion, 'text-13px font-medium text-t-primary leading-18px')}>
-            {activeAnchor.question}
-          </div>
-          {activeAnchor.answer && (
-            <div className={classNames(styles.cardAnswer, 'text-12px text-t-secondary leading-18px')}>
-              {activeAnchor.answer}
-            </div>
-          )}
-        </div>
-      )}
+        icon={<KimiIcon name='search' className={styles.searchIcon} />}
+      />
     </div>
   );
 };

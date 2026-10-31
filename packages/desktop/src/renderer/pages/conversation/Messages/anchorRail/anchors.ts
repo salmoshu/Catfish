@@ -13,9 +13,9 @@ import {
 
 /** One user message rendered as a tick on the anchor rail. */
 export type MessageAnchorItem = {
-  /** 1-based turn number, shown in the preview card. */
+  /** 1-based turn number, exposed to assistive technology. */
   index: number;
-  /** Truncated user question for the preview card. */
+  /** Truncated user question for the expanded outline row. */
   question: string;
   /** Truncated first AI reply of the turn; empty when the turn has no reply yet. */
   answer: string;
@@ -31,7 +31,7 @@ const PREVIEW_MAX_LEN = 120;
  *
  * Only user (right-positioned) text messages become ticks — mirroring the
  * conversation search panel's turn model — and each anchor carries the first AI
- * reply of its turn so the hover card can show a two-line preview.
+ * reply of its turn for the conversation outline data model.
  */
 export const buildMessageAnchors = (messages: TMessage[]): MessageAnchorItem[] => {
   const anchors: MessageAnchorItem[] = [];

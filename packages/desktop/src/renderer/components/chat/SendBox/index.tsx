@@ -705,6 +705,31 @@ const SendBox: React.FC<{
     return textarea instanceof HTMLTextAreaElement ? textarea : null;
   }, []);
 
+  useAddEventListener(
+    'sendbox.image-paths',
+    (paths, targetConversationId) => {
+      if (targetConversationId !== undefined && targetConversationId !== conversationContext?.conversation_id) {
+        return;
+      }
+      const textarea = getTextareaElement();
+      const start = textarea?.selectionStart ?? caretPosition;
+      const end = textarea?.selectionEnd ?? start;
+      const prefix = start > 0 && !/\s/.test(input[start - 1]) ? ' ' : '';
+      const suffix = end < input.length && !/\s/.test(input[end]) ? ' ' : '';
+      const insertion = `${prefix}${paths.map((path) => `[${path}]`).join(' ')}${suffix}`;
+      const next = applyMentionInsertion(input, start, end, insertion);
+      setInput(next.value);
+      requestAnimationFrame(() => {
+        const currentTextarea = getTextareaElement();
+        if (!currentTextarea) return;
+        currentTextarea.focus();
+        currentTextarea.setSelectionRange(next.caret, next.caret);
+        setCaretPosition(next.caret);
+      });
+    },
+    [caretPosition, conversationContext?.conversation_id, getTextareaElement, input, setInput]
+  );
+
   const handleConversationPrefill = useCallback(
     ({ prompt, requestId }: { prompt: string; requestId: number }) => {
       const expectedValue = appendPromptToDraft(prefillDraftChainRef.current ?? latestInputRef.current, prompt);

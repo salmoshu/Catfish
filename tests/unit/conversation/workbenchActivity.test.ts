@@ -45,4 +45,24 @@ describe('workbench activity', () => {
     expect(isAgentToolName('Read')).toBe(false);
     expect(isAgentToolName('Subagent')).toBe(true);
   });
+
+  it('handles live ACP tool calls before a title arrives', () => {
+    const pendingTool = {
+      id: 'pending-tool',
+      conversation_id: 'conversation-1',
+      type: 'acp_tool_call',
+      position: 'left',
+      content: {
+        session_id: 'session-1',
+        update: {
+          sessionUpdate: 'tool_call',
+          tool_call_id: 'pending-tool',
+          status: 'pending',
+          kind: 'execute',
+        },
+      },
+    } as unknown as TMessage;
+
+    expect(deriveWorkbenchActivity([pendingTool])).toEqual({ terminals: [], agents: [] });
+  });
 });

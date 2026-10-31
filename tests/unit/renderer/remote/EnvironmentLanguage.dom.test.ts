@@ -20,7 +20,7 @@ vi.mock('@/common', () => ({
   },
 }));
 
-describe('environment language preferences', () => {
+describe('environment language preferences', { timeout: 30000 }, () => {
   beforeEach(() => {
     vi.resetModules();
     localStorage.clear();

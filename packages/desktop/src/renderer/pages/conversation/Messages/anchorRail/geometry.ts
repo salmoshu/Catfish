@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/** Rendered height of one tick, in px. Mirrors `.tick` in the rail stylesheet. */
-export const TICK_HEIGHT = 2;
+/** Rendered height of one outline row, in px. Mirrors `.tick` in the rail stylesheet. */
+export const TICK_HEIGHT = 26;
 
 /**
  * Spacing between ticks. Fixed, never derived from the rail's height.
@@ -16,7 +16,7 @@ export const TICK_HEIGHT = 2;
  * makes the lifted selection impossible to pick out — so instead of compressing,
  * a long conversation scrolls (see `resolveStackTop` / the rail's scroll host).
  */
-export const TICK_GAP = 10;
+export const TICK_GAP = 6;
 
 /**
  * Vertical space the search button occupies at the head of the stack.
@@ -24,11 +24,10 @@ export const TICK_GAP = 10;
  * The band is carved out of the rail rather than overlaid on it, so the button
  * never sits on top of a tick and hovering it cannot magnet-select one.
  *
- * Sized to fit the 16px button *plus* the "more above" hint that appears between
- * it and the ticks once the rail scrolls. At 26px the hint collided with the
- * button by 4px; the band now reserves room for both so the two never overlap.
+ * Sized to fit the 16px button and the three 8px hint marks with 2px gaps,
+ * with room to spare so the controls never overlap.
  */
-export const SEARCH_BUTTON_BAND = 38;
+export const SEARCH_BUTTON_BAND = 56;
 
 /**
  * Most ticks the rail will ever show at once.

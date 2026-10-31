@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.4.5](https://github.com/salmoshu/Catfish/releases/tag/v0.4.5) (2026-10-31)
+
+### Desktop
+
+#### Features
+
+- **composer:** shorten thought-level labels, capitalize authorization mode labels, and insert uploaded image paths at the caret alongside previews
+- **conversation:** use a Timber-style vertical outline with expandable turn titles, keyboard navigation, long-history scrolling, and retained search
+
+#### Bug Fixes
+
+- **chat:** tolerate live tool calls without titles instead of unmounting the entire renderer
+
+---
+
 ## [0.4.4](https://github.com/salmoshu/Catfish/releases/tag/v0.4.4) (2026-10-30)
 
 ### Desktop

@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
   composeRuntimeSelectorLabel,
+  formatThoughtLevelLabel,
   getCurrentThoughtLevelLabel,
   RUNTIME_SUBMENU_TRIGGER_PROPS,
   RuntimeSelectorCheckedItem,
@@ -244,7 +245,7 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
                           selected={item.value === normalizedThoughtLevelOption.currentValue}
                           description={item.description}
                         >
-                          {item.label}
+                          {formatThoughtLevelLabel(item.label)}
                         </RuntimeSelectorCheckedItem>
                       </Menu.Item>
                     ))}

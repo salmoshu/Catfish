@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import type { FileMetadata } from '@/renderer/services/FileService';
 import { getCleanFileNames } from '@/renderer/services/FileService';
 import type { FileOrFolderItem } from '@/renderer/utils/file/fileTypes';
+import { emitter } from '@/renderer/utils/emitter';
 
 /**
  * 创建通用的setUploadFile函数
@@ -40,6 +41,7 @@ interface UseSendBoxFilesProps {
   uploadFile: string[];
   setAtPath: (atPath: Array<string | FileOrFolderItem>) => void;
   setUploadFile: (uploadFile: string[] | ((prev: string[]) => string[])) => void;
+  conversation_id?: string;
 }
 
 /**
@@ -59,15 +61,25 @@ export const formatFilesForMessage = (files: string[]): string => {
  * 共享的SendBox文件处理逻辑
  * 消除ACP、Gemini、GUID三个组件间的代码重复
  */
-export const useSendBoxFiles = ({ atPath, uploadFile, setAtPath, setUploadFile }: UseSendBoxFilesProps) => {
+export const useSendBoxFiles = ({
+  atPath,
+  uploadFile,
+  setAtPath,
+  setUploadFile,
+  conversation_id,
+}: UseSendBoxFilesProps) => {
   // 处理拖拽或粘贴的文件
   const handleFilesAdded = useCallback(
     (files: FileMetadata[]) => {
       const file_paths = files.map((file) => file.path);
       // 使用函数式更新，基于最新状态而不是闭包中的状态
       setUploadFile((prevUploadFile) => [...prevUploadFile, ...file_paths]);
+      const imagePaths = files.filter((file) => file.type.startsWith('image/')).map((file) => file.path);
+      if (imagePaths.length > 0) {
+        emitter.emit('sendbox.image-paths', imagePaths, conversation_id);
+      }
     },
-    [setUploadFile]
+    [conversation_id, setUploadFile]
   );
 
   // 处理消息中的文件引用（@文件名 格式）

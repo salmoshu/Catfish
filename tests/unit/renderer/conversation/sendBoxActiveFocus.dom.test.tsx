@@ -114,11 +114,6 @@ vi.mock('@/renderer/hooks/system/useLiveTranscriptInsertion', async (importOrigi
   };
 });
 
-vi.mock('@/renderer/utils/emitter', () => ({
-  emitter: { emit: vi.fn() },
-  useAddEventListener: vi.fn(),
-}));
-
 vi.mock('@/renderer/components/chat/BtwOverlay', () => ({ default: () => null }));
 vi.mock('@/renderer/components/chat/SpeechInputButton', () => ({ default: () => null }));
 vi.mock('@/renderer/components/media/UploadProgressBar', () => ({ default: () => null }));
@@ -132,6 +127,7 @@ const SendBoxHarness = ({
   initialValue = '',
   onSend = vi.fn().mockResolvedValue(undefined),
   onAddToDraft,
+  onValueChange,
 }: {
   active?: boolean;
   onFocused?: () => void;
@@ -139,12 +135,16 @@ const SendBoxHarness = ({
   initialValue?: string;
   onSend?: (message: string) => Promise<void | false>;
   onAddToDraft?: () => void;
+  onValueChange?: (value: string) => void;
 }) => {
   const [value, setValue] = useState(initialValue);
   return (
     <SendBox
       value={value}
-      onChange={setValue}
+      onChange={(nextValue) => {
+        setValue(nextValue);
+        onValueChange?.(nextValue);
+      }}
       onSend={onSend}
       active={active}
       onFocused={onFocused}
@@ -293,5 +293,27 @@ describe('SendBox selection→focus downward effect', () => {
     screen.getByRole('button', { name: 'outside' }).focus();
     await waitFor(() => expect(screen.getByRole('button', { name: 'outside' })).toHaveFocus());
     expect(textarea).not.toHaveFocus();
+  });
+});
+
+describe('SendBox image paths', () => {
+  it('inserts uploaded image paths at the current caret', async () => {
+    const { emitter } = await import('@/renderer/utils/emitter');
+    const onValueChange = vi.fn();
+    await act(async () => {
+      render(<SendBoxHarness initialValue='ABCD' onValueChange={onValueChange} />);
+    });
+
+    const textarea = screen.getByTestId('sendbox-input') as HTMLTextAreaElement;
+    await waitFor(() => expect(textarea).toHaveFocus());
+    textarea.setSelectionRange(2, 2);
+    await act(async () => {
+      emitter.emit('sendbox.image-paths', ['D:\\images\\A Image.png'], 'sendbox-active-focus-conversation');
+    });
+
+    await waitFor(() => expect(onValueChange).toHaveBeenCalledWith('AB [D:\\images\\A Image.png] CD'));
+    await waitFor(() => expect(textarea.value).toBe('AB [D:\\images\\A Image.png] CD'));
+    expect(textarea).toHaveFocus();
+    expect(textarea.selectionStart).toBe(textarea.value.indexOf('CD'));
   });
 });

@@ -44,6 +44,7 @@ interface EventTypes {
   'sendbox.fill': [string]; // prompt text to fill
   'sendbox.reply': [ReplyQuote]; // reply/quote a message
   'sendbox.reply.clear': void; // clear reply quote
+  'sendbox.image-paths': [string[], string | undefined];
   /**
    * Mention a conversation in the send box, target already resolved.
    *

@@ -7,7 +7,7 @@
 import { ipcBridge } from '@/common';
 import type { IMcpServer, IProvider, TProviderWithModel } from '@/common/config/storage';
 import AgentModeSelector from '@/renderer/components/agent/AgentModeSelector';
-import { DROPDOWN_SEARCH_THRESHOLD } from '@/renderer/components/agent/runtimeSelectorOptions';
+import { DROPDOWN_SEARCH_THRESHOLD, formatThoughtLevelLabel } from '@/renderer/components/agent/runtimeSelectorOptions';
 import AionInlineSearchInput from '@/renderer/components/base/AionInlineSearchInput';
 import MobileActionSheet from '@/renderer/components/chat/MobileActionSheet';
 import type {
@@ -278,12 +278,14 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
         key: 'thought-level',
         icon: <Brain theme='outline' size='16' />,
         label: t('agent.thoughtLevel.label'),
-        meta: thoughtLevelOption.options.find((o) => o.value === currentValue)?.label || currentValue || '',
+        meta: formatThoughtLevelLabel(
+          thoughtLevelOption.options.find((o) => o.value === currentValue)?.label || currentValue || ''
+        ),
         submenu: {
           title: t('agent.thoughtLevel.label'),
           options: thoughtLevelOption.options.map((o) => ({
             key: o.value,
-            label: o.label,
+            label: formatThoughtLevelLabel(o.label),
             description: o.description ?? undefined,
             active: o.value === currentValue,
           })),

@@ -137,7 +137,10 @@ const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const getDisplayModeLabel = useCallback(
-    (mode: AgentModeOption) => modeLabelFormatter?.(mode) ?? mode.label,
+    (mode: AgentModeOption) => {
+      const label = modeLabelFormatter?.(mode) ?? mode.label;
+      return label.charAt(0).toUpperCase() + label.slice(1);
+    },
     [modeLabelFormatter]
   );
 
@@ -148,7 +151,7 @@ const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
   const pendingModeLabel = useMemo(() => {
     if (!pendingMode || pendingMode === current_mode) return undefined;
     const option = modes.find((mode) => mode.value === pendingMode);
-    return option ? getDisplayModeLabel(option) : pendingMode;
+    return option ? getDisplayModeLabel(option) : pendingMode.charAt(0).toUpperCase() + pendingMode.slice(1);
   }, [pendingMode, current_mode, modes, getDisplayModeLabel]);
 
   const can_switchMode = modes.length > 0 && Boolean(conversation_id || onModeSelect);
@@ -231,14 +234,15 @@ const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
     />
   );
 
-  const displayAgentName = normalizeAssistantDisplayName(agent_name) || normalizeAssistantDisplayName(backend) || 'Agent';
+  const displayAgentName =
+    normalizeAssistantDisplayName(agent_name) || normalizeAssistantDisplayName(backend) || 'Agent';
 
   // Get display label for current mode. When the current value matches no option
   // (e.g. backend mode-vocabulary drift), surface the raw value instead of an empty
   // string so the compact pill never renders a bare "prefix · " with nothing after it.
   const getCurrentModeLabel = () => {
     const modeOption = modes.find((m) => m.value === current_mode);
-    return modeOption ? getDisplayModeLabel(modeOption) : current_mode;
+    return modeOption ? getDisplayModeLabel(modeOption) : current_mode.charAt(0).toUpperCase() + current_mode.slice(1);
   };
 
   // Dropdown menu (shared between compact and full mode)
@@ -278,7 +282,8 @@ const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
   if (compact) {
     const isSetting = isLoading || runtimeConfig.setStatus.state === 'setting';
     const legacyCompactBehavior = !showLogoInCompact && compactLabelType === 'mode';
-    const baseCompactLabel = compactLabelType === 'agent' ? displayAgentName : can_switchMode ? getCurrentModeLabel() : displayAgentName;
+    const baseCompactLabel =
+      compactLabelType === 'agent' ? displayAgentName : can_switchMode ? getCurrentModeLabel() : displayAgentName;
     // With a pending target the pill has to say two things in the width of one. The
     // "权限 · " prefix is what gives: the shield icon already marks this as the
     // permission pill, so the prefix is the least informative part at that moment, and

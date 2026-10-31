@@ -106,8 +106,8 @@ describe('resolveStackTop / resolveSearchButtonTop', () => {
     }
   });
 
-  it('centres button and strip as one group, short conversation or long', () => {
-    for (const count of [10, 200]) {
+  it('centres button and strip when the group fits and anchors a taller group at the top', () => {
+    for (const count of [10]) {
       const buttonTop = resolveSearchButtonTop(RAIL, count);
       const stackTop = resolveStackTop(RAIL, count);
       const viewport = resolveViewportHeight(RAIL, count);
@@ -115,6 +115,7 @@ describe('resolveStackTop / resolveSearchButtonTop', () => {
       // Equal breathing room above the button and below the strip.
       expect(buttonTop).toBeCloseTo(RAIL - (stackTop + viewport));
     }
+    expect(resolveSearchButtonTop(RAIL, 200)).toBe(0);
   });
 
   it('keeps the strip compact rather than filling a tall rail', () => {
@@ -255,7 +256,7 @@ describe('search button band leaves room for the scroll hint', () => {
   // Regression: at 26px the band fitted the 16px button but not the "more above"
   // hint that appears between it and the ticks, so the two overlapped by 4px.
   const BUTTON_HEIGHT = 16;
-  const HINT_HEIGHT = 7;
+  const HINT_HEIGHT = 28;
 
   it('fits the button and the hint without them colliding', () => {
     expect(SEARCH_BUTTON_BAND).toBeGreaterThanOrEqual(BUTTON_HEIGHT + HINT_HEIGHT);

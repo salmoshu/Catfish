@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import RuntimeSelectorPill, { RuntimeSelectorLoadingIndicator } from './RuntimeSelectorPill';
 import {
   composeRuntimeSelectorLabel,
+  formatThoughtLevelLabel,
   getCurrentThoughtLevelLabel,
   isConfigSetting,
   RUNTIME_SUBMENU_TRIGGER_PROPS,
@@ -270,7 +271,7 @@ const AcpModelSelector: React.FC<{
                       selected={item.value === thoughtLevel.currentValue}
                       description={item.description}
                     >
-                      {item.label}
+                      {formatThoughtLevelLabel(item.label)}
                     </RuntimeSelectorCheckedItem>
                   </Menu.Item>
                 ))}

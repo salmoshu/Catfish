@@ -191,6 +191,24 @@ describe('AcpModelSelector runtime options', () => {
     expect(screen.getByTestId('acp-model-selector')).toHaveTextContent('GPT-5.2 · High');
   });
 
+  it('omits the provider Thinking prefix in the header pill', () => {
+    useAcpModelInfoMock.mockReturnValue(
+      makeResult({
+        thoughtLevel: {
+          id: 'thought_level',
+          category: 'thought_level',
+          currentValue: 'max',
+          options: [{ value: 'max', label: 'Thinking Max' }],
+        },
+      })
+    );
+
+    render(<AcpModelSelector conversation_id='conversation-1' backend='kimi' />);
+
+    expect(screen.getByTestId('acp-model-selector')).toHaveTextContent('GPT-5.2 · Max');
+    expect(screen.getByTestId('acp-model-selector')).not.toHaveTextContent('Thinking Max');
+  });
+
   it('reports runtime readiness changes to its parent', () => {
     const onRuntimeReadyChange = vi.fn();
     useAcpModelInfoMock.mockReturnValue(makeResult({ isRuntimeReady: false }));

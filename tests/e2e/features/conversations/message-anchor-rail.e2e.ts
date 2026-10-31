@@ -44,22 +44,49 @@ function createFakeClaudeConversation(id: string, assistantId: string) {
   return {
     id,
     name: `E2E AnchorRail ${id}`,
+    type: 'acp',
     assistant: { id: assistantId },
     extra: {
-      workspace: '/tmp',
+      workspace: process.cwd(),
       custom_workspace: true,
       session_mode: 'default',
     },
   };
 }
 
+let createdAssistantId = '';
+
 async function createConversation(page: Page, conversationId: string): Promise<string> {
   await goToGuid(page);
-  // The rail renders from injected messages alone, so an installed (not
-  // necessarily online) assistant is enough to open a conversation page.
-  const assistantId = await findAssistantIdForBackend(page, 'claude');
-  test.skip(!assistantId, 'No available Claude assistant for anchor rail conversation');
-  if (!assistantId) return '';
+  await page.waitForFunction(
+    () => ((window as unknown as { __backendPort?: number }).__backendPort ?? 0) > 0,
+    undefined,
+    { timeout: 30_000 }
+  );
+  let assistantId = await findAssistantIdForBackend(page, 'kimi');
+  if (!assistantId) {
+    assistantId = await page.evaluate(async () => {
+      const port = (window as unknown as { __backendPort?: number }).__backendPort;
+      const agentsResponse = await fetch(`http://127.0.0.1:${port}/api/agents/management`);
+      const agentsPayload = (await agentsResponse.json()) as
+        | Array<{ id: string; backend?: string; agent_type?: string }>
+        | { data?: Array<{ id: string; backend?: string; agent_type?: string }> };
+      const agents = Array.isArray(agentsPayload) ? agentsPayload : (agentsPayload.data ?? []);
+      const agentId = agents.find((agent) => (agent.agent_type ?? agent.backend) === 'kimi')?.id;
+      if (!agentId) throw new Error('No local ACP agent available for test');
+      const response = await fetch(`http://127.0.0.1:${port}/api/assistants`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'E2E Kimi', preset_agent_type: 'kimi', agent_id: agentId }),
+      });
+      if (!response.ok) throw new Error(`Create test assistant failed: ${response.status} ${await response.text()}`);
+      const payload = (await response.json()) as { data?: { id?: string }; id?: string };
+      const id = payload.data?.id ?? payload.id;
+      if (!id) throw new Error('Create test assistant returned no id');
+      return id;
+    });
+    createdAssistantId = assistantId;
+  }
 
   return page.evaluate(
     async ({ conversation }) => {
@@ -113,7 +140,10 @@ async function openConversationPage(page: Page, targetConversationId: string): P
   const baseUrl = page.url().split('#')[0];
   await page.goto(`${baseUrl}#/conversation/${targetConversationId}`);
   await page.waitForLoadState('domcontentloaded');
-  await page.waitForSelector('[data-testid="message-list-scroller"]', { timeout: 30_000 });
+  await page
+    .locator('[data-testid="message-list-scroller"], [data-testid="single-chat-empty-state"]')
+    .first()
+    .waitFor({ state: 'visible', timeout: 30_000 });
 }
 
 async function waitForStreamController(page: Page, targetConversationId: string): Promise<void> {
@@ -178,6 +208,16 @@ test.describe('Message anchor rail', () => {
       await removeConversation(page, conversationId);
       conversationId = '';
     }
+    if (createdAssistantId) {
+      await page.evaluate(async (id) => {
+        const port = (window as unknown as { __backendPort?: number }).__backendPort;
+        if (!port) return;
+        await fetch(`http://127.0.0.1:${port}/api/assistants/${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(
+          () => {}
+        );
+      }, createdAssistantId);
+      createdAssistantId = '';
+    }
   });
 
   test('renders one tick per user message on the chat area left edge', async ({ page }) => {
@@ -199,14 +239,11 @@ test.describe('Message anchor rail', () => {
     }
   });
 
-  test('hovering anywhere in the rail selects the nearest tick and previews it', async ({ page }) => {
+  test('hovering anywhere in the rail selects a tick and expands its title', async ({ page }, testInfo) => {
     const rail = page.locator('[data-testid="message-anchor-rail"]');
     await expect(rail).toBeVisible({ timeout: 15_000 });
 
     const railBox = await rail.boundingBox();
-    // Target the first tick's row, but aim at the rail column rather than the tick
-    // itself — that is the whole point of the magnet behaviour: a 2px line must not
-    // be the hit target.
     const firstTickBox = await page.locator('[data-testid="message-anchor-tick"]').first().boundingBox();
     expect(railBox).not.toBeNull();
     expect(firstTickBox).not.toBeNull();
@@ -214,17 +251,15 @@ test.describe('Message anchor rail', () => {
 
     await page.mouse.move(railBox.x + railBox.width / 2, firstTickBox.y + firstTickBox.height / 2);
 
-    const preview = page.locator('[data-testid="message-anchor-preview"]');
-    await expect(preview).toBeVisible({ timeout: 10_000 });
-    // Exactly one tick is lifted, and it is the selection the card describes.
+    const label = page.locator(
+      '[data-testid="message-anchor-tick"][data-anchor-index="1"] [data-testid="message-anchor-label"]'
+    );
+    await expect(label).toBeVisible({ timeout: 10_000 });
     const active = page.locator('[data-testid="message-anchor-tick"][data-anchor-active="true"]');
     await expect(active).toHaveCount(1);
     await expect(active).toHaveAttribute('data-anchor-index', '1');
-
-    // The card is intentionally spare: the seeded question and its reply, nothing
-    // else. No turn counter and no "click to jump" hint.
-    await expect(preview).toContainText('User seed message 1');
-    await expect(preview).toContainText('Assistant seed reply 1');
+    await expect(label).toContainText('User seed message 1');
+    await page.screenshot({ path: testInfo.outputPath('outline-expanded.png') });
   });
 
   test('selection follows the pointer as it scrubs down the rail', async ({ page }) => {
@@ -429,7 +464,7 @@ test.describe('Message anchor rail', () => {
 
     await page.mouse.move(railBox.x + railBox.width / 2, lastBox.y + lastBox.height / 2);
 
-    await expect(page.locator('[data-testid="message-anchor-preview"]')).toBeVisible({ timeout: 10_000 });
+    await expect(lastTick.locator('[data-testid="message-anchor-label"]')).toBeVisible({ timeout: 10_000 });
     await expect(lastTick).toHaveAttribute('data-anchor-active', 'true', { timeout: 10_000 });
   });
 
@@ -496,7 +531,7 @@ test.describe('Message anchor rail', () => {
     const active = page.locator('[data-testid="message-anchor-tick"][data-anchor-active="true"]');
     await expect(active).toHaveCount(1, { timeout: 10_000 });
     const before = await active.getAttribute('data-anchor-index');
-    await expect(page.locator('[data-testid="message-anchor-preview"]')).toBeVisible();
+    await expect(active.locator('[data-testid="message-anchor-label"]')).toBeVisible();
 
     // Scroll without moving the pointer. A different tick is now underneath it, so
     // the selection must move to that tick instead of scrolling out of view.
@@ -510,14 +545,13 @@ test.describe('Message anchor rail', () => {
     await expect(active).toHaveCount(1, { timeout: 10_000 });
     await expect.poll(async () => active.getAttribute('data-anchor-index'), { timeout: 10_000 }).not.toBe(before);
 
-    // The preview card stays on screen, describing the newly-selected anchor.
-    const card = page.locator('[data-testid="message-anchor-preview"]');
-    await expect(card).toBeVisible();
-    const cardVisible = await card.evaluate((element) => {
+    const activeLabel = active.locator('[data-testid="message-anchor-label"]');
+    await expect(activeLabel).toBeVisible();
+    const labelVisible = await activeLabel.evaluate((element) => {
       const box = element.getBoundingClientRect();
       return box.top >= 0 && box.bottom <= window.innerHeight;
     });
-    expect(cardVisible).toBe(true);
+    expect(labelVisible).toBe(true);
   });
 
   test('keeps the search button clear of the scroll hint and aligned to the tick column', async ({ page }) => {
@@ -542,7 +576,7 @@ test.describe('Message anchor rail', () => {
       const buttonEl = document.querySelector('[data-testid="message-anchor-rail-search"]');
       const glyphEl = buttonEl?.querySelector('svg');
       const hintDotEl = document.querySelector('[data-testid="message-anchor-rail-more-up"] span');
-      const tickEl = document.querySelector('[data-testid="message-anchor-tick"]');
+      const tickEl = document.querySelector('[data-testid="message-anchor-tick-mark"]');
       if (!railEl || !buttonEl || !glyphEl || !hintDotEl || !tickEl) return null;
 
       const button = buttonEl.getBoundingClientRect();

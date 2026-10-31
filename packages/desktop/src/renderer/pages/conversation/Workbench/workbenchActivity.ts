@@ -10,7 +10,8 @@ export type WorkbenchActivity = {
 
 export const EMPTY_WORKBENCH_ACTIVITY: WorkbenchActivity = { terminals: [], agents: [] };
 
-export const isAgentToolName = (name: string): boolean => /^(agent|task|subagent)(?:\b|:)/i.test(name.trim());
+export const isAgentToolName = (name: string): boolean =>
+  typeof name === 'string' && /^(agent|task|subagent)(?:\b|:)/i.test(name.trim());
 
 export const deriveWorkbenchActivity = (messages: TMessage[]): WorkbenchActivity => {
   const terminals = messages.filter(

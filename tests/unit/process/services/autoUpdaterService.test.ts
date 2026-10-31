@@ -77,6 +77,7 @@ describe('AutoUpdaterService', () => {
   const originalPlatform = process.platform;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     vi.resetModules();
     vi.clearAllMocks();
     setPlatform(originalPlatform);

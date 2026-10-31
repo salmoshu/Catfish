@@ -24,12 +24,14 @@ export type RuntimeSelectorModelGroup = { key: string; title: string; models: Ru
 const matchesModelQuery = (model: RuntimeSelectorModel, keyword: string): boolean =>
   (model.label || model.id).toLowerCase().includes(keyword);
 
+export const formatThoughtLevelLabel = (label: string): string => label.replace(/^Thinking(?:\s+|$)/i, '');
+
 export const getCurrentThoughtLevelLabel = (thoughtLevel: AcpDerivedOption | null | undefined): string => {
   if (!thoughtLevel) return '';
-  return (
+  return formatThoughtLevelLabel(
     thoughtLevel.options.find((item) => item.value === thoughtLevel.currentValue)?.label ||
-    thoughtLevel.currentValue ||
-    ''
+      thoughtLevel.currentValue ||
+      ''
   );
 };
 
