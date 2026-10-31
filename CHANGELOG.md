@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.4.5](https://github.com/salmoshu/Catfish/releases/tag/v0.4.5) (2026-10-31)
+## [0.4.5](https://github.com/salmoshu/Catfish/releases/tag/v0.4.5) (2026-11-01)
 
 ### Desktop
 
@@ -20,6 +20,7 @@
 - **native:** declare and trust cpu-features, and use electron-builder with explicit target architectures
 - **web-cli:** check the renamed Catfish Core binary in packaged smoke tests
 - **ci:** skip optional Sentry source map uploads without credentials and surface native build failures in public annotations
+- **ci:** migrate build workflows from the retired macos-14 runner to macos-15
 
 ---
 

@@ -84,6 +84,17 @@ describe('release packaging configuration', () => {
     expect(workflow).toContain('draft: true');
   });
 
+  it('uses supported macOS runners for build workflows', () => {
+    for (const path of [
+      '.github/workflows/build-and-release.yml',
+      '.github/workflows/pack-web-cli.yml',
+      '.github/workflows/build-manual.yml',
+      '.github/workflows/pr-checks.yml',
+    ]) {
+      expect(readProjectFile(path)).not.toContain('macos-14');
+    }
+  });
+
   it('keeps mac zip artifacts enabled', () => {
     const config = readProjectFile('packages/desktop/electron-builder.yml');
     const macBlock = yamlBlock(config, 'mac');
