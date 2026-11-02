@@ -52,6 +52,7 @@ import type { AgentModeOption } from '@/renderer/utils/model/agentTypes';
 import { Button, Message, Tag } from '@arco-design/web-react';
 import { Brain, Lightning, MagicHat, Shield } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { classifyConversationBusyError } from '../conversationBusyError';
 import { useAionrsMessage } from './useAionrsMessage';
@@ -124,7 +125,16 @@ const AionrsSendBox: React.FC<{
   agent_name?: string;
   teamSendMessage?: (payload: { input: string; files: ChatFileRef[] }) => Promise<void>;
   teamRuntime?: TeamSendBoxRuntime;
-}> = ({ conversation_id, modelSelection, session_mode, agent_name, teamSendMessage, teamRuntime }) => {
+  commandQueueContainer?: HTMLElement | null;
+}> = ({
+  conversation_id,
+  modelSelection,
+  session_mode,
+  agent_name,
+  teamSendMessage,
+  teamRuntime,
+  commandQueueContainer,
+}) => {
   const [dynamicModes, setDynamicModes] = useState<AgentModeOption[]>([]);
   const [currentMode, setCurrentMode] = useState<string | undefined>(session_mode);
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
@@ -387,19 +397,21 @@ const AionrsSendBox: React.FC<{
   const [selectedSessions, setSelectedSessions] = useState<SessionRef[]>([]);
   const { enabled: crossSessionEnabled } = useCrossSessionMessageEnabled();
 
-  // aionrs backends never support mid-turn delivery: while the agent is
-  // replying, sending is hard-blocked with a toast instead of implicitly
-  // enqueuing. The only way to queue a message while busy is the explicit
-  // "add to queue" entry (handleAddToQueue below).
+  const queueMessage = (message: string): boolean => {
+    const filesToSend = collectChatFileRefs(uploadFile, atPath);
+    const sessions = selectedSessions.length > 0 ? selectedSessions : undefined;
+    const item = enqueue({ input: message, files: filesToSend, sessions });
+    if (!item) return false;
+
+    clearFiles();
+    setSelectedSessions([]);
+    emitter.emit('aionrs.selected.file.clear');
+    return true;
+  };
+
   const onSendHandler = async (message: string): Promise<void | false> => {
     if (isBusy) {
-      Message.warning(
-        t('conversation.commandQueue.midturnBlocked', {
-          defaultValue:
-            'This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.',
-        })
-      );
-      return false;
+      return queueMessage(message) ? undefined : false;
     }
 
     const filesToSend = collectChatFileRefs(uploadFile, atPath);
@@ -425,29 +437,6 @@ const AionrsSendBox: React.FC<{
       setInterrupting(false);
     }
   };
-
-  // Explicit "add to queue" entry — visibility is keyed only to the user's
-  // own input (non-empty draft), never to the agent's busy/replying state:
-  // tying it to that racy, async signal made the entry appear/disappear
-  // unpredictably. Clicking while idle is semantically fine — the queue's own
-  // mode governs (auto drains immediately, manual holds). Clears the draft
-  // the same way a send would.
-  const canQueueCurrentDraft = content.trim().length > 0;
-  const handleAddToQueue = useCallback(() => {
-    const filesToSend = collectChatFileRefs(uploadFile, atPath);
-    // `@@` references must ride along, and must be released from the send box
-    // the same way the draft text is — otherwise they leak into whatever the
-    // user sends next.
-    enqueue({
-      input: content,
-      files: filesToSend,
-      sessions: selectedSessions.length > 0 ? selectedSessions : undefined,
-    });
-    setContent('');
-    clearFiles();
-    setSelectedSessions([]);
-    emitter.emit('aionrs.selected.file.clear');
-  }, [atPath, clearFiles, content, enqueue, selectedSessions, setContent, uploadFile]);
 
   const handleEditQueuedCommand = useCallback(
     (item: ConversationCommandQueueItem) => {
@@ -731,20 +720,24 @@ const AionrsSendBox: React.FC<{
 
   return (
     <div className={`${sendBoxWidthClass} flex flex-col mt-auto mb-16px`}>
-      <CommandQueuePanel
-        items={queuedCommands}
-        mode={queueMode}
-        isMobile={isMobile}
-        interactionLocked={isQueueInteractionLocked}
-        onInteractionLock={lockInteraction}
-        onInteractionUnlock={unlockInteraction}
-        onEdit={handleEditQueuedCommand}
-        onSendNow={handleSendNowQueued}
-        onToggleMode={toggleMode}
-        onReorder={reorder}
-        onRemove={remove}
-        onClear={clear}
-      />
+      {commandQueueContainer &&
+        createPortal(
+          <CommandQueuePanel
+            items={queuedCommands}
+            mode={queueMode}
+            isMobile={isMobile}
+            interactionLocked={isQueueInteractionLocked}
+            onInteractionLock={lockInteraction}
+            onInteractionUnlock={unlockInteraction}
+            onEdit={handleEditQueuedCommand}
+            onSendNow={handleSendNowQueued}
+            onToggleMode={toggleMode}
+            onReorder={reorder}
+            onRemove={remove}
+            onClear={clear}
+          />,
+          commandQueueContainer
+        )}
       <ThoughtDisplay
         thought={thought}
         running={teamRuntime?.loading ?? running}
@@ -773,15 +766,6 @@ const AionrsSendBox: React.FC<{
         active={teamRuntime?.isActive}
         onFocused={teamRuntime?.onFocus}
         disabled={!current_model?.use_model}
-        sendDisabled={isBusy}
-        sendDisabledTooltip={
-          isBusy
-            ? t('conversation.commandQueue.midturnBlockedSendHint', {
-                defaultValue:
-                  'The current agent is still working and cannot receive another message yet. Add it to Draft box instead.',
-              })
-            : undefined
-        }
         placeholder={
           current_model?.use_model
             ? t('acp.sendbox.placeholder', {
@@ -868,15 +852,6 @@ const AionrsSendBox: React.FC<{
         onSend={onSendHandler}
         slash_commands={slash_commands}
         onSlashBuiltinCommand={onSlashBuiltinCommand}
-        onAddToDraft={handleAddToQueue}
-        addToDraftDisabled={!canQueueCurrentDraft}
-        addToDraftTooltip={
-          isBusy
-            ? t('conversation.commandQueue.addToQueueBusyHint', {
-                defaultValue: 'Save to Draft box and send it later.',
-              })
-            : t('conversation.commandQueue.addToQueue', { defaultValue: 'Save to Draft box' })
-        }
         allowSendWhileLoading
         sendButtonPrefix={
           teamRuntime?.onInterruptSend && content.trim() ? (

@@ -441,26 +441,29 @@ describe('AionrsSendBox', () => {
   });
 
   describe('mid-turn interjection controls', () => {
-    it('disables the send button and blocks Enter with a toast while replying, without implicitly enqueuing', async () => {
+    it('queues through the primary send action while replying without a separate draft action', async () => {
       runtimeViewIsProcessingRef.current = true;
       draftContentRef.current = 'hello world';
+      enqueueMock.mockReturnValue({ id: 'queued-new', input: 'Hello', files: [], created_at: 1 });
 
       render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
       await waitFor(() => expect(ensureConversationRuntimeMock).toHaveBeenCalledWith('conv-1'));
 
-      const props = sendBoxPropsSpy.mock.calls.at(-1)?.[0] as { sendDisabled?: boolean };
-      expect(props.sendDisabled).toBe(true);
+      const props = sendBoxPropsSpy.mock.calls.at(-1)?.[0] as {
+        onAddToDraft?: () => void;
+        sendDisabled?: boolean;
+      };
+      expect(props.onAddToDraft).toBeUndefined();
+      expect(props.sendDisabled).not.toBe(true);
 
       await act(async () => {
         screen.getByRole('button', { name: 'send' }).click();
       });
 
+      expect(enqueueMock).toHaveBeenCalledWith({ input: 'Hello', files: [], sessions: undefined });
       expect(sendMessageInvokeMock).not.toHaveBeenCalled();
-      expect(enqueueMock).not.toHaveBeenCalled();
-      expect(clearFilesMock).not.toHaveBeenCalled();
-      expect(Message.warning).toHaveBeenCalledWith(
-        'This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.'
-      );
+      expect(clearFilesMock).toHaveBeenCalled();
+      expect(Message.warning).not.toHaveBeenCalled();
     });
 
     it('sends normally while idle', async () => {
@@ -468,9 +471,6 @@ describe('AionrsSendBox', () => {
 
       render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
       await waitFor(() => expect(ensureConversationRuntimeMock).toHaveBeenCalledWith('conv-1'));
-
-      const props = sendBoxPropsSpy.mock.calls.at(-1)?.[0] as { sendDisabled?: boolean };
-      expect(props.sendDisabled).toBe(false);
 
       await act(async () => {
         screen.getByRole('button', { name: 'send' }).click();
@@ -483,38 +483,14 @@ describe('AionrsSendBox', () => {
       expect(Message.warning).not.toHaveBeenCalled();
     });
 
-    it('shows the add-to-draft-box entry with a non-empty draft while replying, and clicking it enqueues without executing', async () => {
+    it('carries `@@` session references into the queue and clears them after a successful enqueue', async () => {
       runtimeViewIsProcessingRef.current = true;
-      draftContentRef.current = 'hello world';
-
-      render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
-      await waitFor(() => expect(ensureConversationRuntimeMock).toHaveBeenCalledWith('conv-1'));
-
-      const props = sendBoxPropsSpy.mock.calls.at(-1)?.[0] as { onAddToDraft?: () => void };
-      expect(props.onAddToDraft).toBeDefined();
-      await act(async () => {
-        props.onAddToDraft?.();
-      });
-
-      expect(enqueueMock).toHaveBeenCalledWith({ input: 'hello world', files: [], sessions: undefined });
-      expect(sendMessageInvokeMock).not.toHaveBeenCalled();
-      expect(clearFilesMock).toHaveBeenCalled();
-      const updater = draftMutateMock.mock.calls.at(-1)?.[0] as (prev: { content: string }) => { content: string };
-      expect(updater({ content: 'hello world' })).toEqual(expect.objectContaining({ content: '' }));
-    });
-
-    it('carries `@@` session references into the draft box and clears them from the send box', async () => {
-      // The draft box is where the references are most likely to be lost:
-      // enqueue rebuilds the item, and a message that reaches the agent without
-      // its session block fails silently on both sides.
-      runtimeViewIsProcessingRef.current = true;
-      draftContentRef.current = 'hello world';
+      enqueueMock.mockReturnValue({ id: 'queued-new', input: 'Hello', files: [], created_at: 1 });
 
       render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
       await waitFor(() => expect(ensureConversationRuntimeMock).toHaveBeenCalledWith('conv-1'));
 
       type SessionProps = {
-        onAddToDraft?: () => void;
         onSelectedSessionsChange?: (sessions: Array<{ id: string }>) => void;
         selectedSessions?: Array<{ id: string }>;
       };
@@ -523,42 +499,26 @@ describe('AionrsSendBox', () => {
       await act(async () => {
         latestProps().onSelectedSessionsChange?.([{ id: 'conv_target' }]);
       });
-      // Re-read: picking a session re-renders, so the previous props snapshot
-      // holds a stale `onAddToDraft` closure over the empty selection.
       await act(async () => {
-        latestProps().onAddToDraft?.();
+        screen.getByRole('button', { name: 'send' }).click();
       });
 
       expect(enqueueMock).toHaveBeenCalledWith(expect.objectContaining({ sessions: [{ id: 'conv_target' }] }));
       expect(latestProps().selectedSessions).toEqual([]);
     });
 
-    it('shows the add-to-draft-box option while idle, as long as the draft is non-empty', async () => {
-      // Visibility is keyed only to the draft, not to the agent's busy state —
-      // clicking while idle is semantically fine (the queue's own mode governs).
-      runtimeViewIsProcessingRef.current = false;
-      draftContentRef.current = 'hello world';
-
-      render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
-      await waitFor(() => expect(ensureConversationRuntimeMock).toHaveBeenCalledWith('conv-1'));
-
-      const props = sendBoxPropsSpy.mock.calls.at(-1)?.[0] as { onAddToDraft?: () => void };
-      expect(props.onAddToDraft).toBeDefined();
-    });
-
-    it('disables the Draft box action with an empty draft, even while replying', async () => {
+    it('does not clear attachments when queueing is rejected', async () => {
       runtimeViewIsProcessingRef.current = true;
-      draftContentRef.current = '';
+      enqueueMock.mockReturnValue(null);
 
       render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
       await waitFor(() => expect(ensureConversationRuntimeMock).toHaveBeenCalledWith('conv-1'));
 
-      const props = sendBoxPropsSpy.mock.calls.at(-1)?.[0] as {
-        onAddToDraft?: () => void;
-        addToDraftDisabled?: boolean;
-      };
-      expect(props.onAddToDraft).toBeDefined();
-      expect(props.addToDraftDisabled).toBe(true);
+      await act(async () => {
+        screen.getByRole('button', { name: 'send' }).click();
+      });
+
+      expect(clearFilesMock).not.toHaveBeenCalled();
     });
   });
 });

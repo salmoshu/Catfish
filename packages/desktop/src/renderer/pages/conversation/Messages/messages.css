@@ -1,4 +1,4 @@
-/* Messages and the Composer share one centered 800px content column. Narrow
+/* Messages and the Composer share one centered 720px content column. Narrow
    standalone and team columns keep using all of their available width. */
 .chat-surface-container {
   container-type: inline-size;
@@ -7,7 +7,7 @@
 .chat-surface-fluid {
   box-sizing: border-box;
   width: 100%;
-  max-width: 800px;
+  max-width: 720px;
   margin-inline-start: auto;
   margin-inline-end: auto;
 }

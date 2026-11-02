@@ -341,11 +341,14 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
           {isRenaming ? (
             <Input
               autoFocus
+              spellCheck={false}
+              autoCorrect='off'
+              autoCapitalize='off'
               dir='ltr'
               value={renameValue}
               disabled={renameSubmitting}
               aria-label={t('conversation.explorer.contextMenu.rename')}
-              className='min-w-0 flex-1 [&_.arco-input-inner-wrapper]:h-24px [&_.arco-input-inner-wrapper]:px-0 [&_.arco-input-inner-wrapper]:bg-transparent [&_.arco-input-inner-wrapper]:shadow-none'
+              className='inline-rename-input min-w-0 flex-1'
               size='mini'
               onChange={setRenameValue}
               onFocus={(event) => event.target.select()}

@@ -142,6 +142,9 @@ describe('ConversationRow inline rename', () => {
 
     expect(input).toHaveValue(conversation.name);
     expect(input).toHaveFocus();
+    expect(input).toHaveAttribute('spellcheck', 'false');
+    expect(input).toHaveAttribute('autocorrect', 'off');
+    expect(input.closest('.inline-rename-input')).not.toBeNull();
     expect(input.selectionStart).toBe(0);
     expect(input.selectionEnd).toBe(conversation.name.length);
     expect(props.onMenuVisibleChange).toHaveBeenCalledWith(conversation.id, false);

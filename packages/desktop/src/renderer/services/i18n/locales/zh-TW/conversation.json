@@ -496,8 +496,8 @@
     "error": "順便提問失敗。"
   },
   "commandQueue": {
-    "title": "草稿箱",
-    "clear": "清空草稿箱",
+    "title": "待發送訊息",
+    "clear": "清空待發送訊息",
     "edit": "編輯",
     "editing": "編輯中",
     "editPlaceholder": "可以在執行前先調整這筆排隊指令。",
@@ -521,19 +521,19 @@
     "helpIntro": "AI 回覆期間你發送的訊息會先存到這裡。",
     "helpAuto": "：AI 每輪回覆結束後自動依序發送。",
     "helpManual": "：只暫存不自動發送，逐筆點「立即發送」。",
-    "clearConfirmTitle": "確定清空發送草稿箱？",
+    "clearConfirmTitle": "確定清空待發送訊息？",
     "clearConfirmContent": "所有待發送的訊息都會被移除，且無法復原。",
     "mode": {
       "auto": "自動發送",
       "manual": "手動發送"
     },
-    "addToQueue": "存到草稿箱",
+    "addToQueue": "加入待發送佇列",
     "addToQueueShortcut": "⌘ + Enter / Ctrl + Enter",
     "midturnBlocked": "目前 Agent 正在處理，暫時不能直接傳送。可以先存到草稿箱，稍後傳送。",
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
     "midturnBlockedSendHint": "目前 Agent 正在處理，暫時不能直接傳送。可以先存到草稿箱，稍後傳送。",
-    "addToQueueBusyHint": "先存到草稿箱，稍後傳送。"
+    "addToQueueBusyHint": "加入待發送佇列，稍後傳送。"
   },
   "contextUsage": {
     "contextUsed": "上下文已使用",

@@ -497,8 +497,8 @@
     "error": "Nebenfrage konnte nicht beantwortet werden."
   },
   "commandQueue": {
-    "title": "Entwurfsbox",
-    "clear": "Entwurfsbox leeren",
+    "title": "Warten auf Senden",
+    "clear": "Wartende Nachrichten löschen",
     "edit": "Bearbeiten",
     "editing": "Bearbeitung",
     "editPlaceholder": "Wartenden Befehl vor der Ausführung aktualisieren.",
@@ -522,19 +522,19 @@
     "helpIntro": "Nachrichten, die du während der KI-Antwort sendest, warten hier.",
     "helpAuto": ": werden nach jeder Antwort automatisch nacheinander gesendet.",
     "helpManual": ": werden hier aufbewahrt, ohne zu senden; sende jede mit „Jetzt senden“.",
-    "clearConfirmTitle": "Sende-Entwurfsbox leeren?",
+    "clearConfirmTitle": "Wartende Nachrichten löschen?",
     "clearConfirmContent": "Alle ausstehenden Nachrichten werden entfernt. Dies kann nicht rückgängig gemacht werden.",
     "mode": {
       "auto": "Auto senden",
       "manual": "Manuell senden"
     },
-    "addToQueue": "Zum Entwurfsfach hinzufügen",
+    "addToQueue": "Zur Warteschlange hinzufügen",
     "addToQueueShortcut": "⌘ + Enter / Ctrl + Enter",
     "midturnBlocked": "Ein Einwurf wird nicht unterstützt, während dieser Agent antwortet. Verwende stattdessen „Zum Entwurfsfach hinzufügen“.",
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
     "midturnBlockedSendHint": "This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.",
-    "addToQueueBusyHint": "Save to Draft box and send it later."
+    "addToQueueBusyHint": "Zur Warteschlange hinzufügen und später senden."
   },
   "contextUsage": {
     "contextUsed": "Kontext verwendet",

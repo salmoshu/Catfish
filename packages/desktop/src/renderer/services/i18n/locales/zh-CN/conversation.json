@@ -496,8 +496,8 @@
     "error": "顺便提问失败。"
   },
   "commandQueue": {
-    "title": "草稿箱",
-    "clear": "清空草稿箱",
+    "title": "待发送消息",
+    "clear": "清空待发送消息",
     "edit": "编辑",
     "editing": "编辑中",
     "editPlaceholder": "可以在执行前先修改这条排队指令。",
@@ -521,19 +521,19 @@
     "helpIntro": "AI 回复期间你发送的消息会先存到这里。",
     "helpAuto": "：AI 每轮回复结束后自动依次发送。",
     "helpManual": "：只暂存不自动发送，逐条点「立即发送」。",
-    "clearConfirmTitle": "确定清空发送草稿箱？",
+    "clearConfirmTitle": "确定清空待发送消息？",
     "clearConfirmContent": "所有待发送的消息都会被移除，且无法恢复。",
     "mode": {
       "auto": "自动发送",
       "manual": "手动发送"
     },
-    "addToQueue": "存到草稿箱",
+    "addToQueue": "加入待发送队列",
     "addToQueueShortcut": "⌘ + Enter / Ctrl + Enter",
     "midturnBlocked": "当前 Agent 正在处理，暂时不能直接发送。可以先存到草稿箱，稍后发送。",
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
     "midturnBlockedSendHint": "当前 Agent 正在处理，暂时不能直接发送。可以先存到草稿箱，稍后发送。",
-    "addToQueueBusyHint": "先存到草稿箱，稍后发送。"
+    "addToQueueBusyHint": "加入待发送队列，稍后发送。"
   },
   "contextUsage": {
     "contextUsed": "上下文已使用",

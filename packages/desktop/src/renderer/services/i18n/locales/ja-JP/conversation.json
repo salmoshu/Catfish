@@ -496,8 +496,8 @@
     "error": "補足質問への回答に失敗しました。"
   },
   "commandQueue": {
-    "title": "ドラフトボックス",
-    "clear": "ドラフトボックスをクリア",
+    "title": "送信待ち",
+    "clear": "送信待ちをクリア",
     "edit": "編集",
     "editing": "編集中",
     "editPlaceholder": "実行される前に、この待機中の指示を修正できます。",
@@ -521,19 +521,19 @@
     "helpIntro": "AI の返信中に送信したメッセージはここに一時保存されます。",
     "helpAuto": "：各返信が終わるたびに自動で順番に送信します。",
     "helpManual": "：自動送信せず保管し、各メッセージを「今すぐ送信」で送ります。",
-    "clearConfirmTitle": "送信ドラフトボックスをクリアしますか？",
+    "clearConfirmTitle": "送信待ちのメッセージをクリアしますか？",
     "clearConfirmContent": "保留中のメッセージはすべて削除され、元に戻せません。",
     "mode": {
       "auto": "自動送信",
       "manual": "手動送信"
     },
-    "addToQueue": "下書きボックスに追加",
+    "addToQueue": "送信待ちに追加",
     "addToQueueShortcut": "⌘ + Enter / Ctrl + Enter",
     "midturnBlocked": "このエージェントが応答中は割り込みができません。「下書きボックスに追加」をご利用ください。",
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
     "midturnBlockedSendHint": "This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.",
-    "addToQueueBusyHint": "Save to Draft box and send it later."
+    "addToQueueBusyHint": "送信待ちに追加し、後で送信します。"
   },
   "contextUsage": {
     "contextUsed": "コンテキスト使用量",

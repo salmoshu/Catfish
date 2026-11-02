@@ -63,6 +63,9 @@ const ChatTitleEditor: React.FC<ChatTitleEditorProps> = ({
         <div className='min-w-0 flex-1 px-8px py-5px'>
           <Input
             autoFocus
+            spellCheck={false}
+            autoCorrect='off'
+            autoCapitalize='off'
             value={titleDraft}
             disabled={renameLoading}
             className='w-full min-w-0 max-w-full border-none bg-transparent shadow-none [&_.arco-input-inner-wrapper]:border-none [&_.arco-input-inner-wrapper]:bg-transparent [&_.arco-input-inner-wrapper]:shadow-none [&_.arco-input]:bg-transparent [&_.arco-input]:px-0 [&_.arco-input]:text-16px [&_.arco-input]:font-700 [&_.arco-input]:leading-24px [&_.arco-input]:text-[var(--color-text-1)]'

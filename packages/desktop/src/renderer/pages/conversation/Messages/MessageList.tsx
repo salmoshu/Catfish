@@ -245,8 +245,7 @@ const MessageItem: React.FC<{
           message.type,
           {
             'justify-center': message.position === 'center',
-            'justify-end': message.position === 'right',
-            'justify-start': message.position === 'left',
+            'justify-start': message.position === 'left' || message.position === 'right',
           }
         )}
         style={highlighted ? highlightStyle : undefined}
@@ -331,7 +330,11 @@ const MessageItem: React.FC<{
         (prev.turnTexts ?? []).every((segment, i) => segment === next.turnTexts?.[i])))
 );
 
-const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }> = ({ emptySlot }) => {
+const MessageList: React.FC<{
+  className?: string;
+  emptySlot?: React.ReactNode;
+  queueSlotRef?: React.Ref<HTMLDivElement>;
+}> = ({ emptySlot, queueSlotRef }) => {
   const list = useMessageList();
   const isMessageListLoading = useMessageListLoading();
   const pagination = useMessagePaginationState();
@@ -768,6 +771,13 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
               {processedList.map((item, index) => (
                 <React.Fragment key={getProcessedItemAnchorId(item) || index}>{renderItem(index, item)}</React.Fragment>
               ))}
+              {queueSlotRef && (
+                <div
+                  ref={queueSlotRef}
+                  className={`${rowWidthClass} min-w-0`}
+                  data-testid='conversation-command-queue-slot'
+                />
+              )}
               <div className='h-20px' />
             </div>
           </div>

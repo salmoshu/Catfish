@@ -51,6 +51,7 @@ import type { ChatFileRef } from '@/common/types/chatFile';
 import { Button, Message, Tag } from '@arco-design/web-react';
 import { Brain, Lightning, MagicHat, Shield } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { classifyConversationBusyError } from '../conversationBusyError';
 import { buildSendFailureError } from './buildSendFailureError';
@@ -116,6 +117,7 @@ const AcpSendBox: React.FC<{
   composerTools?: React.ReactNode;
   teamSendMessage?: (payload: { input: string; files: ChatFileRef[] }) => Promise<void>;
   teamRuntime?: TeamSendBoxRuntime;
+  commandQueueContainer?: HTMLElement | null;
 }> = ({
   conversation_id,
   backend,
@@ -125,6 +127,7 @@ const AcpSendBox: React.FC<{
   composerTools,
   teamSendMessage,
   teamRuntime,
+  commandQueueContainer,
 }) => {
   const {
     aiProcessing,
@@ -436,12 +439,9 @@ Please check your local CLI tool authentication status`,
     resetActiveExecution,
   } = useConversationCommandQueue({
     conversation_id: conversation_id,
-    // The queue (panel, runner, auto-send) is always live: backends that can
-    // deliver mid-turn (supports_midturn_delivery) still need a working
-    // enqueue for the explicit "add to queue" entry, and queued items must
-    // keep auto-sending once their turn arrives, same as non-supporting
-    // backends. What changed is who can trigger enqueue implicitly — see
-    // onSendHandler below.
+    // The queue stays live for both backend kinds. The primary send action
+    // enqueues while busy; Send now can still inject immediately when the
+    // backend supports mid-turn delivery.
     enabled: true,
     isBusy,
     runtimeGate: commandQueueRuntimeGate,
@@ -453,19 +453,21 @@ Please check your local CLI tool authentication status`,
   const [selectedSessions, setSelectedSessions] = useState<SessionRef[]>([]);
   const { enabled: crossSessionEnabled } = useCrossSessionMessageEnabled();
 
-  // Supporting agents (mid-turn delivery) send immediately, busy or not.
-  // Non-supporting agents can no longer send while the agent is replying —
-  // that path is hard-blocked with a toast; the only way to queue a message
-  // while busy is the explicit "add to queue" entry (handleAddToQueue below).
+  const queueMessage = (message: string): boolean => {
+    const allFiles = collectChatFileRefs(uploadFile, atPath);
+    const sessions = selectedSessions.length > 0 ? selectedSessions : undefined;
+    const item = enqueue({ input: message, files: allFiles, sessions });
+    if (!item) return false;
+
+    clearFiles();
+    setSelectedSessions([]);
+    emitter.emit('acp.selected.file.clear');
+    return true;
+  };
+
   const onSendHandler = async (message: string): Promise<void | false> => {
-    if (!supportsMidturnDelivery && isBusy) {
-      Message.warning(
-        t('conversation.commandQueue.midturnBlocked', {
-          defaultValue:
-            'This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.',
-        })
-      );
-      return false;
+    if (isBusy) {
+      return queueMessage(message) ? undefined : false;
     }
 
     const allFiles = collectChatFileRefs(uploadFile, atPath);
@@ -496,26 +498,6 @@ Please check your local CLI tool authentication status`,
       setInterrupting(false);
     }
   };
-
-  // Explicit "add to queue" entry — visibility is keyed only to the user's
-  // own input (non-empty draft), never to the agent's busy/replying state:
-  // tying it to that racy, async signal made the entry appear/disappear
-  // unpredictably. Clicking while idle is semantically fine — the queue's own
-  // mode governs (auto drains immediately, manual holds). Shown for both
-  // supporting and non-supporting backends. Clears the draft the same way a
-  // send would.
-  const canQueueCurrentDraft = content.trim().length > 0;
-  const handleAddToQueue = useCallback(() => {
-    const allFiles = collectChatFileRefs(uploadFile, atPath);
-    // `@@` references must ride along, and must be released from the send box
-    // the same way the draft text is — otherwise they leak into whatever the
-    // user sends next.
-    enqueue({ input: content, files: allFiles, sessions: selectedSessions.length > 0 ? selectedSessions : undefined });
-    setContent('');
-    clearFiles();
-    setSelectedSessions([]);
-    emitter.emit('acp.selected.file.clear');
-  }, [atPath, clearFiles, content, enqueue, selectedSessions, setContent, uploadFile]);
 
   const handleEditQueuedCommand = useCallback(
     (item: ConversationCommandQueueItem) => {
@@ -813,20 +795,24 @@ Please check your local CLI tool authentication status`,
 
   return (
     <div className={`${sendBoxWidthClass} flex flex-col mt-auto mb-16px`}>
-      <CommandQueuePanel
-        items={queuedCommands}
-        mode={queueMode}
-        isMobile={isMobile}
-        interactionLocked={isQueueInteractionLocked}
-        onInteractionLock={lockInteraction}
-        onInteractionUnlock={unlockInteraction}
-        onEdit={handleEditQueuedCommand}
-        onSendNow={handleSendNowQueued}
-        onToggleMode={toggleMode}
-        onReorder={reorder}
-        onRemove={remove}
-        onClear={clear}
-      />
+      {commandQueueContainer &&
+        createPortal(
+          <CommandQueuePanel
+            items={queuedCommands}
+            mode={queueMode}
+            isMobile={isMobile}
+            interactionLocked={isQueueInteractionLocked}
+            onInteractionLock={lockInteraction}
+            onInteractionUnlock={unlockInteraction}
+            onEdit={handleEditQueuedCommand}
+            onSendNow={handleSendNowQueued}
+            onToggleMode={toggleMode}
+            onReorder={reorder}
+            onRemove={remove}
+            onClear={clear}
+          />,
+          commandQueueContainer
+        )}
       <ThoughtDisplay
         running={teamRuntime?.loading ?? (aiProcessing && !hasThinkingMessage)}
         statusText={teamRuntime?.statusText}
@@ -859,15 +845,6 @@ Please check your local CLI tool authentication status`,
         active={teamRuntime?.isActive}
         onFocused={teamRuntime?.onFocus}
         disabled={false}
-        sendDisabled={!supportsMidturnDelivery && isBusy}
-        sendDisabledTooltip={
-          !supportsMidturnDelivery && isBusy
-            ? t('conversation.commandQueue.midturnBlockedSendHint', {
-                defaultValue:
-                  'The current agent is still working and cannot receive another message yet. Add it to Draft box instead.',
-              })
-            : undefined
-        }
         placeholder={t('acp.sendbox.placeholder', {
           backend: agent_name || backend,
           defaultValue: `Send message to {{backend}}...`,
@@ -983,15 +960,6 @@ Please check your local CLI tool authentication status`,
             )}
             {tokenUsage ? <ContextUsageIndicator tokenUsage={tokenUsage} context_limit={context_limit} /> : undefined}
           </>
-        }
-        onAddToDraft={handleAddToQueue}
-        addToDraftDisabled={!canQueueCurrentDraft}
-        addToDraftTooltip={
-          isBusy
-            ? t('conversation.commandQueue.addToQueueBusyHint', {
-                defaultValue: 'Save to Draft box and send it later.',
-              })
-            : t('conversation.commandQueue.addToQueue', { defaultValue: 'Save to Draft box' })
         }
       ></SendBox>
       {isMobile && (

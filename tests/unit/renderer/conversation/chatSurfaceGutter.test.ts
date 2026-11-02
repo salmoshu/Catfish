@@ -29,8 +29,8 @@ describe('chat surface width class', () => {
     expect(surfaceRule).not.toMatch(/calc\(/);
   });
 
-  it('caps the conversation and composer at the shared 800px content width', () => {
-    expect(surfaceRule).toMatch(/max-width:\s*800px/);
+  it('caps the conversation and composer at the shared 720px content width', () => {
+    expect(surfaceRule).toMatch(/max-width:\s*720px/);
     expect(surfaceRule).toMatch(/margin-inline-start:\s*auto/);
     expect(surfaceRule).toMatch(/margin-inline-end:\s*auto/);
   });

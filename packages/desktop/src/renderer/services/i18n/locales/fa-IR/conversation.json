@@ -496,8 +496,8 @@
     "error": "پاسخ به سؤال جانبی ناموفق بود."
   },
   "commandQueue": {
-    "title": "پیش‌نویس‌ها",
-    "clear": "پاک کردن پیش‌نویس‌ها",
+    "title": "در انتظار ارسال",
+    "clear": "پاک کردن پیام‌های در انتظار",
     "edit": "ویرایش",
     "editing": "در حال ویرایش",
     "editPlaceholder": "دستور صف‌شده را قبل از اجرا به‌روزرسانی کنید.",
@@ -521,19 +521,19 @@
     "helpIntro": "پیام‌هایی که هنگام پاسخ هوش مصنوعی می‌فرستید اینجا منتظر می‌مانند.",
     "helpAuto": "：پس از پایان هر پاسخ، به‌طور خودکار یکی‌یکی ارسال می‌شوند.",
     "helpManual": "：بدون ارسال اینجا نگه داشته می‌شوند؛ هرکدام را با «ارسال فوری» بفرستید.",
-    "clearConfirmTitle": "صندوق پیش‌نویس ارسال پاک شود؟",
+    "clearConfirmTitle": "پیام‌های در انتظار ارسال پاک شوند؟",
     "clearConfirmContent": "همه پیام‌های در انتظار حذف می‌شوند. این کار قابل بازگردانی نیست.",
     "mode": {
       "auto": "ارسال خودکار",
       "manual": "ارسال دستی"
     },
-    "addToQueue": "افزودن به جعبه پیش‌نویس",
+    "addToQueue": "افزودن به صف ارسال",
     "addToQueueShortcut": "⌘ + Enter / Ctrl + Enter",
     "midturnBlocked": "وقتی این عامل در حال پاسخ‌دهی است، مداخله پشتیبانی نمی‌شود. در عوض از «افزودن به جعبه پیش‌نویس» استفاده کنید.",
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
     "midturnBlockedSendHint": "This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.",
-    "addToQueueBusyHint": "Save to Draft box and send it later."
+    "addToQueueBusyHint": "به صف ارسال اضافه کنید و بعداً بفرستید."
   },
   "contextUsage": {
     "contextUsed": "زمینه استفاده‌شده",

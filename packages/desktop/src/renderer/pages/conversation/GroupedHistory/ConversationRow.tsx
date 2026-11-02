@@ -233,10 +233,13 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
           {editingTitle ? (
             <Input
               autoFocus
+              spellCheck={false}
+              autoCorrect='off'
+              autoCapitalize='off'
               value={titleDraft}
               disabled={renameLoading}
               aria-label={t('conversation.history.rename')}
-              className='w-full min-w-0 [&_.arco-input-inner-wrapper]:h-24px [&_.arco-input-inner-wrapper]:px-0 [&_.arco-input-inner-wrapper]:bg-transparent [&_.arco-input-inner-wrapper]:shadow-none [&_.arco-input]:text-14px'
+              className='inline-rename-input w-full min-w-0'
               maxLength={120}
               onChange={setTitleDraft}
               onFocus={(event) => event.target.select()}

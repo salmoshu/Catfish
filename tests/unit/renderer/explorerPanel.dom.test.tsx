@@ -392,6 +392,9 @@ describe('ExplorerPanel inline rename', () => {
 
     expect(input).toHaveValue('a.ts');
     expect(input).toHaveFocus();
+    expect(input).toHaveAttribute('spellcheck', 'false');
+    expect(input).toHaveAttribute('autocorrect', 'off');
+    expect(input.closest('.inline-rename-input')).not.toBeNull();
     expect(input.selectionStart).toBe(0);
     expect(input.selectionEnd).toBe(4);
     fireEvent.change(input, { target: { value: '  renamed.ts  ' } });

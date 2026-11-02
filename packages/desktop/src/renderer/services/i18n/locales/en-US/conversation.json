@@ -496,8 +496,8 @@
     "error": "Failed to answer the side question."
   },
   "commandQueue": {
-    "title": "Draft box",
-    "clear": "Clear draft box",
+    "title": "Waiting to send",
+    "clear": "Clear queued messages",
     "edit": "Edit",
     "editing": "Editing",
     "editPlaceholder": "Update the queued command before it runs.",
@@ -521,19 +521,19 @@
     "helpIntro": "Messages you send while the AI is replying wait here.",
     "helpAuto": ": sent automatically one by one after each reply finishes.",
     "helpManual": ": kept here without sending; send each with Send now.",
-    "clearConfirmTitle": "Clear the send draft box?",
+    "clearConfirmTitle": "Clear queued messages?",
     "clearConfirmContent": "All pending messages will be removed. This cannot be undone.",
     "mode": {
       "auto": "Auto send",
       "manual": "Manual send"
     },
-    "addToQueue": "Save to Draft box",
+    "addToQueue": "Queue message",
     "addToQueueShortcut": "⌘ + Enter / Ctrl + Enter",
     "midturnBlocked": "This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.",
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
     "midturnBlockedSendHint": "This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.",
-    "addToQueueBusyHint": "Save to Draft box and send it later."
+    "addToQueueBusyHint": "Queue for later sending."
   },
   "contextUsage": {
     "contextUsed": "context used",

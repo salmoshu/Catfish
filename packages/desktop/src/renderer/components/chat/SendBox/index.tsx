@@ -1664,14 +1664,15 @@ const SendBox: React.FC<{
 
   const hasDraftToSend = input.trim().length > 0 || domSnippets.length > 0;
 
-  const addToDraftLabel = t('conversation.commandQueue.addToQueue', { defaultValue: 'Save to Draft box' });
+  const addToDraftLabel = t('conversation.commandQueue.addToQueue', { defaultValue: 'Queue message' });
   const sendNowLabel = t('conversation.commandQueue.sendNow', { defaultValue: 'Send now' });
   const enterShortcutLabel = t('conversation.commandQueue.enterShortcut', { defaultValue: 'Enter' });
   const addToDraftShortcutLabel = t('conversation.commandQueue.addToQueueShortcut', {
     defaultValue: isMacOS() ? '⌘ + Enter' : 'Ctrl + Enter',
   });
+  const primaryActionLabel = allowSendWhileLoading && (isLoading || loading) ? addToDraftLabel : sendNowLabel;
   const sendActionTooltip =
-    sendDisabled && sendDisabledTooltip ? sendDisabledTooltip : `${sendNowLabel} · ${enterShortcutLabel}`;
+    sendDisabled && sendDisabledTooltip ? sendDisabledTooltip : `${primaryActionLabel} · ${enterShortcutLabel}`;
   const draftActionBaseTooltip = addToDraftTooltip ?? addToDraftLabel;
 
   const handlePrimaryAction = () => {
@@ -1938,7 +1939,7 @@ const SendBox: React.FC<{
             : {
                 borderWidth: '1px',
                 borderColor: isInputActive ? activeBorderColor : inactiveBorderColor,
-                boxShadow: isInputActive ? activeShadow : 'none',
+                boxShadow: isInputActive ? activeShadow : 'var(--shadow-xs)',
               }),
         }}
         {...dragHandlers}
@@ -2151,13 +2152,7 @@ const SendBox: React.FC<{
               disabled={disabled}
               spellCheck={false}
               value={input}
-              placeholder={
-                isMobileCompact
-                  ? (placeholder ?? (bottomHint as string | undefined) ?? sendboxHint)
-                  : placeholder
-                    ? `${placeholder}  ${bottomHint ?? sendboxHint}`
-                    : ((bottomHint as string | undefined) ?? sendboxHint)
-              }
+              placeholder={placeholder ?? (bottomHint as string | undefined) ?? sendboxHint}
               className={`${shouldUseHighlightOverlay ? 'sendbox-highlight-textarea ' : ''}ps-0 pe-0 !b-none focus:shadow-none m-0 !bg-transparent !focus:bg-transparent !hover:bg-transparent lh-[20px] !resize-none text-14px ${isMobile ? 'sendbox-input--mobile' : ''}`}
               data-testid='sendbox-input'
               style={{

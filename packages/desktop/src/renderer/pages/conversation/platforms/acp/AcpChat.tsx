@@ -73,6 +73,7 @@ const AcpChat: React.FC<{
     skipWarmup: Boolean(teamPermission),
     prepareRuntime: teamPermission?.warmupSession,
   });
+  const [commandQueueContainer, setCommandQueueContainer] = React.useState<HTMLDivElement | null>(null);
 
   return (
     <ConversationProvider
@@ -93,7 +94,7 @@ const AcpChat: React.FC<{
       <ConversationArtifactProvider conversation_id={conversation_id}>
         <div className={`${CHAT_SURFACE_CONTAINER_CLASS} flex-1 flex flex-col px-20px min-h-0`}>
           <FlexFullContainer>
-            <MessageList className='flex-1' emptySlot={emptySlot} />
+            <MessageList className='flex-1' emptySlot={emptySlot} queueSlotRef={setCommandQueueContainer} />
           </FlexFullContainer>
           <AcpE2EStreamInjector conversationId={conversation_id} />
           <ConversationPlanBar conversation_id={conversation_id} />
@@ -107,6 +108,7 @@ const AcpChat: React.FC<{
               composerTools={composerTools}
               teamSendMessage={teamSendMessage}
               teamRuntime={teamRuntime}
+              commandQueueContainer={commandQueueContainer}
             ></AcpSendBox>
           )}
         </div>

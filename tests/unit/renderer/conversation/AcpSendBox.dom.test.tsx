@@ -837,11 +837,48 @@ describe('AcpSendBox', () => {
   });
 
   describe('mid-turn interjection controls', () => {
-    it('shows the add-to-draft-box entry for a supporting agent with a non-empty draft, and clicking it enqueues without executing', async () => {
-      runtimeViewMock.supportsMidturnDelivery = true;
+    it.each([
+      { supportsMidturnDelivery: true, backend: 'claude' },
+      { supportsMidturnDelivery: false, backend: 'antigravity' },
+    ])(
+      'queues through the primary send action while $backend is replying',
+      async ({ supportsMidturnDelivery, backend }) => {
+        runtimeViewMock.supportsMidturnDelivery = supportsMidturnDelivery;
+        runtimeViewMock.isProcessing = true;
+        runtimeViewMock.canSendMessage = true;
+        draftContentRef.current = 'hello world';
+        enqueueMock.mockReturnValue({ id: 'queued-new', input: 'Hello', files: [], created_at: 1 });
+
+        render(
+          <AcpSendBox
+            conversation_id='conv-1'
+            backend={backend}
+            workspacePath='/tmp/workspace'
+            messageState={makeMessageState()}
+          />
+        );
+
+        const props = sendBoxPropsSpy.mock.calls.at(-1)?.[0] as {
+          onAddToDraft?: () => void;
+          sendDisabled?: boolean;
+        };
+        expect(props.onAddToDraft).toBeUndefined();
+        expect(props.sendDisabled).not.toBe(true);
+
+        await act(async () => {
+          screen.getByRole('button', { name: 'send' }).click();
+        });
+
+        expect(enqueueMock).toHaveBeenCalledWith({ input: 'Hello', files: [], sessions: undefined });
+        expect(sendMessageInvokeMock).not.toHaveBeenCalled();
+        expect(clearFilesMock).toHaveBeenCalled();
+        expect(messageWarningMock).not.toHaveBeenCalled();
+      }
+    );
+
+    it('keeps attachments and references in the composer when queueing is rejected', async () => {
       runtimeViewMock.isProcessing = true;
-      runtimeViewMock.canSendMessage = true;
-      draftContentRef.current = 'hello world';
+      enqueueMock.mockReturnValue(null);
 
       render(
         <AcpSendBox
@@ -851,91 +888,14 @@ describe('AcpSendBox', () => {
           messageState={makeMessageState()}
         />
       );
-
-      const props = sendBoxPropsSpy.mock.calls.at(-1)?.[0] as { onAddToDraft?: () => void };
-      expect(props.onAddToDraft).toBeDefined();
-      await act(async () => {
-        props.onAddToDraft?.();
-      });
-
-      expect(enqueueMock).toHaveBeenCalledWith({ input: 'hello world', files: [] });
-      expect(sendMessageInvokeMock).not.toHaveBeenCalled();
-      expect(clearFilesMock).toHaveBeenCalled();
-      // setContent('') clears the draft the same way a send would.
-      const updater = draftMutateMock.mock.calls.at(-1)?.[0] as (prev: { content: string }) => { content: string };
-      expect(updater({ content: 'hello world' })).toEqual(expect.objectContaining({ content: '' }));
-    });
-
-    it('shows the add-to-draft-box option for a supporting agent that is idle, as long as the draft is non-empty', async () => {
-      // Visibility is keyed only to the draft, not to the agent's busy state —
-      // clicking while idle is semantically fine (the queue's own mode governs).
-      runtimeViewMock.supportsMidturnDelivery = true;
-      runtimeViewMock.isProcessing = false;
-      draftContentRef.current = 'hello world';
-
-      render(
-        <AcpSendBox
-          conversation_id='conv-1'
-          backend='claude'
-          workspacePath='/tmp/workspace'
-          messageState={makeMessageState()}
-        />
-      );
-
-      const props = sendBoxPropsSpy.mock.calls.at(-1)?.[0] as { onAddToDraft?: () => void };
-      expect(props.onAddToDraft).toBeDefined();
-    });
-
-    it('disables the Draft box action for a supporting agent with an empty draft, even while replying', () => {
-      runtimeViewMock.supportsMidturnDelivery = true;
-      runtimeViewMock.isProcessing = true;
-      draftContentRef.current = '';
-
-      render(
-        <AcpSendBox
-          conversation_id='conv-1'
-          backend='claude'
-          workspacePath='/tmp/workspace'
-          messageState={makeMessageState()}
-        />
-      );
-
-      const props = sendBoxPropsSpy.mock.calls.at(-1)?.[0] as {
-        onAddToDraft?: () => void;
-        addToDraftDisabled?: boolean;
-      };
-      expect(props.onAddToDraft).toBeDefined();
-      expect(props.addToDraftDisabled).toBe(true);
-    });
-
-    it('disables the send button and blocks Enter with a toast for a non-supporting agent while replying, without implicitly enqueuing', async () => {
-      runtimeViewMock.supportsMidturnDelivery = false;
-      runtimeViewMock.isProcessing = true;
-      runtimeViewMock.canSendMessage = true;
-      draftContentRef.current = 'hello world';
-
-      render(
-        <AcpSendBox
-          conversation_id='conv-1'
-          backend='antigravity'
-          workspacePath='/tmp/workspace'
-          messageState={makeMessageState()}
-        />
-      );
-
-      const props = sendBoxPropsSpy.mock.calls.at(-1)?.[0] as { sendDisabled?: boolean };
-      expect(props.sendDisabled).toBe(true);
 
       await act(async () => {
         screen.getByRole('button', { name: 'send' }).click();
       });
 
-      expect(sendMessageInvokeMock).not.toHaveBeenCalled();
-      expect(enqueueMock).not.toHaveBeenCalled();
       expect(clearFilesMock).not.toHaveBeenCalled();
-      expect(messageWarningMock).toHaveBeenCalledWith(
-        'This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.'
-      );
+      const props = sendBoxPropsSpy.mock.calls.at(-1)?.[0] as { selectedSessions?: Array<{ id: string }> };
+      expect(props.selectedSessions).toEqual([]);
     });
 
     it('sends normally for a non-supporting agent while idle', async () => {
@@ -953,9 +913,6 @@ describe('AcpSendBox', () => {
         />
       );
 
-      const props = sendBoxPropsSpy.mock.calls.at(-1)?.[0] as { sendDisabled?: boolean };
-      expect(props.sendDisabled).toBe(false);
-
       await act(async () => {
         screen.getByRole('button', { name: 'send' }).click();
       });
@@ -971,6 +928,20 @@ describe('AcpSendBox', () => {
   describe('queued command send-now', () => {
     const queuedItem = { id: 'q1', input: 'queued draft', files: [], created_at: 1 };
 
+    const renderWithQueue = (backend = 'claude') => {
+      const commandQueueContainer = document.createElement('div');
+      render(
+        <AcpSendBox
+          conversation_id='conv-1'
+          backend={backend}
+          workspacePath='/tmp/workspace'
+          messageState={makeMessageState()}
+          commandQueueContainer={commandQueueContainer}
+        />
+      );
+      return commandQueueContainer;
+    };
+
     const getOnSendNow = () => {
       const props = commandQueuePanelPropsSpy.mock.calls.at(-1)?.[0] as {
         onSendNow: (item: typeof queuedItem) => void;
@@ -978,18 +949,18 @@ describe('AcpSendBox', () => {
       return props.onSendNow;
     };
 
+    it('renders the queue through the message timeline portal', () => {
+      const commandQueueContainer = renderWithQueue();
+      expect(commandQueueContainer).toBeInstanceOf(HTMLDivElement);
+      expect(commandQueuePanelPropsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ onSendNow: expect.any(Function) })
+      );
+    });
+
     it('delivers mid-turn for a supporting agent instead of stopping the turn', async () => {
       runtimeViewMock.supportsMidturnDelivery = true;
       sendMessageInvokeMock.mockResolvedValue({ turn_id: 'turn-1', runtime: null, msg_id: 'msg-1' });
-
-      render(
-        <AcpSendBox
-          conversation_id='conv-1'
-          backend='claude'
-          workspacePath='/tmp/workspace'
-          messageState={makeMessageState()}
-        />
-      );
+      renderWithQueue();
 
       await act(async () => {
         await getOnSendNow()(queuedItem);
@@ -1005,15 +976,7 @@ describe('AcpSendBox', () => {
     it('keeps the stop-then-prioritize path for a non-supporting agent', async () => {
       runtimeViewMock.supportsMidturnDelivery = false;
       runtimeViewMock.activeTurnId = 'turn-9';
-
-      render(
-        <AcpSendBox
-          conversation_id='conv-1'
-          backend='antigravity'
-          workspacePath='/tmp/workspace'
-          messageState={makeMessageState()}
-        />
-      );
+      renderWithQueue('antigravity');
 
       await act(async () => {
         await getOnSendNow()(queuedItem);
@@ -1029,15 +992,7 @@ describe('AcpSendBox', () => {
       runtimeViewMock.supportsMidturnDelivery = true;
       sendMessageInvokeMock.mockRejectedValue(new Error('boom'));
       enqueueMock.mockReturnValue({ id: 'restored-1', input: 'queued draft', files: [], created_at: 123 });
-
-      render(
-        <AcpSendBox
-          conversation_id='conv-1'
-          backend='claude'
-          workspacePath='/tmp/workspace'
-          messageState={makeMessageState()}
-        />
-      );
+      renderWithQueue();
 
       await act(async () => {
         await getOnSendNow()(queuedItem);
@@ -1049,20 +1004,10 @@ describe('AcpSendBox', () => {
     });
 
     it('keeps the `@@` references when a failed mid-turn send is re-enqueued', async () => {
-      // The restore path re-creates the queue item from scratch, so dropping
-      // `sessions` here would silently strip the references the user picked.
       runtimeViewMock.supportsMidturnDelivery = true;
       sendMessageInvokeMock.mockRejectedValue(new Error('boom'));
       enqueueMock.mockReturnValue({ id: 'restored-1', input: 'queued draft', files: [], created_at: 123 });
-
-      render(
-        <AcpSendBox
-          conversation_id='conv-1'
-          backend='claude'
-          workspacePath='/tmp/workspace'
-          messageState={makeMessageState()}
-        />
-      );
+      renderWithQueue();
 
       await act(async () => {
         await getOnSendNow()({ ...queuedItem, sessions: [{ id: 'conv_target' }] });
@@ -1108,10 +1053,9 @@ describe('AcpSendBox', () => {
       expect(sendMessageInvokeMock).toHaveBeenCalledWith(expect.objectContaining({ sessions: undefined }));
     });
 
-    it('carries them into the draft box and clears them from the send box', async () => {
-      // The draft box is the path most likely to lose them: enqueue rebuilds the
-      // item, and a message that reaches the agent without its session block
-      // fails silently on both sides.
+    it('carries them into the queue and clears them after a successful enqueue', async () => {
+      runtimeViewMock.isProcessing = true;
+      enqueueMock.mockReturnValue({ id: 'queued-new', input: 'Hello', files: [], created_at: 1 });
       render(
         <AcpSendBox
           conversation_id='conv-1'
@@ -1125,7 +1069,7 @@ describe('AcpSendBox', () => {
         screen.getByText('pick-session').click();
       });
       await act(async () => {
-        screen.getByText('add-to-draft').click();
+        screen.getByText('send').click();
       });
 
       expect(enqueueMock).toHaveBeenCalledWith(expect.objectContaining({ sessions: [{ id: 'conv_target' }] }));

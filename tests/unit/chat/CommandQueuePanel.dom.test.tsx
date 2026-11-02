@@ -136,7 +136,7 @@ describe('CommandQueuePanel', () => {
     expect(screen.queryByRole('button', { name: 'Help' })).not.toBeInTheDocument();
   });
 
-  it('keeps long draft boxes internally scrollable instead of growing forever', () => {
+  it('keeps long queues internally scrollable instead of growing forever', () => {
     const manyItems = Array.from({ length: 24 }, (_, index) => ({
       ...item,
       id: `queued-${index}`,
@@ -152,12 +152,12 @@ describe('CommandQueuePanel', () => {
     expect(list).toHaveClass('overflow-y-auto');
   });
 
-  it('clears the draft box through a confirm dialog', () => {
+  it('clears queued messages through a confirm dialog', () => {
     confirmMock.mockReset();
     const onClear = vi.fn();
     renderPanel({ onClear });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Clear draft box' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Clear queued messages' }));
     // Clearing must go through a confirm step, not fire immediately.
     expect(onClear).not.toHaveBeenCalled();
     expect(confirmMock).toHaveBeenCalledTimes(1);

@@ -5,7 +5,7 @@ export const CHAT_SURFACE_WIDTH_CLASS = 'chat-surface-fluid';
 /**
  * Shared width for message rows, the plan bar, queues and the Composer.
  *
- * The content is centered and capped at 800px. Narrow standalone columns and
+ * The content is centered and capped at 720px. Narrow standalone columns and
  * team parallel columns still use all available width instead of shrinking
  * further, so layout follows the available column rather than the chat mode.
  */

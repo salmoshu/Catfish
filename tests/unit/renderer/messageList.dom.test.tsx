@@ -342,10 +342,38 @@ describe('MessageList', () => {
     expect(messageRow.className).not.toContain('max-w-780px');
   });
 
+  it('left-aligns user messages with the assistant timeline', () => {
+    const userMessage = {
+      ...createTextMessage(),
+      id: 'user-message',
+      position: 'right',
+    } as IMessageText;
+
+    render(<MessageList />, {
+      wrapper: ({ children }) => <Wrapper messages={[userMessage]}>{children}</Wrapper>,
+    });
+
+    const messageRow = screen.getByTestId('message-text-right');
+    expect(messageRow.className).toContain('justify-start');
+    expect(messageRow.className).not.toContain('justify-end');
+  });
+
+  it('mounts the command queue slot inside the scrollable message timeline', () => {
+    const queueSlotRef = vi.fn();
+    render(<MessageList queueSlotRef={queueSlotRef} />, {
+      wrapper: ({ children }) => <Wrapper>{children}</Wrapper>,
+    });
+
+    const slot = screen.getByTestId('conversation-command-queue-slot');
+    expect(screen.getByTestId('message-list-content').contains(slot)).toBe(true);
+    expect(slot.className).toContain('chat-surface-fluid');
+    expect(queueSlotRef).toHaveBeenCalledWith(slot);
+  });
+
   it('uses the same container-responsive width in team mode', () => {
     // Team and standalone rows share one class. Width is decided by the available
     // column, not by the mode: narrow team parallel columns stay full width, while
-    // wider standalone and team single columns share the same centered 800px cap.
+    // wider standalone and team single columns share the same centered 720px cap.
     useTeamPermissionMock.mockReturnValue({
       isTeamMode: true,
       isLeaderAgent: true,

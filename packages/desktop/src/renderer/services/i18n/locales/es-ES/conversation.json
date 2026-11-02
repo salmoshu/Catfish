@@ -497,8 +497,8 @@
     "error": "Error al responder la pregunta lateral."
   },
   "commandQueue": {
-    "title": "Borradores",
-    "clear": "Vaciar borradores",
+    "title": "Pendientes de envío",
+    "clear": "Vaciar mensajes en cola",
     "edit": "Editar",
     "editing": "Editando",
     "editPlaceholder": "Actualiza el comando en cola antes de que se ejecute.",
@@ -522,19 +522,19 @@
     "helpIntro": "Los mensajes que envías mientras la IA responde esperan aquí.",
     "helpAuto": ": se envían automáticamente uno a uno cuando termina cada respuesta.",
     "helpManual": ": se guardan aquí sin enviar; envía cada uno con Enviar ahora.",
-    "clearConfirmTitle": "¿Vaciar la bandeja de borradores de envío?",
+    "clearConfirmTitle": "¿Vaciar los mensajes en cola?",
     "clearConfirmContent": "Se eliminarán todos los mensajes pendientes. Esta acción no se puede deshacer.",
     "mode": {
       "auto": "Envío automático",
       "manual": "Envío manual"
     },
-    "addToQueue": "Añadir al buzón de borradores",
+    "addToQueue": "Añadir a la cola",
     "addToQueueShortcut": "⌘ + Enter / Ctrl + Enter",
     "midturnBlocked": "No se admite interrumpir mientras este agente está respondiendo. Usa Añadir al buzón de borradores en su lugar.",
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
     "midturnBlockedSendHint": "This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.",
-    "addToQueueBusyHint": "Save to Draft box and send it later."
+    "addToQueueBusyHint": "Añadir a la cola para enviar más tarde."
   },
   "contextUsage": {
     "contextUsed": "contexto usado",

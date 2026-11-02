@@ -18,12 +18,10 @@ import { Button, Dropdown, Menu, Modal, Tooltip, Typography } from '@arco-design
 import { CornerDownRight, Delete, Drag, Edit, MoreOne, SendOne, SortTwo } from '@icon-park/react';
 import React, { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import KimiIcon from '@renderer/components/base/KimiIcon';
-
 const getCommandPreview = (input: string): string => input.replace(/\s+/g, ' ').trim();
 
-const DraftBoxActionIcon: React.FC<{ size?: number; color?: string }> = ({ size = 16, color = 'currentColor' }) => (
-  <KimiIcon name='archive' size={size} fill={color} />
+const QueueActionIcon: React.FC<{ size?: number; color?: string }> = ({ size = 16, color = 'currentColor' }) => (
+  <SendOne theme='outline' size={size} fill={color} />
 );
 
 const createRestrictToQueueContainerModifier = (
@@ -389,7 +387,7 @@ const CommandQueuePanel: React.FC<CommandQueuePanelProps> = ({
     []
   );
 
-  const title = t('conversation.commandQueue.title', { defaultValue: 'Draft box' });
+  const title = t('conversation.commandQueue.title', { defaultValue: 'Waiting to send' });
   const modeLabel =
     mode === 'auto'
       ? t('conversation.commandQueue.mode.auto', { defaultValue: 'Auto send' })
@@ -419,12 +417,12 @@ const CommandQueuePanel: React.FC<CommandQueuePanelProps> = ({
 
   const handleClear = () => {
     Modal.confirm({
-      title: t('conversation.commandQueue.clearConfirmTitle', { defaultValue: 'Clear the send draft box?' }),
+      title: t('conversation.commandQueue.clearConfirmTitle', { defaultValue: 'Clear queued messages?' }),
       content: t('conversation.commandQueue.clearConfirmContent', {
         defaultValue: 'All pending messages will be removed. This cannot be undone.',
       }),
       okButtonProps: { status: 'danger' },
-      okText: t('conversation.commandQueue.clear', { defaultValue: 'Clear draft box' }),
+      okText: t('conversation.commandQueue.clear', { defaultValue: 'Clear queued messages' }),
       onOk: onClear,
     });
   };
@@ -451,16 +449,16 @@ const CommandQueuePanel: React.FC<CommandQueuePanelProps> = ({
         </Menu.Item>
       ) : null}
       <Menu.Item key='clear' onClick={handleClear} style={{ color: 'rgb(var(--danger-6))' }}>
-        {t('conversation.commandQueue.clear', { defaultValue: 'Clear draft box' })}
+        {t('conversation.commandQueue.clear', { defaultValue: 'Clear queued messages' })}
       </Menu.Item>
     </Menu>
   );
 
   return (
-    <div className='relative z-1 mb--12px px-8px pt-8px pb-12px'>
+    <div className='relative z-1 mt-16px px-8px pb-4px'>
       <div
         aria-label={title}
-        className='overflow-hidden rd-t-18px border b-solid'
+        className='overflow-hidden rd-16px border b-solid'
         style={{
           borderColor: 'color-mix(in srgb, var(--color-border-2) 56%, transparent)',
           background: 'color-mix(in srgb, var(--color-fill-1) 84%, var(--color-bg-1))',
@@ -471,12 +469,12 @@ const CommandQueuePanel: React.FC<CommandQueuePanelProps> = ({
             {isMobile ? (
               <Tooltip content={title} position='top'>
                 <span className='inline-flex items-center justify-center text-t-tertiary' aria-label={title}>
-                  <DraftBoxActionIcon size={16} />
+                  <QueueActionIcon size={16} />
                 </span>
               </Tooltip>
             ) : (
               <span className='inline-flex items-center gap-5px text-12px font-600 text-t-secondary whitespace-nowrap leading-none'>
-                <DraftBoxActionIcon size={15} />
+                <QueueActionIcon size={15} />
                 {title}
               </span>
             )}

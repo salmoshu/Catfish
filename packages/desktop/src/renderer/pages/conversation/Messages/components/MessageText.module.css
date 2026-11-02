@@ -1,21 +1,20 @@
 .bubble {
   min-width: 0;
   color: var(--text-primary);
-  font-size: 16px;
-  line-height: 24px;
+  font-size: 14px;
+  line-height: 22px;
   overflow-wrap: anywhere;
 }
 
 .user {
-  max-width: min(80%, 640px);
-  padding: 10px 12px;
+  max-width: min(85%, 640px);
+  padding: 10px 14px;
   border-radius: 12px;
   background: var(--color-fill-2);
 }
 
 .assistant {
   width: 100%;
-  padding-top: 8px;
 }
 
 .teammate {

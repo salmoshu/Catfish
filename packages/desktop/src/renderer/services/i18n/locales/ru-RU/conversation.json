@@ -502,8 +502,8 @@
     "error": "Не удалось ответить на боковой вопрос."
   },
   "commandQueue": {
-    "title": "Черновики",
-    "clear": "Очистить черновики",
+    "title": "Ожидают отправки",
+    "clear": "Очистить очередь",
     "edit": "Редактировать",
     "editing": "Редактирование",
     "editPlaceholder": "Обновите команду в очереди перед выполнением.",
@@ -529,19 +529,19 @@
     "helpIntro": "Сообщения, отправленные во время ответа ИИ, ждут здесь.",
     "helpAuto": ": отправляются автоматически по очереди после каждого ответа.",
     "helpManual": ": хранятся без отправки; отправьте каждое кнопкой «Отправить сейчас».",
-    "clearConfirmTitle": "Очистить черновики отправки?",
+    "clearConfirmTitle": "Очистить очередь отправки?",
     "clearConfirmContent": "Все ожидающие сообщения будут удалены. Это действие необратимо.",
     "mode": {
       "auto": "Авто-отправка",
       "manual": "Ручная отправка"
     },
-    "addToQueue": "Добавить в черновики",
+    "addToQueue": "Добавить в очередь",
     "addToQueueShortcut": "⌘ + Enter / Ctrl + Enter",
     "midturnBlocked": "Вставка сообщений не поддерживается, пока этот агент отвечает. Используйте «Добавить в черновики».",
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
     "midturnBlockedSendHint": "This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.",
-    "addToQueueBusyHint": "Save to Draft box and send it later."
+    "addToQueueBusyHint": "Добавить в очередь и отправить позже."
   },
   "contextUsage": {
     "contextUsed": "контекст использован",

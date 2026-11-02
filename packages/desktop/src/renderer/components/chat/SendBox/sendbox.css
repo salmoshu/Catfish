@@ -1,7 +1,8 @@
 /* Sendbox component styles */
 
 .sendbox-panel {
-  border-radius: var(--radius-hero) !important;
+  padding: 14px 16px 12px;
+  border-radius: 32px !important;
 }
 
 /* Send button layout - keep Arco primary states from drawing a square block */

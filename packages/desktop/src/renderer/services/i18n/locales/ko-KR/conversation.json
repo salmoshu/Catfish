@@ -496,8 +496,8 @@
     "error": "보조 질문에 답하지 못했습니다."
   },
   "commandQueue": {
-    "title": "임시함",
-    "clear": "임시함 비우기",
+    "title": "전송 대기",
+    "clear": "전송 대기 비우기",
     "edit": "편집",
     "editing": "편집 중",
     "editPlaceholder": "실행되기 전에 이 대기 명령을 수정하세요.",
@@ -527,13 +527,13 @@
       "auto": "자동 전송",
       "manual": "수동 전송"
     },
-    "addToQueue": "Draft box에 추가",
+    "addToQueue": "전송 대기에 추가",
     "addToQueueShortcut": "⌘ + Enter / Ctrl + Enter",
     "midturnBlocked": "이 에이전트가 응답하는 동안에는 끼어들기를 지원하지 않습니다. Draft box에 추가를 사용하세요.",
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
     "midturnBlockedSendHint": "This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.",
-    "addToQueueBusyHint": "Save to Draft box and send it later."
+    "addToQueueBusyHint": "Queue for later sending."
   },
   "contextUsage": {
     "contextUsed": "사용된 컨텍스트",
