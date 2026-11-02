@@ -342,7 +342,7 @@ describe('MessageList', () => {
     expect(messageRow.className).not.toContain('max-w-780px');
   });
 
-  it('left-aligns user messages with the assistant timeline', () => {
+  it('right-aligns user messages', () => {
     const userMessage = {
       ...createTextMessage(),
       id: 'user-message',
@@ -354,8 +354,8 @@ describe('MessageList', () => {
     });
 
     const messageRow = screen.getByTestId('message-text-right');
-    expect(messageRow.className).toContain('justify-start');
-    expect(messageRow.className).not.toContain('justify-end');
+    expect(messageRow.className).toContain('justify-end');
+    expect(messageRow.className).not.toContain('justify-start');
   });
 
   it('mounts the command queue slot inside the scrollable message timeline', () => {

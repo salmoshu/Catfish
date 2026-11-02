@@ -7,6 +7,7 @@
 import { ipcBridge } from '@/common';
 import type { TConversationRuntimeSummary } from '@/common/config/storage';
 import {
+  getConversationStreamRevision,
   reconcileGeneratingFromRuntime,
   reconcileWaitingConfirmationFromRuntime,
 } from '@/renderer/pages/conversation/GroupedHistory/hooks/useConversationListSync';
@@ -88,6 +89,7 @@ export const useConversationRuntimeView = (conversation_id: string): UseConversa
     }
 
     let cancelled = false;
+    const observedStreamRevision = getConversationStreamRevision(conversation_id);
     flushRuntimeViewLogs(hydrateStarted(conversation_id));
 
     void getConversationOrNull(conversation_id)
@@ -101,7 +103,7 @@ export const useConversationRuntimeView = (conversation_id: string): UseConversa
         // a missed WS frame (window reload/reconnect race) can otherwise
         // leave the row dark even though the runtime is still processing.
         if (runtime) {
-          reconcileGeneratingFromRuntime(conversation_id, runtime.is_processing === true);
+          reconcileGeneratingFromRuntime(conversation_id, runtime.is_processing === true, observedStreamRevision);
           reconcileWaitingConfirmationFromRuntime(conversation_id, runtime.pending_confirmations ?? 0);
         }
       })
@@ -156,7 +158,11 @@ export const useConversationRuntimeView = (conversation_id: string): UseConversa
   const markSendAccepted = useCallback(
     (turn_id: string, runtime: TConversationRuntimeSummary, msg_id?: string) => {
       flushRuntimeViewLogs(localSendAccepted(conversation_id, turn_id, runtime, msg_id));
-      reconcileGeneratingFromRuntime(conversation_id, runtime.is_processing === true);
+      reconcileGeneratingFromRuntime(
+        conversation_id,
+        runtime.is_processing === true,
+        getConversationStreamRevision(conversation_id)
+      );
     },
     [conversation_id]
   );

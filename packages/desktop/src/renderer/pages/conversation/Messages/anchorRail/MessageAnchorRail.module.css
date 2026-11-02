@@ -157,8 +157,9 @@
 }
 
 .tickActive {
-  color: rgb(var(--primary-6));
+  color: var(--color-text-1);
   font-weight: 600;
+  background: var(--color-fill-1);
 }
 
 .scrollHint {

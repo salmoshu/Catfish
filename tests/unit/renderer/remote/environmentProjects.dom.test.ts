@@ -43,6 +43,27 @@ describe('environment project index', () => {
     expect(readEnvironmentProjects().find((entry) => entry.environment.type === 'remote')?.projects).toEqual([]);
   });
 
+  it('preserves environment and project order when a reconnect refreshes metadata', () => {
+    recordEnvironmentProjects([conversation('local')], local);
+    recordEnvironmentProjects(
+      [conversation('one', { workspace: '/one' }), conversation('two', { workspace: '/two' })],
+      remote
+    );
+
+    recordEnvironmentProjects(
+      [
+        { ...conversation('two-new', { workspace: '/two' }), modified_at: 3 },
+        conversation('one', { workspace: '/one' }),
+      ],
+      remote
+    );
+
+    const history = readEnvironmentProjects();
+    expect(history.map((entry) => environmentKey(entry.environment))).toEqual(['local', 'remote:wsl-1']);
+    expect(history[1].projects.map((project) => project.workspace)).toEqual(['/one', '/two']);
+    expect(history[1].projects[1].conversations[0].id).toBe('two-new');
+  });
+
   it('caches only display metadata and excludes temporary, team and health-check conversations', () => {
     recordEnvironmentProjects(
       [

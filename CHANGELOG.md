@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.7](https://github.com/salmoshu/Catfish/releases/tag/v0.4.7) (2026-11-02)
+
+### Desktop
+
+#### Features
+
+- **conversation:** right-align user messages and use neutral Timber-style outline labels with a colored active marker
+- **workspace:** promote projects with recent conversation activity while keeping their order stable during reconnection
+- **updates:** silently reuse the existing Windows installation scope and directory when installing an update
+
+#### Bug Fixes
+
+- **conversation:** stop stale sidebar, thinking, and tool-step animations after a turn finishes
+- **remote:** animate the reconnect action and preserve project and conversation identity during environment refreshes
+
+---
+
 ## [0.4.5](https://github.com/salmoshu/Catfish/releases/tag/v0.4.5) (2026-11-01)
 
 ### Desktop

@@ -35,9 +35,10 @@ const ALERT_CLASSES =
 // CollapsibleContent 高度常量 CollapsibleContent height constants
 const RESULT_MAX_HEIGHT = COLLAPSE_CONFIG.MAX_HEIGHT;
 
-interface IMessageToolGroupProps {
+type IMessageToolGroupProps = {
   message: IMessageToolGroup;
-}
+  isProcessing?: boolean;
+};
 
 const useConfirmationButtons = (
   confirmationDetails: IMessageToolGroupProps['message']['content'][number]['confirmationDetails'],
@@ -453,7 +454,7 @@ const ToolResultDisplay: React.FC<{
   );
 };
 
-const MessageToolGroup: React.FC<IMessageToolGroupProps> = ({ message }) => {
+const MessageToolGroup: React.FC<IMessageToolGroupProps> = ({ message, isProcessing = true }) => {
   const { t } = useTranslation();
 
   // 收集所有 WriteFile 结果用于汇总显示 / Collect all WriteFile results for summary display
@@ -484,7 +485,7 @@ const MessageToolGroup: React.FC<IMessageToolGroupProps> = ({ message }) => {
     <div>
       {message.content.map((content, index) => {
         const { status, call_id, name, description, result_display, confirmationDetails } = content;
-        const isLoading = status !== 'Success' && status !== 'Error' && status !== 'Canceled';
+        const isLoading = isProcessing && status !== 'Success' && status !== 'Error' && status !== 'Canceled';
         // status === "Confirming" &&
         if (confirmationDetails) {
           return (

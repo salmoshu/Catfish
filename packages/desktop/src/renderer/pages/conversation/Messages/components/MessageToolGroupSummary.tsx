@@ -29,7 +29,7 @@ const statusToBadge = (status: NormalizedToolStatus): BadgeProps['status'] => {
   }
 };
 
-const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
+const ToolItemDetail: React.FC<{ item: NormalizedToolCall; isProcessing: boolean }> = ({ item, isProcessing }) => {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [fullItem, setFullItem] = useState<NormalizedToolCall | null>(null);
@@ -81,7 +81,10 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
   const heading = (
     <>
       <span className='tool-row__rail'>
-        <Badge status={statusToBadge(item.status)} className={item.status === 'running' ? 'badge-breathing' : ''} />
+        <Badge
+          status={statusToBadge(isProcessing ? item.status : 'completed')}
+          className={isProcessing && item.status === 'running' ? 'badge-breathing' : ''}
+        />
       </span>
       <span className='tool-row__heading'>
         <span className='tool-row__name'>{displayItem.name}</span>
@@ -155,9 +158,12 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
   );
 };
 
-const MessageToolGroupSummary: React.FC<{ messages: ToolMessage[] }> = ({ messages }) => {
+const MessageToolGroupSummary: React.FC<{ messages: ToolMessage[]; isProcessing?: boolean }> = ({
+  messages,
+  isProcessing = true,
+}) => {
   const { t } = useTranslation();
-  const hasRunning = hasRunningToolMessages(messages);
+  const hasRunning = isProcessing && hasRunningToolMessages(messages);
   const [showMore, setShowMore] = useState(hasRunning);
 
   useEffect(() => {
@@ -167,7 +173,7 @@ const MessageToolGroupSummary: React.FC<{ messages: ToolMessage[] }> = ({ messag
   const tools = useMemo(() => normalizeToolMessages(messages), [messages]);
 
   return (
-    <div className='tool-group-summary'>
+    <div className='tool-group-summary' data-processing={hasRunning ? 'true' : 'false'}>
       <Button
         type='text'
         className='tool-group-summary__header'
@@ -175,7 +181,7 @@ const MessageToolGroupSummary: React.FC<{ messages: ToolMessage[] }> = ({ messag
         onClick={() => setShowMore((current) => !current)}
       >
         <span className='tool-group-summary__icon'>
-          {hasRunning ? <Spin size={12} /> : <Checklist theme='outline' size='14' />}
+          {hasRunning ? <Spin size={12} data-testid='tool-group-running' /> : <Checklist theme='outline' size='14' />}
         </span>
         <span className='tool-group-summary__label'>
           {t('messages.toolGroup.viewSteps', { count: tools.length, defaultValue: 'View Steps · {{count}}' })}
@@ -187,7 +193,7 @@ const MessageToolGroupSummary: React.FC<{ messages: ToolMessage[] }> = ({ messag
       {showMore && (
         <div className='tool-group-summary__body'>
           {tools.map((item) => (
-            <ToolItemDetail key={item.key} item={item} />
+            <ToolItemDetail key={item.key} item={item} isProcessing={isProcessing} />
           ))}
         </div>
       )}

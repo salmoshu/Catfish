@@ -226,6 +226,7 @@ const MessageItem: React.FC<{
   showCopyRow?: boolean;
   isLastMessage?: boolean;
   hasForkAnchor?: boolean;
+  isProcessing: boolean;
   turnTexts?: string[];
 }> = React.memo(
   HOC((props) => {
@@ -245,7 +246,8 @@ const MessageItem: React.FC<{
           message.type,
           {
             'justify-center': message.position === 'center',
-            'justify-start': message.position === 'left' || message.position === 'right',
+            'justify-start': message.position === 'left',
+            'justify-end': message.position === 'right',
           }
         )}
         style={highlighted ? highlightStyle : undefined}
@@ -259,6 +261,7 @@ const MessageItem: React.FC<{
       showCopyRow,
       isLastMessage,
       hasForkAnchor,
+      isProcessing,
       turnTexts,
     }: {
       message: TMessage;
@@ -267,6 +270,7 @@ const MessageItem: React.FC<{
       showCopyRow?: boolean;
       isLastMessage?: boolean;
       hasForkAnchor?: boolean;
+      isProcessing: boolean;
       turnTexts?: string[];
     }) => {
       const { t } = useTranslation();
@@ -286,7 +290,7 @@ const MessageItem: React.FC<{
         case 'tool_call':
           return <MessageToolCall message={message}></MessageToolCall>;
         case 'tool_group':
-          return <MessageToolGroup message={message}></MessageToolGroup>;
+          return <MessageToolGroup message={message} isProcessing={isProcessing}></MessageToolGroup>;
         case 'agent_status':
           return <MessageAgentStatus message={message}></MessageAgentStatus>;
         case 'permission':
@@ -300,7 +304,7 @@ const MessageItem: React.FC<{
         case 'acp_terminal_output':
           return <MessageAcpTerminalOutput message={message}></MessageAcpTerminalOutput>;
         case 'thinking':
-          return <MessageThinking message={message}></MessageThinking>;
+          return <MessageThinking message={message} isProcessing={isProcessing}></MessageThinking>;
         // Both are filtered out of `processedList` above and never reach this
         // switch. These arms exist only to keep the `default` branch's
         // exhaustiveness check (`getUnhandledMessageType`) satisfied — a plan
@@ -323,6 +327,7 @@ const MessageItem: React.FC<{
     prev.showCopyRow === next.showCopyRow &&
     prev.isLastMessage === next.isLastMessage &&
     prev.hasForkAnchor === next.hasForkAnchor &&
+    prev.isProcessing === next.isProcessing &&
     // Compare by content: the map is rebuilt per render, so reference equality
     // would defeat the memo for the one row that carries the copy button.
     (prev.turnTexts === next.turnTexts ||
@@ -713,7 +718,9 @@ const MessageList: React.FC<{
           style={highlighted ? highlightStyle : undefined}
         >
           {item.type === 'file_summary' && <MessageFileChanges diffsChanges={item.diffs} />}
-          {item.type === 'tool_summary' && <MessageToolGroupSummary messages={item.messages}></MessageToolGroupSummary>}
+          {item.type === 'tool_summary' && (
+            <MessageToolGroupSummary messages={item.messages} isProcessing={isProcessing} />
+          )}
         </div>
       );
     }
@@ -729,6 +736,7 @@ const MessageList: React.FC<{
         showCopyRow={showCopyRow}
         isLastMessage={message.id === lastMessageId}
         hasForkAnchor={forkAnchoredIds.has(message.id)}
+        isProcessing={isProcessing}
         turnTexts={aiTurnTextsById.get(message.id)}
       ></MessageItem>
     );

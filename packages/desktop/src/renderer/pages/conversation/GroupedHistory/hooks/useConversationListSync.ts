@@ -222,6 +222,7 @@ type ConversationListSyncSnapshot = {
   waitingConfirmationConversationIds: Set<string>;
   completionUnreadConversationIds: Set<string>;
   manualUnreadConversationIds: Set<string>;
+  conversationActivityAt: ReadonlyMap<string, number>;
 };
 
 /**
@@ -257,6 +258,16 @@ const listeners = new Set<() => void>();
 let isStoreInitialized = false;
 let conversationsState: TChatConversation[] = [];
 let generatingConversationIdsState = new Set<string>();
+let conversationActivityAtState = new Map<string, number>();
+const streamRevisionByConversation = new Map<string, number>();
+
+/** Capture stream ordering before an async runtime fetch; stale idle snapshots cannot clear newer work. */
+export const getConversationStreamRevision = (conversation_id: string): number =>
+  streamRevisionByConversation.get(conversation_id) ?? 0;
+
+const advanceConversationStreamRevision = (conversation_id: string): void => {
+  streamRevisionByConversation.set(conversation_id, getConversationStreamRevision(conversation_id) + 1);
+};
 // Per-conversation set of pending confirmation ids (permission / acp_permission
 // / ask). A conversation with a non-empty set is "waiting on the user" and gets
 // the distinct sidebar icon. Kept separate from the derived id set below so
@@ -282,6 +293,7 @@ let snapshotState: ConversationListSyncSnapshot = {
   waitingConfirmationConversationIds: waitingConfirmationConversationIdsState,
   completionUnreadConversationIds: completionUnreadConversationIdsState,
   manualUnreadConversationIds: manualUnreadConversationIdsState,
+  conversationActivityAt: conversationActivityAtState,
 };
 
 const emitStoreChange = () => {
@@ -291,6 +303,7 @@ const emitStoreChange = () => {
     waitingConfirmationConversationIds: waitingConfirmationConversationIdsState,
     completionUnreadConversationIds: completionUnreadConversationIdsState,
     manualUnreadConversationIds: manualUnreadConversationIdsState,
+    conversationActivityAt: conversationActivityAtState,
   };
   listeners.forEach((listener) => listener());
 };
@@ -397,6 +410,10 @@ const markGenerating = (conversation_id: string, source: GeneratingTransitionSou
   }
 
   generatingConversationIdsState = new Set(generatingConversationIdsState).add(conversation_id);
+  if (source === 'stream') {
+    // Only real conversation activity changes project ordering, not reconnects or runtime hydration.
+    conversationActivityAtState = new Map(conversationActivityAtState).set(conversation_id, Date.now());
+  }
   logGeneratingTransition(conversation_id, true, source);
   emitStoreChange();
 };
@@ -413,28 +430,39 @@ const clearGenerating = (conversation_id: string, source: GeneratingTransitionSo
   emitStoreChange();
 };
 
-/**
- * Pure decision helper: whether a runtime summary's `is_processing` bit
- * should light the sidebar spinner. Clearing is intentionally NOT handled
- * here (and never by this reconcile path) — an idle-looking runtime summary
- * must not fight a live background stream that's still mid-flight; only
- * terminal stream frames / turn.completed are allowed to clear the flag.
- */
+/** Whether a runtime summary can light the sidebar spinner. */
 export const shouldReconcileMarkGenerating = (isProcessing: boolean): boolean => isProcessing === true;
 
+/** Runtime fetches can only clear state observed at their own revision, never newer stream work. */
+export const shouldReconcileClearGenerating = (observedRevision: number, currentRevision: number): boolean =>
+  observedRevision === currentRevision;
+
 /**
- * Reconciles the sidebar spinner with authoritative runtime state (e.g. a
- * per-conversation hydrate or send-accepted response). Call this whenever a
- * runtime summary's `is_processing` bit is in hand for a conversation — it
- * covers the case where a WS stream frame was missed (window reload/reconnect
- * race) and the store would otherwise never know the turn is still running.
+ * Reconcile missed stream frames with runtime state. Callers performing an async fetch
+ * capture its revision before starting; stale idle responses are deliberately ignored.
  */
-export const reconcileGeneratingFromRuntime = (conversation_id: string, isProcessing: boolean): void => {
+export const reconcileGeneratingFromRuntime = (
+  conversation_id: string,
+  isProcessing: boolean,
+  observedStreamRevision?: number
+): void => {
   if (!conversation_id) {
     return;
   }
   if (shouldReconcileMarkGenerating(isProcessing)) {
-    markGenerating(conversation_id, 'reconcile');
+    if (
+      observedStreamRevision === undefined ||
+      shouldReconcileClearGenerating(observedStreamRevision, getConversationStreamRevision(conversation_id))
+    ) {
+      markGenerating(conversation_id, 'reconcile');
+    }
+    return;
+  }
+  if (
+    observedStreamRevision !== undefined &&
+    shouldReconcileClearGenerating(observedStreamRevision, getConversationStreamRevision(conversation_id))
+  ) {
+    clearGenerating(conversation_id, 'reconcile');
   }
 };
 
@@ -619,6 +647,7 @@ const initializeConversationListSyncStore = () => {
       refreshConversations();
     }
 
+    advanceConversationStreamRevision(conversation_id);
     if (isTerminalStreamMessage(message)) {
       const wasGenerating = generatingConversationIdsState.has(conversation_id);
       if (wasGenerating && activeConversationIdState !== conversation_id) {
@@ -658,6 +687,7 @@ const initializeConversationListSyncStore = () => {
     }
   });
   ipcBridge.conversation.turnCompleted.on((event) => {
+    advanceConversationStreamRevision(event.session_id);
     if (isTerminalTurnState(event.state) && activeConversationIdState !== event.session_id) {
       markCompletionUnread(event.session_id);
     }
@@ -689,6 +719,7 @@ export const useConversationListSync = () => {
     waitingConfirmationConversationIds,
     completionUnreadConversationIds,
     manualUnreadConversationIds,
+    conversationActivityAt,
   } = useSyncExternalStore(
     subscribeConversationListSync,
     getConversationListSyncSnapshot,
@@ -741,6 +772,7 @@ export const useConversationListSync = () => {
 
   return {
     conversations,
+    conversationActivityAt,
     isConversationGenerating,
     isConversationWaitingConfirmation,
     hasCompletionUnread,

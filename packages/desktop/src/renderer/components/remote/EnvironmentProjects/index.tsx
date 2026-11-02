@@ -30,7 +30,8 @@ const EnvironmentProjects: React.FC<Props> = ({ collapsed, heading, hidden, empt
   const [history, setHistory] = useState(readEnvironmentProjects);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [connection, setConnection] = useState<{ environment: RemoteEnvironmentSummary; route: string }>();
-  const [switching, setSwitching] = useState(false);
+  const [switchingKey, setSwitchingKey] = useState<string | null>(null);
+  const switching = switchingKey !== null;
   const active = window.__backendEnvironment;
   const otherHistory = active
     ? history.filter((entry) => environmentKey(entry.environment) !== environmentKey(active))
@@ -67,7 +68,7 @@ const EnvironmentProjects: React.FC<Props> = ({ collapsed, heading, hidden, empt
     const route = conversationId
       ? `/conversation/${encodeURIComponent(conversationId)}`
       : `/guid?workspace=${encodeURIComponent(workspace)}`;
-    setSwitching(true);
+    setSwitchingKey(`${environmentKey(entry.environment)}:${workspace}`);
     try {
       if (entry.environment.type === 'local') {
         const result = await ipcBridge.remoteEnvironment.disconnect.invoke();
@@ -88,7 +89,7 @@ const EnvironmentProjects: React.FC<Props> = ({ collapsed, heading, hidden, empt
     } catch (error) {
       Message.error(error instanceof Error ? error.message : t('guid.workspace.remote.connectFailed'));
     } finally {
-      setSwitching(false);
+      setSwitchingKey(null);
     }
   };
 
@@ -159,7 +160,12 @@ const EnvironmentProjects: React.FC<Props> = ({ collapsed, heading, hidden, empt
                         }}
                       >
                         {isRemote ? (
-                          <Refresh theme='outline' size='14' fill='currentColor' className='block leading-none' />
+                          <Refresh
+                            theme='outline'
+                            size='14'
+                            fill='currentColor'
+                            className={classNames('block leading-none', { loading: switchingKey === key })}
+                          />
                         ) : (
                           <Plus theme='outline' size='14' fill='currentColor' className='block leading-none' />
                         )}

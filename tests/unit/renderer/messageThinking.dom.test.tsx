@@ -84,4 +84,16 @@ describe('MessageThinking', () => {
     expect(screen.getByText('Thought complete · 5s')).toBeInTheDocument();
     expect(screen.queryByText(/^Thinking\.\.\./)).not.toBeInTheDocument();
   });
+
+  it('stops a persisted thinking spinner when the conversation is no longer processing', () => {
+    vi.setSystemTime(new Date('2026-05-26T09:00:10.000Z'));
+    const { container, rerender } = render(<MessageThinking message={createThinkingMessage(Date.now())} />);
+
+    rerender(<MessageThinking message={createThinkingMessage(Date.now())} isProcessing={false} />);
+
+    expect(screen.getByText('Thought complete · 0s')).toBeInTheDocument();
+    expect(container.querySelector('.arco-spin')).toBeNull();
+    vi.advanceTimersByTime(10_000);
+    expect(screen.getByText('Thought complete · 0s')).toBeInTheDocument();
+  });
 });

@@ -33,7 +33,7 @@ vi.mock('@icon-park/react', async (original) => ({
   ...(await original<typeof import('@icon-park/react')>()),
   FolderClose: () => <svg data-testid='folder-close' />,
   FolderOpen: () => <svg data-testid='folder-open' />,
-  Refresh: () => <svg data-testid='reconnect-icon' />,
+  Refresh: ({ className }: { className?: string }) => <svg data-testid='reconnect-icon' className={className} />,
 }));
 vi.mock('@/renderer/components/remote/RemoteConnectionModal', () => ({
   default: ({ onConnected }: { onConnected: () => void }) => <button onClick={onConnected}>complete-connection</button>,
@@ -147,6 +147,7 @@ describe('projects across environments', () => {
     fireEvent.click(screen.getByRole('button', { name: 'mcp.connect' }));
     fireEvent.click(screen.getByText('RemoteProject'));
     expect(mocks.connect).toHaveBeenCalledOnce();
+    expect(screen.getByTestId('reconnect-icon')).toHaveClass('loading');
 
     resolveConnect({ ok: true, data: remote });
     await waitFor(() => expect(mocks.reload).toHaveBeenCalledOnce());

@@ -27,7 +27,8 @@ export const getConversationPinnedAt = (conversation: TChatConversation): number
 
 export const groupConversationsByWorkspace = (
   conversations: TChatConversation[],
-  t: (key: string) => string
+  t: (key: string) => string,
+  conversationActivityAt: ReadonlyMap<string, number> = new Map()
 ): TimelineSection[] => {
   const allWorkspaceGroups = new Map<string, TChatConversation[]>();
   const withoutWorkspaceConvs: TChatConversation[] = [];
@@ -54,8 +55,9 @@ export const groupConversationsByWorkspace = (
   allWorkspaceGroups.forEach((convList, workspace) => {
     const sortedConvs = [...convList].toSorted((a, b) => getActivityTime(b) - getActivityTime(a));
     const latestConversationTime = getActivityTime(sortedConvs[0]);
+    const latestActivityTime = Math.max(0, ...convList.map((conv) => conversationActivityAt.get(conv.id) ?? 0));
     const updateTime = getWorkspaceUpdateTime(workspace);
-    const time = Math.max(updateTime, latestConversationTime);
+    const time = Math.max(updateTime, latestConversationTime, latestActivityTime);
     items.push({
       type: 'workspace',
       time,
@@ -99,7 +101,8 @@ const isTeamConversation = (conversation: TChatConversation): boolean => {
 
 export const buildGroupedHistory = (
   conversations: TChatConversation[],
-  t: (key: string) => string
+  t: (key: string) => string,
+  conversationActivityAt: ReadonlyMap<string, number> = new Map()
 ): GroupedHistoryResult => {
   // Filter out team-owned conversations; they are only visible via the Teams panel
   const visibleConversations = conversations.filter((conv) => !isTeamConversation(conv));
@@ -119,6 +122,6 @@ export const buildGroupedHistory = (
 
   return {
     pinnedConversations,
-    timelineSections: groupConversationsByWorkspace(normalConversations, t),
+    timelineSections: groupConversationsByWorkspace(normalConversations, t, conversationActivityAt),
   };
 };

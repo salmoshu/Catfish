@@ -11,7 +11,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import styles from './MessageThinking.module.css';
 
-const MessageThinking: React.FC<{ message: IMessageThinking }> = ({ message }) => {
+const MessageThinking: React.FC<{ message: IMessageThinking; isProcessing?: boolean }> = ({
+  message,
+  isProcessing = true,
+}) => {
   const { t } = useTranslation();
 
   const formatDuration = (ms: number): string => {
@@ -37,7 +40,8 @@ const MessageThinking: React.FC<{ message: IMessageThinking }> = ({ message }) =
 
   const { content: text, status, subject } = message.content;
   const duration = message.content.duration ?? (message.content as { duration_ms?: number }).duration_ms;
-  const isDone = status === 'done';
+  // A persisted streaming status must stop animating once the turn is no longer active.
+  const isDone = status === 'done' || !isProcessing;
   const [expanded, setExpanded] = useState(!isDone);
   const [elapsedTime, setElapsedTime] = useState(() => {
     const initialStartedAt = message.created_at ?? Date.now();

@@ -99,16 +99,23 @@ export const recordEnvironmentProjects = (
     });
   }
   const key = environmentKey(environment);
-  writeHistory([
-    ...readEnvironmentProjects().filter((entry) => environmentKey(entry.environment) !== key),
-    {
-      environment,
-      projects: [...projects.values()].map((project) => ({
-        ...project,
-        conversations: project.conversations.toSorted((a, b) => b.modifiedAt - a.modifiedAt),
-      })),
-    },
-  ]);
+  const history = readEnvironmentProjects();
+  const previous = history.find((entry) => environmentKey(entry.environment) === key);
+  const previousWorkspaces = new Map(previous?.projects.map((project) => [project.workspace, project]) ?? []);
+  const orderedProjects = [
+    ...(previous?.projects.filter((project) => projects.has(project.workspace)) ?? []),
+    ...[...projects.values()].filter((project) => !previousWorkspaces.has(project.workspace)),
+  ].map((project) => ({
+    ...projects.get(project.workspace)!,
+    conversations: projects.get(project.workspace)!.conversations.toSorted((a, b) => b.modifiedAt - a.modifiedAt),
+  }));
+  const next = { environment, projects: orderedProjects };
+  const index = history.findIndex((entry) => environmentKey(entry.environment) === key);
+  if (index === -1) {
+    writeHistory([...history, next]);
+    return;
+  }
+  writeHistory(history.map((entry, entryIndex) => (entryIndex === index ? next : entry)));
 };
 
 /** Remove cached project entries when their saved remote connection is deleted. */

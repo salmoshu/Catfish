@@ -63,6 +63,20 @@ describe('buildGroupedHistory', () => {
     ]);
   });
 
+  it('promotes a project only when its conversation has real stream activity', () => {
+    const conversations = [
+      conversation('older', { workspace: '/older', custom_workspace: true }, 100),
+      conversation('newer', { workspace: '/newer', custom_workspace: true }, 200),
+    ];
+
+    const result = buildGroupedHistory(conversations, t, new Map([['older', 300]]));
+    expect(result.timelineSections[0].items.map((item) => item.workspaceGroup?.workspace)).toEqual([
+      '/older',
+      '/newer',
+    ]);
+    expect(buildGroupedHistory(conversations, t).timelineSections[0].items[0].workspaceGroup?.workspace).toBe('/newer');
+  });
+
   it('continues to hide team-owned conversations from the regular history', () => {
     const result = buildGroupedHistory(
       [conversation('team-conversation', { backend: 'aioncore', team_id: 'team-1' }, 100)],

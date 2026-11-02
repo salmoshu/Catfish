@@ -7,9 +7,9 @@
 /**
  * Reconcile wiring: `reconcileGeneratingFromRuntime` lets an authoritative
  * runtime summary (hydrate / send-accepted) relight the sidebar spinner when a
- * WS stream frame was missed (window reload/reconnect race). It must only
- * ever turn the flag ON — clearing stays exclusively with terminal stream
- * frames / turn.completed.
+ * WS stream frame was missed (window reload/reconnect race). Fresh idle summaries
+ * also clear a stale spinner; a revision guard prevents stale async responses from
+ * overriding newer stream activity.
  */
 
 import { act, renderHook } from '@testing-library/react';
@@ -43,6 +43,7 @@ vi.mock('@/renderer/hooks/chat/useAutoTitle', () => ({
 vi.mock('@/renderer/utils/emitter', () => ({ addEventListener: () => () => {} }));
 
 import {
+  getConversationStreamRevision,
   reconcileGeneratingFromRuntime,
   useConversationListSync,
 } from '@/renderer/pages/conversation/GroupedHistory/hooks/useConversationListSync';
@@ -80,6 +81,28 @@ describe('reconcileGeneratingFromRuntime', () => {
     });
 
     expect(result.current.isConversationGenerating('conv-d')).toBe(false);
+  });
+
+  it('clears a stale spinner using a fresh authoritative idle snapshot', () => {
+    const { result } = renderHook(() => useConversationListSync());
+
+    act(() => {
+      reconcileGeneratingFromRuntime('conv-fresh', true);
+      reconcileGeneratingFromRuntime('conv-fresh', false, getConversationStreamRevision('conv-fresh'));
+    });
+
+    expect(result.current.isConversationGenerating('conv-fresh')).toBe(false);
+  });
+
+  it('does not let an outdated idle snapshot clear newer stream activity', () => {
+    const { result } = renderHook(() => useConversationListSync());
+
+    act(() => {
+      reconcileGeneratingFromRuntime('conv-stale', true);
+      reconcileGeneratingFromRuntime('conv-stale', false, getConversationStreamRevision('conv-stale') - 1);
+    });
+
+    expect(result.current.isConversationGenerating('conv-stale')).toBe(true);
   });
 });
 

@@ -17,6 +17,23 @@ vi.mock('@/common', () => ({
 }));
 
 describe('MessageToolGroupSummary', () => {
+  it('stops the steps spinner and running badge after the turn ends', () => {
+    const message = {
+      id: 'message-running',
+      conversation_id: 'conversation-1',
+      type: 'tool_group',
+      content: [{ call_id: 'call-1', name: 'ReadFile', status: 'Executing', description: 'Reading' }],
+    } as unknown as ToolMessage;
+    const { container, rerender } = render(<MessageToolGroupSummary messages={[message]} />);
+
+    expect(screen.getByTestId('tool-group-running')).toBeInTheDocument();
+    rerender(<MessageToolGroupSummary messages={[message]} isProcessing={false} />);
+
+    expect(screen.queryByTestId('tool-group-running')).not.toBeInTheDocument();
+    expect(container.querySelector('.badge-breathing')).toBeNull();
+    expect(screen.getByRole('button', { name: /View Steps/ })).toHaveAttribute('aria-expanded', 'true');
+  });
+
   it('loads full tool content when expanding a compact history item', async () => {
     const invoke = vi.mocked(ipcBridge.database.getConversationMessage.invoke);
     invoke.mockResolvedValue({
