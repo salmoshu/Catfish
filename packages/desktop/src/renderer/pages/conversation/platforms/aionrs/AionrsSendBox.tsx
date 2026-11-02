@@ -782,14 +782,12 @@ const AionrsSendBox: React.FC<{
         defaultMultiLine={!isMobile}
         lockMultiLine={!isMobile}
         tools={
-          <FileAttachButton
-            openFileSelector={openFileSelector}
-            onLocalFilesAdded={handleFilesAdded}
-            loadedMcpStatuses={loadedMcpStatuses}
-          />
-        }
-        rightTools={
           <div className='flex items-center gap-8px min-w-0'>
+            <FileAttachButton
+              openFileSelector={openFileSelector}
+              onLocalFilesAdded={handleFilesAdded}
+              loadedMcpStatuses={loadedMcpStatuses}
+            />
             <AgentModeSelector
               backend='aionrs'
               conversation_id={conversation_id}
@@ -831,7 +829,7 @@ const AionrsSendBox: React.FC<{
                       <Tag
                         key={item.path}
                         data-testid={`aionrs-folder-tag-${folderIndex}`}
-                        color='blue'
+                        color='gray'
                         closable
                         onClose={() => {
                           const newAtPath = atPath.filter((v) => (typeof v === 'string' ? true : v.path !== item.path));

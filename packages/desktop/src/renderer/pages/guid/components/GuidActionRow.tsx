@@ -619,6 +619,17 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
             />
           )}
         </div>
+        {!isMobile && showModeSwitch && (
+          <AgentModeSelector
+            backend={modeBackend}
+            compact
+            initialMode={selectedMode}
+            onModeSelect={onModeSelect}
+            dynamicModes={dynamicModes}
+            compactLeadingIcon={<Shield theme='outline' size='14' fill={iconColors.secondary} />}
+            modeLabelFormatter={(mode) => mode.value}
+          />
+        )}
       </div>
       {isMobile && (
         <MobileActionSheet
@@ -629,22 +640,10 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
         />
       )}
       <div className={styles.actionSubmit}>
-        {/* Desktop keeps the inline model/permission selectors; on mobile they move into the sheet. */}
+        {/* Mobile keeps the model selector in the action sheet. */}
         {!isMobile && configOptionCount > 0 && (
           <div className={styles.actionConfigGroup} data-mobile={isMobile ? 'true' : undefined}>
             {modelSelectorNode}
-
-            {showModeSwitch && (
-              <AgentModeSelector
-                backend={modeBackend}
-                compact
-                initialMode={selectedMode}
-                onModeSelect={onModeSelect}
-                dynamicModes={dynamicModes}
-                compactLeadingIcon={<Shield theme='outline' size='14' fill={iconColors.secondary} />}
-                modeLabelFormatter={(mode) => mode.value}
-              />
-            )}
           </div>
         )}
 

@@ -3,17 +3,17 @@
 /* Light Mode */
 :root,
 [data-color-scheme='default'] {
-  /* Blue Scale - Light Mode */
-  --aou-1: #e8f3ff;
-  --aou-2: #cfe5ff;
-  --aou-3: #a8ceff;
-  --aou-4: #7bb3ff;
-  --aou-5: #489aff;
-  --aou-6: #1783ff;
-  --aou-7: #167ff7;
-  --aou-8: #167cf2;
-  --aou-9: #125fca;
-  --aou-10: #0d4696;
+  /* Neutral Scale - Light Mode */
+  --aou-1: #f5f5f5;
+  --aou-2: #e5e5e5;
+  --aou-3: #d4d4d4;
+  --aou-4: #a3a3a3;
+  --aou-5: #737373;
+  --aou-6: #525252;
+  --aou-7: #404040;
+  --aou-8: #363636;
+  --aou-9: #292929;
+  --aou-10: #1f1f1f;
 
   /* Background Colors - Light Mode */
   --bg-base: #ffffff; /* bg-0 - 主背景 */
@@ -38,24 +38,24 @@
   --text-disabled: #0000004d; /* 禁用文字 */
 
   /* Semantic Colors - Light Mode */
-  --primary: #1783ff;
+  --primary: #525252;
   --success: #16c456;
   --warning: #ff9500;
   --danger: #ff3849;
-  --info: #1783ff;
+  --info: #525252;
 
   /* Border Colors - Light Mode */
   --border-base: #00000021; /* 基础边框 */
   --border-light: #00000008; /* 浅色边框 */
 
   /* Brand Colors - Light Mode */
-  --brand: #1783ff; /* 品牌色 */
-  --brand-light: #e8f3ff; /* 品牌浅色背景 */
-  --brand-hover: #167ff7; /* 品牌色悬停 */
+  --brand: #525252; /* 品牌色 */
+  --brand-light: #f5f5f5; /* 品牌浅色背景 */
+  --brand-hover: #404040; /* 品牌色悬停 */
 
   /* Message & UI Component Colors - Light Mode */
-  --message-user-bg: #e8f3ff; /* 用户消息背景（浅蓝） */
-  --message-tips-bg: #e8f3ff; /* 提示信息背景（浅蓝） */
+  --message-user-bg: #f5f5f5; /* 用户消息背景 */
+  --message-tips-bg: #f5f5f5; /* 提示信息背景 */
   --workspace-btn-bg: #f2f2f2; /* 工作区按钮背景 */
   --thought-gradient: linear-gradient(90deg, #f5f5f5 0%, #f2f2f2 100%); /* 思考面板背景渐变 */
 
@@ -85,10 +85,10 @@
   --ui-caption-font-size: 12px;
   --ui-caption-line-height: 18px;
   --text-tertiary: #00000073;
-  --text-selection: #1783ff33;
+  --text-selection: #52525233;
   --surface-glass: #ffffffb3;
-  --input-focus-border: #1783ff73;
-  --input-focus-shadow: 0 4px 16px #1783ff1a;
+  --input-focus-border: #52525273;
+  --input-focus-shadow: 0 4px 16px #5252521a;
   --send-button-bg: #292929;
   --send-button-hover: #121212;
   --send-button-active: #000000;
@@ -115,17 +115,17 @@
 
 /* Dark Mode */
 [data-color-scheme='default'][data-theme='dark'] {
-  /* Blue Scale - Dark Mode */
-  --aou-1: #1e2a38;
-  --aou-2: #213248;
-  --aou-3: #25425f;
-  --aou-4: #245783;
-  --aou-5: #2271b3;
-  --aou-6: #1a88ff;
-  --aou-7: #258eff;
-  --aou-8: #3194ff;
-  --aou-9: #66b0ff;
-  --aou-10: #99cbff;
+  /* Neutral Scale - Dark Mode */
+  --aou-1: #262626;
+  --aou-2: #333333;
+  --aou-3: #525252;
+  --aou-4: #737373;
+  --aou-5: #a3a3a3;
+  --aou-6: #d4d4d4;
+  --aou-7: #e5e5e5;
+  --aou-8: #eeeeee;
+  --aou-9: #f5f5f5;
+  --aou-10: #ffffff;
 
   /* Background Colors - Dark Mode */
   --bg-base: #121212; /* 主背景 */
@@ -150,24 +150,24 @@
   --text-disabled: #ffffff42; /* 禁用文字 */
 
   /* Semantic Colors - Dark Mode */
-  --primary: #1a88ff;
+  --primary: #d4d4d4;
   --success: #16c456;
   --warning: #ff9f0a;
   --danger: #ff4756;
-  --info: #1a88ff;
+  --info: #d4d4d4;
 
   /* Border Colors - Dark Mode */
   --border-base: #ffffff1f; /* 基础边框 */
   --border-light: #ffffff0d; /* 浅色边框 */
 
   /* Brand Colors - Dark Mode */
-  --brand: #1a88ff; /* 品牌色 */
-  --brand-light: #1e2a38; /* 品牌深色背景 */
-  --brand-hover: #258eff; /* 品牌色悬停 */
+  --brand: #d4d4d4; /* 品牌色 */
+  --brand-light: #262626; /* 品牌深色背景 */
+  --brand-hover: #e5e5e5; /* 品牌色悬停 */
 
   /* Message & UI Component Colors - Dark Mode */
   --message-user-bg: #292929; /* 用户消息背景 */
-  --message-tips-bg: #1e2a38; /* 提示信息背景 */
+  --message-tips-bg: #262626; /* 提示信息背景 */
   --workspace-btn-bg: #1f1f1f; /* 工作区按钮背景 */
   --thought-gradient: linear-gradient(135deg, #292929 0%, #1f1f1f 100%); /* 思考面板背景渐变 */
 
@@ -184,10 +184,10 @@
   --border-special: var(--border-base); /* 特殊边框色 */
   --color-guid-agent-bar: #1f1f1f; /* 首页 Agent 选择条背景 - 暗色 */
   --text-tertiary: #ffffff6b;
-  --text-selection: #1a88ff33;
+  --text-selection: #d4d4d433;
   --surface-glass: #121212b3;
-  --input-focus-border: #1a88ff80;
-  --input-focus-shadow: 0 4px 16px #1a88ff26;
+  --input-focus-border: #d4d4d480;
+  --input-focus-shadow: 0 4px 16px #d4d4d426;
   --send-button-bg: #f5f5f5;
   --send-button-hover: #ffffff;
   --send-button-active: #e1e3e6;

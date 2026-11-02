@@ -342,6 +342,16 @@ describe('GuidPage', () => {
     ];
   });
 
+  it('places the animated Catfish mascot before the new conversation greeting', () => {
+    render(<GuidPage />);
+
+    const mascot = screen.getByTestId('catfish-mascot');
+    const greeting = screen.getByText('conversation.welcome.title');
+    expect(mascot).toHaveAttribute('src', expect.stringContaining('catfish-anime-animated.svg'));
+    expect(mascot).toHaveAttribute('aria-hidden', 'true');
+    expect(mascot.compareDocumentPosition(greeting) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+  });
+
   it('keeps the existing replace contract for ordinary Guid prefills', () => {
     locationMock.state = { prefillPrompt: 'Replace with this prompt' };
     guidInputMock.setInput.mockClear();

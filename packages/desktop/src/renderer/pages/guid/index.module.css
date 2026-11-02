@@ -10,7 +10,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 12px;
   margin-bottom: 20px;
+}
+
+.heroMascot {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  object-fit: contain;
 }
 
 .heroTitle {
@@ -69,7 +77,7 @@
   margin-inline-end: 0;
 }
 
-/* 方案E：模型 + 权限各自独立 tb-btn，中间有竖线分隔 */
+/* The model selector stays on the right; permission sits beside the add button. */
 .actionConfigGroup {
   display: inline-flex;
   align-items: center;

@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.8](https://github.com/salmoshu/Catfish/releases/tag/v0.4.8) (2026-11-02)
+
+### Desktop
+
+#### Features
+
+- **composer:** place the permission selector beside the attachment action on desktop while preserving the mobile action sheet
+- **conversation:** add an animated Catfish mascot to the new-conversation greeting
+- **theme:** replace bright blue interface accents with neutral gray tones while retaining status colors
+
+#### Bug Fixes
+
+- **interaction:** remove the titlebar Report Issue shortcut without changing the remaining feedback entry points
+
+---
+
 ## [0.4.7](https://github.com/salmoshu/Catfish/releases/tag/v0.4.7) (2026-11-02)
 
 ### Desktop

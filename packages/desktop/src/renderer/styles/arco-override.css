@@ -89,16 +89,16 @@ body {
   --gray-8: 77, 77, 77;
   --gray-9: 41, 41, 41;
   --gray-10: 18, 18, 18;
-  --arcoblue-1: 232, 243, 255;
-  --arcoblue-2: 207, 229, 255;
-  --arcoblue-3: 168, 206, 255;
-  --arcoblue-4: 123, 179, 255;
-  --arcoblue-5: 72, 154, 255;
-  --arcoblue-6: 23, 131, 255;
-  --arcoblue-7: 22, 127, 247;
-  --arcoblue-8: 22, 124, 242;
-  --arcoblue-9: 18, 95, 202;
-  --arcoblue-10: 13, 70, 150;
+  --arcoblue-1: 245, 245, 245;
+  --arcoblue-2: 229, 229, 229;
+  --arcoblue-3: 212, 212, 212;
+  --arcoblue-4: 163, 163, 163;
+  --arcoblue-5: 115, 115, 115;
+  --arcoblue-6: 82, 82, 82;
+  --arcoblue-7: 64, 64, 64;
+  --arcoblue-8: 54, 54, 54;
+  --arcoblue-9: 41, 41, 41;
+  --arcoblue-10: 31, 31, 31;
   --primary-1: var(--arcoblue-1);
   --primary-2: var(--arcoblue-2);
   --primary-3: var(--arcoblue-3);
@@ -149,16 +149,16 @@ body[arco-theme='dark'] {
   --gray-8: 179, 179, 179;
   --gray-9: 230, 230, 230;
   --gray-10: 255, 255, 255;
-  --arcoblue-1: 30, 42, 56;
-  --arcoblue-2: 33, 50, 72;
-  --arcoblue-3: 37, 66, 95;
-  --arcoblue-4: 36, 87, 131;
-  --arcoblue-5: 34, 113, 179;
-  --arcoblue-6: 26, 136, 255;
-  --arcoblue-7: 37, 142, 255;
-  --arcoblue-8: 49, 148, 255;
-  --arcoblue-9: 102, 176, 255;
-  --arcoblue-10: 153, 203, 255;
+  --arcoblue-1: 38, 38, 38;
+  --arcoblue-2: 51, 51, 51;
+  --arcoblue-3: 82, 82, 82;
+  --arcoblue-4: 115, 115, 115;
+  --arcoblue-5: 163, 163, 163;
+  --arcoblue-6: 212, 212, 212;
+  --arcoblue-7: 229, 229, 229;
+  --arcoblue-8: 238, 238, 238;
+  --arcoblue-9: 245, 245, 245;
+  --arcoblue-10: 255, 255, 255;
   --primary-1: var(--arcoblue-1);
   --primary-2: var(--arcoblue-2);
   --primary-3: var(--arcoblue-3);
@@ -350,6 +350,10 @@ h6 {
   }
 }
 
+body[arco-theme='dark'] .arco-btn-primary:not(.arco-btn-disabled) {
+  color: var(--send-button-icon);
+}
+
 .arco-btn-primary.arco-btn-disabled {
   background-color: var(--aou-2) !important;
   border-color: var(--aou-2) !important;
@@ -396,13 +400,13 @@ body[arco-theme='dark'] .arco-tag-checked.arco-tag-gray {
 
 /* AionUi Steps wrapper styles */
 .aionui-steps .arco-steps-item-process .arco-steps-item-icon {
-  background-color: var(--aou-6-brand) !important;
-  border-color: var(--aou-6-brand) !important;
+  background-color: var(--aou-6) !important;
+  border-color: var(--aou-6) !important;
 }
 
 .aionui-steps .arco-steps-item-finish .arco-steps-item-icon {
-  background-color: #e8f3ff !important;
-  border-color: #e8f3ff !important;
+  background-color: var(--aou-1) !important;
+  border-color: var(--aou-1) !important;
   border-radius: 50% !important;
 }
 
@@ -615,7 +619,7 @@ body[arco-theme='dark'] .arco-modal-confirm-icon {
 }
 
 .arco-message-info {
-  background: linear-gradient(90deg, #e8f3ff 0%, #f8f8ff 49.52%) !important;
+  background: linear-gradient(90deg, var(--aou-1) 0%, var(--bg-1) 49.52%) !important;
 }
 
 .arco-message-error {

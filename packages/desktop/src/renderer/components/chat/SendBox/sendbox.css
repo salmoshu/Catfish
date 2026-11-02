@@ -250,13 +250,13 @@ body[arco-theme='dark'] .sendbox-panel .send-button-custom--disabled svg * {
   0% {
     background-color: var(--aou-2) !important;
     border-color: var(--aou-2) !important;
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--aou-6-brand) 0%, transparent);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--aou-6) 0%, transparent);
   }
 
   100% {
     background-color: var(--aou-5) !important;
     border-color: var(--aou-5) !important;
-    box-shadow: 0 0 0 6px color-mix(in srgb, var(--aou-6-brand) 22%, transparent);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--aou-6) 22%, transparent);
   }
 }
 

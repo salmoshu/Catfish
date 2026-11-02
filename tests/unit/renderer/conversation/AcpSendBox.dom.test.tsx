@@ -97,6 +97,7 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
   default: ({
     onSend,
     onChange,
+    tools,
     rightTools,
     sendButtonPrefix,
     topRightOverlay,
@@ -113,6 +114,7 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
   }: {
     onSend: (message: string) => Promise<void>;
     onChange?: (value: string) => void;
+    tools?: React.ReactNode;
     rightTools?: React.ReactNode;
     sendButtonPrefix?: React.ReactNode;
     topRightOverlay?: React.ReactNode;
@@ -140,6 +142,7 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
     });
     return (
       <div>
+        <div data-testid='composer-tools'>{tools}</div>
         {rightTools}
         {sendButtonPrefix}
         {topRightOverlay}
@@ -200,7 +203,9 @@ vi.mock('@/renderer/components/chat/MobileActionSheet', () => ({
   useAttachEntry: () => ({ entries: [], hiddenFileInput: null }),
 }));
 vi.mock('@/renderer/components/chat/ThoughtDisplay', () => ({ default: () => null }));
-vi.mock('@/renderer/components/media/FileAttachButton', () => ({ default: () => null }));
+vi.mock('@/renderer/components/media/FileAttachButton', () => ({
+  default: () => <div data-testid='file-attach-button' />,
+}));
 vi.mock('@/renderer/components/media/FilePreview', () => ({ default: () => null }));
 vi.mock('@/renderer/components/media/HorizontalFileList', () => ({
   default: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
@@ -386,6 +391,12 @@ describe('AcpSendBox', () => {
       reload: vi.fn(),
       setConfigOption: vi.fn(),
     });
+  });
+
+  it('places permission immediately after the attachment action', () => {
+    render(<AcpSendBox conversation_id='conv-1' backend='claude' messageState={makeMessageState()} />);
+
+    expect(screen.getByTestId('file-attach-button').nextElementSibling).toBe(screen.getByTestId('acp-mode-label'));
   });
 
   it('uses raw English backend values for authorization mode labels', () => {

@@ -858,26 +858,12 @@ Please check your local CLI tool authentication status`,
         defaultMultiLine={!isMobile}
         lockMultiLine={!isMobile}
         tools={
-          <FileAttachButton
-            openFileSelector={openFileSelector}
-            onLocalFilesAdded={handleFilesAdded}
-            loadedMcpStatuses={loadedMcpStatuses}
-          />
-        }
-        rightTools={
           <div className='flex items-center gap-8px min-w-0'>
-            {supportsGoal && (
-              <Button
-                type='text'
-                size='small'
-                data-testid='goal-toggle'
-                aria-expanded={goalOpen}
-                onClick={() => setGoalOpen((current) => !current)}
-              >
-                {t('messages.goal.action', { defaultValue: 'Goal' })}
-              </Button>
-            )}
-            {composerTools}
+            <FileAttachButton
+              openFileSelector={openFileSelector}
+              onLocalFilesAdded={handleFilesAdded}
+              loadedMcpStatuses={loadedMcpStatuses}
+            />
             {showModeSelector && (
               <AgentModeSelector
                 backend={backend}
@@ -894,6 +880,22 @@ Please check your local CLI tool authentication status`,
                 configOptionsPort={teamPermission?.configOptionsPort}
               />
             )}
+          </div>
+        }
+        rightTools={
+          <div className='flex items-center gap-8px min-w-0'>
+            {supportsGoal && (
+              <Button
+                type='text'
+                size='small'
+                data-testid='goal-toggle'
+                aria-expanded={goalOpen}
+                onClick={() => setGoalOpen((current) => !current)}
+              >
+                {t('messages.goal.action', { defaultValue: 'Goal' })}
+              </Button>
+            )}
+            {composerTools}
           </div>
         }
         prefix={
@@ -918,7 +920,7 @@ Please check your local CLI tool authentication status`,
                     return (
                       <Tag
                         key={item.path}
-                        color='blue'
+                        color='gray'
                         closable
                         onClose={() => {
                           const newAtPath = atPath.filter((v) => (typeof v === 'string' ? true : v.path !== item.path));

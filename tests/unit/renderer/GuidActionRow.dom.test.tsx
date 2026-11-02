@@ -204,8 +204,14 @@ describe('GuidActionRow skill/MCP submenu search', () => {
       mcpServers: [],
     });
 
-    expect(screen.getByTestId('agent-mode-selector')).toHaveTextContent('bypassPermissions');
-    expect(screen.getByTestId('agent-mode-selector')).not.toHaveTextContent('全自动');
+    const permission = screen.getByTestId('agent-mode-selector');
+    const upload = screen.getByTestId('file-upload-btn');
+    expect(permission).toHaveTextContent('bypassPermissions');
+    expect(permission).not.toHaveTextContent('全自动');
+    expect(upload.compareDocumentPosition(permission) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    expect(
+      screen.getByTestId('guid-send-btn').compareDocumentPosition(permission) & Node.DOCUMENT_POSITION_PRECEDING
+    ).not.toBe(0);
     unmount();
 
     environment.isMobile = true;

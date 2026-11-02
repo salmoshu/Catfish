@@ -52,28 +52,25 @@ describe('Titlebar workspace toggle', () => {
     sidebar.collapsed = undefined;
   });
 
-  it('places the Windows workspace toggle directly after Bug Report', () => {
+  it('places the Windows workspace toggle next to the window controls without a report action', () => {
     render(<Titlebar workspaceAvailable />);
 
-    const report = screen.getByRole('button', { name: 'conversation.welcome.quickActionFeedback' });
     const workspace = screen.getByRole('button', { name: 'common.expandMore' });
 
-    expect(report.nextElementSibling).toBe(workspace);
+    expect(screen.queryByRole('button', { name: 'conversation.welcome.quickActionFeedback' })).not.toBeInTheDocument();
     expect(workspace.nextElementSibling).toBe(screen.getByTestId('window-controls'));
   });
 
   it.each([
     { runtime: 'macOS desktop', desktop: true, mac: true },
     { runtime: 'WebUI', desktop: false, mac: false },
-  ])('keeps the workspace toggle after Bug Report on $runtime', ({ desktop, mac }) => {
+  ])('keeps the workspace toggle without a report action on $runtime', ({ desktop, mac }) => {
     platform.desktop = desktop;
     platform.mac = mac;
     render(<Titlebar workspaceAvailable />);
 
-    const report = screen.getByRole('button', { name: 'conversation.welcome.quickActionFeedback' });
-    const workspace = screen.getByRole('button', { name: 'common.expandMore' });
-
-    expect(report.nextElementSibling).toBe(workspace);
+    expect(screen.getByRole('button', { name: 'common.expandMore' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'conversation.welcome.quickActionFeedback' })).not.toBeInTheDocument();
     expect(screen.queryByTestId('window-controls')).not.toBeInTheDocument();
   });
 

@@ -60,6 +60,7 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
     onFocused,
     disabled,
     sendDisabled,
+    tools,
     rightTools,
     sendButtonPrefix,
     topRightOverlay,
@@ -76,6 +77,7 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
     onFocused?: () => void;
     disabled?: boolean;
     sendDisabled?: boolean;
+    tools?: React.ReactNode;
     rightTools?: React.ReactNode;
     sendButtonPrefix?: React.ReactNode;
     topRightOverlay?: React.ReactNode;
@@ -100,6 +102,7 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
     });
     return (
       <div>
+        <div data-testid='composer-tools'>{tools}</div>
         {rightTools}
         {sendButtonPrefix}
         {topRightOverlay}
@@ -133,7 +136,9 @@ vi.mock('@/renderer/components/chat/MobileActionSheet', () => ({
   useAttachEntry: () => ({ entries: [], hiddenFileInput: null }),
 }));
 vi.mock('@/renderer/components/chat/ThoughtDisplay', () => ({ default: () => null }));
-vi.mock('@/renderer/components/media/FileAttachButton', () => ({ default: () => null }));
+vi.mock('@/renderer/components/media/FileAttachButton', () => ({
+  default: () => <div data-testid='file-attach-button' />,
+}));
 vi.mock('@/renderer/components/media/FilePreview', () => ({ default: () => null }));
 vi.mock('@/renderer/components/media/HorizontalFileList', () => ({
   default: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
@@ -320,6 +325,7 @@ describe('AionrsSendBox', () => {
 
     expect(screen.getByTestId('aionrs-mode-label')).toHaveTextContent('auto_edit');
     expect(screen.getByTestId('aionrs-mode-label')).not.toHaveTextContent('自动接受编辑');
+    expect(screen.getByTestId('file-attach-button').nextElementSibling).toBe(screen.getByTestId('aionrs-mode-label'));
   });
 
   it('does not warm up team session when draft content changes', async () => {
