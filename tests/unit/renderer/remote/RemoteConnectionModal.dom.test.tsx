@@ -264,6 +264,25 @@ describe('RemoteConnectionModal', () => {
     expect(onRequestConnection).toHaveBeenCalledTimes(1);
   });
 
+  it('requests a workspace for an inactive but still connected environment without reconnecting', async () => {
+    const connected = { ...wslEnvironment, status: 'connected' as const };
+    remoteMocks.list.mockResolvedValue([connected]);
+    const onRequestConnection = vi.fn();
+    const onRequestWorkspace = vi.fn();
+    render(
+      <RemoteEnvironmentMenu
+        searchQuery=''
+        onClose={vi.fn()}
+        onRequestConnection={onRequestConnection}
+        onRequestWorkspace={onRequestWorkspace}
+      />
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: /Ubuntu/ }));
+    await waitFor(() => expect(onRequestWorkspace).toHaveBeenCalledWith(connected));
+    expect(onRequestConnection).not.toHaveBeenCalled();
+  });
+
   it('requests a workspace for the active environment without reconnecting', async () => {
     remoteMocks.state.mockResolvedValue({
       active: { type: 'remote', id: wslEnvironment.id, name: wslEnvironment.name, kind: 'wsl' },

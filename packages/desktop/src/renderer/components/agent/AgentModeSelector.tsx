@@ -252,7 +252,7 @@ const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
         {modes.map((mode: AgentModeOption) => (
           <Menu.Item key={mode.value} className={current_mode === mode.value ? '!bg-2' : ''}>
             <div
-              className='flex items-center gap-8px'
+              className='flex items-center gap-8px w-full min-w-0'
               data-mode-value={mode.value}
               data-testid={`aionrs-mode-option-${mode.value}`}
             >
@@ -266,10 +266,10 @@ const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
               </span>
               {mode.description ? (
                 <Tooltip content={mode.description} position='right'>
-                  <span className='min-w-0 truncate'>{getDisplayModeLabel(mode)}</span>
+                  <span className='min-w-0 flex-1 truncate px-1px -mx-1px'>{getDisplayModeLabel(mode)}</span>
                 </Tooltip>
               ) : (
-                <span className='min-w-0 truncate'>{getDisplayModeLabel(mode)}</span>
+                <span className='min-w-0 flex-1 truncate px-1px -mx-1px'>{getDisplayModeLabel(mode)}</span>
               )}
             </div>
           </Menu.Item>

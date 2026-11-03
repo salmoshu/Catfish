@@ -34,6 +34,7 @@ vi.mock('@renderer/pages/conversation/runtime/useConversationRuntimeView', () =>
 
 import { getChatSurfaceWidthClass } from '@renderer/pages/conversation/utils/chatSurfaceWidth';
 import ConversationPlanBar from '@renderer/pages/conversation/PlanBar/ConversationPlanBar';
+import ConversationPlanCard from '@renderer/pages/conversation/PlanBar/ConversationPlanCard';
 
 const ENTRIES = [
   { content: 'read the readme', status: 'completed' },
@@ -134,5 +135,30 @@ describe('ConversationPlanBar', () => {
 
     expect(screen.queryByText('read the readme')).toBeNull();
     expect(screen.getByText('conversation.planBar.progress:1/3')).toBeTruthy();
+  });
+});
+
+describe('ConversationPlanCard', () => {
+  const setupCard = (sidebarOpen: boolean) => {
+    document.body.innerHTML = `<div data-plan-card-slot="conv-1"></div><div data-project-panel-host data-collapsed="${!sidebarOpen}"></div>`;
+    const panel = document.querySelector<HTMLElement>('[data-project-panel-host]');
+    if (!panel) throw new Error('Missing test workbench');
+    vi.spyOn(panel, 'getBoundingClientRect').mockReturnValue({ left: 900, width: 320 } as DOMRect);
+    latestPlan.mockReturnValue(plan('turn-id-1'));
+    runtimeView.mockReturnValue({ isProcessing: true, activeTurnId: 'turn-id-1', hydrated: true });
+    render(<ConversationPlanCard conversation_id='conv-1' />);
+    fireEvent.click(screen.getByRole('button', { name: 'conversation.planBar.title' }));
+    return screen.getByRole('dialog', { name: 'conversation.planBar.title' });
+  };
+
+  it('floats to the left of an open workbench instead of covering it', () => {
+    const dialog = setupCard(true);
+    expect(dialog).toHaveStyle({ position: 'fixed', left: '544px', width: '340px' });
+    expect(screen.getByText('conversation.planBar.progress:1/3')).toBeInTheDocument();
+  });
+
+  it('uses the right-side space when the workbench is collapsed', () => {
+    const dialog = setupCard(false);
+    expect(dialog).toHaveStyle({ position: 'fixed', left: `${window.innerWidth - 356}px`, width: '340px' });
   });
 });

@@ -93,13 +93,12 @@ describe('RemoteEnvironmentManager', () => {
     expect(firstBackend.stop).not.toHaveBeenCalled();
   });
 
-  it('does not fail a ready connection when the previous backend cannot stop cleanly', async () => {
+  it('keeps both remote backends connected when switching between them', async () => {
     const instance = await manager();
     const first = await saveEnvironment(instance, 'Ubuntu');
     const second = await saveEnvironment(instance, 'Debian');
     const firstBackend = backend(41001);
     const secondBackend = backend(41002);
-    vi.mocked(firstBackend.stop).mockRejectedValue(new Error('already closed'));
     mocks.backendStart.mockResolvedValueOnce(firstBackend).mockResolvedValueOnce(secondBackend);
 
     await instance.connect({ id: first });
@@ -108,6 +107,35 @@ describe('RemoteEnvironmentManager', () => {
     expect(switched.ok).toBe(true);
     expect(instance.active).toEqual({ type: 'remote', id: second, name: 'Debian', kind: 'wsl' });
     expect(instance.port).toBe(41002);
+    expect(firstBackend.stop).not.toHaveBeenCalled();
+    expect(secondBackend.stop).not.toHaveBeenCalled();
+    expect(instance.list().map((item) => item.status)).toEqual(['connected', 'connected']);
+
+    await instance.connect({ id: first });
+    expect(instance.port).toBe(41001);
+    expect(mocks.backendStart).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the remote runtime alive while local is active and resumes it without restarting', async () => {
+    const instance = await manager();
+    const id = await saveEnvironment(instance, 'Ubuntu');
+    const remote = backend(41001);
+    mocks.backendStart.mockResolvedValue(remote);
+    await instance.connect({ id });
+
+    expect(await instance.activate()).toEqual({ ok: true, data: { type: 'local' } });
+    expect(instance.active).toEqual({ type: 'local' });
+    expect(instance.port).toBeNull();
+    expect(remote.stop).not.toHaveBeenCalled();
+    expect(instance.list()[0].status).toBe('connected');
+
+    expect(await instance.activate(id)).toEqual({
+      ok: true,
+      data: { type: 'remote', id, name: 'Ubuntu', kind: 'wsl' },
+    });
+    expect(instance.port).toBe(41001);
+    expect(mocks.backendStart).toHaveBeenCalledTimes(1);
+    expect(remote.stop).not.toHaveBeenCalled();
   });
 
   it('returns to the local backend and stops the remote runtime on disconnect', async () => {

@@ -42,6 +42,7 @@ import PptViewer from '../viewers/PptViewer';
 import CodeEditor from '../editors/CodeEditor';
 import URLViewer from '../viewers/URLViewer';
 import BrowserTabLayer from '../../browser/BrowserTabLayer';
+import SideChatPanel from './SideChatPanel';
 import { MAX_BROWSER_TABS } from '../../browser/constants';
 import {
   PreviewTabs,
@@ -903,6 +904,7 @@ const PreviewPanel: React.FC = () => {
 
   // 渲染预览内容 / Render preview content
   const renderContent = () => {
+    if (metadata?.sideChat) return <SideChatPanel workspace={metadata.workspace} />;
     if (metadata?.missingFile) return renderMissingFile();
     if (metadata?.oversized) return renderOversized();
     if (content_type === 'unsupported') return renderUnsupported();
@@ -1231,7 +1233,7 @@ const PreviewPanel: React.FC = () => {
 
         {/* 工具栏（URL / 浏览器 类型不显示工具栏，因为不需要下载/编辑等功能）
             Toolbar (hidden for URL and browser types — no download/edit needed) */}
-        {content_type !== 'url' && content_type !== 'browser' && !metadata?.missingFile && (
+        {content_type !== 'url' && content_type !== 'browser' && !metadata?.missingFile && !metadata?.sideChat && (
           <PreviewToolbar
             content_type={content_type}
             isMarkdown={isMarkdown}

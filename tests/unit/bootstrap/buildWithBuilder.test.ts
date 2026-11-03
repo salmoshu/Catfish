@@ -50,9 +50,9 @@ function resolveAppBuilderInstallUtil(): string {
 
 describe('build-with-builder', () => {
   it('rejects skip-vite when renderer output is only a source html shell', () => {
-    const outDir = resolve(repoRoot, 'out');
-    const backupOutDir = resolve(repoRoot, `.tmp-out-backup-${process.pid}-${Date.now()}`);
     const tempDir = mkdtempSync(join(tmpdir(), 'aionui-build-skip-vite-test-'));
+    const outDir = join(tempDir, 'vite-output');
+    const backupOutDir = join(tempDir, 'vite-output-backup');
     const hookPath = join(tempDir, 'hook.cjs');
 
     writeFileSync(
@@ -83,12 +83,19 @@ childProcess.execSync = function mockedExecSync(command) {
 
       const result = spawnSync(
         process.execPath,
-        ['scripts/build-with-builder.js', 'x64', '--skip-vite', '--pack-only'],
+        [
+          'scripts/build-with-builder.js',
+          'x64',
+          '--skip-vite',
+          '--pack-only',
+          `--config.directories.output=${join(tempDir, 'builder-output')}`,
+        ],
         {
           cwd: repoRoot,
           encoding: 'utf8',
           env: {
             ...process.env,
+            AIONUI_BUILD_OUTPUT_DIR: outDir,
             NODE_OPTIONS: [process.env.NODE_OPTIONS, `--require=${hookPath}`].filter(Boolean).join(' '),
           },
         }
@@ -272,8 +279,8 @@ childProcess.execSync = function mockedExecSync(command) {
     const tempDir = mkdtempSync(join(tmpdir(), 'aionui-build-test-'));
     const hookPath = join(tempDir, 'hook.cjs');
     const callsPath = join(tempDir, 'prepare-calls.json');
-    const outDir = resolve(repoRoot, 'out');
-    const backupOutDir = resolve(repoRoot, `.tmp-out-backup-${process.pid}-${Date.now()}-${expectedArch}`);
+    const outDir = join(tempDir, 'vite-output');
+    const backupOutDir = join(tempDir, 'vite-output-backup');
 
     writeFileSync(
       hookPath,
@@ -309,11 +316,9 @@ Module._load = function patchedLoad(request, parent, isMain) {
   return originalLoad.call(this, request, parent, isMain);
 };
 
-// Satisfy build-with-builder's output checks without clobbering real build
-// artifacts: out/ lives in the actual repo (the script resolves it from its
-// own __dirname), so only create empty placeholders when nothing is there.
+// Satisfy build-with-builder's output checks in its isolated Vite directory.
 function ensurePlaceholder(relativePath) {
-  const target = path.join(process.cwd(), relativePath);
+  const target = path.join(process.env.AIONUI_BUILD_OUTPUT_DIR, relativePath);
   fs.mkdirSync(path.dirname(target), { recursive: true });
   if (!fs.existsSync(target)) {
     fs.writeFileSync(target, '');
@@ -323,12 +328,12 @@ function ensurePlaceholder(relativePath) {
 childProcess.execSync = function mockedExecSync(command) {
   const commandText = String(command);
   if (commandText.includes('electron-vite build')) {
-    ensurePlaceholder('out/main/index.js');
-    ensurePlaceholder('out/preload/index.js');
-    ensurePlaceholder('out/renderer/assets/index-test.js');
-    ensurePlaceholder('out/renderer/assets/index-test.css');
+    ensurePlaceholder('main/index.js');
+    ensurePlaceholder('preload/index.js');
+    ensurePlaceholder('renderer/assets/index-test.js');
+    ensurePlaceholder('renderer/assets/index-test.css');
     fs.writeFileSync(
-      path.join(process.cwd(), 'out/renderer/index.html'),
+      path.join(process.env.AIONUI_BUILD_OUTPUT_DIR, 'renderer/index.html'),
       '<!doctype html><html><head><script type="module" src="./assets/index-test.js"></script><link rel="stylesheet" href="./assets/index-test.css"></head><body><div id="root"></div></body></html>\\n'
     );
   }
@@ -345,15 +350,20 @@ childProcess.execSync = function mockedExecSync(command) {
         movedExistingOut = true;
       }
 
-      const result = spawnSync(process.execPath, ['scripts/build-with-builder.js', ...args], {
-        cwd: repoRoot,
-        encoding: 'utf8',
-        env: {
-          ...process.env,
-          AIONUI_PREPARE_CALLS_FILE: callsPath,
-          NODE_OPTIONS: [process.env.NODE_OPTIONS, `--require=${hookPath}`].filter(Boolean).join(' '),
-        },
-      });
+      const result = spawnSync(
+        process.execPath,
+        ['scripts/build-with-builder.js', ...args, `--config.directories.output=${join(tempDir, 'builder-output')}`],
+        {
+          cwd: repoRoot,
+          encoding: 'utf8',
+          env: {
+            ...process.env,
+            AIONUI_BUILD_OUTPUT_DIR: outDir,
+            AIONUI_PREPARE_CALLS_FILE: callsPath,
+            NODE_OPTIONS: [process.env.NODE_OPTIONS, `--require=${hookPath}`].filter(Boolean).join(' '),
+          },
+        }
+      );
 
       expect(result.status, result.stderr || result.stdout).toBe(0);
       expect(readFileSync(resolve(repoRoot, 'resources/windows/support/_sentry-dsn.generated.nsh'), 'utf8')).toBe(

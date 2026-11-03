@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Message, Tooltip } from '@arco-design/web-react';
+import { Button, Message, Spin, Tooltip } from '@arco-design/web-react';
 import { Plus, Refresh } from '@icon-park/react';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
@@ -12,29 +12,46 @@ import type { TChatConversation } from '@/common/config/storage';
 import {
   ENVIRONMENT_PROJECTS_CHANGED,
   environmentKey,
+  environmentProjectKey,
   readEnvironmentProjects,
   recordEnvironmentProjects,
+  type EnvironmentProject,
   type EnvironmentProjects as History,
 } from '@/renderer/utils/workspace/environmentProjects';
 import { getLastDirectoryName } from '@/renderer/utils/workspace/workspace';
+import { connectOrResumeEnvironment, switchBackendRoute } from '@/renderer/utils/workspace/backendSwitch';
+import { getBackendEnvironment } from '@/common/adapter/httpBridge';
 import RemoteConnectionModal from '../RemoteConnectionModal';
 import styles from './EnvironmentProjects.module.css';
+import {
+  toggleExpandedWorkspace,
+  useWorkspaceExpansionState,
+} from '@/renderer/pages/conversation/GroupedHistory/hooks/useWorkspaceExpansionState';
 
 type Props = {
   collapsed: boolean;
   heading?: React.ReactNode;
   hidden?: boolean;
   emptyContent?: React.ReactNode;
+  getProjectOrder?: (environment: History['environment'], project: EnvironmentProject) => number;
+  isConversationGenerating?: (conversationId: string) => boolean;
 };
 
-const EnvironmentProjects: React.FC<Props> = ({ collapsed, heading, hidden, emptyContent }) => {
+const EnvironmentProjects: React.FC<Props> = ({
+  collapsed,
+  heading,
+  hidden,
+  emptyContent,
+  getProjectOrder,
+  isConversationGenerating,
+}) => {
   const { t } = useTranslation();
   const [history, setHistory] = useState(readEnvironmentProjects);
-  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const expandedWorkspaces = useWorkspaceExpansionState();
   const [connection, setConnection] = useState<{ environment: RemoteEnvironmentSummary; route: string }>();
   const [switchingKey, setSwitchingKey] = useState<string | null>(null);
   const switching = switchingKey !== null;
-  const active = window.__backendEnvironment;
+  const active = getBackendEnvironment();
   const otherHistory = active
     ? history.filter((entry) => environmentKey(entry.environment) !== environmentKey(active))
     : [];
@@ -56,13 +73,12 @@ const EnvironmentProjects: React.FC<Props> = ({ collapsed, heading, hidden, empt
     };
   }, [active?.type]);
 
-  const reloadRoute = useCallback((route: string) => {
-    window.location.hash = route;
-    window.location.reload();
+  const reloadRoute = useCallback(async (route: string) => {
+    await switchBackendRoute(route);
   }, []);
 
   const onConnected = useCallback(() => {
-    if (connection) reloadRoute(connection.route);
+    if (connection) void reloadRoute(connection.route);
   }, [connection, reloadRoute]);
 
   const open = async (entry: History, workspace: string, conversationId?: string) => {
@@ -73,14 +89,14 @@ const EnvironmentProjects: React.FC<Props> = ({ collapsed, heading, hidden, empt
     setSwitchingKey(`${environmentKey(entry.environment)}:${workspace}`);
     try {
       if (entry.environment.type === 'local') {
-        const result = await ipcBridge.remoteEnvironment.disconnect.invoke();
+        const result = await ipcBridge.remoteEnvironment.activate.invoke({});
         if (result.ok === false) throw new Error(result.message);
-        reloadRoute(route);
+        await reloadRoute(route);
       } else {
         const id = entry.environment.id;
-        const result = await ipcBridge.remoteEnvironment.connect.invoke({ id });
+        const result = await connectOrResumeEnvironment(id);
         if (result.ok === true) {
-          reloadRoute(route);
+          await reloadRoute(route);
           return;
         }
         const environments = await ipcBridge.remoteEnvironment.list.invoke();
@@ -102,82 +118,76 @@ const EnvironmentProjects: React.FC<Props> = ({ collapsed, heading, hidden, empt
       {!hidden &&
         otherHistory.map((entry) =>
           entry.projects.map((project) => {
-            const key = `${environmentKey(entry.environment)}:${project.workspace}`;
+            const key = environmentProjectKey(entry.environment, project.workspace);
             const isRemote = entry.environment.type === 'remote';
             const name = getLastDirectoryName(project.workspace);
             const actionLabel = isRemote ? t('mcp.connect') : t('conversation.history.newConversationInProject');
+            const projectExpanded = expandedWorkspaces.includes(key) || expandedWorkspaces.includes(project.workspace);
+            const projectRunning = project.conversations.some((conversation) =>
+              isConversationGenerating?.(conversation.id)
+            );
             return (
-              <WorkspaceCollapse
-                key={key}
-                expanded={expanded.has(key)}
-                siderCollapsed={collapsed}
-                stickyHeader
-                stickyTop={28}
-                onToggle={() => {
-                  if (isRemote) {
-                    void open(entry, project.workspace);
-                    return;
+              <div key={key} style={{ order: getProjectOrder?.(entry.environment, project) }}>
+                <WorkspaceCollapse
+                  expanded={projectExpanded}
+                  siderCollapsed={collapsed}
+                  stickyHeader
+                  stickyTop={28}
+                  onToggle={() => toggleExpandedWorkspace(key, [project.workspace])}
+                  leadingIcon={
+                    projectRunning ? (
+                      <Spin size={16} data-testid='cached-project-running' />
+                    ) : isRemote ? (
+                      <span role='img' aria-label={name} className={styles.environment}>
+                        <KimiIcon name='globe' size={16} />
+                      </span>
+                    ) : undefined
                   }
-                  setExpanded((previous) => {
-                    const next = new Set(previous);
-                    if (next.has(key)) next.delete(key);
-                    else next.add(key);
-                    return next;
-                  });
-                }}
-                leadingIcon={
-                  isRemote ? (
-                    <span role='img' aria-label={name} className={styles.environment}>
-                      <KimiIcon name='globe' size={16} />
-                    </span>
-                  ) : undefined
-                }
-                header={
-                  <Tooltip content={name}>
-                    <span className='text-14px font-[500] truncate flex-1 text-t-primary min-w-0'>{name}</span>
-                  </Tooltip>
-                }
-                trailing={
-                  <span className='flex items-center gap-6px'>
-                    <Tooltip content={actionLabel} position='top'>
-                      <span
-                        role='button'
-                        tabIndex={0}
-                        aria-label={actionLabel}
-                        aria-disabled={switching}
-                        className={classNames(
-                          'flex-center cursor-pointer transition-colors text-t-secondary hover:text-t-primary size-20px rd-4px sider-action-btn',
-                          switchingKey === key ? 'flex' : 'hidden group-hover:flex'
-                        )}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void open(entry, project.workspace);
-                        }}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
+                  header={
+                    <Tooltip content={name}>
+                      <span className='text-14px font-[500] truncate flex-1 text-t-primary min-w-0'>{name}</span>
+                    </Tooltip>
+                  }
+                  trailing={
+                    <span className='flex items-center gap-6px'>
+                      <Tooltip content={actionLabel} position='top'>
+                        <span
+                          role='button'
+                          tabIndex={0}
+                          aria-label={actionLabel}
+                          aria-disabled={switching}
+                          className={classNames(
+                            'flex-center cursor-pointer transition-colors text-t-secondary hover:text-t-primary size-20px rd-4px sider-action-btn',
+                            switchingKey === key ? 'flex' : 'hidden group-hover:flex'
+                          )}
+                          onClick={(event) => {
                             event.stopPropagation();
                             void open(entry, project.workspace);
-                          }
-                        }}
-                      >
-                        {isRemote ? (
-                          <Refresh
-                            theme='outline'
-                            size='14'
-                            fill='currentColor'
-                            className={classNames('block leading-none', { loading: switchingKey === key })}
-                          />
-                        ) : (
-                          <Plus theme='outline' size='14' fill='currentColor' className='block leading-none' />
-                        )}
-                      </span>
-                    </Tooltip>
-                  </span>
-                }
-              >
-                {entry.environment.type === 'local' &&
-                  project.conversations.map((conversation) => {
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              void open(entry, project.workspace);
+                            }
+                          }}
+                        >
+                          {isRemote ? (
+                            <Refresh
+                              theme='outline'
+                              size='14'
+                              fill='currentColor'
+                              className={classNames('block leading-none', { loading: switchingKey === key })}
+                            />
+                          ) : (
+                            <Plus theme='outline' size='14' fill='currentColor' className='block leading-none' />
+                          )}
+                        </span>
+                      </Tooltip>
+                    </span>
+                  }
+                >
+                  {project.conversations.map((conversation) => {
                     const cachedConversation = {
                       id: conversation.id,
                       name: conversation.name,
@@ -205,12 +215,19 @@ const EnvironmentProjects: React.FC<Props> = ({ collapsed, heading, hidden, empt
                         title={conversation.name}
                         onClick={() => void open(entry, project.workspace, conversation.id)}
                       >
-                        <ConversationIdentityIcon conversation={cachedConversation} />
+                        <span className='size-22px flex items-center justify-center shrink-0 leading-none'>
+                          {isConversationGenerating?.(conversation.id) ? (
+                            <Spin size={14} data-testid='cached-conversation-running' />
+                          ) : (
+                            <ConversationIdentityIcon conversation={cachedConversation} />
+                          )}
+                        </span>
                         <span className={styles.conversationName}>{conversation.name}</span>
                       </Button>
                     );
                   })}
-              </WorkspaceCollapse>
+                </WorkspaceCollapse>
+              </div>
             );
           })
         )}

@@ -106,6 +106,7 @@ import {
   toApiModelOptional,
 } from './apiModelMapper';
 import {
+  getBackendEnvironment,
   httpDelete,
   httpGet,
   httpPatch,
@@ -791,7 +792,7 @@ export const dialog = {
   showOpen: {
     provider: nativeShowOpen.provider,
     invoke: ((options?: ShowOpenOptions) => {
-      const remoteEnvironment = typeof window !== 'undefined' && window.__backendEnvironment?.type === 'remote';
+      const remoteEnvironment = getBackendEnvironment()?.type === 'remote';
       if (webShowOpenHandler && (!isElectronRenderer() || remoteEnvironment)) {
         return webShowOpenHandler(options);
       }
@@ -1346,6 +1347,10 @@ export const remoteEnvironment = {
     import('@/common/types/remote').RemoteOperationResult<import('@/common/types/remote').BackendEnvironment>,
     import('@/common/types/remote').RemoteEnvironmentConnectParams
   >('remote-environment.connect'),
+  activate: bridge.buildProvider<
+    import('@/common/types/remote').RemoteOperationResult<import('@/common/types/remote').BackendEnvironment>,
+    { id?: string }
+  >('remote-environment.activate'),
   disconnect: bridge.buildProvider<
     import('@/common/types/remote').RemoteOperationResult<import('@/common/types/remote').BackendEnvironment>,
     void
@@ -1860,6 +1865,9 @@ export interface ICreateConversationParams {
   extra: {
     workspace?: string;
     custom_workspace?: boolean;
+    is_temporary_workspace?: boolean;
+    /** Session-only side chat, hidden from normal history and deleted with its preview tab. */
+    side_chat?: boolean;
     default_files?: string[];
     cli_path?: string;
     gateway?: {

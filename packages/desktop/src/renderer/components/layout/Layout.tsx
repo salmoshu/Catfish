@@ -36,6 +36,8 @@ import { useConversationShortcuts } from '@renderer/hooks/ui/useConversationShor
 import { isElectronDesktop } from '@renderer/utils/platform';
 import { IS_DISCONTINUED_BUILD } from '@/renderer/utils/discontinuedBuild';
 import UpdateMigrationDialog from '@/renderer/components/settings/UpdateMigrationDialog';
+import { syncBackendEnvironment } from '@/renderer/utils/workspace/backendSwitch';
+import { getBackendEnvironment } from '@/common/adapter/httpBridge';
 import UpdateModal from '@/renderer/components/settings/UpdateModal';
 import KimiIcon from '@renderer/components/base/KimiIcon';
 import brandLogo from '@renderer/assets/logo.svg';
@@ -134,10 +136,12 @@ const Layout: React.FC<{
     let reloadTimer: number | undefined;
     const dispose =
       ipcBridge.remoteEnvironment?.disconnected?.on((event) => {
-        const active = window.__backendEnvironment;
+        const active = getBackendEnvironment();
         if (active?.type !== 'remote' || active.id !== event.environmentId) return;
         Message.warning(t('guid.workspace.remote.unexpectedDisconnect'));
-        reloadTimer = window.setTimeout(() => window.location.reload(), 800);
+        reloadTimer = window.setTimeout(() => {
+          void syncBackendEnvironment();
+        }, 800);
       }) ?? (() => {});
     return () => {
       dispose();

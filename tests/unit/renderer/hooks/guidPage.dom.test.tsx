@@ -342,7 +342,7 @@ describe('GuidPage', () => {
     ];
   });
 
-  it('places the animated Catfish mascot before the new conversation greeting', () => {
+  it('places the enlarged animated Catfish mascot above the new conversation greeting', () => {
     render(<GuidPage />);
 
     const mascot = screen.getByTestId('catfish-mascot');

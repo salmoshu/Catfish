@@ -37,6 +37,22 @@ export const dispatchWorkspaceExpansionChange = (expandedWorkspaces: string[]): 
   );
 };
 
+export const writeExpandedWorkspaces = (expandedWorkspaces: string[]): void => {
+  try {
+    localStorage.setItem(WORKSPACE_EXPANSION_STORAGE_KEY, JSON.stringify(expandedWorkspaces));
+  } catch {
+    // The custom event still keeps the current document in sync without storage.
+  }
+  dispatchWorkspaceExpansionChange(expandedWorkspaces);
+};
+
+export const toggleExpandedWorkspace = (key: string, legacyKeys: string[] = []): void => {
+  const current = readExpandedWorkspaces();
+  const expanded = current.includes(key) || legacyKeys.some((legacyKey) => current.includes(legacyKey));
+  const next = expanded ? current.filter((item) => item !== key && !legacyKeys.includes(item)) : [...current, key];
+  writeExpandedWorkspaces(next);
+};
+
 export const useWorkspaceExpansionState = (): string[] => {
   const [expandedWorkspaces, setExpandedWorkspaces] = useState<string[]>(() => readExpandedWorkspaces());
 

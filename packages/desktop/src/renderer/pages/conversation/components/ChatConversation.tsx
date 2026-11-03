@@ -412,6 +412,7 @@ const ChatConversation: React.FC<{
           <CronJobManager conversation_id={conversation.id} cron_job_id={cronJobId} />
         </div>
       )}
+      {conversation && <div data-plan-card-slot={conversation.id} className='inline-flex shrink-0' />}
       {conversation && conversation.type === 'acp' && !isMobile && !isLegacyReadOnlyConversation && (
         <div className='shrink-0'>
           <AcpRuntimeRestartButton

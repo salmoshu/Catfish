@@ -44,6 +44,7 @@ describe('AssistantSelectionArea', () => {
   it('keeps the selected agent in the compact input selector', () => {
     renderPicker();
     expect(screen.getByTestId('assistant-selector')).toHaveTextContent('Catfish CLI');
+    expect(screen.getByTestId('assistant-selector')).toHaveClass('sendbox-model-btn', 'guid-config-btn');
     expect(screen.queryByTestId('preset-pill-bare-aionrs')).not.toBeInTheDocument();
   });
 

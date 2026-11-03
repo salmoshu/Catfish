@@ -1,6 +1,5 @@
 import { Badge, Button } from '@arco-design/web-react';
-import { CloseSmall } from '@icon-park/react';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { NormalizedToolCall, NormalizedToolStatus } from '@/common/chat/normalizeToolCall';
 import { useLatestRef } from '@/renderer/hooks/ui/useLatestRef';
@@ -9,8 +8,6 @@ import { ExplorerContainer } from '@/renderer/pages/conversation/explorer/Explor
 import { useCurrentConversation } from '@/renderer/pages/conversation/explorer/currentConversationStore';
 import MessageAcpTerminalOutput from '@/renderer/pages/conversation/Messages/acp/MessageAcpTerminalOutput';
 import { PreviewPanel, usePreviewContext } from '@/renderer/pages/conversation/Preview';
-import { ScmPanel } from '@/renderer/pages/conversation/SourceControl/ScmPanel';
-import { WorkbenchTabs } from './WorkbenchTabs';
 import type { WorkbenchSection } from './workbenchActivity';
 import { useWorkbenchActivity, WORKBENCH_OPEN_EVENT, type WorkbenchOpenDetail } from './workbenchActivityStore';
 import './workbench.css';
@@ -79,7 +76,6 @@ type WorkbenchPanelProps = {
 export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({
   projectId,
   collapsed = false,
-  onCollapse,
   onExpand,
   onSectionChange,
 }) => {
@@ -142,63 +138,21 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({
     [activeTab, openBrowserTab, openPreview, previewOpen]
   );
 
-  const tabItems = useMemo(
-    () =>
-      [
-        { id: 'files' as const, label: t('messages.workbench.files', { defaultValue: 'Files' }) },
-        { id: 'changes' as const, label: t('messages.workbench.changes', { defaultValue: 'Changes' }) },
-        { id: 'preview' as const, label: t('messages.workbench.preview', { defaultValue: 'Preview' }) },
-        {
-          id: 'terminal' as const,
-          label: t('messages.workbench.terminal', { defaultValue: 'Terminal' }),
-          count: activity.terminals.length,
-        },
-        {
-          id: 'agents' as const,
-          label: t('messages.workbench.agents', { defaultValue: 'Agents' }),
-          count: activity.agents.length,
-        },
-      ].filter((item) => !isMobile || item.id !== 'preview'),
-    [activity.agents.length, activity.terminals.length, isMobile, t]
-  );
-
   return (
     <div className='workbench' data-workbench data-active-section={activeSection}>
-      <div className='workbench-header'>
-        <WorkbenchTabs
-          items={tabItems}
-          activeSection={activeSection}
-          label={t('messages.workbench.tabsLabel', { defaultValue: 'Workbench sections' })}
-          onSelect={selectSection}
-        />
-        {onCollapse && (
-          <Button
-            type='text'
-            size='small'
-            className='workbench-collapse'
-            aria-label={t('messages.workbench.collapse', { defaultValue: 'Collapse Workbench' })}
-            onClick={onCollapse}
-            icon={<CloseSmall size='14' />}
-          />
-        )}
-      </div>
       <div className='workbench-body'>
         <section
           id='workbench-panel-files'
           role={activeSection === 'preview' ? 'complementary' : 'tabpanel'}
           aria-labelledby='workbench-tab-files'
-          className={activeSection === 'preview' ? 'workbench-files-pane--rail' : undefined}
-          hidden={activeSection !== 'files' && activeSection !== 'preview'}
+          hidden={activeSection === 'preview'}
         >
-          <ExplorerContainer projectId={projectId} />
-        </section>
-        <section
-          id='workbench-panel-changes'
-          role='tabpanel'
-          aria-labelledby='workbench-tab-changes'
-          hidden={activeSection !== 'changes'}
-        >
-          <ScmPanel projectId={projectId} />
+          <ExplorerContainer
+            projectId={projectId}
+            activeSection={activeSection}
+            contentHidden={activeSection === 'terminal' || activeSection === 'agents'}
+            onSectionChange={selectSection}
+          />
         </section>
         <section
           id='workbench-panel-preview'

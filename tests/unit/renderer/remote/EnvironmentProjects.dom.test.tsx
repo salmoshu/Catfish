@@ -10,7 +10,8 @@ const mocks = vi.hoisted(() => ({
   local: vi.fn(),
   list: vi.fn(),
   connect: vi.fn(),
-  disconnect: vi.fn(),
+  activate: vi.fn(),
+  switchRoute: vi.fn(),
   reload: vi.fn(),
   error: vi.fn(),
 }));
@@ -20,9 +21,13 @@ vi.mock('@/common', () => ({
       localConversations: { invoke: mocks.local },
       list: { invoke: mocks.list },
       connect: { invoke: mocks.connect },
-      disconnect: { invoke: mocks.disconnect },
+      activate: { invoke: mocks.activate },
     },
   },
+}));
+vi.mock('@/renderer/utils/workspace/backendSwitch', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/renderer/utils/workspace/backendSwitch')>()),
+  switchBackendRoute: mocks.switchRoute,
 }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('@arco-design/web-react', async (original) => ({
@@ -62,7 +67,12 @@ beforeEach(() => {
   mocks.local.mockResolvedValue([conversation('local-chat', 'E:/LocalProject')]);
   mocks.list.mockResolvedValue([{ ...remote, status: 'disconnected', createdAt: 1, updatedAt: 1 }]);
   mocks.connect.mockResolvedValue({ ok: true, data: remote });
-  mocks.disconnect.mockResolvedValue({ ok: true, data: { type: 'local' } });
+  mocks.activate.mockImplementation((params: { id?: string } = {}) =>
+    Promise.resolve(
+      params.id ? { ok: false, code: 'not_connected', message: 'not connected' } : { ok: true, data: { type: 'local' } }
+    )
+  );
+  mocks.switchRoute.mockResolvedValue(undefined);
   vi.stubGlobal('location', { ...window.location, hash: '#/guid', reload: mocks.reload });
 });
 afterEach(() => {
@@ -120,24 +130,48 @@ describe('projects across environments', () => {
     expect(screen.queryByText('conversation.history.archiveProject')).not.toBeInTheDocument();
   });
 
-  it('does not render cached remote sessions while the environment is inactive', () => {
+  it('keeps cached sessions expanded across environment remounts without switching', () => {
     recordEnvironmentProjects([conversation('remote-chat', '/home/user/RemoteProject')], remote);
-    render(<EnvironmentProjects collapsed={false} />);
+    const first = render(<EnvironmentProjects collapsed={false} />);
 
-    expect(screen.queryByText('remote-chat')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'remote-chat' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('RemoteProject'));
+    expect(screen.getByRole('button', { name: 'remote-chat' })).toBeInTheDocument();
+    expect(mocks.connect).not.toHaveBeenCalled();
+    expect(mocks.reload).not.toHaveBeenCalled();
+
+    first.unmount();
+    render(<EnvironmentProjects collapsed={false} />);
+    expect(screen.getByRole('button', { name: 'remote-chat' })).toBeInTheDocument();
+    expect(mocks.connect).not.toHaveBeenCalled();
   });
 
-  it('connects from the project row and reloads the selected workspace only after success', async () => {
+  it('shows running state for conversations from an inactive environment', () => {
+    recordEnvironmentProjects([conversation('remote-chat', '/home/user/RemoteProject')], remote);
+    render(
+      <EnvironmentProjects
+        collapsed={false}
+        isConversationGenerating={(conversationId) => conversationId === 'remote-chat'}
+      />
+    );
+
+    fireEvent.click(screen.getByText('RemoteProject'));
+    expect(screen.getByTestId('cached-conversation-running')).toBeInTheDocument();
+    expect(screen.getByTestId('cached-project-running')).toBeInTheDocument();
+  });
+
+  it('activates the remote backend only after a cached conversation is selected', async () => {
     recordEnvironmentProjects([conversation('remote-chat', '/home/user/Remote Project')], remote);
     render(<EnvironmentProjects collapsed={false} />);
     fireEvent.click(screen.getByText('Remote Project'));
+    fireEvent.click(screen.getByRole('button', { name: 'remote-chat' }));
 
-    await waitFor(() => expect(mocks.reload).toHaveBeenCalledOnce());
+    await waitFor(() => expect(mocks.switchRoute).toHaveBeenCalledOnce());
+    expect(mocks.reload).not.toHaveBeenCalled();
+    expect(mocks.activate).toHaveBeenCalledWith({ id: 'wsl-1' });
     expect(mocks.connect).toHaveBeenCalledWith({ id: 'wsl-1' });
     expect(mocks.list).not.toHaveBeenCalled();
-    expect(mocks.disconnect).not.toHaveBeenCalled();
-    expect(window.location.hash).toBe('/guid?workspace=%2Fhome%2Fuser%2FRemote%20Project');
+    expect(mocks.switchRoute).toHaveBeenCalledWith('/conversation/remote-chat');
     expect(screen.queryByRole('button', { name: 'complete-connection' })).not.toBeInTheDocument();
   });
 
@@ -154,13 +188,14 @@ describe('projects across environments', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'mcp.connect' }));
     fireEvent.click(screen.getByText('RemoteProject'));
-    expect(mocks.connect).toHaveBeenCalledOnce();
+    await waitFor(() => expect(mocks.connect).toHaveBeenCalledOnce());
     expect(screen.getByTestId('reconnect-icon')).toHaveClass('loading');
     expect(screen.getByRole('button', { name: 'mcp.connect' })).toHaveClass('flex');
     expect(screen.getByRole('button', { name: 'mcp.connect' })).not.toHaveClass('hidden');
 
     resolveConnect({ ok: true, data: remote });
-    await waitFor(() => expect(mocks.reload).toHaveBeenCalledOnce());
+    await waitFor(() => expect(mocks.switchRoute).toHaveBeenCalledOnce());
+    expect(mocks.reload).not.toHaveBeenCalled();
   });
 
   it('stays reconnect-only and uses the modal as a failed-connection fallback', async () => {
@@ -184,11 +219,12 @@ describe('projects across environments', () => {
     mocks.connect.mockResolvedValue({ ok: false, code: 'host_key', message: 'Host key required' });
     recordEnvironmentProjects([conversation('remote-chat', '/home/user/Remote Project')], remote);
     render(<EnvironmentProjects collapsed={false} />);
-    fireEvent.click(screen.getByText('Remote Project'));
+    fireEvent.click(screen.getByRole('button', { name: 'mcp.connect' }));
 
     fireEvent.click(await screen.findByRole('button', { name: 'complete-connection' }));
-    await waitFor(() => expect(mocks.reload).toHaveBeenCalledOnce());
-    expect(window.location.hash).toBe('/guid?workspace=%2Fhome%2Fuser%2FRemote%20Project');
+    await waitFor(() => expect(mocks.switchRoute).toHaveBeenCalledOnce());
+    expect(mocks.reload).not.toHaveBeenCalled();
+    expect(mocks.switchRoute).toHaveBeenCalledWith('/guid?workspace=%2Fhome%2Fuser%2FRemote%20Project');
   });
 
   it('filters out projects from the active remote environment', async () => {
@@ -209,14 +245,15 @@ describe('projects across environments', () => {
     render(<EnvironmentProjects collapsed={false} />);
     fireEvent.click(await screen.findByText('LocalProject'));
     fireEvent.click(screen.getByRole('button', { name: 'local-chat' }));
-    await waitFor(() => expect(mocks.reload).toHaveBeenCalledOnce());
-    expect(mocks.disconnect).toHaveBeenCalledOnce();
-    expect(window.location.hash).toBe('/conversation/local-chat');
+    await waitFor(() => expect(mocks.switchRoute).toHaveBeenCalledOnce());
+    expect(mocks.reload).not.toHaveBeenCalled();
+    expect(mocks.activate).toHaveBeenCalledWith({});
+    expect(mocks.switchRoute).toHaveBeenCalledWith('/conversation/local-chat');
   });
 
   it('keeps the current environment and route when switching fails', async () => {
     window.__backendEnvironment = remote;
-    mocks.disconnect.mockResolvedValue({ ok: false, code: 'failed', message: 'Disconnect failed' });
+    mocks.activate.mockResolvedValue({ ok: false, code: 'failed', message: 'Disconnect failed' });
     render(<EnvironmentProjects collapsed={false} />);
     fireEvent.click(await screen.findByText('LocalProject'));
     fireEvent.click(screen.getByRole('button', { name: 'local-chat' }));

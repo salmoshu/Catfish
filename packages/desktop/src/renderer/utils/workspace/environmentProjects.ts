@@ -1,5 +1,6 @@
 import type { TChatConversation } from '@/common/config/storage';
 import type { BackendEnvironment } from '@/common/types/remote';
+import { getBackendEnvironment } from '@/common/adapter/httpBridge';
 
 const STORAGE_KEY = 'catfish:environment-projects:v1';
 export const ENVIRONMENT_PROJECTS_CHANGED = 'catfish:environment-projects-changed';
@@ -31,6 +32,9 @@ export type EnvironmentProjects = {
 /** Return a stable environment identity without conflating equal paths on different hosts. */
 export const environmentKey = (environment: BackendEnvironment): string =>
   environment.type === 'local' ? 'local' : `remote:${environment.id}`;
+
+export const environmentProjectKey = (environment: BackendEnvironment, workspace: string): string =>
+  `${environmentKey(environment)}:${workspace}`;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 
@@ -87,7 +91,7 @@ const readIdentityString = (extra: Record<string, unknown> | undefined, key: str
 /** Save explicit projects and visual identity only — never models, credentials, messages or runtime state. */
 export const recordEnvironmentProjects = (
   conversations: TChatConversation[],
-  environment: BackendEnvironment | undefined = typeof window === 'undefined' ? undefined : window.__backendEnvironment
+  environment: BackendEnvironment | undefined = getBackendEnvironment()
 ): void => {
   if (!environment) return;
   const projects = new Map<string, EnvironmentProject>();

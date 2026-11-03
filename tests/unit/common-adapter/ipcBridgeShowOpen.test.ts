@@ -30,6 +30,7 @@ vi.mock('@/common/adapter/httpBridge', () => {
     httpDelete: provider(),
     httpRequest: vi.fn(),
     getBaseUrl: vi.fn(() => ''),
+    getBackendEnvironment: vi.fn(() => undefined),
     stubProvider: vi.fn(() => ({ provider: vi.fn(), invoke: vi.fn() })),
     withResponseMap: vi.fn((inner: unknown) => inner),
     wsEmitter: vi.fn(emitter),

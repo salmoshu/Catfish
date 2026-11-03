@@ -59,10 +59,15 @@ export function initRemoteEnvironmentBridge(): void {
     return instance;
   };
   remote.list.provider(() => getManager().list());
-  remote.state.provider(() => getManager().getState());
+  remote.state.provider(() => {
+    const instance = getManager();
+    const localPort = (globalThis as typeof globalThis & { __backendPort?: number }).__backendPort ?? null;
+    return { ...instance.getState(), port: instance.port ?? localPort };
+  });
   remote.discover.provider(() => getManager().discover());
   remote.save.provider((input) => getManager().save(input));
   remote.connect.provider((params) => getManager().connect(params));
+  remote.activate.provider(({ id }) => getManager().activate(id));
   remote.disconnect.provider(() => getManager().disconnect());
   remote.cancel.provider(() => getManager().cancel());
   remote.selectPrivateKey.provider(async () => {

@@ -6,7 +6,22 @@
  * so existing renderer code works without changes.
  */
 
+import type { BackendEnvironment } from '@/common/types/remote';
 import { refreshSession, WS_CLOSE_POLICY_VIOLATION } from './sessionRefresh';
+
+let activeBackendPort: number | undefined;
+let activeBackendEnvironment: BackendEnvironment | undefined;
+
+/** Update renderer-owned backend state without mutating preload's read-only window properties. */
+export function setBackendRuntime(environment: BackendEnvironment, port: number): void {
+  activeBackendEnvironment = environment;
+  activeBackendPort = port;
+}
+
+export function getBackendEnvironment(): BackendEnvironment | undefined {
+  if (activeBackendEnvironment) return activeBackendEnvironment;
+  return typeof window === 'undefined' ? undefined : window.__backendEnvironment;
+}
 
 // ---------------------------------------------------------------------------
 // Base URL
@@ -36,6 +51,7 @@ declare global {
  *   will still fail cleanly with ECONNREFUSED rather than masking the bug.
  */
 function getBackendPort(): number {
+  if (activeBackendPort) return activeBackendPort;
   if (typeof window !== 'undefined' && (window as Window).__backendPort) {
     return (window as Window).__backendPort as number;
   }
@@ -484,6 +500,19 @@ function ensureWs(): void {
       // ignore non-JSON
     }
   });
+}
+
+/** Reconnect the shared realtime socket after the active backend changes. */
+export function resetBackendSocket(): void {
+  if (wsReconnectTimer) {
+    clearTimeout(wsReconnectTimer);
+    wsReconnectTimer = null;
+  }
+  const current = ws;
+  ws = null;
+  wsReconnectAttempt = 0;
+  if (current && current.readyState < WebSocket.CLOSING) current.close(1000, 'backend environment changed');
+  ensureWs();
 }
 
 function scheduleWsReconnect(): void {

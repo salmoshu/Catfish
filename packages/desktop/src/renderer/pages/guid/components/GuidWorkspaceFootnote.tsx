@@ -7,7 +7,7 @@
 import { ipcBridge } from '@/common';
 import { addRecentWorkspace, DEFAULT_RECENT_WS_KEY, getRecentWorkspaces } from '@/renderer/components/workspace';
 import { AionInlineSearchInput } from '@/renderer/components/base';
-import { Tooltip } from '@arco-design/web-react';
+import { Message, Tooltip } from '@arco-design/web-react';
 import { Close, Down } from '@icon-park/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -18,12 +18,14 @@ import type { RemoteEnvironmentSummary } from '@/common/types/remote';
 import { isElectronDesktop } from '@/renderer/utils/platform';
 import styles from '../index.module.css';
 import KimiIcon from '@renderer/components/base/KimiIcon';
+import { connectOrResumeEnvironment, syncBackendEnvironment } from '@/renderer/utils/workspace/backendSwitch';
+import { getBackendEnvironment } from '@/common/adapter/httpBridge';
 
 const REMOTE_WORKSPACE_PICKER_PENDING_KEY = 'aionui:remote-workspace-picker:pending';
 const LOCAL_WORKSPACE_PICKER_PENDING_KEY = 'aionui:local-workspace-picker:pending';
 
 const consumeWorkspacePickerRequest = (key: string, environmentType: 'local' | 'remote'): boolean => {
-  if (window.__backendEnvironment?.type !== environmentType) return false;
+  if (getBackendEnvironment()?.type !== environmentType) return false;
   try {
     if (sessionStorage.getItem(key) !== '1') return false;
     sessionStorage.removeItem(key);
@@ -77,8 +79,33 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
       });
   }, [onSelectWorkspace]);
 
+  const browseRemoteWorkspace = useCallback(
+    (environment: RemoteEnvironmentSummary) => {
+      const current = getBackendEnvironment();
+      if (current?.type === 'remote' && current.id === environment.id) {
+        browseCurrentBackend();
+        return;
+      }
+      setOpen(false);
+      void connectOrResumeEnvironment(environment.id)
+        .then((result) => {
+          if (result.ok === false) throw new Error(result.message);
+          try {
+            sessionStorage.setItem(REMOTE_WORKSPACE_PICKER_PENDING_KEY, '1');
+          } catch {
+            // Storage can be unavailable in hardened browser contexts.
+          }
+          return syncBackendEnvironment();
+        })
+        .catch((error: unknown) => {
+          Message.error(error instanceof Error ? error.message : t('guid.workspace.remote.connectFailed'));
+        });
+    },
+    [browseCurrentBackend, t]
+  );
+
   const handleBrowseWorkspace = useCallback(() => {
-    if (window.__backendEnvironment?.type !== 'remote') {
+    if (getBackendEnvironment()?.type !== 'remote') {
       browseCurrentBackend();
       return;
     }
@@ -88,11 +115,11 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
     } catch {
       // A reload can still return to the local project list without storage.
     }
-    void ipcBridge.remoteEnvironment.disconnect
-      .invoke()
+    void ipcBridge.remoteEnvironment.activate
+      .invoke({})
       .then((result) => {
         if (result.ok === false) throw new Error(result.message);
-        window.location.reload();
+        return syncBackendEnvironment();
       })
       .catch((error: unknown) => console.error('Failed to return to the local backend:', error));
   }, [browseCurrentBackend]);
@@ -107,16 +134,16 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
       addRecentWorkspace(path, DEFAULT_RECENT_WS_KEY);
       setOpen(false);
       setSearchQuery('');
-      if (window.__backendEnvironment?.type !== 'remote') {
+      if (getBackendEnvironment()?.type !== 'remote') {
         onSelectWorkspace(path);
         return;
       }
-      void ipcBridge.remoteEnvironment.disconnect
-        .invoke()
+      void ipcBridge.remoteEnvironment.activate
+        .invoke({})
         .then((result) => {
           if (result.ok === false) throw new Error(result.message);
           window.location.hash = `/guid?workspace=${encodeURIComponent(path)}`;
-          window.location.reload();
+          return syncBackendEnvironment();
         })
         .catch((error: unknown) => console.error('Failed to open the local project:', error));
     },
@@ -176,7 +203,7 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
   });
 
   const workspaceName = workspaceDir ? workspaceDir.split(/[\\/]/).pop() || workspaceDir : '';
-  const backendEnvironment = window.__backendEnvironment;
+  const backendEnvironment = getBackendEnvironment();
 
   const dropdownEl = open
     ? createPortal(
@@ -222,7 +249,7 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
                 closeDropdown();
                 setConnectionModal({ open: true, environment });
               }}
-              onRequestWorkspace={browseCurrentBackend}
+              onRequestWorkspace={browseRemoteWorkspace}
             />
           )}
 
@@ -246,20 +273,6 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
 
   return (
     <div className={styles.workspaceFootnote}>
-      {backendEnvironment && (backendEnvironment.type !== 'remote' || workspaceName) && (
-        <Tooltip
-          content={backendEnvironment.type === 'remote' ? workspaceName : t('guid.workspace.remote.local')}
-          position='top'
-        >
-          <span
-            role='img'
-            aria-label={backendEnvironment.type === 'remote' ? workspaceName : t('guid.workspace.remote.local')}
-            className='inline-flex items-center justify-center rounded-6px bg-aou-1 p-4px text-aou-6'
-          >
-            <KimiIcon name={backendEnvironment.type === 'remote' ? 'globe' : 'device-desktop'} size={14} />
-          </span>
-        </Tooltip>
-      )}
       {workspaceDir ? (
         <>
           <Tooltip content={workspaceName} position='top'>
@@ -328,7 +341,7 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
             } catch {
               // Storage can be unavailable in hardened browser contexts.
             }
-            window.location.reload();
+            return syncBackendEnvironment();
           }}
         />
       )}

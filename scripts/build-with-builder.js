@@ -24,8 +24,10 @@ const crypto = require('crypto');
 const DMG_RETRY_MAX = 3;
 const DMG_RETRY_DELAY_SEC = 30;
 
+// Tests and isolated local builds can redirect all Vite artifacts away from a locked shared out/.
+const BUILD_OUTPUT_DIR = path.resolve(process.env.AIONUI_BUILD_OUTPUT_DIR || path.join(__dirname, '../out'));
 // Incremental build: hash of source files to detect changes
-const INCREMENTAL_CACHE_FILE = 'out/.build-hash';
+const INCREMENTAL_CACHE_FILE = path.join(BUILD_OUTPUT_DIR, '.build-hash');
 const DEBUG_AUTO_UPDATE_CURRENT_VERSION_ENV = 'AIONUI_DEBUG_AUTO_UPDATE_CURRENT_VERSION';
 
 function patchElectronBuilderNsisInstaller() {
@@ -251,7 +253,7 @@ function saveCurrentHash(hash) {
 }
 
 function viteBuildExists() {
-  const outDir = path.resolve(__dirname, '../out');
+  const outDir = BUILD_OUTPUT_DIR;
   const mainDir = path.join(outDir, 'main');
   const rendererDir = path.join(outDir, 'renderer');
 
@@ -345,7 +347,7 @@ function validateRendererBuildOutput(rendererDir) {
 }
 
 function validateViteBuildOutput() {
-  const outDir = path.resolve(__dirname, '../out');
+  const outDir = BUILD_OUTPUT_DIR;
   const problems = [];
 
   for (const relPath of ['main/index.js', 'preload/index.js']) {
@@ -541,7 +543,7 @@ function createMacArtifactsWithPrepackaged(appDir, targetArch) {
 
 function buildWithDmgRetry(cmd, targetArch) {
   const isMac = process.platform === 'darwin';
-  const outDir = path.resolve(__dirname, '../out');
+  const outDir = BUILD_OUTPUT_DIR;
 
   try {
     execSync(cmd, { stdio: 'inherit', shell: process.platform === 'win32' });
@@ -578,7 +580,7 @@ function buildWithDmgRetry(cmd, targetArch) {
 
 // Clean stale Windows packaging outputs from previous runs
 function cleanupWindowsPackOutput() {
-  const outDir = path.resolve(__dirname, '../out');
+  const outDir = BUILD_OUTPUT_DIR;
   if (!fs.existsSync(outDir)) return;
 
   const removed = [];
@@ -745,7 +747,7 @@ try {
   });
 
   // 3. Verify electron-vite output
-  const outDir = path.resolve(__dirname, '../out');
+  const outDir = BUILD_OUTPUT_DIR;
   if (!fs.existsSync(outDir)) {
     throw new Error('electron-vite did not generate out/ directory');
   }

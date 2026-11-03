@@ -259,6 +259,14 @@ test.describe('Message anchor rail', () => {
     await expect(active).toHaveCount(1);
     await expect(active).toHaveAttribute('data-anchor-index', '1');
     await expect(label).toContainText('User seed message 1');
+    const labelColor = await label.evaluate((element) => getComputedStyle(element).color);
+    const channels =
+      labelColor
+        .match(/[\d.]+/g)
+        ?.slice(0, 3)
+        .map(Number) ?? [];
+    expect(channels).toHaveLength(3);
+    expect(Math.max(...channels) - Math.min(...channels)).toBeLessThanOrEqual(1);
     await page.screenshot({ path: testInfo.outputPath('outline-expanded.png') });
   });
 

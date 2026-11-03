@@ -12,6 +12,7 @@
 
 import { ipcBridge } from '@/common';
 import type { ShowOpenHandler, ShowOpenOptions } from '@/common/adapter/ipcBridge';
+import { getBackendEnvironment } from '@/common/adapter/httpBridge';
 import { Button, Input, Modal, Spin } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -21,7 +22,7 @@ import { matchesFilters, normalizeEntry, parentOf, sortEntries } from './webFsPi
 import KimiIcon from '@renderer/components/base/KimiIcon';
 
 const getLastDirKey = (): string => {
-  const environment = window.__backendEnvironment;
+  const environment = getBackendEnvironment();
   return environment?.type === 'remote'
     ? `aionui:web-fs-picker:last-dir:remote:${environment.id}`
     : 'aionui:web-fs-picker:last-dir';

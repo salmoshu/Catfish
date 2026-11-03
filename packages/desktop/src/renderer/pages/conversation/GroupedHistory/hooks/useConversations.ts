@@ -9,10 +9,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useConversationHistoryContext } from '@/renderer/hooks/context/ConversationHistoryContext';
 import type { TimelineSection } from '../types';
+import { getBackendEnvironment } from '@/common/adapter/httpBridge';
+import { environmentProjectKey } from '@/renderer/utils/workspace/environmentProjects';
 import {
-  dispatchWorkspaceExpansionChange,
-  readExpandedWorkspaces,
-  WORKSPACE_EXPANSION_STORAGE_KEY,
+  toggleExpandedWorkspace,
+  useWorkspaceExpansionState,
+  writeExpandedWorkspaces,
 } from './useWorkspaceExpansionState';
 
 // Persist section collapsed state across reloads.
@@ -54,11 +56,12 @@ const locateConversation = (
 };
 
 export const useConversations = () => {
-  const [expandedWorkspaces, setExpandedWorkspaces] = useState<string[]>(() => readExpandedWorkspaces());
+  const expandedWorkspaces = useWorkspaceExpansionState();
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => readCollapsedSections());
   const { id } = useParams();
   const {
     conversations,
+    conversationActivityAt,
     isConversationGenerating,
     isConversationWaitingConfirmation,
     hasCompletionUnread,
@@ -122,7 +125,11 @@ export const useConversations = () => {
     // Expand the containing project folder if collapsed.
     if (location.workspace) {
       const workspace = location.workspace;
-      setExpandedWorkspaces((prev) => (prev.includes(workspace) ? prev : [...prev, workspace]));
+      const environment = getBackendEnvironment() ?? { type: 'local' as const };
+      const key = environmentProjectKey(environment, workspace);
+      if (!expandedWorkspaces.includes(key) && !expandedWorkspaces.includes(workspace)) {
+        toggleExpandedWorkspace(key, [workspace]);
+      }
     }
 
     let cancelled = false;
@@ -143,17 +150,6 @@ export const useConversations = () => {
       cancelAnimationFrame(innerRafId);
     };
   }, [clearCompletionUnread, clearManualUnread, id, setActiveConversation, pinnedConversations, timelineSections]);
-
-  // Persist workspace expansion state
-  useEffect(() => {
-    try {
-      localStorage.setItem(WORKSPACE_EXPANSION_STORAGE_KEY, JSON.stringify(expandedWorkspaces));
-    } catch {
-      // ignore
-    }
-
-    dispatchWorkspaceExpansionChange(expandedWorkspaces);
-  }, [expandedWorkspaces]);
 
   // Persist section collapsed state
   useEffect(() => {
@@ -180,39 +176,19 @@ export const useConversations = () => {
       });
     });
     if (allWorkspaces.length > 0) {
-      setExpandedWorkspaces(allWorkspaces);
+      const environment = getBackendEnvironment() ?? { type: 'local' as const };
+      writeExpandedWorkspaces(allWorkspaces.map((workspace) => environmentProjectKey(environment, workspace)));
       hasAutoExpandedRef.current = true;
     }
   }, [timelineSections]);
 
-  // Remove stale workspace entries that no longer exist in the data
-  useEffect(() => {
-    const currentWorkspaces = new Set<string>();
-    timelineSections.forEach((section) => {
-      section.items.forEach((item) => {
-        if (item.type === 'workspace' && item.workspaceGroup) {
-          currentWorkspaces.add(item.workspaceGroup.workspace);
-        }
-      });
-    });
-    if (currentWorkspaces.size === 0) return;
-    setExpandedWorkspaces((prev) => {
-      const filtered = prev.filter((ws) => currentWorkspaces.has(ws));
-      return filtered.length === prev.length ? prev : filtered;
-    });
-  }, [timelineSections]);
-
-  const handleToggleWorkspace = useCallback((workspace: string) => {
-    setExpandedWorkspaces((prev) => {
-      if (prev.includes(workspace)) {
-        return prev.filter((item) => item !== workspace);
-      }
-      return [...prev, workspace];
-    });
+  const handleToggleWorkspace = useCallback((workspace: string, legacyKeys: string[] = []) => {
+    toggleExpandedWorkspace(workspace, legacyKeys);
   }, []);
 
   return {
     conversations,
+    conversationActivityAt,
     isConversationGenerating,
     isConversationWaitingConfirmation,
     hasCompletionUnread,

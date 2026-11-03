@@ -75,6 +75,22 @@
   flex-direction: column;
 }
 
+/* A quiet vertical guide connects each step, including any expanded detail. */
+.tool-row::before {
+  position: absolute;
+  inset-inline-start: 9px;
+  top: 20px;
+  bottom: 0;
+  width: 1px;
+  background: var(--color-border-2);
+  content: '';
+  pointer-events: none;
+}
+
+.tool-row:last-child::before {
+  bottom: 4px;
+}
+
 .tool-row:not(:last-child) {
   padding-bottom: 12px;
 }
@@ -100,6 +116,8 @@
 }
 
 .tool-row__rail {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   width: 20px;
   height: 20px;

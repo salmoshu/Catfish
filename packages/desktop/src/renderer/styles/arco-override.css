@@ -859,3 +859,13 @@ body[arco-theme='dark'] .arco-message-error {
   font-weight: 500;
   line-height: 20px;
 }
+
+/* Source-control actions use quiet neutral icons rather than Arco's default blue. */
+[data-scm-panel] .arco-btn-text:not(.arco-btn-disabled) {
+  color: var(--text-secondary);
+}
+
+[data-scm-panel] .arco-btn-text:not(.arco-btn-disabled):hover,
+[data-scm-panel] .arco-btn-text:not(.arco-btn-disabled):focus-visible {
+  color: var(--text-primary);
+}

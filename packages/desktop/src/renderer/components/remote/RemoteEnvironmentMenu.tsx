@@ -12,6 +12,8 @@ import { ipcBridge } from '@/common';
 import type { RemoteEnvironmentState, RemoteEnvironmentSummary } from '@/common/types/remote';
 import styles from './RemoteConnectionModal.module.css';
 import { forgetEnvironmentProjects } from '@/renderer/utils/workspace/environmentProjects';
+import { syncBackendEnvironment } from '@/renderer/utils/workspace/backendSwitch';
+import { getBackendEnvironment } from '@/common/adapter/httpBridge';
 
 type RemoteEnvironmentMenuProps = {
   searchQuery: string;
@@ -31,7 +33,7 @@ const RemoteEnvironmentMenu: React.FC<RemoteEnvironmentMenuProps> = ({
   const { t } = useTranslation();
   const [environments, setEnvironments] = useState<RemoteEnvironmentSummary[]>([]);
   const [state, setState] = useState<RemoteEnvironmentState>({
-    active: window.__backendEnvironment ?? { type: 'local' },
+    active: getBackendEnvironment() ?? { type: 'local' },
   });
 
   const refresh = useCallback(async () => {
@@ -66,7 +68,7 @@ const RemoteEnvironmentMenu: React.FC<RemoteEnvironmentMenuProps> = ({
 
   const disconnect = async () => {
     const result = await ipcBridge.remoteEnvironment.disconnect.invoke();
-    if (result.ok === true) window.location.reload();
+    if (result.ok === true) await syncBackendEnvironment();
     else Message.error(result.message || t('guid.workspace.remote.connectFailed'));
   };
 
@@ -82,14 +84,15 @@ const RemoteEnvironmentMenu: React.FC<RemoteEnvironmentMenuProps> = ({
           return;
         }
         forgetEnvironmentProjects(environment.id);
-        if (state.active.type === 'remote' && state.active.id === environment.id) window.location.reload();
+        if (state.active.type === 'remote' && state.active.id === environment.id) await syncBackendEnvironment();
         else await refresh();
       },
     });
   };
 
   const openConnection = (environment?: RemoteEnvironmentSummary) => {
-    if (environment && state.active.type === 'remote' && state.active.id === environment.id) {
+    const isActive = environment && state.active.type === 'remote' && state.active.id === environment.id;
+    if (environment && (environment.status === 'connected' || isActive)) {
       onClose();
       onRequestWorkspace(environment);
       return;

@@ -6,7 +6,12 @@ import GuidWorkspaceFootnote from '@renderer/pages/guid/components/GuidWorkspace
 
 const PENDING_KEY = 'aionui:remote-workspace-picker:pending';
 const reloadMock = vi.fn();
-const remoteMocks = vi.hoisted(() => ({ showOpen: vi.fn(), disconnect: vi.fn() }));
+const remoteMocks = vi.hoisted(() => ({
+  showOpen: vi.fn(),
+  activate: vi.fn(),
+  connect: vi.fn(),
+  syncBackend: vi.fn(),
+}));
 const environment: RemoteEnvironmentSummary = {
   id: 'wsl-ubuntu',
   kind: 'wsl',
@@ -20,8 +25,16 @@ const environment: RemoteEnvironmentSummary = {
 vi.mock('@/common', () => ({
   ipcBridge: {
     dialog: { showOpen: { invoke: remoteMocks.showOpen } },
-    remoteEnvironment: { disconnect: { invoke: remoteMocks.disconnect } },
+    remoteEnvironment: {
+      activate: { invoke: remoteMocks.activate },
+      connect: { invoke: remoteMocks.connect },
+    },
   },
+}));
+
+vi.mock('@/renderer/utils/workspace/backendSwitch', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/renderer/utils/workspace/backendSwitch')>()),
+  syncBackendEnvironment: remoteMocks.syncBackend,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -80,7 +93,18 @@ describe('GuidWorkspaceFootnote remote directory selection', () => {
     localStorage.clear();
     window.__backendEnvironment = { type: 'local' };
     remoteMocks.showOpen.mockResolvedValue([]);
-    remoteMocks.disconnect.mockResolvedValue({ ok: true, data: { type: 'local' } });
+    remoteMocks.syncBackend.mockResolvedValue(undefined);
+    remoteMocks.activate.mockImplementation((params: { id?: string } = {}) =>
+      Promise.resolve(
+        params.id
+          ? { ok: false, code: 'not_connected', message: 'not connected' }
+          : { ok: true, data: { type: 'local' } }
+      )
+    );
+    remoteMocks.connect.mockResolvedValue({
+      ok: true,
+      data: { type: 'remote', id: environment.id, name: environment.name, kind: 'wsl' },
+    });
     vi.stubGlobal('location', { ...window.location, hash: '#/guid', reload: reloadMock });
   });
 
@@ -98,7 +122,8 @@ describe('GuidWorkspaceFootnote remote directory selection', () => {
     fireEvent.click(screen.getByText('mock-connected'));
 
     expect(sessionStorage.getItem(PENDING_KEY)).toBe('1');
-    expect(reloadMock).toHaveBeenCalledOnce();
+    expect(remoteMocks.syncBackend).toHaveBeenCalledOnce();
+    expect(reloadMock).not.toHaveBeenCalled();
     expect(remoteMocks.showOpen).not.toHaveBeenCalled();
   });
 
@@ -143,7 +168,25 @@ describe('GuidWorkspaceFootnote remote directory selection', () => {
     expect(screen.queryByText(environment.name)).not.toBeInTheDocument();
   });
 
-  it('shows local recent projects by default and disconnects before opening one', async () => {
+  it('resumes a connected remote environment without disconnecting the local backend', async () => {
+    remoteMocks.activate.mockResolvedValue({
+      ok: true,
+      data: { type: 'remote', id: environment.id, name: environment.name, kind: 'wsl' },
+    });
+    renderFootnote();
+
+    fireEvent.click(screen.getByTestId('workspace-selector-btn'));
+    fireEvent.click(screen.getByText('mock-active-workspace'));
+
+    await waitFor(() => expect(remoteMocks.syncBackend).toHaveBeenCalledOnce());
+    expect(reloadMock).not.toHaveBeenCalled();
+    expect(remoteMocks.activate).toHaveBeenCalledWith({ id: environment.id });
+    expect(remoteMocks.connect).not.toHaveBeenCalled();
+    expect(remoteMocks.showOpen).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem(PENDING_KEY)).toBe('1');
+  });
+
+  it('shows local recent projects by default and activates before opening one', async () => {
     window.__backendEnvironment = { type: 'remote', id: environment.id, name: environment.name, kind: 'wsl' };
     localStorage.setItem('aionui:recent-workspaces', JSON.stringify(['E:/LocalProject']));
     localStorage.setItem('aionui:recent-workspaces:remote:wsl-ubuntu', JSON.stringify(['/home/RemoteProject']));
@@ -154,8 +197,9 @@ describe('GuidWorkspaceFootnote remote directory selection', () => {
     expect(screen.queryByText('RemoteProject')).not.toBeInTheDocument();
     fireEvent.click(screen.getByText('LocalProject'));
 
-    await waitFor(() => expect(reloadMock).toHaveBeenCalledOnce());
-    expect(remoteMocks.disconnect).toHaveBeenCalledOnce();
+    await waitFor(() => expect(remoteMocks.syncBackend).toHaveBeenCalledOnce());
+    expect(reloadMock).not.toHaveBeenCalled();
+    expect(remoteMocks.activate).toHaveBeenCalledOnce();
     expect(window.location.hash).toBe('/guid?workspace=E%3A%2FLocalProject');
     expect(onSelectWorkspace).not.toHaveBeenCalled();
   });
@@ -167,8 +211,9 @@ describe('GuidWorkspaceFootnote remote directory selection', () => {
     fireEvent.click(screen.getByTestId('workspace-selector-btn'));
     fireEvent.click(screen.getByText('team.create.chooseDifferentFolder'));
 
-    await waitFor(() => expect(reloadMock).toHaveBeenCalledOnce());
-    expect(remoteMocks.disconnect).toHaveBeenCalledOnce();
+    await waitFor(() => expect(remoteMocks.syncBackend).toHaveBeenCalledOnce());
+    expect(reloadMock).not.toHaveBeenCalled();
+    expect(remoteMocks.activate).toHaveBeenCalledOnce();
     expect(sessionStorage.getItem('aionui:local-workspace-picker:pending')).toBe('1');
     expect(remoteMocks.showOpen).not.toHaveBeenCalled();
   });
@@ -178,10 +223,10 @@ describe('GuidWorkspaceFootnote remote directory selection', () => {
     const workspaceDir = '\\\\wsl$\\Ubuntu-20.04\\home\\winchell\\CatfishCore';
     renderFootnote(workspaceDir);
 
-    const icon = screen.getByRole('img', { name: 'CatfishCore' });
-    expect(document.querySelectorAll('[data-kimi-icon="globe"]')).toHaveLength(2);
+    const projectButton = screen.getByRole('button', { name: 'CatfishCore' });
+    expect(document.querySelectorAll('[data-kimi-icon="globe"]')).toHaveLength(1);
     expect(document.querySelector('[data-kimi-icon="folder"]')).not.toBeInTheDocument();
-    fireEvent.mouseOver(icon);
+    fireEvent.mouseOver(projectButton);
     expect((await screen.findAllByText('CatfishCore')).length).toBeGreaterThan(0);
     expect(screen.queryByRole('img', { name: /Ubuntu/ })).not.toBeInTheDocument();
     expect(screen.queryByText(/Ubuntu/)).not.toBeInTheDocument();

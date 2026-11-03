@@ -572,7 +572,12 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
               <Button
                 type='secondary'
                 shape='circle'
-                icon={<Plus theme='outline' size='14' strokeWidth={2} fill={iconColors.primary} />}
+                className='relative !flex !items-center !justify-center [&_.arco-btn-icon]:!m-0'
+                icon={
+                  <span className='flex size-14px items-center justify-center leading-none'>
+                    <Plus theme='outline' size='14' strokeWidth={2} fill={iconColors.primary} className='block' />
+                  </span>
+                }
                 loading={uploading}
                 disabled={uploading}
                 data-testid='file-upload-btn'
@@ -593,8 +598,12 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
                 <Button
                   type='secondary'
                   shape='circle'
-                  className={isPlusDropdownOpen ? styles.plusButtonRotate : ''}
-                  icon={<Plus theme='outline' size='14' strokeWidth={2} fill={iconColors.primary} />}
+                  className={`${isPlusDropdownOpen ? styles.plusButtonRotate : ''} relative !flex !items-center !justify-center [&_.arco-btn-icon]:!m-0`}
+                  icon={
+                    <span className='flex size-14px items-center justify-center leading-none'>
+                      <Plus theme='outline' size='14' strokeWidth={2} fill={iconColors.primary} className='block' />
+                    </span>
+                  }
                   loading={uploading}
                   disabled={uploading}
                   data-testid='file-upload-btn'

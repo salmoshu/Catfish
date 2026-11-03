@@ -60,6 +60,7 @@ function failure(error: unknown): Extract<RemoteOperationResult<never>, { ok: fa
 
 export class RemoteEnvironmentManager {
   private activeRuntime?: ActiveRuntime;
+  private readonly runtimes = new Map<string, ActiveRuntime>();
   private connectingId?: string;
   private abortController?: AbortController;
   private connectingBackend?: RemoteBackend;
@@ -91,14 +92,13 @@ export class RemoteEnvironmentManager {
   list(): RemoteEnvironmentSummary[] {
     return this.store.list().map((environment) => ({
       ...environment,
-      status:
-        this.activeRuntime?.environmentId === environment.id
-          ? 'connected'
-          : this.connectingId === environment.id
-            ? 'connecting'
-            : this.errors.has(environment.id)
-              ? 'error'
-              : 'disconnected',
+      status: this.runtimes.has(environment.id)
+        ? 'connected'
+        : this.connectingId === environment.id
+          ? 'connecting'
+          : this.errors.has(environment.id)
+            ? 'error'
+            : 'disconnected',
     }));
   }
 
@@ -128,7 +128,12 @@ export class RemoteEnvironmentManager {
   async remove(id: string): Promise<RemoteOperationResult> {
     try {
       if (this.connectingId) return { ok: false, code: 'busy', message: 'A connection attempt is in progress' };
-      if (this.activeRuntime?.environmentId === id) await this.disconnect();
+      const runtime = this.runtimes.get(id);
+      if (runtime) {
+        this.runtimes.delete(id);
+        if (this.activeRuntime?.environmentId === id) this.activeRuntime = undefined;
+        await runtime.backend.stop().catch(() => {});
+      }
       await this.store.remove(id);
       this.errors.delete(id);
       return success(undefined);
@@ -175,6 +180,12 @@ export class RemoteEnvironmentManager {
   async connect(params: RemoteEnvironmentConnectParams): Promise<RemoteOperationResult<BackendEnvironment>> {
     if (this.connectingId) return { ok: false, code: 'busy', message: 'A connection attempt is in progress' };
     if (this.activeRuntime?.environmentId === params.id) return success(this.activeRuntime.environment);
+    const existing = this.runtimes.get(params.id);
+    if (existing) {
+      this.activeRuntime = existing;
+      this.progress(params.id, 'connected');
+      return success(existing.environment);
+    }
     let connection: RemoteConnection;
     try {
       connection = this.store.getConnection(params.id, params.hostKeyApproval);
@@ -210,7 +221,6 @@ export class RemoteEnvironmentManager {
       if (connection.environment.kind === 'ssh' && params.hostKeyApproval) {
         await this.store.approveHostKey(params.id, params.hostKeyApproval.fingerprint);
       }
-      const previous = this.activeRuntime;
       const environment: ActiveRuntime['environment'] = {
         type: 'remote',
         id: connection.environment.id,
@@ -218,10 +228,10 @@ export class RemoteEnvironmentManager {
         kind: connection.environment.kind,
       };
       this.activeRuntime = { environmentId: params.id, environment, backend };
+      this.runtimes.set(params.id, this.activeRuntime);
       this.connectingBackend = undefined;
       this.connectingId = undefined;
       this.abortController = undefined;
-      if (previous) await previous.backend.stop().catch(() => {});
       this.progress(params.id, 'connected');
       return success(environment);
     } catch (error) {
@@ -245,9 +255,10 @@ export class RemoteEnvironmentManager {
   }
 
   private async handleUnexpectedExit(environmentId: string, error: Error): Promise<void> {
-    if (this.activeRuntime?.environmentId !== environmentId) return;
-    const runtime = this.activeRuntime;
-    this.activeRuntime = undefined;
+    const runtime = this.runtimes.get(environmentId);
+    if (!runtime) return;
+    this.runtimes.delete(environmentId);
+    if (this.activeRuntime?.environmentId === environmentId) this.activeRuntime = undefined;
     this.errors.set(environmentId, error.message);
     this.emit({ type: 'disconnected', environmentId, reason: error.message });
     await runtime.backend.stop().catch(() => {});
@@ -258,10 +269,26 @@ export class RemoteEnvironmentManager {
     await this.connectingBackend?.stop().catch(() => {});
   }
 
+  /** Switch the UI backend without stopping any connected remote runtime. */
+  async activate(id?: string): Promise<RemoteOperationResult<BackendEnvironment>> {
+    if (!id) {
+      this.activeRuntime = undefined;
+      return success({ type: 'local' });
+    }
+    const runtime = this.runtimes.get(id);
+    if (!runtime) {
+      return { ok: false, code: 'not_connected', message: 'Remote environment is not connected' };
+    }
+    this.activeRuntime = runtime;
+    return success(runtime.environment);
+  }
+
+  /** Explicitly stop the active remote runtime and return the UI to local. */
   async disconnect(): Promise<RemoteOperationResult<BackendEnvironment>> {
     await this.cancel();
     const runtime = this.activeRuntime;
     this.activeRuntime = undefined;
+    if (runtime) this.runtimes.delete(runtime.environmentId);
     try {
       await runtime?.backend.stop();
       return success({ type: 'local' });
@@ -272,8 +299,9 @@ export class RemoteEnvironmentManager {
 
   async stop(): Promise<void> {
     await this.cancel();
-    const runtime = this.activeRuntime;
     this.activeRuntime = undefined;
-    await runtime?.backend.stop().catch(() => {});
+    const runtimes = [...this.runtimes.values()];
+    this.runtimes.clear();
+    await Promise.all(runtimes.map((runtime) => runtime.backend.stop().catch(() => {})));
   }
 }

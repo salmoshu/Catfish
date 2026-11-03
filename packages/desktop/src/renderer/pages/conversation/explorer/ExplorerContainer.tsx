@@ -59,10 +59,14 @@ import { SearchPanel } from './search/SearchPanel';
 import type { SearchHit } from './search/searchModel';
 import { ScmPanel } from '../SourceControl/ScmPanel';
 import { rediscoverRepos, refreshAllRepos } from '../SourceControl/scmStore';
+import type { WorkbenchSection } from '../Workbench/workbenchActivity';
 
 export type ExplorerContainerProps = {
   /** Owning project id — scopes the store's fact cache + localStorage UI state. */
   projectId: string;
+  activeSection?: WorkbenchSection;
+  contentHidden?: boolean;
+  onSectionChange?: (section: WorkbenchSection) => void;
 };
 
 /** The name-entry dialog collects a single file or folder name. */
@@ -145,7 +149,12 @@ export const buildExplorerPreviewPayload = async (
   };
 };
 
-export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId }) => {
+export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({
+  projectId,
+  activeSection,
+  contentHidden = false,
+  onSectionChange,
+}) => {
   const { t } = useTranslation();
   const { openPreview } = usePreviewContext();
   const activeConversationId = useCurrentConversation();
@@ -204,7 +213,8 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
   // unmounts the inactive one for `changes`, which is safe because the SCM
   // subscription is owned by its store per project, not by the component's mount
   // (see ScmPanel's lifecycle note) — a tab switch never drops the backend watch.
-  const [activeTab, setActiveTab] = useState<'files' | 'changes'>('files');
+  const [internalActiveTab, setInternalActiveTab] = useState<'files' | 'changes'>('files');
+  const activeTab = activeSection ?? internalActiveTab;
   // Busy flag for the top-bar refresh: spins the icon and disables re-click while a
   // refresh is in flight (so rapid clicks don't fan out redundant backend round-trips).
   const [refreshing, setRefreshing] = useState(false);
@@ -330,7 +340,7 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
   // select it. Reuses the store's existing reveal path; does NOT open preview
   // (product decision Y — the click is "find the file", not "preview it").
   const handleRevealHit = (hit: SearchHit): void => {
-    setActiveTab('files');
+    setInternalActiveTab('files');
     reveal({ pe_id: hit.pe_id, relative_path: parentRel(hit.relative_path) });
     select(peKey(hit.pe_id, hit.relative_path));
   };
@@ -446,12 +456,18 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
     }
   };
 
-  const tabButton = (key: 'files' | 'changes', label: string) => (
+  const tabButton = (key: WorkbenchSection, label: string) => (
     <Button
       type='text'
       size='small'
+      id={`workbench-tab-${key}`}
+      role='tab'
+      aria-selected={activeTab === key}
       className={`flex-shrink-0 !px-8px ${activeTab === key ? '!text-t-primary !font-medium !bg-2' : '!text-t-secondary'}`}
-      onClick={() => setActiveTab(key)}
+      onClick={() => {
+        if (key === 'files' || key === 'changes') setInternalActiveTab(key);
+        onSectionChange?.(key);
+      }}
     >
       {label}
     </Button>
@@ -480,6 +496,8 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
         <div className='flex items-center gap-2px overflow-x-auto flex-1 min-w-0'>
           {tabButton('files', t('conversation.explorer.tabs.files'))}
           {tabButton('changes', t('conversation.explorer.tabs.changes'))}
+          {tabButton('terminal', t('messages.workbench.terminal', { defaultValue: 'Terminal' }))}
+          {tabButton('agents', t('messages.workbench.agents', { defaultValue: 'Agents' }))}
         </div>
         <div className='flex items-center gap-2px flex-shrink-0'>
           {/* File and folder creation stays in the tree's context menu. The top
@@ -524,36 +542,38 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
           the 12px baseline on their own (the former via its own padding, the latter
           via the .workspace-tree rules in arco-override.css). Adding a layer here
           would push both off that baseline. */}
-      <div className='flex-1 min-h-0' style={activeTab === 'files' ? undefined : { display: 'none' }}>
-        <SearchPanel
-          roots={searchRoots}
-          peNames={searchPeNames}
-          onRevealHit={handleRevealHit}
-          onAddHit={activeConversationId ? handleAddHit : undefined}
-        >
-          <ExplorerPanel
-            projectId={projectId}
-            roots={roots}
-            workspacePeId={workspacePeId}
-            onRemoveRoot={handleRemoveFolder}
-            onOpenFile={handleOpenFile}
-            onDelete={handleDelete}
-            onNewFile={handleNewFile}
-            onNewDir={handleNewDir}
-            onAddToChat={activeConversationId ? handleAddToChat : undefined}
-            onRevealInFolder={handleRevealInFolder}
-            onCopyRelativePath={handleCopyRelativePath}
-            onCopyAbsolutePath={handleCopyAbsolutePath}
-            onImportFiles={handleImportFiles}
-            onTransfer={handleTransfer}
-          />
-        </SearchPanel>
-      </div>
-      {activeTab === 'changes' && (
-        <div className='flex-1 min-h-0'>
-          <ScmPanel projectId={projectId} />
+      <div className='flex-1 min-h-0 flex flex-col' style={contentHidden ? { display: 'none' } : undefined}>
+        <div className='flex-1 min-h-0' style={activeTab === 'files' ? undefined : { display: 'none' }}>
+          <SearchPanel
+            roots={searchRoots}
+            peNames={searchPeNames}
+            onRevealHit={handleRevealHit}
+            onAddHit={activeConversationId ? handleAddHit : undefined}
+          >
+            <ExplorerPanel
+              projectId={projectId}
+              roots={roots}
+              workspacePeId={workspacePeId}
+              onRemoveRoot={handleRemoveFolder}
+              onOpenFile={handleOpenFile}
+              onDelete={handleDelete}
+              onNewFile={handleNewFile}
+              onNewDir={handleNewDir}
+              onAddToChat={activeConversationId ? handleAddToChat : undefined}
+              onRevealInFolder={handleRevealInFolder}
+              onCopyRelativePath={handleCopyRelativePath}
+              onCopyAbsolutePath={handleCopyAbsolutePath}
+              onImportFiles={handleImportFiles}
+              onTransfer={handleTransfer}
+            />
+          </SearchPanel>
         </div>
-      )}
+        {activeTab === 'changes' && (
+          <div className='flex-1 min-h-0'>
+            <ScmPanel projectId={projectId} />
+          </div>
+        )}
+      </div>
       <Modal
         title={nameDialog ? t(nameDialogTitleKey(nameDialog.mode)) : ''}
         visible={nameDialog !== null}

@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
   local: vi.fn(),
   list: vi.fn(),
   connect: vi.fn(),
-  disconnect: vi.fn(),
+  activate: vi.fn(),
 }));
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
@@ -28,7 +28,7 @@ vi.mock('@/common', () => ({
       localConversations: { invoke: mocks.local },
       list: { invoke: mocks.list },
       connect: { invoke: mocks.connect },
-      disconnect: { invoke: mocks.disconnect },
+      activate: { invoke: mocks.activate },
     },
   },
 }));

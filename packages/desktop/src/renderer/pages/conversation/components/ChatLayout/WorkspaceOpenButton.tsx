@@ -1,7 +1,7 @@
 import { ipcBridge } from '@/common';
 import { isElectronDesktop } from '@/renderer/utils/platform';
 import { useOptionalPreviewContext } from '@/renderer/pages/conversation/Preview/context/PreviewContext';
-import { Browser, Command, FolderOpen, FolderFocus, Terminal } from '@icon-park/react';
+import { Browser, Command, FolderOpen, MessageOne, Plus, Terminal } from '@icon-park/react';
 import { Button, Dropdown, Tooltip } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -13,10 +13,10 @@ import { useTranslation } from 'react-i18next';
  * `browser` opens the in-app browser (a tab in the preview panel); the other three
  * launch external programs. The dropdown separates the two groups with a divider.
  */
-type ToolType = 'vscode' | 'terminal' | 'explorer' | 'browser';
+type ToolType = 'vscode' | 'terminal' | 'explorer' | 'browser' | 'side-chat';
 
 /** 拉起外部程序的工具，需要走 shell IPC / Tools that launch external programs via shell IPC */
-type ExternalToolType = Exclude<ToolType, 'browser'>;
+type ExternalToolType = Exclude<ToolType, 'browser' | 'side-chat'>;
 
 interface ToolOption {
   key: ToolType;
@@ -38,7 +38,7 @@ interface WorkspaceOpenButtonProps {
 
 const STORAGE_KEY = 'workspace-open-preference';
 
-const isExternalTool = (tool: ToolType): tool is ExternalToolType => tool !== 'browser';
+const isExternalTool = (tool: ToolType): tool is ExternalToolType => tool !== 'browser' && tool !== 'side-chat';
 
 /**
  * Workspace Open Button — opens the workspace with various tools.
@@ -60,6 +60,7 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
    */
   const previewContext = useOptionalPreviewContext();
   const openBrowserTab = previewContext?.openBrowserTab;
+  const openSideChat = previewContext?.openSideChat;
   const [vscodeInstalled, setVscodeInstalled] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [preferredTool, setPreferredTool] = useState<ToolType | null>(null);
@@ -93,8 +94,10 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
       try {
         if (isExternalTool(tool)) {
           await ipcBridge.shell.openFolderWith.invoke({ folder_path: workspacePath, tool });
-        } else {
+        } else if (tool === 'browser') {
           openBrowserTab?.();
+        } else {
+          openSideChat?.(workspacePath, t('conversation.welcome.newConversation'));
         }
         // Save preference
         localStorage.setItem(STORAGE_KEY, tool);
@@ -104,7 +107,7 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
       }
       setDropdownOpen(false);
     },
-    [workspacePath, openBrowserTab]
+    [workspacePath, openBrowserTab, openSideChat, t]
   );
 
   // Build dropdown options. Temp workspaces have no project folder, so the
@@ -135,8 +138,14 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
         icon: <Browser size={16} />,
         available: Boolean(openBrowserTab),
       },
+      {
+        key: 'side-chat',
+        label: t('conversation.welcome.newConversation'),
+        icon: <MessageOne size={16} />,
+        available: Boolean(openSideChat),
+      },
     ],
-    [t, isTemporary, vscodeInstalled, openBrowserTab]
+    [t, isTemporary, vscodeInstalled, openBrowserTab, openSideChat]
   );
 
   // Filter only available tools
@@ -198,7 +207,7 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
             size='small'
             className='workspace-open-button__btn flex items-center justify-center !text-t-secondary hover:!text-t-primary hover:!bg-fill-2'
             aria-label={tooltipContent}
-            icon={<FolderFocus theme='outline' size='16' fill='currentColor' />}
+            icon={<Plus theme='outline' size='17' fill='currentColor' />}
           />
         </Tooltip>
       </span>

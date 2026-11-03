@@ -7,8 +7,8 @@
 import { ipcBridge } from '@/common';
 import type { IMessageToolGroup } from '@/common/chat/chatLib';
 import { iconColors } from '@/renderer/styles/colors';
-import { Alert, Button, Image, Message, Radio, Tag, Tooltip } from '@arco-design/web-react';
-import { Copy, Download, LoadingOne } from '@icon-park/react';
+import { Badge, Button, Image, Message, Radio, Tooltip } from '@arco-design/web-react';
+import { Copy, Down, Download, LoadingOne } from '@icon-park/react';
 import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ButlerDiagnoseButton from '@/renderer/components/base/ButlerDiagnoseButton';
@@ -27,10 +27,7 @@ import type { ImageGenerationResult, WriteFileResult } from '../types';
 
 const CODE_STYLE = { marginTop: 4, marginBottom: 4 };
 
-// Alert 组件样式常量 Alert component style constant
-// 顶部对齐图标与内容，避免多行文本时图标垂直居中
-const ALERT_CLASSES =
-  '!items-start !rd-8px !px-8px [&_.arco-alert-icon]:flex [&_.arco-alert-icon]:items-start [&_.arco-alert-content-wrapper]:flex [&_.arco-alert-content-wrapper]:items-start [&_.arco-alert-content-wrapper]:w-full [&_.arco-alert-content]:flex-1';
+import './MessageToolGroupSummary.css';
 
 // CollapsibleContent 高度常量 CollapsibleContent height constants
 const RESULT_MAX_HEIGHT = COLLAPSE_CONFIG.MAX_HEIGHT;
@@ -454,9 +451,73 @@ const ToolResultDisplay: React.FC<{
   );
 };
 
-const MessageToolGroup: React.FC<IMessageToolGroupProps> = ({ message, isProcessing = true }) => {
+const GenericToolItem: React.FC<{
+  content: IMessageToolGroupProps['message']['content'][number];
+  isProcessing: boolean;
+}> = ({ content, isProcessing }) => {
   const { t } = useTranslation();
+  const { status, name, description, result_display } = content;
+  const isLoading = isProcessing && status !== 'Success' && status !== 'Error' && status !== 'Canceled';
+  const hasDetail = Boolean(description || result_display || status === 'Error');
+  const [expanded, setExpanded] = useState(status === 'Error');
+  const badgeStatus =
+    status === 'Error' ? 'error' : isLoading ? 'processing' : status === 'Success' ? 'success' : 'default';
 
+  const heading = (
+    <>
+      <span className='tool-row__rail'>
+        <Badge status={badgeStatus} className={isLoading ? 'badge-breathing' : ''} />
+      </span>
+      <span className='tool-row__heading'>
+        <span className='tool-row__name'>
+          {name}
+          {status === 'Canceled' ? `(${t('messages.canceledExecution')})` : ''}
+        </span>
+        {description && description !== name && <span className='tool-row__description'>{description}</span>}
+      </span>
+      {hasDetail && (
+        <span className={`tool-row__chevron${expanded ? ' tool-row__chevron--open' : ''}`}>
+          <Down size='12' />
+        </span>
+      )}
+    </>
+  );
+
+  return (
+    <div className='tool-row'>
+      {hasDetail ? (
+        <Button
+          type='text'
+          className='tool-row__button'
+          aria-expanded={expanded}
+          onClick={() => setExpanded((value) => !value)}
+        >
+          {heading}
+        </Button>
+      ) : (
+        <div className='tool-row__button tool-row__button--static'>{heading}</div>
+      )}
+      {expanded && hasDetail && (
+        <div className='tool-detail-panel'>
+          {description && <pre className='tool-detail-content'>{description}</pre>}
+          {result_display && <ToolResultDisplay content={content} />}
+          {status === 'Error' && (
+            <div className='mt-4px flex justify-end'>
+              <ButlerDiagnoseButton
+                errorText={[name, description, typeof result_display === 'string' ? result_display : '']
+                  .filter(Boolean)
+                  .join('\n')}
+              />
+              <FeedbackButton module='conversation-session' />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const MessageToolGroup: React.FC<IMessageToolGroupProps> = ({ message, isProcessing = true }) => {
   // 收集所有 WriteFile 结果用于汇总显示 / Collect all WriteFile results for summary display
   const writeFileResults = useMemo(() => {
     return message.content
@@ -484,8 +545,7 @@ const MessageToolGroup: React.FC<IMessageToolGroupProps> = ({ message, isProcess
   return (
     <div>
       {message.content.map((content, index) => {
-        const { status, call_id, name, description, result_display, confirmationDetails } = content;
-        const isLoading = isProcessing && status !== 'Success' && status !== 'Error' && status !== 'Canceled';
+        const { call_id, name, result_display, confirmationDetails } = content;
         // status === "Confirming" &&
         if (confirmationDetails) {
           return (
@@ -535,67 +595,7 @@ const MessageToolGroup: React.FC<IMessageToolGroupProps> = ({ message, isProcess
           }
         }
 
-        // 通用工具调用展示 Generic tool call display
-        // 将可展开的长内容放在 Alert 下方，保持 Alert 仅展示头部信息
-        return (
-          <div key={call_id}>
-            <Alert
-              className={ALERT_CLASSES}
-              type={
-                status === 'Error'
-                  ? 'error'
-                  : status === 'Success'
-                    ? 'success'
-                    : status === 'Canceled'
-                      ? 'warning'
-                      : 'info'
-              }
-              icon={
-                isLoading && (
-                  <LoadingOne theme='outline' size='12' fill={iconColors.primary} className='loading lh-[1] flex' />
-                )
-              }
-              content={
-                <div>
-                  <Tag className={'me-4px'}>
-                    {name}
-                    {status === 'Canceled' ? `(${t('messages.canceledExecution')})` : ''}
-                  </Tag>
-                </div>
-              }
-            />
-
-            {(description || result_display || status === 'Error') && (
-              <div className='mt-8px'>
-                {description && (
-                  <div
-                    className={`text-12px text-t-secondary mb-2 ${status === 'Error' ? 'whitespace-pre-wrap break-words' : 'truncate'}`}
-                  >
-                    {description}
-                  </div>
-                )}
-                {result_display && (
-                  <div>
-                    {/* 在 Alert 外展示完整结果 Display full result outside Alert */}
-                    {/* ToolResultDisplay 内部已包含 CollapsibleContent，避免嵌套 */}
-                    {/* ToolResultDisplay already contains CollapsibleContent internally, avoid nesting */}
-                    <ToolResultDisplay content={content} />
-                  </div>
-                )}
-                {status === 'Error' && (
-                  <div className='mt-4px flex justify-end'>
-                    <ButlerDiagnoseButton
-                      errorText={[name, description, typeof result_display === 'string' ? result_display : '']
-                        .filter(Boolean)
-                        .join('\n')}
-                    />
-                    <FeedbackButton module='conversation-session' />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        );
+        return <GenericToolItem key={call_id} content={content} isProcessing={isProcessing} />;
       })}
     </div>
   );

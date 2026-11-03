@@ -5,7 +5,7 @@
  */
 
 /** Rendered height of one outline row, in px. Mirrors `.tick` in the rail stylesheet. */
-export const TICK_HEIGHT = 26;
+export const TICK_HEIGHT = 36;
 
 /**
  * Spacing between ticks. Fixed, never derived from the rail's height.
@@ -16,7 +16,7 @@ export const TICK_HEIGHT = 26;
  * makes the lifted selection impossible to pick out — so instead of compressing,
  * a long conversation scrolls (see `resolveStackTop` / the rail's scroll host).
  */
-export const TICK_GAP = 6;
+export const TICK_GAP = 4;
 
 /**
  * Vertical space the search button occupies at the head of the stack.

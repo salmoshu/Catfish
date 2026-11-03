@@ -87,24 +87,29 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@arco-design/web-react', () => ({
-  Button: ({
-    children,
-    icon,
-    ...props
-  }: React.ButtonHTMLAttributes<HTMLButtonElement> & { icon?: React.ReactNode }) => (
-    <button type='button' {...props}>
-      {icon}
-      {children}
-    </button>
-  ),
-  Message: {
-    error: vi.fn(),
-  },
-  Tooltip: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
-}));
+vi.mock('@arco-design/web-react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@arco-design/web-react')>();
+  return {
+    ...actual,
+    Button: ({
+      children,
+      icon,
+      ...props
+    }: React.ButtonHTMLAttributes<HTMLButtonElement> & { icon?: React.ReactNode }) => (
+      <button type='button' {...props}>
+        {icon}
+        {children}
+      </button>
+    ),
+    Message: {
+      error: vi.fn(),
+    },
+    Tooltip: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  };
+});
 
-vi.mock('@icon-park/react', () => ({
+vi.mock('@icon-park/react', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@icon-park/react')>()),
   Copy: () => <span data-testid='copy-icon' />,
 }));
 

@@ -5,7 +5,7 @@
  */
 
 import type { Assistant } from '@/common/types/agent/assistantTypes';
-import { Button, Dropdown } from '@arco-design/web-react';
+import { Button, Dropdown, Menu } from '@arco-design/web-react';
 import { Down, Robot } from '@icon-park/react';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -143,9 +143,9 @@ const AssistantSelectionArea: React.FC<AssistantSelectionAreaProps> = ({
 
   const label = normalizeAssistantDisplayName(selectedAssistant.name_i18n?.[localeKey] || selectedAssistant.name);
   const droplist = (
-    <div className='w-260px max-w-[calc(100vw-32px)] p-6px'>
-      {orderedAssistants.length > 8 && (
-        <div className='mb-6px'>
+    <Menu selectedKeys={[selectedAssistant.id]} className='w-260px max-w-[calc(100vw-32px)]'>
+      {orderedAssistants.length > 5 && (
+        <div className='px-6px pt-4px pb-6px' style={{ background: 'var(--color-bg-popup)' }}>
           <AionInlineSearchInput
             value={search}
             onChange={setSearch}
@@ -154,30 +154,32 @@ const AssistantSelectionArea: React.FC<AssistantSelectionAreaProps> = ({
           />
         </div>
       )}
-      <div className='max-h-300px overflow-y-auto'>
+      <div className='dropdown-search-scroll max-h-280px overflow-y-auto'>
         {filteredAssistants.map((assistant) => {
           const itemLabel = normalizeAssistantDisplayName(assistant.name_i18n?.[localeKey] || assistant.name);
           const selected = assistant.id === selectedAssistant.id;
           return (
-            <Button
+            <Menu.Item
               key={assistant.id}
-              type='text'
               data-testid={`assistant-option-${assistant.id}`}
               data-assistant-id={assistant.id}
               data-assistant-selected={selected ? 'true' : 'false'}
               aria-pressed={selected}
-              className={`!mb-2px !flex !h-34px !w-full !min-w-0 !items-center !justify-start !gap-8px !rounded-6px !px-8px !text-13px ${
-                selected ? '!bg-fill-2 !text-t-primary' : '!text-t-secondary hover:!bg-fill-2 hover:!text-t-primary'
-              }`}
+              className='text-13px'
               onClick={() => selectAssistant(assistant.id)}
             >
-              <AssistantAvatar assistant={assistant} />
-              <span className='min-w-0 flex-1 truncate text-start'>{itemLabel}</span>
-            </Button>
+              <div className='flex items-center gap-8px w-full min-w-0'>
+                <span aria-hidden='true' className='w-16px shrink-0 text-t-primary'>
+                  {selected ? '✓' : ''}
+                </span>
+                <AssistantAvatar assistant={assistant} size={14} />
+                <span className='min-w-0 flex-1 truncate text-start'>{itemLabel}</span>
+              </div>
+            </Menu.Item>
           );
         })}
       </div>
-    </div>
+    </Menu>
   );
 
   return (
@@ -194,16 +196,19 @@ const AssistantSelectionArea: React.FC<AssistantSelectionAreaProps> = ({
     >
       <Button
         type='text'
+        shape='round'
         size='small'
         aria-label={t('settings.agents', { defaultValue: 'Agents' })}
         data-testid='assistant-selector'
         data-assistant-id={selectedAssistant.id}
         data-assistant-selected='true'
-        className='!flex !h-28px !max-w-160px !min-w-0 !items-center !gap-5px !rounded-6px !border-none !px-7px !text-12px !text-t-secondary hover:!bg-fill-2 hover:!text-t-primary'
+        className='sendbox-model-btn guid-config-btn'
       >
-        <AssistantAvatar assistant={selectedAssistant} size={16} />
-        <span className='min-w-0 truncate'>{label}</span>
-        <Down theme='outline' size={11} fill='currentColor' className='shrink-0' />
+        <span className='flex items-center gap-6px min-w-0 text-13px'>
+          <AssistantAvatar assistant={selectedAssistant} size={14} />
+          <span className='guid-model-label'>{label}</span>
+          <Down theme='outline' size={12} fill='currentColor' className='shrink-0' />
+        </span>
       </Button>
     </Dropdown>
   );

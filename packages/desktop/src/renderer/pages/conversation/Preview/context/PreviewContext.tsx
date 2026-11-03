@@ -63,6 +63,9 @@ export interface PreviewMetadata {
   missingFile?: boolean; // 文件不存在或无法读取 / Whether the referenced file is missing or unreadable
   favicon?: string; // 浏览器 tab 的站点图标 URL / Site icon URL for browser tabs
   agentActive?: boolean; // Agent 正在操作该浏览器 tab / Agent is currently driving this browser tab
+  /** Temporary side-chat tabs are session-only and never persisted. */
+  transient?: boolean;
+  sideChat?: boolean;
 }
 
 export interface PreviewTab {
@@ -132,6 +135,8 @@ export interface PreviewContextValue {
    * Open a browser tab; blank page when url is omitted.
    */
   openBrowserTab: (url?: string) => void;
+  /** Open a session-only temporary chat tab; closing it deletes the temporary conversation. */
+  openSideChat: (workspace?: string, title?: string) => void;
   closePreview: () => void;
   /** 切换最大化 / Toggle maximized. */
   toggleMaximized: () => void;
@@ -341,8 +346,9 @@ const tabForPersistence = (tab: PreviewTab): PreviewTab | null => {
  * were" true rather than approximately true — the restored tab is still dirty, still
  * marked, and Cmd+S still writes it.
  */
-const sanitizeTabsForPersistence = (input: PreviewTab[]): PreviewTab[] => {
+export const sanitizeTabsForPersistence = (input: PreviewTab[]): PreviewTab[] => {
   return input
+    .filter((tab) => !tab.metadata?.transient)
     .filter((tab) => PERSISTABLE_CONTENT_TYPES.has(tab.content_type))
     .map(tabForPersistence)
     .filter((tab): tab is PreviewTab => tab !== null);
@@ -881,6 +887,13 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
     [openPreview]
   );
 
+  const openSideChat = useCallback(
+    (workspace?: string, title?: string) => {
+      openPreview('', 'markdown', { title, sideChat: true, transient: true, workspace });
+    },
+    [openPreview]
+  );
+
   /**
    * Hide the preview panel, keeping its tabs.
    *
@@ -1369,6 +1382,7 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
       updateContent,
       updateTab,
       openBrowserTab,
+      openSideChat,
       browserTabLimitHitAt,
       persistQuotaExceededAt,
       saveContent,
@@ -1400,6 +1414,7 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
     updateContent,
     updateTab,
     openBrowserTab,
+    openSideChat,
     browserTabLimitHitAt,
     persistQuotaExceededAt,
     saveContent,

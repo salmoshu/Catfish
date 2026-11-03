@@ -35,9 +35,9 @@ vi.mock('@renderer/pages/conversation/platforms/aionrs/AionrsSendBox', () => ({
   default: () => null,
 }));
 
-// This test is about ConversationContext wiring only; the plan bar pulls in the
+// This test is about ConversationContext wiring only; the plan card pulls in the
 // message list + runtime view, neither of which this file's narrow mocks provide.
-vi.mock('@renderer/pages/conversation/PlanBar/ConversationPlanBar', () => ({
+vi.mock('@renderer/pages/conversation/PlanBar/ConversationPlanCard', () => ({
   __esModule: true,
   default: () => null,
 }));

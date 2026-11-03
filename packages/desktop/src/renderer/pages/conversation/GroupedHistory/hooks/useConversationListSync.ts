@@ -357,8 +357,10 @@ const refreshConversations = () => {
         const filteredData = items.filter((conv) => {
           // Legacy rows from the pre-provider-probe health check flow are hidden
           // from normal history. New health checks must not create conversations.
-          const extra = conv.extra as { is_health_check?: boolean; team_id?: string; teamId?: string } | undefined;
-          return extra?.is_health_check !== true && !extra?.team_id && !extra?.teamId;
+          const extra = conv.extra as
+            | { is_health_check?: boolean; side_chat?: boolean; team_id?: string; teamId?: string }
+            | undefined;
+          return extra?.is_health_check !== true && extra?.side_chat !== true && !extra?.team_id && !extra?.teamId;
         });
         conversationsState = filteredData;
         recordEnvironmentProjects(filteredData);

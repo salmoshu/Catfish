@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Sider from '@/renderer/components/layout/Sider';
 
 const mocks = vi.hoisted(() => ({
-  disconnect: vi.fn(),
+  activate: vi.fn(),
+  syncBackend: vi.fn(),
   navigate: vi.fn(),
   reload: vi.fn(),
   error: vi.fn(),
@@ -12,8 +13,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/common', () => ({
-  ipcBridge: { remoteEnvironment: { disconnect: { invoke: mocks.disconnect } } },
+  ipcBridge: { remoteEnvironment: { activate: { invoke: mocks.activate } } },
 }));
+
+vi.mock('@/renderer/utils/workspace/backendSwitch', () => ({ syncBackendEnvironment: mocks.syncBackend }));
 
 vi.mock('@arco-design/web-react', async (original) => ({
   ...(await original<typeof import('@arco-design/web-react')>()),
@@ -52,7 +55,7 @@ describe('Sider new chat environment', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.__backendEnvironment = { type: 'local' };
-    mocks.disconnect.mockResolvedValue({ ok: true, data: { type: 'local' } });
+    mocks.activate.mockResolvedValue({ ok: true, data: { type: 'local' } });
     vi.stubGlobal('location', { ...window.location, reload: mocks.reload });
   });
 
@@ -62,29 +65,30 @@ describe('Sider new chat environment', () => {
     vi.unstubAllGlobals();
   });
 
-  it('disconnects before navigating and reloading for a local new chat', async () => {
+  it('activates the local backend without disconnecting remote runtimes', async () => {
     window.__backendEnvironment = { type: 'remote', id: 'wsl-1', name: 'Ubuntu', kind: 'wsl' };
     render(<Sider />);
     fireEvent.click(screen.getByText('new-chat'));
 
-    await waitFor(() => expect(mocks.disconnect).toHaveBeenCalledOnce());
+    await waitFor(() => expect(mocks.activate).toHaveBeenCalledOnce());
     expect(mocks.navigate).toHaveBeenCalledWith('/guid', { state: { resetAssistant: true } });
-    expect(mocks.reload).toHaveBeenCalledOnce();
+    expect(mocks.syncBackend).toHaveBeenCalledOnce();
+    expect(mocks.reload).not.toHaveBeenCalled();
     expect(mocks.closePreview).toHaveBeenCalledOnce();
   });
 
-  it('keeps the local navigation path without disconnecting again', async () => {
+  it('keeps the local navigation path without switching environments again', async () => {
     render(<Sider />);
     fireEvent.click(screen.getByText('new-chat'));
 
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/guid', { state: { resetAssistant: true } }));
-    expect(mocks.disconnect).not.toHaveBeenCalled();
+    expect(mocks.activate).not.toHaveBeenCalled();
     expect(mocks.reload).not.toHaveBeenCalled();
   });
 
   it('keeps the current route when returning to local fails', async () => {
     window.__backendEnvironment = { type: 'remote', id: 'wsl-1', name: 'Ubuntu', kind: 'wsl' };
-    mocks.disconnect.mockResolvedValue({ ok: false, code: 'failed', message: 'Disconnect failed' });
+    mocks.activate.mockResolvedValue({ ok: false, code: 'failed', message: 'Disconnect failed' });
     render(<Sider />);
     fireEvent.click(screen.getByText('new-chat'));
 

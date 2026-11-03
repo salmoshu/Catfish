@@ -1,4 +1,6 @@
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MessageAnchorRail from '@/renderer/pages/conversation/Messages/anchorRail/MessageAnchorRail';
@@ -66,5 +68,16 @@ describe('MessageAnchorRail', () => {
 
     fireEvent.click(screen.getByTestId('message-anchor-rail-search'));
     expect(searchMock).toHaveBeenCalledWith({ conversation_id: 'conversation-1' });
+  });
+
+  it('hides before the collapsed rail can overlap the centered 720px message column', () => {
+    const stylesheet = readFileSync(
+      join(
+        __dirname,
+        '../../../../packages/desktop/src/renderer/pages/conversation/Messages/anchorRail/MessageAnchorRail.module.css'
+      ),
+      'utf8'
+    );
+    expect(stylesheet).toContain('@container (min-width: 816px)');
   });
 });

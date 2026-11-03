@@ -95,6 +95,7 @@ import { registerPwa } from './services/registerPwa';
 import { ipcBridge } from '@/common';
 import { repairAllCronJobTimeZonesOnce } from '@renderer/pages/cron/repairCronJobTimeZone';
 import { bootstrapRendererConfig } from '@renderer/services/bootstrapRenderer';
+import { BACKEND_ENVIRONMENT_CHANGED } from '@renderer/utils/workspace/backendSwitch';
 
 // Components and utilities
 import BackendStartingView from './components/layout/BackendStartingView';
@@ -486,6 +487,20 @@ const BackendStartupFailureDialog: React.FC<{ failure: BackendStartupFailureInfo
   );
 };
 
+const BackendEnvironmentApp: React.FC = () => {
+  const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    const remount = () => setRevision((current) => current + 1);
+    window.addEventListener(BACKEND_ENVIRONMENT_CHANGED, remount);
+    return () => window.removeEventListener(BACKEND_ENVIRONMENT_CHANGED, remount);
+  }, []);
+  return (
+    <AppProviders key={revision}>
+      <App />
+    </AppProviders>
+  );
+};
+
 void registerPwa();
 
 const root = createRoot(document.getElementById('root')!);
@@ -501,10 +516,6 @@ root.render(
         <BackendStartupFailureDialog failure={failure} />
       </Config>
     )}
-    renderApp={() => (
-      <AppProviders>
-        <App />
-      </AppProviders>
-    )}
+    renderApp={() => <BackendEnvironmentApp />}
   />
 );

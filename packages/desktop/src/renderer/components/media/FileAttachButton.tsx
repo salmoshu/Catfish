@@ -130,13 +130,18 @@ const FileAttachButton: React.FC<FileAttachButtonProps> = ({
   const isDesktop = isElectronDesktop();
   const hasSkills = skillNames.length > 0;
   const hasMcpServers = mcpStatuses.length > 0;
-  const plusIcon = <Plus theme='outline' size='14' strokeWidth={2} fill={iconColors.primary} />;
+  const plusIcon = (
+    <span className='flex size-14px items-center justify-center leading-none'>
+      <Plus theme='outline' size='14' strokeWidth={2} fill={iconColors.primary} className='block' />
+    </span>
+  );
 
   if (isDesktop && !hasSkills && !hasMcpServers) {
     return (
       <Button
         type='secondary'
         shape='circle'
+        className='relative !flex !items-center !justify-center [&_.arco-btn-icon]:!m-0'
         icon={plusIcon}
         onClick={openFileSelector}
         data-testid='aionrs-attach-folder-btn'
@@ -314,6 +319,7 @@ const FileAttachButton: React.FC<FileAttachButtonProps> = ({
         <Button
           type='secondary'
           shape='circle'
+          className='relative !flex !items-center !justify-center [&_.arco-btn-icon]:!m-0'
           icon={plusIcon}
           loading={uploading}
           disabled={uploading}

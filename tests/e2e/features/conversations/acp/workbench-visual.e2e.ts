@@ -129,6 +129,11 @@ test.describe('Kimi-style conversation and Workbench', () => {
     const workbench = page.locator('[data-workbench]');
     await expect(workbench).toHaveAttribute('data-active-section', 'agents');
     await expect(workbench.locator('.workbench-agent-card').first()).toContainText('Task');
+    const agentsBodyWidth = await workbench.locator('.workbench-body').evaluate((element) => element.clientWidth);
+    const agentsPanelWidth = await workbench
+      .locator('#workbench-panel-agents')
+      .evaluate((element) => element.clientWidth);
+    expect(agentsPanelWidth).toBeCloseTo(agentsBodyWidth, 0);
     expect(
       await workbench.evaluate((element) => element.parentElement?.getBoundingClientRect().width ?? 0)
     ).toBeGreaterThan(450);
@@ -141,6 +146,11 @@ test.describe('Kimi-style conversation and Workbench', () => {
     await page.locator('#workbench-tab-terminal').click();
     await expect(workbench).toHaveAttribute('data-active-section', 'terminal');
     await expect(workbench.getByTestId('terminal-card-output')).toContainText('67 tests passed');
+    const terminalBodyWidth = await workbench.locator('.workbench-body').evaluate((element) => element.clientWidth);
+    const terminalPanelWidth = await workbench
+      .locator('#workbench-panel-terminal')
+      .evaluate((element) => element.clientWidth);
+    expect(terminalPanelWidth).toBeCloseTo(terminalBodyWidth, 0);
 
     await page.locator('#workbench-tab-files').click();
     await expect(page.locator('.workspace-tree').first()).toBeVisible();

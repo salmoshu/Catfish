@@ -10,7 +10,6 @@ import { parseError } from '@/common/utils';
 import { revalidateAcpConfigOptions } from '@/renderer/hooks/agent/useAcpConfigOptions';
 import { useConversationRuntimeView } from '@/renderer/pages/conversation/runtime/useConversationRuntimeView';
 import { getConversationOrNull } from '@/renderer/pages/conversation/utils/conversationCache';
-import { iconColors } from '@/renderer/styles/colors';
 import { Button, Message, Popconfirm, Tooltip } from '@arco-design/web-react';
 import { Refresh } from '@icon-park/react';
 import React, { useCallback, useRef, useState } from 'react';
@@ -102,10 +101,10 @@ const AcpRuntimeRestartButton: React.FC<{
     <Button
       type='text'
       size='mini'
-      className='h-28px w-28px'
+      className='h-28px w-28px !text-t-secondary hover:!text-t-primary hover:!bg-fill-2'
       loading={restarting}
       disabled={effectivelyDisabled || restarting}
-      icon={<Refresh theme='outline' size='14' fill={iconColors.secondary} />}
+      icon={<Refresh theme='outline' size='14' fill='currentColor' />}
       aria-label={t('agent.runtimeRestart.tooltip')}
     />
   );

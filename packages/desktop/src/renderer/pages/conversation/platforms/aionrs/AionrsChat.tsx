@@ -8,7 +8,7 @@ import type { IConversationMcpStatus } from '@/common/config/storage';
 import type { ChatFileRef } from '@/common/types/chatFile';
 import type { ConversationContextValue } from '@/renderer/hooks/context/ConversationContext';
 import { ConversationProvider } from '@/renderer/hooks/context/ConversationContext';
-import ConversationPlanBar from '@renderer/pages/conversation/PlanBar/ConversationPlanBar';
+import ConversationPlanCard from '@renderer/pages/conversation/PlanBar/ConversationPlanCard';
 import { usePlanRecovery } from '@renderer/pages/conversation/PlanBar/usePlanRecovery';
 import { CHAT_SURFACE_CONTAINER_CLASS } from '@/renderer/pages/conversation/utils/chatSurfaceWidth';
 import FlexFullContainer from '@renderer/components/layout/FlexFullContainer';
@@ -93,7 +93,7 @@ const AionrsChat: React.FC<{
           <FlexFullContainer>
             <MessageList className='flex-1' emptySlot={emptySlot} queueSlotRef={setCommandQueueContainer} />
           </FlexFullContainer>
-          <ConversationPlanBar conversation_id={conversation_id} />
+          <ConversationPlanCard conversation_id={conversation_id} />
           <AionrsSendBox
             conversation_id={conversation_id}
             modelSelection={modelSelection}

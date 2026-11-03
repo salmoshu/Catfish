@@ -95,6 +95,22 @@
   display: none;
 }
 
+.workbench[data-active-section='terminal'] .workbench-body,
+.workbench[data-active-section='agents'] .workbench-body {
+  flex-direction: column;
+}
+
+.workbench[data-active-section='terminal'] #workbench-panel-files,
+.workbench[data-active-section='agents'] #workbench-panel-files {
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.workbench[data-active-section='terminal'] #workbench-panel-files > .h-full,
+.workbench[data-active-section='agents'] #workbench-panel-files > .h-full {
+  height: auto;
+}
+
 .workbench-empty {
   display: flex;
   min-width: 0;

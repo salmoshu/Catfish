@@ -268,6 +268,14 @@ describe('AgentModeSelector', () => {
     expect(loading.parentElement?.lastElementChild).toBe(loading);
   });
 
+  it('keeps permission labels flexible with a small glyph-overhang allowance', () => {
+    render(<AgentModeSelector backend='claude' conversation_id='conv-1' compact compactLabelPrefix='权限' />);
+
+    const label = screen.getByText('Bypass Permissions');
+    expect(label).toHaveClass('min-w-0', 'flex-1', 'truncate', 'px-1px', '-mx-1px');
+    expect(label.closest('[data-mode-value]')).toHaveClass('w-full', 'min-w-0');
+  });
+
   it('does not persist runtime mode changes to global agent preferences', async () => {
     const setConfigOption = vi.fn().mockResolvedValue(undefined);
     useAcpConfigOptionsMock.mockImplementation(() => ({

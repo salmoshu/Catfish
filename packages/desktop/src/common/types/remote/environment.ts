@@ -61,6 +61,8 @@ export type BackendEnvironment =
 
 export type RemoteEnvironmentState = {
   active: BackendEnvironment;
+  /** Loopback port for the active backend; local falls back to the main local backend. */
+  port?: number | null;
   connectingId?: string;
   lastError?: string;
 };

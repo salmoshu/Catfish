@@ -10,6 +10,8 @@ import { useLayoutContext } from '@renderer/hooks/context/LayoutContext';
 import { blurActiveElement } from '@renderer/utils/ui/focus';
 import { useThemeContext } from '@renderer/hooks/context/ThemeContext';
 import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry, SiderAssistantEntry } from './SiderNav';
+import { syncBackendEnvironment } from '@/renderer/utils/workspace/backendSwitch';
+import { getBackendEnvironment } from '@/common/adapter/httpBridge';
 import SiderFooter from './SiderFooter';
 import TeamSiderSection from './TeamSiderSection';
 import siderStyles from './Sider.module.css';
@@ -50,9 +52,9 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
     closePreview();
     setIsBatchMode(false);
     try {
-      const shouldReload = window.__backendEnvironment?.type === 'remote';
+      const shouldReload = getBackendEnvironment()?.type === 'remote';
       if (shouldReload) {
-        const result = await ipcBridge.remoteEnvironment.disconnect.invoke();
+        const result = await ipcBridge.remoteEnvironment.activate.invoke({});
         if (result.ok === false) {
           Message.error(result.message);
           return;
@@ -63,7 +65,7 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
         onSessionClick();
       }
       if (shouldReload) {
-        window.location.reload();
+        await syncBackendEnvironment();
       }
     } catch (error) {
       console.error('Navigation failed:', error);
