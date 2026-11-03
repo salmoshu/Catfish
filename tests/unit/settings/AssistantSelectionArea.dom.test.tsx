@@ -28,7 +28,7 @@ vi.mock('@/renderer/hooks/agent/useManagedAgents', () => ({
 }));
 
 describe('AssistantSelectionArea', () => {
-  it('returns the real assistant id when a pill is selected', () => {
+  it('returns the real assistant id when a dropdown option is selected', async () => {
     const onSelectAssistant = vi.fn();
 
     render(
@@ -42,12 +42,13 @@ describe('AssistantSelectionArea', () => {
       </ConfigProvider>
     );
 
-    fireEvent.click(screen.getByTestId('preset-pill-writer'));
+    fireEvent.click(screen.getByTestId('assistant-selector'));
+    fireEvent.click(await screen.findByTestId('assistant-option-writer'));
 
     expect(onSelectAssistant).toHaveBeenCalledWith('writer');
   });
 
-  it('renders assistant pills in sort_order order', () => {
+  it('renders assistant options in sort_order order when no recent order exists', async () => {
     render(
       <ConfigProvider>
         <AssistantSelectionArea
@@ -59,11 +60,12 @@ describe('AssistantSelectionArea', () => {
       </ConfigProvider>
     );
 
-    const presetPills = screen
-      .getAllByTestId(/preset-pill-/)
-      .map((element) => element.getAttribute('data-testid')?.replace('preset-pill-', ''));
+    fireEvent.click(screen.getByTestId('assistant-selector'));
+    const options = (await screen.findAllByTestId(/^assistant-option-/)).map((element) =>
+      element.getAttribute('data-assistant-id')
+    );
 
-    expect(presetPills).toEqual(['writer', 'cowork']);
+    expect(options).toEqual(['writer', 'cowork']);
   });
 
   it('prefers localized assistant names for the active locale', () => {
@@ -125,13 +127,13 @@ describe('AssistantSelectionArea', () => {
       </ConfigProvider>
     );
 
-    fireEvent.click(screen.getByTestId('assistant-more-btn'));
-    expect(screen.getByTestId('assistant-overflow-filler-10')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('assistant-selector'));
+    expect(screen.getByTestId('assistant-option-filler-10')).toBeInTheDocument();
 
     fireEvent.change(screen.getByPlaceholderText('Search'), { target: { value: 'ag' } });
 
-    expect(screen.getByTestId('assistant-overflow-antigravity')).toBeInTheDocument();
-    expect(screen.queryByTestId('assistant-overflow-filler-10')).not.toBeInTheDocument();
+    expect(screen.getByTestId('assistant-option-antigravity')).toBeInTheDocument();
+    expect(screen.queryByTestId('assistant-option-filler-10')).not.toBeInTheDocument();
   });
 });
 

@@ -79,7 +79,8 @@ type GuidActionRowProps = {
   /** Backend-machine picker (native dialog / server-fs browse): sent as `local` refs. */
   onFilesPicked: (paths: string[]) => void;
 
-  // Model selector node (rendered by parent for the desktop layout)
+  // Agent and model selectors share the input's configuration group.
+  agentSelectorNode?: React.ReactNode;
   modelSelectorNode: React.ReactNode;
 
   // Flat model data for the mobile action sheet (desktop uses modelSelectorNode).
@@ -121,6 +122,7 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
   files,
   onFilesPicked,
   onFilesUploaded,
+  agentSelectorNode,
   modelSelectorNode,
   isGeminiMode,
   modelList,
@@ -164,7 +166,6 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
     }
   }, []);
   const showModeSwitch = dynamicModes.length > 0;
-  const configOptionCount = (modelSelectorNode ? 1 : 0) + (showModeSwitch ? 1 : 0);
 
   // Browser file picker ref (WebUI only)
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -640,12 +641,10 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
         />
       )}
       <div className={styles.actionSubmit}>
-        {/* Mobile keeps the model selector in the action sheet. */}
-        {!isMobile && configOptionCount > 0 && (
-          <div className={styles.actionConfigGroup} data-mobile={isMobile ? 'true' : undefined}>
-            {modelSelectorNode}
-          </div>
-        )}
+        <div className={styles.actionConfigGroup} data-mobile={isMobile ? 'true' : undefined}>
+          {agentSelectorNode}
+          {!isMobile && modelSelectorNode}
+        </div>
 
         {speechInputNode}
         <Button

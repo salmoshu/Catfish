@@ -202,9 +202,9 @@ const MessageText: React.FC<{
         type='text'
         size='mini'
         aria-label={t('common.copy', { defaultValue: 'Copy' })}
-        className='p-4px rd-4px hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
+        className='p-4px rd-4px !text-t-secondary hover:!text-t-primary hover:!bg-fill-2 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
         onClick={handleCopy}
-        icon={<Copy theme='outline' size='16' fill={iconColors.secondary} />}
+        icon={<Copy theme='outline' size='16' fill='currentColor' />}
       />
     </Tooltip>
   );
@@ -222,10 +222,10 @@ const MessageText: React.FC<{
         type='text'
         size='mini'
         aria-label={t('messages.fork.action')}
-        className='p-4px rd-4px hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
+        className='p-4px rd-4px !text-t-secondary hover:!text-t-primary hover:!bg-fill-2 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
         onClick={() => void forkConversation(message.msg_id ?? message.id)}
         data-testid='message-fork-button'
-        icon={<ForkBranchIcon size={16} fill={iconColors.secondary} />}
+        icon={<ForkBranchIcon size={16} fill='currentColor' />}
       />
     </Tooltip>
   ) : null;

@@ -7,6 +7,8 @@ import { ipcBridge } from '@/common';
 import type { RemoteEnvironmentSummary } from '@/common/types/remote';
 import KimiIcon from '@/renderer/components/base/KimiIcon';
 import WorkspaceCollapse from '@/renderer/pages/conversation/components/WorkspaceCollapse';
+import { ConversationIdentityIcon } from '@/renderer/pages/conversation/GroupedHistory/ConversationRow';
+import type { TChatConversation } from '@/common/config/storage';
 import {
   ENVIRONMENT_PROJECTS_CHANGED,
   environmentKey,
@@ -145,7 +147,7 @@ const EnvironmentProjects: React.FC<Props> = ({ collapsed, heading, hidden, empt
                         aria-disabled={switching}
                         className={classNames(
                           'flex-center cursor-pointer transition-colors text-t-secondary hover:text-t-primary size-20px rd-4px sider-action-btn',
-                          'hidden group-hover:flex'
+                          switchingKey === key ? 'flex' : 'hidden group-hover:flex'
                         )}
                         onClick={(event) => {
                           event.stopPropagation();
@@ -175,19 +177,39 @@ const EnvironmentProjects: React.FC<Props> = ({ collapsed, heading, hidden, empt
                 }
               >
                 {entry.environment.type === 'local' &&
-                  project.conversations.map((conversation) => (
-                    <Button
-                      key={conversation.id}
-                      type='text'
-                      className={styles.conversation}
-                      disabled={switching}
-                      title={conversation.name}
-                      onClick={() => void open(entry, project.workspace, conversation.id)}
-                    >
-                      <KimiIcon name='message' size={15} />
-                      <span className={styles.conversationName}>{conversation.name}</span>
-                    </Button>
-                  ))}
+                  project.conversations.map((conversation) => {
+                    const cachedConversation = {
+                      id: conversation.id,
+                      name: conversation.name,
+                      type: conversation.type ?? 'acp',
+                      created_at: conversation.modifiedAt,
+                      modified_at: conversation.modifiedAt,
+                      assistant: conversation.assistant,
+                      extra: {
+                        workspace: project.workspace,
+                        custom_workspace: true,
+                        backend: conversation.backend,
+                        assistant_id: conversation.assistant_id,
+                        preset_assistant_id: conversation.preset_assistant_id,
+                        custom_agent_id: conversation.custom_agent_id,
+                        agent_id: conversation.agent_id,
+                        agent_name: conversation.agent_name,
+                      },
+                    } as TChatConversation;
+                    return (
+                      <Button
+                        key={conversation.id}
+                        type='text'
+                        className={`chat-history__item ${styles.conversation}`}
+                        disabled={switching}
+                        title={conversation.name}
+                        onClick={() => void open(entry, project.workspace, conversation.id)}
+                      >
+                        <ConversationIdentityIcon conversation={cachedConversation} />
+                        <span className={styles.conversationName}>{conversation.name}</span>
+                      </Button>
+                    );
+                  })}
               </WorkspaceCollapse>
             );
           })

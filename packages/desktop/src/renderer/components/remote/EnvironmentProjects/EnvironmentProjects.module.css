@@ -12,8 +12,14 @@
   height: 34px;
   padding-inline: 36px 10px;
   gap: 8px;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   border-radius: 8px;
+}
+
+.conversation:global(.arco-btn):not(:disabled):hover,
+.conversation:global(.arco-btn):not(:disabled):focus-visible {
+  color: var(--text-primary);
+  background: var(--color-fill-3);
 }
 
 .conversationName {

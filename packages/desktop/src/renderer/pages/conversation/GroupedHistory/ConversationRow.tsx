@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { TChatConversation } from '@/common/config/storage';
 import { useAgentLogos } from '@/renderer/utils/model/agentLogo';
 import ThemedLogo from '@/renderer/components/agent/ThemedLogo';
 import FlexFullContainer from '@/renderer/components/layout/FlexFullContainer';
@@ -34,6 +35,44 @@ import { useTranslation } from 'react-i18next';
 import type { ConversationRowProps } from './types';
 import { isConversationPinned } from './utils/groupingHelpers';
 
+/** Shared visual identity for live and cached local conversation rows. */
+export const ConversationIdentityIcon: React.FC<{ conversation: TChatConversation; className?: string }> = ({
+  conversation,
+  className,
+}) => {
+  const logos = useAgentLogos();
+  const { info: assistantInfo } = usePresetAssistantInfo(conversation);
+  const leadingMark = resolveConversationLeadingMark(conversation, assistantInfo, logos);
+  if (leadingMark.kind === 'emoji') {
+    return <span className={classNames('text-16px leading-none flex-shrink-0', className)}>{leadingMark.value}</span>;
+  }
+  if (leadingMark.kind === 'image') {
+    return (
+      <ThemedLogo
+        src={leadingMark.value}
+        alt={leadingMark.label}
+        className={classNames('w-16px h-16px rounded-50% flex-shrink-0', className)}
+      />
+    );
+  }
+  if (leadingMark.kind === 'assistant_fallback') {
+    return (
+      <Robot
+        theme='outline'
+        size='16'
+        className={classNames('line-height-0 flex-shrink-0 text-t-secondary', className)}
+      />
+    );
+  }
+  return (
+    <MessageOne
+      theme='outline'
+      size='16'
+      className={classNames('line-height-0 flex-shrink-0 text-t-secondary', className)}
+    />
+  );
+};
+
 const ConversationRow: React.FC<ConversationRowProps> = (props) => {
   const {
     conversation,
@@ -49,7 +88,6 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
     dimIcon = false,
     dragHandle,
   } = props;
-  const logos = useAgentLogos();
   const layout = useLayoutContext();
   const isMobile = layout?.isMobile ?? false;
   const {
@@ -72,7 +110,6 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
       conversation_id: conversation.id,
     }
   );
-  const { info: assistantInfo } = usePresetAssistantInfo(conversation);
   const isPinned = isConversationPinned(conversation);
   // Fork-lineage badge: present only on forked conversations (extra.fork is
   // server-minted by the fork API). Parent name resolves from the loaded
@@ -90,44 +127,10 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
       return <CronJobIndicator status={cronStatus} size={16} className='flex-shrink-0' />;
     }
 
-    // When the row is pinned, hovering reveals an overlay on the leading icon —
-    // the drag handle when the row is sortable, otherwise a pushpin marker.
-    // We dim the resting icon on hover so the overlay reads cleanly.
+    // The cached local-project rows use the same identity component. Keep the
+    // pinned hover treatment local to this interactive live-history row.
     const pinnedHoverFade = isPinned ? 'group-hover:opacity-0 transition-opacity' : '';
-    const composedClass = classNames(pinnedHoverFade);
-
-    const leadingMark = resolveConversationLeadingMark(conversation, assistantInfo, logos);
-    if (leadingMark.kind === 'emoji') {
-      return (
-        <span className={classNames('text-16px leading-none flex-shrink-0', composedClass)}>{leadingMark.value}</span>
-      );
-    }
-    if (leadingMark.kind === 'image') {
-      return (
-        <ThemedLogo
-          src={leadingMark.value}
-          alt={leadingMark.label}
-          className={classNames('w-16px h-16px rounded-50% flex-shrink-0', composedClass)}
-        />
-      );
-    }
-    if (leadingMark.kind === 'assistant_fallback') {
-      return (
-        <Robot
-          theme='outline'
-          size='16'
-          className={classNames('line-height-0 flex-shrink-0 text-t-secondary', composedClass)}
-        />
-      );
-    }
-
-    return (
-      <MessageOne
-        theme='outline'
-        size='16'
-        className={classNames('line-height-0 flex-shrink-0 text-t-secondary', composedClass)}
-      />
-    );
+    return <ConversationIdentityIcon conversation={conversation} className={pinnedHoverFade} />;
   };
 
   const handleRowClick = () => {

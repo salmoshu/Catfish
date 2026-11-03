@@ -134,22 +134,21 @@ export function assistantSwitchById(id: string): string {
   return `[data-testid="switch-enabled-${id}"]`;
 }
 
-/** Preset assistant pill by ID on guid page. */
+/** Assistant option by ID in the compact guid selector. */
 export function presetPillById(id: string): string {
-  return `[data-testid="preset-pill-${id}"]`;
+  return `[data-testid="assistant-option-${id}"]`;
 }
 
-/** Overflow assistant pill by ID on guid page. */
+/** Overflow assistant option by ID (retained helper name for existing e2e flows). */
 export function assistantOverflowPillById(id: string): string {
-  return `[data-testid="assistant-overflow-${id}"]`;
+  return presetPillById(id);
 }
 
-/** Stable selector for all assistant pills on guid page. */
-export const ASSISTANT_PILL = '[data-testid^="preset-pill-"], [data-testid^="assistant-overflow-"]';
+/** Stable selector for all assistant options on guid page. */
+export const ASSISTANT_PILL = '[data-testid^="assistant-option-"]';
 
-/** Match currently selected assistant pill. */
-export const ASSISTANT_PILL_SELECTED =
-  '[data-testid^="preset-pill-"][data-assistant-selected="true"], [data-testid^="assistant-overflow-"][data-assistant-selected="true"]';
+/** Match currently selected assistant option. */
+export const ASSISTANT_PILL_SELECTED = '[data-testid^="assistant-option-"][data-assistant-selected="true"]';
 
 /** Assistant editor surface: full-page editor or legacy drawer wrapper. */
 export const ASSISTANT_EDITOR_SURFACE = '[data-testid="assistant-editor-page"], [data-testid="assistant-edit-drawer"]';

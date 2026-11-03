@@ -36,13 +36,13 @@ test.describe('Agent Diagnostics', () => {
   test('guid no longer renders direct agent pills', async ({ page }) => {
     await goToGuid(page);
     await expect(page.locator(AGENT_PILL)).toHaveCount(0);
-    await expect(page.locator('[data-testid^="preset-pill-"]').first()).toBeVisible({ timeout: 12_000 });
+    await expect(page.locator('[data-testid="assistant-selector"]')).toBeVisible({ timeout: 12_000 });
   });
 
   test('screenshot: guid assistant pills', async ({ page }) => {
     test.skip(!process.env.E2E_SCREENSHOTS, 'screenshots disabled');
     await goToGuid(page);
-    await expect(page.locator('[data-testid^="preset-pill-"]').first()).toBeVisible({ timeout: 12_000 });
+    await expect(page.locator('[data-testid="assistant-selector"]')).toBeVisible({ timeout: 12_000 });
     await takeScreenshot(page, 'guid-assistant-pills');
   });
 

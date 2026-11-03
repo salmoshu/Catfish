@@ -64,17 +64,37 @@ describe('environment project index', () => {
     expect(history[1].projects[1].conversations[0].id).toBe('two-new');
   });
 
-  it('caches only display metadata and excludes temporary, team and health-check conversations', () => {
+  it('caches identity metadata for explicit projects only, excluding implicit and internal conversations', () => {
     recordEnvironmentProjects(
       [
-        conversation('project', { custom_workspace: false, is_temporary_workspace: false }),
+        conversation('project', {
+          assistant_id: 'builtin-kimi',
+          preset_assistant_id: 'builtin-kimi',
+          agent_id: 'kimi-runtime',
+          agent_name: 'Kimi',
+        }),
+        conversation('implicit-default', {
+          workspace: '/CatfishCore',
+          custom_workspace: false,
+          is_temporary_workspace: false,
+        }),
         conversation('temporary', { is_temporary_workspace: true }),
         conversation('team', { team_id: 'team-1' }),
         conversation('health', { is_health_check: true }),
       ],
       remote
     );
-    expect(readEnvironmentProjects()[0].projects[0].conversations.map((item) => item.id)).toEqual(['project']);
+    const cached = readEnvironmentProjects()[0].projects[0].conversations;
+    expect(cached.map((item) => item.id)).toEqual(['project']);
+    expect(cached[0]).toMatchObject({
+      type: 'acp',
+      backend: 'kimi',
+      assistant_id: 'builtin-kimi',
+      preset_assistant_id: 'builtin-kimi',
+      agent_id: 'kimi-runtime',
+      agent_name: 'Kimi',
+    });
+    expect(JSON.stringify(readEnvironmentProjects())).not.toContain('CatfishCore');
     expect(JSON.stringify(readEnvironmentProjects())).not.toContain('must-not-be-cached');
   });
 

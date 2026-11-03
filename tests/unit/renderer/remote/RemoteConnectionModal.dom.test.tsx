@@ -166,6 +166,11 @@ describe('RemoteConnectionModal', () => {
     const onConnected = vi.fn();
     render(<RemoteConnectionModal visible onClose={vi.fn()} onConnected={onConnected} />);
 
+    expect(screen.getByPlaceholderText('guid.workspace.remote.hostPlaceholder')).toHaveAttribute('spellcheck', 'false');
+    expect(screen.getByPlaceholderText('guid.workspace.remote.usernamePlaceholder')).toHaveAttribute(
+      'autocapitalize',
+      'off'
+    );
     fireEvent.change(screen.getByPlaceholderText('guid.workspace.remote.hostPlaceholder'), {
       target: { value: 'example.test' },
     });

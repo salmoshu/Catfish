@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.9](https://github.com/salmoshu/Catfish/releases/tag/v0.4.9) (2026-11-03)
+
+### Desktop
+
+#### Features
+
+- **composer:** move the agent selector beside the model picker and order agents by recent use
+- **workspace:** simplify explorer toolbar actions and use neutral folder, refresh, copy, fork, and outline controls
+- **remote:** keep local projects as the default new-conversation destination while retaining a separate remote entry
+
+#### Bug Fixes
+
+- **remote:** cache only explicitly selected projects, preserve local agent identity and row styling across connections, and keep the reconnect spinner visible while connecting
+- **connection:** disable spellcheck and input correction for remote paths, hosts, usernames, and container identifiers
+
+---
+
 ## [0.4.8](https://github.com/salmoshu/Catfish/releases/tag/v0.4.8) (2026-11-02)
 
 ### Desktop

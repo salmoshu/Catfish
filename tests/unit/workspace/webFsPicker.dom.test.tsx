@@ -55,6 +55,8 @@ describe('WebFsPicker responsive dialog', () => {
     const onDone = vi.fn();
     render(<WebFsPicker options={{ properties: ['openDirectory'] }} onDone={onDone} />);
 
+    expect(screen.getByPlaceholderText('/path/to/folder')).toHaveAttribute('spellcheck', 'false');
+    expect(screen.getByPlaceholderText('/path/to/folder')).toHaveAttribute('autocorrect', 'off');
     fireEvent.click(await screen.findByText('CatfishCore'));
     expect(await screen.findByText('src')).toBeInTheDocument();
     expect(pickerMocks.getFilesByDir).toHaveBeenLastCalledWith({

@@ -367,13 +367,14 @@ test.describe('Assistant Settings CRUD', () => {
 
   test('disabled builtin assistant removed from guid page presets', async ({ page }) => {
     await goToGuidListView(page);
+    await page.locator('[data-testid="assistant-selector"]').click();
     await page.locator(ASSISTANT_PILL).first().waitFor({ state: 'visible', timeout: 8_000 });
 
     const visiblePresetIds = await page
-      .locator('[data-testid^="preset-pill-"]')
+      .locator('[data-testid^="assistant-option-"]')
       .evaluateAll((elements) =>
         elements
-          .map((element) => element.getAttribute('data-testid')?.replace('preset-pill-', '') ?? '')
+          .map((element) => element.getAttribute('data-testid')?.replace('assistant-option-', '') ?? '')
           .filter(Boolean)
       );
     const builtinCandidateIds = new Set(
@@ -391,12 +392,13 @@ test.describe('Assistant Settings CRUD', () => {
 
     // Go to guid and verify it's gone
     await goToGuidListView(page);
+    await page.locator('[data-testid="assistant-selector"]').click();
     await page.locator(GUID_INPUT).first().waitFor({ state: 'visible', timeout: 8_000 });
     await expect
       .poll(
         async () =>
           page
-            .locator(`[data-testid="preset-pill-${builtinId}"]`)
+            .locator(`[data-testid="assistant-option-${builtinId}"]`)
             .isVisible()
             .catch(() => false),
         { timeout: 10_000 }
@@ -533,19 +535,22 @@ test.describe('Assistant Settings CRUD', () => {
     if (!assistantId) return;
 
     await goToGuidListView(page);
-    await expect(page.locator(`[data-testid="preset-pill-${assistantId}"]`)).toBeVisible();
+    await page.locator('[data-testid="assistant-selector"]').click();
+    await expect(page.locator(`[data-testid="assistant-option-${assistantId}"]`)).toBeVisible();
 
     await goToAssistantSettings(page);
     await toggleAssistantEnabled(page, assistantId);
 
     await goToGuidListView(page);
-    await expect(page.locator(`[data-testid="preset-pill-${assistantId}"]`)).toHaveCount(0);
+    await page.locator('[data-testid="assistant-selector"]').click();
+    await expect(page.locator(`[data-testid="assistant-option-${assistantId}"]`)).toHaveCount(0);
 
     await goToAssistantSettings(page);
     await toggleAssistantEnabled(page, assistantId);
 
     await goToGuidListView(page);
-    await expect(page.locator(`[data-testid="preset-pill-${assistantId}"]`)).toBeVisible();
+    await page.locator('[data-testid="assistant-selector"]').click();
+    await expect(page.locator(`[data-testid="assistant-option-${assistantId}"]`)).toBeVisible();
 
     await goToAssistantSettings(page);
     await openAssistantEditor(page, assistantId);
@@ -615,15 +620,16 @@ test.describe('Assistant Settings CRUD', () => {
       .toBe(true);
 
     await goToGuidListView(page);
+    await page.locator('[data-testid="assistant-selector"]').click();
     await expect
       .poll(async () => {
         const guidOrder = await page
-          .locator('[data-testid^="preset-pill-"]')
+          .locator('[data-testid^="assistant-option-"]')
           .evaluateAll((elements) => elements.map((element) => element.getAttribute('data-testid')));
         return (
-          guidOrder.indexOf(`preset-pill-${draggedId}`) !== -1 &&
-          guidOrder.indexOf(`preset-pill-${targetId}`) !== -1 &&
-          guidOrder.indexOf(`preset-pill-${draggedId}`) < guidOrder.indexOf(`preset-pill-${targetId}`)
+          guidOrder.indexOf(`assistant-option-${draggedId}`) !== -1 &&
+          guidOrder.indexOf(`assistant-option-${targetId}`) !== -1 &&
+          guidOrder.indexOf(`assistant-option-${draggedId}`) < guidOrder.indexOf(`assistant-option-${targetId}`)
         );
       })
       .toBe(true);

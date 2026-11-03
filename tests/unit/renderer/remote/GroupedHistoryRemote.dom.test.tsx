@@ -59,6 +59,9 @@ vi.mock('@/renderer/pages/conversation/GroupedHistory/ConversationRow', () => ({
   default: ({ conversation }: { conversation: TChatConversation }) => (
     <div data-testid='standard-conversation-row'>{conversation.name}</div>
   ),
+  ConversationIdentityIcon: ({ conversation }: { conversation: TChatConversation }) => (
+    <svg data-testid='cached-agent-icon' data-backend={(conversation.extra as { backend?: string }).backend} />
+  ),
 }));
 vi.mock('@/renderer/pages/conversation/GroupedHistory/SortableConversationRow', () => ({ default: () => null }));
 vi.mock('@/renderer/components/base/AionModal', () => ({ default: () => null }));

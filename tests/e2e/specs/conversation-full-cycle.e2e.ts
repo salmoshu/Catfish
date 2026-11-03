@@ -676,7 +676,8 @@ test.describe('Conversation Full Cycle', () => {
     await waitForSettle(page, 3_000);
 
     // Find preset assistant pills rendered on the guid page
-    const presetPills = page.locator('[data-testid^="preset-pill-"]');
+    await page.locator('[data-testid="assistant-selector"]').click();
+    const presetPills = page.locator('[data-testid^="assistant-option-"]');
     const count = await presetPills.count();
     if (count === 0) {
       test.skip(true, 'No preset assistant pills visible on guid page');
@@ -755,7 +756,8 @@ test.describe('Conversation Full Cycle', () => {
     await waitForSettle(page, 3_000);
 
     // Select a preset which may have disabled skills from earlier tests
-    const presetPills = page.locator('[data-testid^="preset-pill-"]');
+    await page.locator('[data-testid="assistant-selector"]').click();
+    const presetPills = page.locator('[data-testid^="assistant-option-"]');
     const count = await presetPills.count();
     if (count === 0) {
       test.skip(true, 'No preset assistant pills visible on guid page');
@@ -1714,7 +1716,8 @@ test.describe('Conversation Full Cycle', () => {
     }
 
     // Select a preset assistant (which provides assistantId for badge navigation)
-    const presetPills = page.locator('[data-testid^="preset-pill-"]');
+    await page.locator('[data-testid="assistant-selector"]').click();
+    const presetPills = page.locator('[data-testid^="assistant-option-"]');
     if ((await presetPills.count()) === 0) {
       test.skip(true, 'No preset assistants -- AgentBadge navigation requires assistantId');
       return;

@@ -188,6 +188,10 @@ export const WebFsPicker: React.FC<PickerProps> = ({ options, onDone }) => {
           onChange={setPathDraft}
           onPressEnter={() => void load(pathDraft.trim() || '/')}
           placeholder='/path/to/folder'
+          spellCheck={false}
+          autoCorrect='off'
+          autoCapitalize='off'
+          autoComplete='off'
         />
         <Button onClick={() => void load(pathDraft.trim() || '/')} disabled={loading}>
           {t('fileSelection.webFsPicker.go', { defaultValue: 'Go' })}

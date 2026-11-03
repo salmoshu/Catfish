@@ -4,18 +4,11 @@
  * Provides utilities for creating, waiting on, and deleting ACP conversations
  * through the actual UI flow (guid page → conversation page → cleanup).
  */
-import type { Locator, Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { expect } from '../fixtures';
 import { goToGuid } from './navigation';
 import { httpGet } from './httpBridge';
-import {
-  GUID_INPUT,
-  AGENT_STATUS_MESSAGE,
-  MODEL_SELECTOR_BTN,
-  NEW_CHAT_TRIGGER,
-  assistantOverflowPillById,
-  presetPillById,
-} from './selectors';
+import { GUID_INPUT, AGENT_STATUS_MESSAGE, MODEL_SELECTOR_BTN, NEW_CHAT_TRIGGER, presetPillById } from './selectors';
 import { assistantRuntimeKey, type Assistant } from '@/common/types/agent/assistantTypes';
 
 type FindAssistantOptions = {
@@ -44,75 +37,23 @@ function pickAssistantForBackend(assistants: Assistant[], backend: string, optio
 
 async function clickAssistantPillById(page: Page, assistantId: string): Promise<void> {
   await page.locator(GUID_INPUT).waitFor({ state: 'visible', timeout: 10_000 });
-
-  const isSelected = async () =>
-    page
-      .locator(`[data-assistant-id="${assistantId}"][data-assistant-selected="true"]`)
-      .first()
-      .isVisible()
-      .catch(() => false);
-  const clickPill = async (pill: Locator) => {
-    try {
-      await pill.click({ timeout: 5_000 });
-    } catch {
-      if (await isSelected()) return;
-      const handle = await pill.elementHandle({ timeout: 1_000 }).catch(() => null);
-      if (!handle) {
-        throw new Error(`Assistant pill "${assistantId}" detached before click could complete`);
-      }
-      await handle.evaluate((element) => {
-        (element as HTMLElement).click();
-      });
-    }
-  };
-  const waitForSelected = async () => {
-    await page
-      .locator(`[data-assistant-id="${assistantId}"][data-assistant-selected="true"]`)
-      .waitFor({ state: 'visible', timeout: 5_000 });
-  };
-  const visiblePill = page.locator(presetPillById(assistantId));
-  const moreButton = page.locator('[data-testid="assistant-more-btn"]');
+  const selector = page.locator('[data-testid="assistant-selector"]');
+  const option = page.locator(presetPillById(assistantId));
   const deadline = Date.now() + 10_000;
 
   while (Date.now() < deadline) {
-    if (await visiblePill.isVisible().catch(() => false)) {
-      await clickPill(visiblePill).catch(async () => {
-        await page.waitForTimeout(200);
-      });
-      if (!(await isSelected())) {
-        await page.waitForTimeout(200);
-        continue;
-      }
-      await waitForSelected();
-      await page.locator(GUID_INPUT).waitFor({ state: 'visible', timeout: 3_000 });
-      return;
-    }
-
-    if (await moreButton.isVisible().catch(() => false)) {
-      await moreButton.click();
-      const overflowPill = page.locator(assistantOverflowPillById(assistantId));
-      await overflowPill.waitFor({ state: 'visible', timeout: 5_000 });
-      await clickPill(overflowPill).catch(async () => {
-        await page.keyboard.press('Escape').catch(() => {});
-        await page.waitForTimeout(200);
-      });
-      if (!(await isSelected())) {
-        await page.waitForTimeout(200);
-        continue;
-      }
-      await waitForSelected();
-      await page
-        .locator(presetPillById(assistantId))
-        .waitFor({ state: 'visible', timeout: 3_000 })
-        .catch(() => {});
-      await page.locator(GUID_INPUT).waitFor({ state: 'visible', timeout: 3_000 });
-      return;
-    }
-
-    await page.waitForTimeout(200);
+    if ((await selector.getAttribute('data-assistant-id')) === assistantId) return;
+    await selector.click();
+    await option.waitFor({ state: 'visible', timeout: 5_000 });
+    await option.click();
+    await page
+      .locator(`[data-testid="assistant-selector"][data-assistant-id="${assistantId}"]`)
+      .waitFor({ state: 'visible', timeout: 5_000 });
+    await page.locator(GUID_INPUT).waitFor({ state: 'visible', timeout: 3_000 });
+    return;
   }
 
-  throw new Error(`Assistant "${assistantId}" was not rendered as a visible pill or overflow menu item within 10s`);
+  throw new Error(`Assistant "${assistantId}" was not rendered in the compact selector within 10s`);
 }
 
 /** Select an assistant on the guid page by backend name (e.g. 'claude', 'codex'). */

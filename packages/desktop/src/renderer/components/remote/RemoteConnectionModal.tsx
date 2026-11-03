@@ -326,6 +326,9 @@ const RemoteConnectionModal: React.FC<RemoteConnectionModalProps> = ({
                       onChange={setHost}
                       placeholder={t('guid.workspace.remote.hostPlaceholder')}
                       autoComplete='off'
+                      spellCheck={false}
+                      autoCorrect='off'
+                      autoCapitalize='off'
                     />
                   </Form.Item>
                   <Form.Item label={t('guid.workspace.remote.port')} required>
@@ -338,6 +341,9 @@ const RemoteConnectionModal: React.FC<RemoteConnectionModalProps> = ({
                     onChange={setUsername}
                     placeholder={t('guid.workspace.remote.usernamePlaceholder')}
                     autoComplete='off'
+                    spellCheck={false}
+                    autoCorrect='off'
+                    autoCapitalize='off'
                   />
                 </Form.Item>
                 <Form.Item label={t('guid.workspace.remote.authType')}>
@@ -363,6 +369,10 @@ const RemoteConnectionModal: React.FC<RemoteConnectionModalProps> = ({
                           value={privateKeyPath}
                           onChange={setPrivateKeyPath}
                           placeholder={t('guid.workspace.remote.privateKeyPlaceholder')}
+                          spellCheck={false}
+                          autoCorrect='off'
+                          autoCapitalize='off'
+                          autoComplete='off'
                         />
                         <Button onClick={() => void selectPrivateKey()}>{t('guid.workspace.remote.chooseFile')}</Button>
                       </div>
@@ -399,6 +409,10 @@ const RemoteConnectionModal: React.FC<RemoteConnectionModalProps> = ({
                     value={linuxUser}
                     onChange={setLinuxUser}
                     placeholder={t('guid.workspace.remote.defaultUser')}
+                    spellCheck={false}
+                    autoCorrect='off'
+                    autoCapitalize='off'
+                    autoComplete='off'
                   />
                 </Form.Item>
               </>
@@ -429,6 +443,10 @@ const RemoteConnectionModal: React.FC<RemoteConnectionModalProps> = ({
                       value={container}
                       onChange={setContainer}
                       placeholder={t('guid.workspace.remote.containerPlaceholder')}
+                      spellCheck={false}
+                      autoCorrect='off'
+                      autoCapitalize='off'
+                      autoComplete='off'
                     />
                   )}
                 </Form.Item>
@@ -448,6 +466,10 @@ const RemoteConnectionModal: React.FC<RemoteConnectionModalProps> = ({
                     value={linuxUser}
                     onChange={setLinuxUser}
                     placeholder={t('guid.workspace.remote.defaultUser')}
+                    spellCheck={false}
+                    autoCorrect='off'
+                    autoCapitalize='off'
+                    autoComplete='off'
                   />
                 </Form.Item>
               </>

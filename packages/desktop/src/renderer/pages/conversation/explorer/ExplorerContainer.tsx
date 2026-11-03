@@ -9,15 +9,15 @@
  * Explorer. Given a `projectId`, it fetches the project's pe roots from the HTTP
  * control plane (`GET /api/projects/{id}`), maps them to `RootRef[]`, and hands
  * them to {@link ExplorerPanel} (which drives the WS store). It also owns the
- * project-level actions: add folder (attach) and remove folder.
+ * project-level remove-folder action.
  *
- * Scope: data wiring + tree + attach/remove + the Files/Changes tabs, plus the
+ * Scope: data wiring + tree + remove + the Files/Changes tabs, plus the
  * persistent filename-search area at the top of the Files tab (fs/search →
  * reveal / explicit add-to-chat; see {@link SearchPanel}).
  */
 
 import { Button, Input, Message, Modal, Spin, Tooltip } from '@arco-design/web-react';
-import { FoldUpOne, FolderPlus, Refresh } from '@icon-park/react';
+import { Refresh } from '@icon-park/react';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useSWR from 'swr';
@@ -25,8 +25,6 @@ import useSWR from 'swr';
 import { dispatchWorkspaceHasFilesEvent } from '@/renderer/utils/workspace/workspaceEvents';
 
 import { ipcBridge } from '@/common';
-import { isBackendHttpError } from '@/common/adapter/httpBridge';
-import { PROJECT_ERROR_DUPLICATE, PROJECT_ERROR_OVERLAP } from '@/common/types/project';
 import { usePreviewContext } from '@/renderer/pages/conversation/Preview';
 import WorkspaceOpenButton from '@/renderer/pages/conversation/components/ChatLayout/WorkspaceOpenButton';
 import { getFileTypeInfo } from '@/renderer/utils/file/fileType';
@@ -55,7 +53,7 @@ import {
 } from './explorerModel';
 import { initExplorerRuntime } from './monitorTransport';
 import { toRootRefs } from './projectRoots';
-import { collapseAll, refreshRoot, reveal, select } from './explorerStore';
+import { refreshRoot, reveal, select } from './explorerStore';
 import { useCurrentConversation } from './currentConversationStore';
 import { SearchPanel } from './search/SearchPanel';
 import type { SearchHit } from './search/searchModel';
@@ -65,13 +63,6 @@ import { rediscoverRepos, refreshAllRepos } from '../SourceControl/scmStore';
 export type ExplorerContainerProps = {
   /** Owning project id — scopes the store's fact cache + localStorage UI state. */
   projectId: string;
-};
-
-/** A local absolute path → `file://` URI (normalize `\`, ensure leading slash, encode). */
-const pathToFileUri = (p: string): string => {
-  const normalized = p.replace(/\\/g, '/');
-  const withLeadingSlash = normalized.startsWith('/') ? normalized : `/${normalized}`;
-  return `file://${encodeURI(withLeadingSlash)}`;
 };
 
 /** The name-entry dialog collects a single file or folder name. */
@@ -192,26 +183,6 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
       openPreview(content, contentType, metadata);
     } catch (e) {
       Message.error(t(previewErrorToI18nKey(classifyPreviewError(e))));
-    }
-  };
-
-  const handleAddFolder = async (): Promise<void> => {
-    const paths = await ipcBridge.dialog.showOpen.invoke({ properties: ['openDirectory', 'createDirectory'] });
-    const path = paths?.[0];
-    if (!path) return; // cancelled
-    try {
-      const entry = await ipcBridge.project.attachFolder.invoke({ project_id: projectId, uri: pathToFileUri(path) });
-      await mutate();
-      // Focus the attached (or, for a subdir, the existing focused) root.
-      select(peKey(entry.pe_id, ''));
-    } catch (e) {
-      if (isBackendHttpError(e) && e.code === PROJECT_ERROR_DUPLICATE) {
-        Message.info(t('conversation.explorer.attachDuplicate'));
-      } else if (isBackendHttpError(e) && e.code === PROJECT_ERROR_OVERLAP) {
-        Message.warning(t('conversation.explorer.attachOverlap'));
-      } else {
-        Message.error(t('conversation.explorer.attachFailed'));
-      }
     }
   };
 
@@ -511,25 +482,8 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
           {tabButton('changes', t('conversation.explorer.tabs.changes'))}
         </div>
         <div className='flex items-center gap-2px flex-shrink-0'>
-          {/* Right cluster order (VS Code parity): project-scope actions first (add
-              folder, open workspace), then view actions grouped at the far right
-              (refresh, collapse-all). Refresh shows on both tabs (tab-scoped
-              behavior); collapse-all only on Files, since Changes has no tree.
-
-              Tooltip 与相邻按钮保持同一形态（mini），观感一致。注意：Arco 的 Tooltip
-              不能包裹 Dropdown（会取到非 DOM 节点而崩），这里包的是普通 Button，安全。
-              Note: an Arco Tooltip must not wrap a Dropdown (it would resolve a
-              non-DOM node and crash); wrapping a plain Button like this is safe. */}
-          <Tooltip content={t('conversation.explorer.addFolder')} mini position='br'>
-            <Button
-              type='text'
-              size='small'
-              className='flex items-center justify-center'
-              icon={<FolderPlus theme='outline' size='16' />}
-              aria-label={t('conversation.explorer.addFolder')}
-              onClick={handleAddFolder}
-            />
-          </Tooltip>
+          {/* File and folder creation stays in the tree's context menu. The top
+              bar only opens the workspace externally or refreshes the visible tab. */}
           {workspacePath && <WorkspaceOpenButton workspacePath={workspacePath} isTemporary={false} />}
           <Tooltip
             content={
@@ -543,9 +497,9 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
             <Button
               type='text'
               size='small'
-              className='flex items-center justify-center'
+              className='flex items-center justify-center !text-t-secondary hover:!text-t-primary hover:!bg-fill-2'
               loading={refreshing}
-              icon={<Refresh theme='outline' size='16' />}
+              icon={<Refresh theme='outline' size='16' fill='currentColor' />}
               aria-label={
                 activeTab === 'changes'
                   ? t('conversation.explorer.refreshChanges')
@@ -554,18 +508,6 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
               onClick={() => void handleRefreshActiveTab()}
             />
           </Tooltip>
-          {activeTab === 'files' && (
-            <Tooltip content={t('conversation.explorer.collapseAll')} mini position='br'>
-              <Button
-                type='text'
-                size='small'
-                className='flex items-center justify-center'
-                icon={<FoldUpOne theme='outline' size='16' />}
-                aria-label={t('conversation.explorer.collapseAll')}
-                onClick={() => collapseAll()}
-              />
-            </Tooltip>
-          )}
         </div>
       </div>
       {/* Files tab (explorer): kept mounted across tab switches so the tree + WS

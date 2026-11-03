@@ -4,9 +4,23 @@ import type { BackendEnvironment } from '@/common/types/remote';
 const STORAGE_KEY = 'catfish:environment-projects:v1';
 export const ENVIRONMENT_PROJECTS_CHANGED = 'catfish:environment-projects-changed';
 
+export type EnvironmentConversation = {
+  id: string;
+  name: string;
+  modifiedAt: number;
+  type?: TChatConversation['type'];
+  backend?: string;
+  assistant_id?: string;
+  preset_assistant_id?: string;
+  custom_agent_id?: string;
+  agent_id?: string;
+  agent_name?: string;
+  assistant?: TChatConversation['assistant'];
+};
+
 export type EnvironmentProject = {
   workspace: string;
-  conversations: Array<{ id: string; name: string; modifiedAt: number }>;
+  conversations: EnvironmentConversation[];
 };
 
 export type EnvironmentProjects = {
@@ -67,7 +81,10 @@ const writeHistory = (history: EnvironmentProjects[]): void => {
   }
 };
 
-/** Save project names and conversation identities, excluding models, credentials, messages and runtime state. */
+const readIdentityString = (extra: Record<string, unknown> | undefined, key: string): string | undefined =>
+  typeof extra?.[key] === 'string' ? extra[key] : undefined;
+
+/** Save explicit projects and visual identity only — never models, credentials, messages or runtime state. */
 export const recordEnvironmentProjects = (
   conversations: TChatConversation[],
   environment: BackendEnvironment | undefined = typeof window === 'undefined' ? undefined : window.__backendEnvironment
@@ -80,8 +97,8 @@ export const recordEnvironmentProjects = (
     if (
       typeof workspace !== 'string' ||
       !workspace ||
+      extra?.custom_workspace !== true ||
       extra?.is_temporary_workspace === true ||
-      !(extra?.custom_workspace === true || extra?.is_temporary_workspace === false) ||
       extra?.team_id ||
       extra?.teamId ||
       extra?.is_health_check
@@ -96,6 +113,22 @@ export const recordEnvironmentProjects = (
       id: conversation.id,
       name: conversation.name,
       modifiedAt: conversation.modified_at ?? conversation.created_at ?? 0,
+      type: conversation.type,
+      backend: readIdentityString(extra, 'backend'),
+      assistant_id: readIdentityString(extra, 'assistant_id'),
+      preset_assistant_id: readIdentityString(extra, 'preset_assistant_id'),
+      custom_agent_id: readIdentityString(extra, 'custom_agent_id'),
+      agent_id: readIdentityString(extra, 'agent_id'),
+      agent_name: readIdentityString(extra, 'agent_name'),
+      assistant: conversation.assistant
+        ? {
+            id: conversation.assistant.id,
+            source: conversation.assistant.source,
+            name: conversation.assistant.name,
+            avatar: conversation.assistant.avatar,
+            backend: conversation.assistant.backend,
+          }
+        : undefined,
     });
   }
   const key = environmentKey(environment);

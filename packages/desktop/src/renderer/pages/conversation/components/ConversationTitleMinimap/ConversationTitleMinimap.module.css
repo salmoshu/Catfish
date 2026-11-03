@@ -39,11 +39,11 @@
 }
 
 .searchInput:focus-within {
-  border-color: rgb(var(--primary-6));
+  border-color: var(--color-neutral-6);
   background: var(--color-bg-2);
   box-shadow:
-    0 0 0 3px rgba(var(--primary-6), 0.1),
-    0 4px 12px rgba(15, 23, 42, 0.06);
+    0 0 0 3px var(--color-fill-2),
+    0 4px 12px var(--color-fill-2);
 }
 
 .searchInput :global(.arco-input-inner-wrapper) {

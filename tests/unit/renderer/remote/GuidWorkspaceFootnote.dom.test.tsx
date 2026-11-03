@@ -6,7 +6,7 @@ import GuidWorkspaceFootnote from '@renderer/pages/guid/components/GuidWorkspace
 
 const PENDING_KEY = 'aionui:remote-workspace-picker:pending';
 const reloadMock = vi.fn();
-const remoteMocks = vi.hoisted(() => ({ showOpen: vi.fn() }));
+const remoteMocks = vi.hoisted(() => ({ showOpen: vi.fn(), disconnect: vi.fn() }));
 const environment: RemoteEnvironmentSummary = {
   id: 'wsl-ubuntu',
   kind: 'wsl',
@@ -18,7 +18,10 @@ const environment: RemoteEnvironmentSummary = {
 };
 
 vi.mock('@/common', () => ({
-  ipcBridge: { dialog: { showOpen: { invoke: remoteMocks.showOpen } } },
+  ipcBridge: {
+    dialog: { showOpen: { invoke: remoteMocks.showOpen } },
+    remoteEnvironment: { disconnect: { invoke: remoteMocks.disconnect } },
+  },
 }));
 
 vi.mock('react-i18next', () => ({
@@ -77,7 +80,8 @@ describe('GuidWorkspaceFootnote remote directory selection', () => {
     localStorage.clear();
     window.__backendEnvironment = { type: 'local' };
     remoteMocks.showOpen.mockResolvedValue([]);
-    vi.stubGlobal('location', { ...window.location, reload: reloadMock });
+    remoteMocks.disconnect.mockResolvedValue({ ok: true, data: { type: 'local' } });
+    vi.stubGlobal('location', { ...window.location, hash: '#/guid', reload: reloadMock });
   });
 
   afterEach(() => {
@@ -137,6 +141,36 @@ describe('GuidWorkspaceFootnote remote directory selection', () => {
     expect(screen.queryByText('mock-connected')).toBeNull();
     expect(screen.queryByRole('img', { name: environment.name })).not.toBeInTheDocument();
     expect(screen.queryByText(environment.name)).not.toBeInTheDocument();
+  });
+
+  it('shows local recent projects by default and disconnects before opening one', async () => {
+    window.__backendEnvironment = { type: 'remote', id: environment.id, name: environment.name, kind: 'wsl' };
+    localStorage.setItem('aionui:recent-workspaces', JSON.stringify(['E:/LocalProject']));
+    localStorage.setItem('aionui:recent-workspaces:remote:wsl-ubuntu', JSON.stringify(['/home/RemoteProject']));
+    const onSelectWorkspace = renderFootnote('/home/CurrentProject');
+
+    fireEvent.click(screen.getByText('CurrentProject'));
+    expect(screen.getByText('LocalProject')).toBeInTheDocument();
+    expect(screen.queryByText('RemoteProject')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('LocalProject'));
+
+    await waitFor(() => expect(reloadMock).toHaveBeenCalledOnce());
+    expect(remoteMocks.disconnect).toHaveBeenCalledOnce();
+    expect(window.location.hash).toBe('/guid?workspace=E%3A%2FLocalProject');
+    expect(onSelectWorkspace).not.toHaveBeenCalled();
+  });
+
+  it('returns to the local backend before opening the main local folder picker', async () => {
+    window.__backendEnvironment = { type: 'remote', id: environment.id, name: environment.name, kind: 'wsl' };
+    renderFootnote();
+
+    fireEvent.click(screen.getByTestId('workspace-selector-btn'));
+    fireEvent.click(screen.getByText('team.create.chooseDifferentFolder'));
+
+    await waitFor(() => expect(reloadMock).toHaveBeenCalledOnce());
+    expect(remoteMocks.disconnect).toHaveBeenCalledOnce();
+    expect(sessionStorage.getItem('aionui:local-workspace-picker:pending')).toBe('1');
+    expect(remoteMocks.showOpen).not.toHaveBeenCalled();
   });
 
   it('uses only the workspace basename in remote tooltips and accessible labels', async () => {

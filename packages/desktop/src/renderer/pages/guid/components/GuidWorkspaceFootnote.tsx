@@ -5,7 +5,7 @@
  */
 
 import { ipcBridge } from '@/common';
-import { addRecentWorkspace, getRecentWorkspaces } from '@/renderer/components/workspace';
+import { addRecentWorkspace, DEFAULT_RECENT_WS_KEY, getRecentWorkspaces } from '@/renderer/components/workspace';
 import { AionInlineSearchInput } from '@/renderer/components/base';
 import { Tooltip } from '@arco-design/web-react';
 import { Close, Down } from '@icon-park/react';
@@ -20,12 +20,13 @@ import styles from '../index.module.css';
 import KimiIcon from '@renderer/components/base/KimiIcon';
 
 const REMOTE_WORKSPACE_PICKER_PENDING_KEY = 'aionui:remote-workspace-picker:pending';
+const LOCAL_WORKSPACE_PICKER_PENDING_KEY = 'aionui:local-workspace-picker:pending';
 
-const consumeRemoteWorkspacePickerRequest = (): boolean => {
-  if (window.__backendEnvironment?.type !== 'remote') return false;
+const consumeWorkspacePickerRequest = (key: string, environmentType: 'local' | 'remote'): boolean => {
+  if (window.__backendEnvironment?.type !== environmentType) return false;
   try {
-    if (sessionStorage.getItem(REMOTE_WORKSPACE_PICKER_PENDING_KEY) !== '1') return false;
-    sessionStorage.removeItem(REMOTE_WORKSPACE_PICKER_PENDING_KEY);
+    if (sessionStorage.getItem(key) !== '1') return false;
+    sessionStorage.removeItem(key);
     return true;
   } catch {
     return false;
@@ -50,7 +51,7 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
   onClearWorkspace,
 }) => {
   const { t } = useTranslation();
-  const recentWorkspaces = getRecentWorkspaces();
+  const recentWorkspaces = getRecentWorkspaces(DEFAULT_RECENT_WS_KEY);
   const [open, setOpen] = useState(false);
   const [connectionModal, setConnectionModal] = useState<{ open: boolean; environment?: RemoteEnvironmentSummary }>({
     open: false,
@@ -61,7 +62,7 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const handleBrowseWorkspace = useCallback(() => {
+  const browseCurrentBackend = useCallback(() => {
     setOpen(false);
     ipcBridge.dialog.showOpen
       .invoke({ properties: ['openDirectory', 'createDirectory'] })
@@ -76,16 +77,48 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
       });
   }, [onSelectWorkspace]);
 
+  const handleBrowseWorkspace = useCallback(() => {
+    if (window.__backendEnvironment?.type !== 'remote') {
+      browseCurrentBackend();
+      return;
+    }
+    setOpen(false);
+    try {
+      sessionStorage.setItem(LOCAL_WORKSPACE_PICKER_PENDING_KEY, '1');
+    } catch {
+      // A reload can still return to the local project list without storage.
+    }
+    void ipcBridge.remoteEnvironment.disconnect
+      .invoke()
+      .then((result) => {
+        if (result.ok === false) throw new Error(result.message);
+        window.location.reload();
+      })
+      .catch((error: unknown) => console.error('Failed to return to the local backend:', error));
+  }, [browseCurrentBackend]);
+
   useEffect(() => {
-    if (consumeRemoteWorkspacePickerRequest()) handleBrowseWorkspace();
-  }, [handleBrowseWorkspace]);
+    if (consumeWorkspacePickerRequest(REMOTE_WORKSPACE_PICKER_PENDING_KEY, 'remote')) browseCurrentBackend();
+    if (consumeWorkspacePickerRequest(LOCAL_WORKSPACE_PICKER_PENDING_KEY, 'local')) browseCurrentBackend();
+  }, [browseCurrentBackend]);
 
   const handleSelectPath = useCallback(
     (path: string) => {
-      addRecentWorkspace(path);
-      onSelectWorkspace(path);
+      addRecentWorkspace(path, DEFAULT_RECENT_WS_KEY);
       setOpen(false);
       setSearchQuery('');
+      if (window.__backendEnvironment?.type !== 'remote') {
+        onSelectWorkspace(path);
+        return;
+      }
+      void ipcBridge.remoteEnvironment.disconnect
+        .invoke()
+        .then((result) => {
+          if (result.ok === false) throw new Error(result.message);
+          window.location.hash = `/guid?workspace=${encodeURIComponent(path)}`;
+          window.location.reload();
+        })
+        .catch((error: unknown) => console.error('Failed to open the local project:', error));
     },
     [onSelectWorkspace]
   );
@@ -167,11 +200,7 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
                 className={`${styles.wsDropdownItem} ${isActive ? styles.wsDropdownItemActive : ''}`}
                 onClick={() => handleSelectPath(path)}
               >
-                <KimiIcon
-                  name={backendEnvironment?.type === 'remote' ? 'globe' : 'folder'}
-                  size={13}
-                  style={{ lineHeight: 0, flexShrink: 0 }}
-                />
+                <KimiIcon name='folder' size={13} style={{ lineHeight: 0, flexShrink: 0 }} />
                 <span className={styles.wsDropdownItemName}>{name}</span>
                 {isActive && <KimiIcon name='check' size={12} style={{ marginInlineStart: 'auto', flexShrink: 0 }} />}
               </div>
@@ -193,7 +222,7 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
                 closeDropdown();
                 setConnectionModal({ open: true, environment });
               }}
-              onRequestWorkspace={handleBrowseWorkspace}
+              onRequestWorkspace={browseCurrentBackend}
             />
           )}
 

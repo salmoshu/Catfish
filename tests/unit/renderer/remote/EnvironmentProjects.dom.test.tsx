@@ -38,6 +38,11 @@ vi.mock('@icon-park/react', async (original) => ({
 vi.mock('@/renderer/components/remote/RemoteConnectionModal', () => ({
   default: ({ onConnected }: { onConnected: () => void }) => <button onClick={onConnected}>complete-connection</button>,
 }));
+vi.mock('@/renderer/pages/conversation/GroupedHistory/ConversationRow', () => ({
+  ConversationIdentityIcon: ({ conversation }: { conversation: TChatConversation }) => (
+    <svg data-testid='cached-agent-icon' data-backend={(conversation.extra as { backend?: string }).backend} />
+  ),
+}));
 
 const remote: BackendEnvironment = { type: 'remote', id: 'wsl-1', name: 'Ubuntu-20.04', kind: 'wsl' };
 const conversation = (id: string, workspace: string): TChatConversation =>
@@ -81,7 +86,10 @@ describe('projects across environments', () => {
     expect(screen.queryByRole('button', { name: 'mcp.connect' })).not.toBeInTheDocument();
 
     fireEvent.click(localHeader);
-    expect(screen.getByRole('button', { name: 'local-chat' })).toBeInTheDocument();
+    const cachedRow = screen.getByRole('button', { name: 'local-chat' });
+    expect(cachedRow).toHaveClass('chat-history__item');
+    expect(cachedRow.querySelector('[data-kimi-icon="message"]')).not.toBeInTheDocument();
+    expect(screen.getByTestId('cached-agent-icon')).toHaveAttribute('data-backend', 'kimi');
     expect(screen.getByTestId('folder-open')).toBeInTheDocument();
     expect(localHeader.closest('.workspace-collapse')?.querySelector('.sticky')).toHaveStyle({ top: '28px' });
     expect(screen.queryByText('guid.workspace.remote.local')).not.toBeInTheDocument();
@@ -148,6 +156,8 @@ describe('projects across environments', () => {
     fireEvent.click(screen.getByText('RemoteProject'));
     expect(mocks.connect).toHaveBeenCalledOnce();
     expect(screen.getByTestId('reconnect-icon')).toHaveClass('loading');
+    expect(screen.getByRole('button', { name: 'mcp.connect' })).toHaveClass('flex');
+    expect(screen.getByRole('button', { name: 'mcp.connect' })).not.toHaveClass('hidden');
 
     resolveConnect({ ok: true, data: remote });
     await waitFor(() => expect(mocks.reload).toHaveBeenCalledOnce());

@@ -277,8 +277,9 @@ async function selectGuidAssistant(page: Page, assistantId: string): Promise<voi
   await resetGuidLastSelectedAgent(page);
   await goToGuid(page);
   await page.reload();
-  await page.locator(`[data-testid="preset-pill-${assistantId}"]`).click();
-  // Assistant defaults are applied asynchronously after the preset pill flips
+  await page.locator('[data-testid="assistant-selector"]').click();
+  await page.locator(`[data-testid="assistant-option-${assistantId}"]`).click();
+  // Assistant defaults are applied asynchronously after the compact selector flips
   // selected and the detail cache resolves. Give the Guid page one settle pass
   // before interacting with model/mode/skills/MCP controls.
   await page.waitForTimeout(1_000);

@@ -61,7 +61,8 @@ test.describe('Assistant Settings Recommended Prompts', () => {
     await resetGuidLastSelectedAgent(page);
     await goToGuid(page);
     await page.reload();
-    await page.locator(`[data-testid="preset-pill-${assistantId}"]`).click();
+    await page.locator('[data-testid="assistant-selector"]').click();
+    await page.locator(`[data-testid="assistant-option-${assistantId}"]`).click();
     await expect(page.locator(`text=${promptText}`)).toBeVisible();
 
     await page.locator(`text=${promptText}`).click();
@@ -107,8 +108,9 @@ test.describe('Assistant Settings Recommended Prompts', () => {
     await resetGuidLastSelectedAgent(page);
     await goToGuid(page);
     await page.reload();
-    await expect(page.locator(`[data-testid="preset-pill-${assistantId}"]`)).toContainText(updatedName);
-    await page.locator(`[data-testid="preset-pill-${assistantId}"]`).click();
+    await page.locator('[data-testid="assistant-selector"]').click();
+    await expect(page.locator(`[data-testid="assistant-option-${assistantId}"]`)).toContainText(updatedName);
+    await page.locator(`[data-testid="assistant-option-${assistantId}"]`).click();
     await expect(page.locator(`text=${updatedPrompt}`)).toBeVisible();
     await expect(page.locator(`text=${originalPrompt}`)).toHaveCount(0);
   });

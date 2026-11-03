@@ -604,8 +604,14 @@ const GuidPage: React.FC = () => {
   const PROVIDER_BASED_AGENTS = new Set(['aionrs']);
   const isGeminiMode = PROVIDER_BASED_AGENTS.has(agentSelection.selectedAssistantBackend);
 
-  // Build the mention dropdown node
-  // Build the model selector node
+  const agentSelectorNode = (
+    <AssistantSelectionArea
+      selectedAssistantId={agentSelection.selectedAssistantId}
+      assistants={agentSelection.assistants}
+      localeKey={localeKey}
+      onSelectAssistant={handleSelectAssistant}
+    />
+  );
   const modelSelectorNode = (
     <GuidModelSelector
       isGeminiMode={isGeminiMode}
@@ -634,6 +640,7 @@ const GuidPage: React.FC = () => {
       files={displayFilePaths}
       onFilesUploaded={guidInput.handleFilesUploaded}
       onFilesPicked={guidInput.handleFilesPicked}
+      agentSelectorNode={agentSelectorNode}
       modelSelectorNode={modelSelectorNode}
       isGeminiMode={isGeminiMode}
       modelList={modelSelection.modelList}
@@ -695,13 +702,6 @@ const GuidPage: React.FC = () => {
             />
             <p className={`${styles.heroTitle} mb-0 text-t-primary text-center`}>{t('conversation.welcome.title')}</p>
           </div>
-
-          <AssistantSelectionArea
-            selectedAssistantId={agentSelection.selectedAssistantId}
-            assistants={agentSelection.assistants}
-            localeKey={localeKey}
-            onSelectAssistant={handleSelectAssistant}
-          />
 
           <GuidInputCard
             focusRequestKey={navState?.focusPrefill && navState.prefillPrompt ? location.key : undefined}

@@ -195,6 +195,24 @@ describe('GuidActionRow skill/MCP submenu search', () => {
     environment.isDesktop = true;
   });
 
+  it('places the agent selector before the model selector inside the action row', () => {
+    renderActionRow({
+      agentSelectorNode: <div data-testid='agent-selector-stub' />,
+      modelSelectorNode: <div data-testid='model-selector-stub' />,
+    });
+    const agent = screen.getByTestId('agent-selector-stub');
+    const model = screen.getByTestId('model-selector-stub');
+    expect(agent.compareDocumentPosition(model) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+
+    environment.isMobile = true;
+    renderActionRow({
+      agentSelectorNode: <div data-testid='mobile-agent-selector-stub' />,
+      modelSelectorNode: <div data-testid='mobile-model-selector-stub' />,
+    });
+    expect(screen.getByTestId('mobile-agent-selector-stub')).toBeInTheDocument();
+    expect(screen.queryByTestId('mobile-model-selector-stub')).not.toBeInTheDocument();
+  });
+
   it('uses raw English backend values for authorization mode labels', () => {
     const dynamicModes = [{ value: 'bypassPermissions', label: '全自动' }];
     const { unmount } = renderActionRow({

@@ -1,7 +1,7 @@
 import { ipcBridge } from '@/common';
 import { isElectronDesktop } from '@/renderer/utils/platform';
 import { useOptionalPreviewContext } from '@/renderer/pages/conversation/Preview/context/PreviewContext';
-import { Browser, Command, Down, FolderOpen, Terminal } from '@icon-park/react';
+import { Browser, Command, FolderOpen, FolderFocus, Terminal } from '@icon-park/react';
 import { Button, Dropdown, Tooltip } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -43,8 +43,8 @@ const isExternalTool = (tool: ToolType): tool is ExternalToolType => tool !== 'b
 /**
  * Workspace Open Button — opens the workspace with various tools.
  *
- * Covers VS Code / Terminal / File Explorer (external programs) plus the in-app
- * browser, and remembers the user's last choice so the main button repeats it.
+ * The main folder button opens a menu for VS Code / Terminal / File Explorer
+ * and the in-app browser. The last used item is marked in that menu.
  */
 const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath, isTemporary }) => {
   const { t } = useTranslation();
@@ -150,25 +150,7 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
     return availableOptions[0]?.key ?? 'browser';
   }, [preferredTool, availableOptions]);
 
-  // Get current icon based on selected tool
-  const currentIcon = useMemo(() => {
-    switch (currentTool) {
-      case 'vscode':
-        return <Command size={16} />;
-      case 'explorer':
-        return <FolderOpen size={16} />;
-      case 'browser':
-        return <Browser size={16} />;
-      case 'terminal':
-      default:
-        return <Terminal size={16} />;
-    }
-  }, [currentTool]);
-
-  const tooltipContent =
-    currentTool === 'browser'
-      ? t('conversation.workspace.openWith.browser', { defaultValue: 'Browser' })
-      : t('conversation.workspace.openWorkspace', { defaultValue: 'Open workspace folder' });
+  const tooltipContent = t('conversation.workspace.openWorkspace', { defaultValue: 'Open workspace folder' });
 
   // Don't render in WebUI/browser mode: shell tools would run on the server with
   // no visible feedback, and the in-app browser needs Electron's <webview>.
@@ -202,35 +184,25 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
   );
 
   return (
-    <div className='workspace-open-button flex items-center'>
-      <Tooltip content={tooltipContent} mini position='br'>
-        <Button
-          type='text'
-          size='small'
-          className='workspace-open-button__btn flex items-center gap-4px ps-8px pe-4px'
-          onClick={() => handleOpenWith(currentTool)}
-        >
-          {currentIcon}
-        </Button>
-      </Tooltip>
-
-      <Dropdown
-        trigger='click'
-        position='br'
-        popupVisible={dropdownOpen}
-        onVisibleChange={setDropdownOpen}
-        droplist={dropdownList}
-      >
-        <Button
-          type='text'
-          size='small'
-          className='workspace-open-button__dropdown-btn ps-2px pe-4px'
-          style={{ marginInlineStart: '-4px' }}
-        >
-          <Down size={12} className={`transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
-        </Button>
-      </Dropdown>
-    </div>
+    <Dropdown
+      trigger='click'
+      position='br'
+      popupVisible={dropdownOpen}
+      onVisibleChange={setDropdownOpen}
+      droplist={dropdownList}
+    >
+      <span className='workspace-open-button flex items-center'>
+        <Tooltip content={tooltipContent} mini position='br'>
+          <Button
+            type='text'
+            size='small'
+            className='workspace-open-button__btn flex items-center justify-center !text-t-secondary hover:!text-t-primary hover:!bg-fill-2'
+            aria-label={tooltipContent}
+            icon={<FolderFocus theme='outline' size='16' fill='currentColor' />}
+          />
+        </Tooltip>
+      </span>
+    </Dropdown>
   );
 };
 

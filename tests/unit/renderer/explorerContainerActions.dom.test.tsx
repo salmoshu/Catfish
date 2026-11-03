@@ -152,8 +152,6 @@ const detail = (entries: ProjectEntryDto[]): ProjectDetailDto => ({
   name: 'Proj',
   explorer: { workspace_pe_id: entries[0]?.pe_id ?? '', entries },
 });
-const backendErr = (code: string) => ({ name: 'BackendHttpError', status: 409, code });
-
 const renderIt = () =>
   render(
     <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
@@ -198,52 +196,14 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const clickAdd = async () => {
-  await screen.findByTestId('roots');
-  fireEvent.click(screen.getByLabelText('conversation.explorer.addFolder'));
-};
-
-describe('ExplorerContainer attach/remove', () => {
-  it('attaches a picked directory as a file:// URI and revalidates the tree', async () => {
-    showOpen.mockResolvedValue(['/Users/me/lib']);
-    attachFolder.mockResolvedValue(entry({ pe_id: 'peB', role: 'attached' }));
+describe('ExplorerContainer toolbar and folder actions', () => {
+  it('keeps file and folder creation in the tree instead of the top toolbar', async () => {
     renderIt();
-    await clickAdd();
-
-    await waitFor(() => expect(attachFolder).toHaveBeenCalledWith({ project_id: 'p1', uri: 'file:///Users/me/lib' }));
-    await waitFor(() => expect(projectGet).toHaveBeenCalledTimes(2)); // initial + revalidate
-  });
-
-  it('does nothing when the directory picker is cancelled', async () => {
-    showOpen.mockResolvedValue(undefined);
-    renderIt();
-    await clickAdd();
-    await waitFor(() => expect(showOpen).toHaveBeenCalled());
-    expect(attachFolder).not.toHaveBeenCalled();
-  });
-
-  it('shows an info message on a duplicate-folder 409 (already in project)', async () => {
-    showOpen.mockResolvedValue(['/dup']);
-    attachFolder.mockRejectedValue(backendErr('project_explorer_duplicate'));
-    renderIt();
-    await clickAdd();
-    await waitFor(() => expect(Message.info).toHaveBeenCalledWith('conversation.explorer.attachDuplicate'));
-  });
-
-  it('shows a warning on an overlap 409', async () => {
-    showOpen.mockResolvedValue(['/overlap']);
-    attachFolder.mockRejectedValue(backendErr('project_explorer_overlap'));
-    renderIt();
-    await clickAdd();
-    await waitFor(() => expect(Message.warning).toHaveBeenCalledWith('conversation.explorer.attachOverlap'));
-  });
-
-  it('shows a generic error on other attach failures', async () => {
-    showOpen.mockResolvedValue(['/x']);
-    attachFolder.mockRejectedValue(new Error('network'));
-    renderIt();
-    await clickAdd();
-    await waitFor(() => expect(Message.error).toHaveBeenCalledWith('conversation.explorer.attachFailed'));
+    await screen.findByTestId('roots');
+    expect(screen.queryByLabelText('conversation.explorer.addFolder')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('conversation.explorer.collapseAll')).not.toBeInTheDocument();
+    expect(screen.getByTestId('do-new-file')).toBeInTheDocument();
+    expect(screen.getByTestId('do-new-dir')).toBeInTheDocument();
   });
 
   it('opens a selected file in preview via /content by ChatFileRef (pe_id + relative_path, no absolute path)', async () => {
@@ -316,21 +276,12 @@ describe('ExplorerContainer attach/remove', () => {
     await waitFor(() => expect(btn.className).not.toContain('arco-btn-loading'));
   });
 
-  it('shows Collapse all on the Files tab and clicking it collapses the tree', async () => {
-    const collapseSpy = vi.spyOn(explorerStore, 'collapseAll').mockImplementation(() => {});
+  it('keeps the simplified toolbar when switching between Files and Changes', async () => {
     renderIt();
     await screen.findByTestId('roots');
-    fireEvent.click(screen.getByLabelText('conversation.explorer.collapseAll'));
-    expect(collapseSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it('hides Collapse all on the Changes tab — there is no tree to collapse there', async () => {
-    renderIt();
-    await screen.findByTestId('roots');
-    // Switch to the Changes tab (react-i18next `t` is mocked to echo the key).
     fireEvent.click(screen.getByText('conversation.explorer.tabs.changes'));
-    expect(screen.queryByLabelText('conversation.explorer.collapseAll')).toBeNull();
-    // Refresh stays (now Changes-scoped), confirming only collapse-all is tab-gated.
+    expect(screen.queryByLabelText('conversation.explorer.addFolder')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('conversation.explorer.collapseAll')).not.toBeInTheDocument();
     expect(screen.getByLabelText('conversation.explorer.refreshChanges')).toBeInTheDocument();
   });
 });
