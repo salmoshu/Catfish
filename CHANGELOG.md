@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.15](https://github.com/salmoshu/Catfish/releases/tag/v0.4.15) (2026-11-04)
+
+### Desktop
+
+#### Features
+
+- **plan:** keep the plan button and the conversation's latest plan visible across turns, including after an aborted task is resumed
+- **plan:** mark the step that is currently running and remove the plan area's inner collapse control
+- **workbench:** use one sidebar width for files, changes, terminal, and agents
+
+---
+
 ## [0.4.14](https://github.com/salmoshu/Catfish/releases/tag/v0.4.14) (2026-11-04)
 
 ### Desktop
