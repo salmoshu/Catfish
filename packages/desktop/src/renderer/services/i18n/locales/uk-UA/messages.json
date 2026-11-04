@@ -29,6 +29,10 @@
     "output": "Вивід",
     "loadFailed": "Не вдалося завантажити повний вивід"
   },
+  "turnWork": {
+    "summary": "Робота тривала {{duration}}",
+    "summaryNoDuration": "Роботу завершено"
+  },
   "workbench": {
     "files": "Файли",
     "changes": "Зміни",

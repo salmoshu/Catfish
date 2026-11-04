@@ -26,6 +26,10 @@
     "output": "Çıktı",
     "loadFailed": "Tam çıktı yüklenemedi"
   },
+  "turnWork": {
+    "summary": "{{duration}} boyunca çalıştı",
+    "summaryNoDuration": "Çalışma tamamlandı"
+  },
   "workbench": {
     "files": "Dosyalar",
     "changes": "Değişiklikler",

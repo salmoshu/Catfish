@@ -268,7 +268,7 @@ describe('MessageList streaming scroll behavior', () => {
     vi.mocked(scroller.scrollTo).mockClear();
 
     scroller.scrollTop = 480;
-    vi.setSystemTime(new Date('2026-05-26T12:00:00.250Z'));
+    fireEvent.wheel(scroller, { deltaY: -100 });
     fireEvent.scroll(scroller);
 
     rerender(

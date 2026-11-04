@@ -37,7 +37,6 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useSWR from 'swr';
-import catfishMascot from '@/renderer/assets/catfish-anime-animated.svg';
 import styles from './index.module.css';
 
 type GuidNavigationState = {
@@ -693,13 +692,6 @@ const GuidPage: React.FC = () => {
       <div ref={guidContainerRef} className={styles.guidContainer}>
         <div className={styles.guidLayout}>
           <div className={styles.heroHeader}>
-            <img
-              src={catfishMascot}
-              alt=''
-              aria-hidden='true'
-              className={styles.heroMascot}
-              data-testid='catfish-mascot'
-            />
             <p className={`${styles.heroTitle} mb-0 text-t-primary text-center`}>{t('conversation.welcome.title')}</p>
           </div>
 

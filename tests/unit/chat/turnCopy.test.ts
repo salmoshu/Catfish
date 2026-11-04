@@ -19,14 +19,13 @@ describe('collectAiCopyRows', () => {
     expect(turnTextsById.get('a1')).toEqual(['hello']);
   });
 
-  it('collects EVERY text segment of a turn split by tool calls and thinking', () => {
-    // The bug: copying the turn only yielded segment B; A was lost.
+  it('copies only the final summary of a turn split by tool calls and thinking', () => {
     const { copyRowIds, turnTextsById } = collectAiCopyRows(
       [user('u1'), aiText('a1', 'part A'), tool('t1'), thinking('th1'), aiText('a2', 'part B')],
       false
     );
     expect([...copyRowIds]).toEqual(['a2']);
-    expect(turnTextsById.get('a2')).toEqual(['part A', 'part B']);
+    expect(turnTextsById.get('a2')).toEqual(['part B']);
   });
 
   it('keeps turns separated by user messages independent', () => {
@@ -36,7 +35,7 @@ describe('collectAiCopyRows', () => {
     );
     expect([...copyRowIds]).toEqual(['a1', 'b2']);
     expect(turnTextsById.get('a1')).toEqual(['first']);
-    expect(turnTextsById.get('b2')).toEqual(['second-1', 'second-2']);
+    expect(turnTextsById.get('b2')).toEqual(['second-2']);
   });
 
   it('withholds the final turn while streaming, texts included', () => {
@@ -58,10 +57,10 @@ describe('collectAiCopyRows', () => {
       ],
       false
     );
-    expect(turnTextsById.get('a2')).toEqual(['part A', 'part B']);
+    expect(turnTextsById.get('a2')).toEqual(['part B']);
   });
 
-  it('anchors the row to the turn’s last item, including trailing tool summaries', () => {
+  it('anchors the row to the final visible summary text', () => {
     const { copyRowAnchorByTextId } = collectAiCopyRows(
       [
         user('u1'),
@@ -72,7 +71,7 @@ describe('collectAiCopyRows', () => {
       ],
       false
     );
-    expect(copyRowAnchorByTextId.get('a1')).toBe('summary-1');
+    expect(copyRowAnchorByTextId.get('a1')).toBe('a1');
     expect(copyRowAnchorByTextId.get('b1')).toBe('b1');
   });
 

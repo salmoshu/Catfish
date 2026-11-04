@@ -8,7 +8,8 @@ import {
 describe('thought level labels', () => {
   it('removes the provider Thinking prefix from compact labels', () => {
     expect(formatThoughtLevelLabel('Thinking Max')).toBe('Max');
-    expect(formatThoughtLevelLabel('thinking high')).toBe('high');
+    expect(formatThoughtLevelLabel('thinking high')).toBe('High');
+    expect(formatThoughtLevelLabel('extra high')).toBe('Extra High');
     expect(formatThoughtLevelLabel('Max')).toBe('Max');
   });
 

@@ -15,12 +15,18 @@ import { getPlatformServices } from '@/common/platform';
 import { ipcBridge } from '@/common';
 import { electronNotification } from '@/common/electronSafe';
 import { ProcessConfig } from '@process/utils/initStorage';
-import type { BrowserWindow } from 'electron';
+import type { BrowserWindow, Notification as ElectronNotification } from 'electron';
 import path from 'path';
 import fs from 'fs';
 
 // Main window reference, used to gate on focus and to focus + navigate on click.
 let mainWindowRef: BrowserWindow | null = null;
+
+// Keep the JS wrappers alive until their native toast closes. Otherwise a
+// garbage-collected wrapper can lose its click handler while the toast is still
+// visible in the Windows action center.
+const activeNotifications = new Set<ElectronNotification>();
+const MAX_ACTIVE_NOTIFICATIONS = 32;
 
 export const setNotificationMainWindow = (win: BrowserWindow): void => {
   mainWindowRef = win;
@@ -85,7 +91,18 @@ export async function showNotification({
   if (electronNotification) {
     try {
       const notification = new electronNotification({ title, body, ...(iconPath ? { icon: iconPath } : {}) });
+      activeNotifications.add(notification);
+      // The set only seeds the strong references Windows needs; it must not grow
+      // without bound if a platform never reports a toast as closed.
+      if (activeNotifications.size > MAX_ACTIVE_NOTIFICATIONS) {
+        const oldest = activeNotifications.values().next().value;
+        if (oldest) activeNotifications.delete(oldest);
+      }
+      const release = () => activeNotifications.delete(notification);
+      notification.on('close', release);
+      notification.on('failed', release);
       notification.on('click', () => {
+        release();
         const win = mainWindowRef;
         if (win && !win.isDestroyed()) {
           if (win.isMinimized()) win.restore();

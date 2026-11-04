@@ -26,6 +26,10 @@
     "output": "출력",
     "loadFailed": "전체 출력을 불러오지 못했습니다"
   },
+  "turnWork": {
+    "summary": "작업 시간: {{duration}}",
+    "summaryNoDuration": "작업 완료"
+  },
   "workbench": {
     "files": "파일",
     "changes": "변경 사항",

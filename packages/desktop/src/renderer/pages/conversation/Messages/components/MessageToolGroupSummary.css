@@ -75,20 +75,29 @@
   flex-direction: column;
 }
 
-/* A quiet vertical guide connects each step, including any expanded detail. */
+/* A horizontal guide under each step: it rests as a short stub and extends
+ * like a piano string when the pointer moves onto the row. */
 .tool-row::before {
   position: absolute;
-  inset-inline-start: 9px;
-  top: 28px;
-  bottom: 8px;
-  width: 1px;
-  background: var(--color-border-2);
+  inset-inline-start: 28px;
+  top: 25px;
+  width: calc(100% - 28px);
+  height: 1px;
+  background: linear-gradient(90deg, var(--color-border-2) 0%, var(--color-border-2) 55%, transparent 100%);
   content: '';
   pointer-events: none;
+  opacity: 0.65;
+  transform: scaleX(0.08);
+  transform-origin: left center;
+  transition:
+    transform 280ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 280ms ease;
 }
 
-.tool-row:last-child::before {
-  bottom: 8px;
+.tool-row:hover::before,
+.tool-row:focus-within::before {
+  opacity: 1;
+  transform: scaleX(1);
 }
 
 .tool-row:not(:last-child) {
@@ -209,6 +218,10 @@
 
   .tool-group-summary__arrow,
   .tool-row__chevron {
+    transition: none;
+  }
+
+  .tool-row::before {
     transition: none;
   }
 }

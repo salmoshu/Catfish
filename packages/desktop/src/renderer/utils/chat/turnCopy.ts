@@ -36,7 +36,7 @@ export interface AiCopyRows {
 }
 
 /** Pseudo timeline entries that neither end a turn nor carry copyable text. */
-const PSEUDO_TYPES = new Set(['file_summary', 'tool_summary', 'artifact']);
+const PSEUDO_TYPES = new Set(['file_summary', 'tool_summary', 'turn_work_summary', 'artifact']);
 
 /**
  * Group the visible timeline into AI turns. A turn runs until the next user
@@ -51,19 +51,15 @@ export function collectAiCopyRows(items: TurnCopyItem[], isProcessing: boolean):
   const copyRowAnchorByTextId = new Map<string, string>();
   let pendingTextId: string | undefined;
   let turnTexts: string[] = [];
-  let lastItemId: string | undefined;
 
   const flush = () => {
     if (pendingTextId) {
       copyRowIds.add(pendingTextId);
       turnTextsById.set(pendingTextId, turnTexts);
-      if (lastItemId) {
-        copyRowAnchorByTextId.set(pendingTextId, lastItemId);
-      }
+      copyRowAnchorByTextId.set(pendingTextId, pendingTextId);
     }
     pendingTextId = undefined;
     turnTexts = [];
-    lastItemId = undefined;
   };
 
   for (const item of items) {
@@ -71,21 +67,16 @@ export function collectAiCopyRows(items: TurnCopyItem[], isProcessing: boolean):
       flush();
       continue;
     }
-    // Artifacts (cron / skill suggestions) are app-level cards, not turn
-    // content, so they never become the row's anchor. Tool and file summaries
-    // DO: they are exactly the cards that used to land below the action row.
-    if (item.type === 'artifact') {
-      continue;
-    }
-    lastItemId = item.id;
     if (item.type && PSEUDO_TYPES.has(item.type)) {
       continue;
     }
     if (item.type === 'text') {
-      pendingTextId = item.id;
       const raw = (item.content as { content?: unknown } | undefined)?.content;
       if (typeof raw === 'string' && raw.trim()) {
-        turnTexts.push(raw);
+        // Earlier text in a turn is progress output and is folded into the work
+        // summary. The copy row belongs to the final, visible summary only.
+        pendingTextId = item.id;
+        turnTexts = [raw];
       }
     }
   }

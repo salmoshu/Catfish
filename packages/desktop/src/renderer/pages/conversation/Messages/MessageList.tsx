@@ -47,6 +47,8 @@ import MessageTips from './components/MessageTips';
 import MessageToolCall from './components/MessageToolCall';
 import MessageToolGroup from './components/MessageToolGroup';
 import MessageToolGroupSummary from './components/MessageToolGroupSummary';
+import MessageTurnWorkSummary from './components/MessageTurnWorkSummary';
+import { collapseCompletedTurnWork, type TurnWorkSummaryItem } from './turnWorkCollapse';
 import MessageCronTrigger from './components/MessageCronTrigger';
 import MessageSkillSuggest from './components/MessageSkillSuggest';
 import MessageText, { MessageTextActions } from './components/MessageText';
@@ -56,16 +58,22 @@ import { useAutoScroll } from './useAutoScroll';
 import SelectionReplyButton from './components/SelectionReplyButton';
 import { publishWorkbenchActivity } from '../Workbench/workbenchActivityStore';
 
-type IMessageVO =
-  | TMessage
-  | { type: 'file_summary'; id: string; diffs: FileChangeInfo[]; sourceMessageIds: string[]; created_at: number }
-  | {
-      type: 'tool_summary';
-      id: string;
-      messages: Array<IMessageToolGroup | IMessageAcpToolCall | IMessageToolCall>;
-      sourceMessageIds: string[];
-      created_at: number;
-    };
+type IFileSummaryVO = {
+  type: 'file_summary';
+  id: string;
+  diffs: FileChangeInfo[];
+  sourceMessageIds: string[];
+  created_at: number;
+};
+type IToolSummaryVO = {
+  type: 'tool_summary';
+  id: string;
+  messages: Array<IMessageToolGroup | IMessageAcpToolCall | IMessageToolCall>;
+  sourceMessageIds: string[];
+  created_at: number;
+};
+type IWorkItemVO = TMessage | IFileSummaryVO | IToolSummaryVO;
+type IMessageVO = IWorkItemVO | TurnWorkSummaryItem<IWorkItemVO>;
 type IArtifactVO = { type: 'artifact'; id: string; artifact: IConversationArtifact; created_at: number };
 type IProcessedItem = IMessageVO | IArtifactVO;
 
@@ -120,10 +128,10 @@ const getProcessedItemSourceMessageIds = (item: IProcessedItem): string[] => {
   if ('type' in item && item.type === 'artifact') {
     return [item.id];
   }
-  if ('type' in item && item.type === 'tool_summary') {
-    return item.sourceMessageIds;
-  }
-  if ('type' in item && item.type === 'file_summary') {
+  if (
+    'type' in item &&
+    (item.type === 'tool_summary' || item.type === 'file_summary' || item.type === 'turn_work_summary')
+  ) {
     return item.sourceMessageIds;
   }
   return 'id' in item ? [item.id] : [];
@@ -142,7 +150,7 @@ const getProcessedItemAnchorId = (item: IProcessedItem): string => {
 };
 
 const getProcessedItemCreatedAt = (item: IProcessedItem): number => {
-  if ('type' in item && ['file_summary', 'tool_summary', 'artifact'].includes(item.type)) {
+  if ('type' in item && ['file_summary', 'tool_summary', 'turn_work_summary', 'artifact'].includes(item.type)) {
     return item.created_at;
   }
   return item.created_at ?? 0;
@@ -374,8 +382,8 @@ const MessageList: React.FC<{
   }, [conversationContext?.conversation_id, list]);
 
   // Pre-process message list to group tool outputs into summary cards
-  const processedList = useMemo(() => {
-    const result: Array<IMessageVO> = [];
+  const groupedList = useMemo(() => {
+    const result: Array<IWorkItemVO> = [];
     let diffsChanges: FileChangeInfo[] = [];
     let diffsSourceMessageIds: string[] = [];
     let toolList: Array<IMessageToolGroup | IMessageAcpToolCall | IMessageToolCall> = [];
@@ -478,15 +486,17 @@ const MessageList: React.FC<{
     );
   }, [artifacts, list]);
 
-  // An AI reply can be split into several messages (thinking / multiple text /
-  // tool blocks). The hover copy + timestamp row should appear once per turn,
-  // after the turn's last text — not under every intermediate text block.
-  // Collect the id of the last AI text in each turn; a turn runs until the next
-  // user (right) message. Tool/file/artifact items don't end a turn and, per the
-  // fallback strategy, the row stays on the turn's last text even when followed
-  // by tool blocks. While the conversation is still streaming, the final turn's
-  // row is withheld (it would otherwise appear then shift down as more text
-  // streams in); earlier, already-finished turns always keep their row.
+  // A completed turn keeps only its final reply visible; thinking, progress
+  // text and tool work move into an expandable summary. The active turn is
+  // untouched so ongoing work remains visible while streaming.
+  const processedList = useMemo(
+    () => collapseCompletedTurnWork(groupedList, isProcessing),
+    [groupedList, isProcessing]
+  );
+
+  // The hover copy + timestamp row appears once per completed turn, after the
+  // final AI text, and copies that summary rather than intermediate progress.
+  // While streaming, the active turn's row stays hidden to avoid reflow.
   const {
     copyRowIds: aiCopyRowTextIds,
     turnTextsById: aiTurnTextsById,
@@ -515,7 +525,10 @@ const MessageList: React.FC<{
       const item = processedList[i];
       if (
         'type' in item &&
-        (item.type === 'file_summary' || item.type === 'tool_summary' || item.type === 'artifact')
+        (item.type === 'file_summary' ||
+          item.type === 'tool_summary' ||
+          item.type === 'turn_work_summary' ||
+          item.type === 'artifact')
       ) {
         continue;
       }
@@ -534,7 +547,10 @@ const MessageList: React.FC<{
     for (const item of processedList) {
       if (
         'type' in item &&
-        (item.type === 'file_summary' || item.type === 'tool_summary' || item.type === 'artifact')
+        (item.type === 'file_summary' ||
+          item.type === 'tool_summary' ||
+          item.type === 'turn_work_summary' ||
+          item.type === 'artifact')
       ) {
         continue;
       }
@@ -552,6 +568,7 @@ const MessageList: React.FC<{
     handleScroll,
     handleWheel,
     handlePointerDown,
+    handleKeyDown,
     showScrollButton,
     scrollToBottom,
     scrollElementIntoView,
@@ -745,6 +762,24 @@ const MessageList: React.FC<{
         </div>
       );
     }
+    if ('type' in item && item.type === 'turn_work_summary') {
+      return (
+        <div
+          key={item.id}
+          id={`message-${getProcessedItemAnchorId(item)}`}
+          className={`${rowWidthClass} min-w-0 message-item px-8px m-t-10px turn_work_summary`}
+          style={highlighted ? highlightStyle : undefined}
+        >
+          <MessageTurnWorkSummary startedAt={item.started_at} endedAt={item.ended_at}>
+            {item.items.map((workItem, index) => (
+              <React.Fragment key={getProcessedItemAnchorId(workItem) || index}>
+                {renderItem(index, workItem)}
+              </React.Fragment>
+            ))}
+          </MessageTurnWorkSummary>
+        </div>
+      );
+    }
     if ('type' in item && ['file_summary', 'tool_summary'].includes(item.type)) {
       return (
         <>
@@ -809,6 +844,7 @@ const MessageList: React.FC<{
             className='flex-1 h-full overflow-y-auto pb-10px box-border -mx-20px px-20px'
             style={{ overflowAnchor: 'none' }}
             onPointerDown={handlePointerDown}
+            onKeyDown={handleKeyDown}
             onScroll={handleMessageListScroll}
             onWheel={handleWheel}
           >

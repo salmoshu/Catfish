@@ -1328,6 +1328,8 @@ export type I18nKey =
   | 'messages.toolGroup.viewSteps'
   | 'messages.toolGroup.viewSteps_one'
   | 'messages.toolGroup.viewSteps_other'
+  | 'messages.turnWork.summary'
+  | 'messages.turnWork.summaryNoDuration'
   | 'messages.unknownMessageType'
   | 'messages.workbench.agents'
   | 'messages.workbench.agentsEmpty'

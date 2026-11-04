@@ -26,6 +26,10 @@
     "output": "出力",
     "loadFailed": "完全な出力の読み込みに失敗しました"
   },
+  "turnWork": {
+    "summary": "作業時間: {{duration}}",
+    "summaryNoDuration": "作業が完了しました"
+  },
   "workbench": {
     "files": "ファイル",
     "changes": "変更",

@@ -36,6 +36,7 @@ interface UseAutoScrollReturn {
   handleScroll: (e: React.UIEvent<HTMLDivElement>) => void;
   handleWheel: (e: React.WheelEvent<HTMLDivElement>) => void;
   handlePointerDown: () => void;
+  handleKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
   showScrollButton: boolean;
   scrollToBottom: (behavior?: ScrollBehavior) => void;
   scrollElementIntoView: (element: HTMLElement | null, options?: ScrollElementIntoViewOptions) => void;
@@ -140,16 +141,15 @@ export function useAutoScroll({ messages, itemCount }: UseAutoScrollOptions): Us
     (e: React.UIEvent<HTMLDivElement>) => {
       const target = e.currentTarget;
       const currentScrollTop = target.scrollTop;
-      const timeSinceGuard = Date.now() - lastProgrammaticScrollTimeRef.current;
       const delta = currentScrollTop - lastScrollTopRef.current;
       const bottomGap = getBottomGap(target);
       const pinnedToBottom = bottomGap <= FOLLOW_BOTTOM_THRESHOLD_PX;
 
-      if (
-        !pinnedToBottom &&
-        Math.abs(delta) > 2 &&
-        (userInputActiveRef.current || timeSinceGuard >= PROGRAMMATIC_SCROLL_GUARD_MS)
-      ) {
+      // Only a real user gesture may cancel following. Layout changes (for
+      // example cards collapsing when a turn finishes) also emit scroll events;
+      // treating those as manual scrolling used to leave the list stuck even
+      // though the user never touched it.
+      if (!pinnedToBottom && Math.abs(delta) > 2 && userInputActiveRef.current) {
         userScrolledRef.current = true;
       }
 
@@ -173,6 +173,12 @@ export function useAutoScroll({ messages, itemCount }: UseAutoScrollOptions): Us
 
   const handlePointerDown = useCallback(() => {
     userInputActiveRef.current = true;
+  }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) {
+      userInputActiveRef.current = true;
+    }
   }, []);
 
   useEffect(() => {
@@ -249,6 +255,7 @@ export function useAutoScroll({ messages, itemCount }: UseAutoScrollOptions): Us
     handleScroll,
     handleWheel,
     handlePointerDown,
+    handleKeyDown,
     showScrollButton,
     scrollToBottom,
     scrollElementIntoView,

@@ -26,6 +26,10 @@
     "output": "Ausgabe",
     "loadFailed": "Vollständige Ausgabe konnte nicht geladen werden"
   },
+  "turnWork": {
+    "summary": "{{duration}} gearbeitet",
+    "summaryNoDuration": "Arbeit abgeschlossen"
+  },
   "workbench": {
     "files": "Dateien",
     "changes": "Änderungen",

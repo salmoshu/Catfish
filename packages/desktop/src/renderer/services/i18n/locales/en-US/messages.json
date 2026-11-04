@@ -26,6 +26,10 @@
     "output": "Output",
     "loadFailed": "Failed to load full output"
   },
+  "turnWork": {
+    "summary": "Worked for {{duration}}",
+    "summaryNoDuration": "Work completed"
+  },
   "workbench": {
     "files": "Files",
     "changes": "Changes",

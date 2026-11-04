@@ -26,6 +26,10 @@
     "output": "خروجی",
     "loadFailed": "بارگیری خروجی کامل ناموفق بود"
   },
+  "turnWork": {
+    "summary": "مدت کار: {{duration}}",
+    "summaryNoDuration": "کار تکمیل شد"
+  },
   "workbench": {
     "files": "فایل‌ها",
     "changes": "تغییرات",

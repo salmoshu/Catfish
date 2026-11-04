@@ -111,6 +111,10 @@ describe('showNotification', () => {
     expect(win.show).toHaveBeenCalledTimes(1);
     expect(win.focus).toHaveBeenCalledTimes(1);
     expect(clickedEmit).toHaveBeenCalledWith({ conversation_id: 'c1', environment });
+    // The wrapper must stay alive until the native toast closes; registering
+    // these lifecycle handlers is part of that retention path.
+    expect(FakeElectronNotification.instances[0].handlers.close).toBeTypeOf('function');
+    expect(FakeElectronNotification.instances[0].handlers.failed).toBeTypeOf('function');
   });
 
   it('logs when skipping because notifications are disabled in settings', async () => {

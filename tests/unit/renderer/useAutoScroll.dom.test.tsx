@@ -250,6 +250,9 @@ describe('useAutoScroll', () => {
 
     fireScroll(result.current.handleScroll, scroller, 600);
     vi.setSystemTime(new Date('2026-05-26T12:00:00.250Z'));
+    act(() => {
+      result.current.handlePointerDown();
+    });
     fireScroll(result.current.handleScroll, scroller, 480);
 
     act(() => {
@@ -282,6 +285,9 @@ describe('useAutoScroll', () => {
 
     fireScroll(result.current.handleScroll, scroller, 240);
     vi.setSystemTime(new Date('2026-05-26T12:00:00.250Z'));
+    act(() => {
+      result.current.handlePointerDown();
+    });
     fireScroll(result.current.handleScroll, scroller, 260);
 
     act(() => {
@@ -294,6 +300,35 @@ describe('useAutoScroll', () => {
       behavior: 'auto',
     });
     expect(result.current.showScrollButton).toBe(true);
+  });
+
+  it('keeps following after a layout-driven scroll without any user gesture', () => {
+    const scroller = createScroller({ scrollTop: 600 });
+    const content = createContent();
+    const { result } = renderHook(() =>
+      useAutoScroll({
+        messages: [createLeftMessage('hello')],
+        itemCount: 1,
+      })
+    );
+
+    attachElements(result, scroller, content);
+    act(() => {
+      vi.runAllTimers();
+    });
+    vi.mocked(scroller.scrollTo).mockClear();
+
+    vi.setSystemTime(new Date('2026-05-26T12:00:00.250Z'));
+    fireScroll(result.current.handleScroll, scroller, 420);
+    act(() => {
+      resizeObserverCallback?.([], {} as ResizeObserver);
+      vi.runAllTimers();
+    });
+
+    expect(scroller.scrollTo).toHaveBeenCalledWith({
+      top: 600,
+      behavior: 'auto',
+    });
   });
 
   it('treats wheel-driven user scroll as manual intervention even inside the programmatic guard window', () => {

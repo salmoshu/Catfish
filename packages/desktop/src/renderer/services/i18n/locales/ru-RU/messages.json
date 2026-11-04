@@ -30,6 +30,10 @@
     "output": "Вывод",
     "loadFailed": "Не удалось загрузить полный вывод"
   },
+  "turnWork": {
+    "summary": "Работа заняла {{duration}}",
+    "summaryNoDuration": "Работа завершена"
+  },
   "workbench": {
     "files": "Файлы",
     "changes": "Изменения",

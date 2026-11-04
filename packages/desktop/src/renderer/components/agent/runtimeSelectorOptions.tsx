@@ -26,7 +26,12 @@ export type RuntimeSelectorModelGroup = { key: string; title: string; models: Ru
 const matchesModelQuery = (model: RuntimeSelectorModel, keyword: string): boolean =>
   (model.label || model.id).toLowerCase().includes(keyword);
 
-export const formatThoughtLevelLabel = (label: string): string => label.replace(/^Thinking(?:\s+|$)/i, '');
+export const formatThoughtLevelLabel = (label: string): string =>
+  label
+    .replace(/^Thinking(?:\s+|$)/i, '')
+    .split(/(\s+)/)
+    .map((word) => (word ? word.charAt(0).toUpperCase() + word.slice(1) : word))
+    .join('');
 
 export const getCurrentThoughtLevelLabel = (thoughtLevel: AcpDerivedOption | null | undefined): string => {
   if (!thoughtLevel) return '';

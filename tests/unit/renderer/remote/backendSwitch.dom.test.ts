@@ -59,6 +59,18 @@ describe('backend environment switching', () => {
     expect(mocks.reload).not.toHaveBeenCalled();
   });
 
+  it('finishes the backend switch before navigating to the target conversation', async () => {
+    let hashDuringConfigReload: string | undefined;
+    mocks.resetConfig.mockImplementation(() => {
+      hashDuringConfigReload = window.location.hash;
+    });
+
+    await switchBackendRoute('/conversation/remote-chat');
+
+    expect(hashDuringConfigReload).toBe('#/guid');
+    expect(window.location.hash).toBe('/conversation/remote-chat');
+  });
+
   it('does not remount against a missing backend port', async () => {
     mocks.state.mockResolvedValue({ active: { type: 'local' }, port: null });
     await expect(switchBackendRoute('/guid')).rejects.toThrow('no available port');

@@ -31,8 +31,10 @@ export const syncBackendEnvironment = async (): Promise<void> => {
   window.dispatchEvent(new Event(BACKEND_ENVIRONMENT_CHANGED));
 };
 
-/** Navigate and switch the renderer backend while preserving the current document and theme. */
+/** Switch the renderer backend before navigating, while preserving the current document and theme. */
 export const switchBackendRoute = async (route: string): Promise<void> => {
-  window.location.hash = route;
+  // Navigating first would fetch the target conversation from the outgoing
+  // backend and turn the environment switch into a spurious 404 redirect home.
   await syncBackendEnvironment();
+  window.location.hash = route;
 };

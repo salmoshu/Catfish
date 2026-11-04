@@ -24,7 +24,12 @@ const { parseDiffMock, useTeamPermissionMock } = vi.hoisted(() => ({
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (_key: string, options?: { defaultValue?: string }) => options?.defaultValue ?? _key,
+    t: (_key: string, options?: Record<string, unknown>) => {
+      const template = typeof options?.defaultValue === 'string' ? options.defaultValue : _key;
+      return template.replace(/\{\{(\w+)\}\}/g, (_match, name: string) =>
+        name in (options ?? {}) ? String(options?.[name]) : `{{${name}}}`
+      );
+    },
   }),
 }));
 
@@ -36,6 +41,9 @@ vi.mock('react-router-dom', () => ({
 }));
 
 vi.mock('@arco-design/web-react', () => ({
+  Button: ({ children, ...props }: PropsWithChildren<Record<string, unknown>>) => (
+    <button {...props}>{children}</button>
+  ),
   Image: {
     PreviewGroup: ({ children }: PropsWithChildren) => <>{children}</>,
   },
@@ -159,6 +167,8 @@ vi.mock('@/renderer/pages/conversation/Messages/components/SelectionReplyButton'
 
 vi.mock('@icon-park/react', () => ({
   Down: () => <span>down</span>,
+  Checklist: () => <span>checklist</span>,
+  Right: () => <span>right</span>,
 }));
 
 function createTextMessage(): IMessageText {
@@ -313,9 +323,12 @@ describe('MessageList', () => {
     // pass against the unfixed code.
     const content = screen.getByTestId('message-list-content');
     expect(content.querySelectorAll('[data-message-type="plan"]')).toHaveLength(0);
+    expect(content.querySelectorAll('[data-message-type="text"]')).toHaveLength(1);
+    expect(screen.getByText('after the plan')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('turn-work-summary').querySelector('button')!);
     expect(content.querySelectorAll('[data-message-type="text"]')).toHaveLength(2);
     expect(screen.getByText('before the plan')).toBeInTheDocument();
-    expect(screen.getByText('after the plan')).toBeInTheDocument();
   });
 
   it('renders message rows with external margin spacing in the plain scroll list', () => {
@@ -391,35 +404,36 @@ describe('MessageList', () => {
     expect(messageRow.className).not.toContain('md:w-[calc(100%-clamp(80px,10vw,240px))]');
   });
 
-  it('shows the copy row only on the last AI text of each turn', () => {
-    // Turn 1: thinking + text(a) + tool + text(b) -> row only on text(b).
-    // A user message ends the turn. Turn 2: text(c) -> row on text(c).
+  it('collapses completed work and shows the copy row only on the final AI summary', () => {
     const messages = [
-      { id: 'think-1', type: 'thinking', position: 'left', content: { content: 'thinking' }, created_at: 1 },
-      { id: 'text-a', type: 'text', position: 'left', content: { content: 'a' }, created_at: 2 },
-      { id: 'tool-1', type: 'tool_call', position: 'left', content: { content: 't' }, created_at: 3 },
-      { id: 'text-b', type: 'text', position: 'left', content: { content: 'b' }, created_at: 4 },
-      { id: 'user-1', type: 'text', position: 'right', content: { content: 'q' }, created_at: 5 },
-      { id: 'text-c', type: 'text', position: 'left', content: { content: 'c' }, created_at: 6 },
+      { id: 'think-1', type: 'thinking', position: 'left', content: { content: 'thinking' }, created_at: 1000 },
+      { id: 'text-a', type: 'text', position: 'left', content: { content: 'a' }, created_at: 2000 },
+      { id: 'tool-1', type: 'tool_call', position: 'left', content: { content: 't' }, created_at: 3000 },
+      { id: 'text-b', type: 'text', position: 'left', content: { content: 'b' }, created_at: 4000 },
+      { id: 'user-1', type: 'text', position: 'right', content: { content: 'q' }, created_at: 5000 },
+      { id: 'text-c', type: 'text', position: 'left', content: { content: 'c' }, created_at: 6000 },
     ] as unknown as IMessageText[];
 
     render(<MessageList />, {
       wrapper: ({ children }) => <Wrapper messages={messages}>{children}</Wrapper>,
     });
 
-    // Intermediate AI text (followed by a tool then another text) hides the row.
-    expect(screen.getByTestId('msgtext-text-a').getAttribute('data-copy-row')).toBe('false');
-    // Last AI text of turn 1 (after the tool block) keeps the row — fallback strategy.
+    const workSummary = screen.getByTestId('turn-work-summary');
+    expect(workSummary).toHaveTextContent('Worked for 3s');
+    expect(screen.queryByTestId('msgtext-text-a')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('tool-summary')).not.toBeInTheDocument();
     expect(screen.getByTestId('msgtext-text-b').getAttribute('data-copy-row')).toBe('true');
-    // User message always keeps its own row.
     expect(screen.getByTestId('msgtext-user-1').getAttribute('data-copy-row')).toBe('true');
-    // Turn 2's only/last text keeps the row.
     expect(screen.getByTestId('msgtext-text-c').getAttribute('data-copy-row')).toBe('true');
+
+    fireEvent.click(workSummary.querySelector('button') as HTMLButtonElement);
+    expect(screen.getByTestId('msgtext-text-a')).toBeInTheDocument();
+    expect(screen.getByTestId('tool-summary')).toBeInTheDocument();
   });
 
-  it('moves the turn action row below a trailing View Steps card', () => {
+  it('folds trailing View Steps into the work summary instead of detaching the copy row', () => {
     const messages = [
-      { id: 'text-a', type: 'text', position: 'left', content: { content: 'answer' }, created_at: 1 },
+      { id: 'text-a', type: 'text', position: 'left', content: { content: 'answer' }, created_at: 1000 },
       createToolGroup([], 'tool-group-1'),
     ] as unknown as IMessageText[];
 
@@ -427,12 +441,10 @@ describe('MessageList', () => {
       wrapper: ({ children }) => <Wrapper messages={messages}>{children}</Wrapper>,
     });
 
-    // The text bubble no longer carries the row itself…
-    expect(screen.getByTestId('msgtext-text-a').getAttribute('data-copy-row')).toBe('false');
-    // …it is rendered AFTER the tool summary, so no content sits below it.
-    const actions = screen.getByTestId('turn-actions-text-a');
-    const summary = screen.getByTestId('tool-summary');
-    expect(summary.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByTestId('turn-work-summary')).toBeInTheDocument();
+    expect(screen.getByTestId('msgtext-text-a').getAttribute('data-copy-row')).toBe('true');
+    expect(screen.queryByTestId('turn-actions-text-a')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('tool-summary')).not.toBeInTheDocument();
   });
 
   it('withholds the streaming turn copy row but keeps earlier finished turns', () => {

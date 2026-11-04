@@ -26,6 +26,10 @@
     "output": "輸出",
     "loadFailed": "載入完整輸出失敗"
   },
+  "turnWork": {
+    "summary": "工作了 {{duration}}",
+    "summaryNoDuration": "工作已完成"
+  },
   "workbench": {
     "files": "檔案",
     "changes": "變更",
