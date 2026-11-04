@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.13](https://github.com/salmoshu/Catfish/releases/tag/v0.4.13) (2026-11-04)
+
+### Desktop
+
+#### Bug Fixes
+
+- **conversation:** stop treating transient conversation-load failures as deleted conversations when switching chats
+- **composer:** align model-selector submenus with the hovered row so long option lists grow upward instead of hitting the window bottom
+- **conversation:** keep turn copy, fork, and timestamp actions after trailing tool and file summaries instead of letting content spill below them
+- **composer:** pin the queued-command panel above the send box instead of scrolling it with the message timeline
+- **conversation:** cancel Codex turns automatically when the selected model reports capacity exhaustion
+
+---
+
 ## [0.4.9](https://github.com/salmoshu/Catfish/releases/tag/v0.4.9) (2026-11-03)
 
 ### Desktop
