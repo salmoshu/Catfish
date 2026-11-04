@@ -5,7 +5,7 @@
  */
 
 import { Button } from '@arco-design/web-react';
-import { Checklist, CheckOne, Down, Up } from '@icon-park/react';
+import { Checklist, Down, Up } from '@icon-park/react';
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +18,7 @@ import {
 } from '@renderer/pages/conversation/Workbench/workbenchActivityStore';
 import { WORKSPACE_STATE_EVENT } from '@renderer/utils/workspace/workspaceEvents';
 import ConversationPlanBar from './ConversationPlanBar';
+import PlanStepIcon from './PlanStepIcon';
 import { useLatestPlan } from './useLatestPlan';
 
 const readWorkbenchPresentation = (): { collapsed: boolean; section: WorkbenchSection | null } => {
@@ -39,12 +40,9 @@ const ConversationPlanCard: React.FC<{ conversation_id: string }> = ({ conversat
   const [presentation, setPresentation] = useState(readWorkbenchPresentation);
   const triggerRef = useRef<HTMLDivElement>(null);
   const plan = useLatestPlan();
-  const { isProcessing, activeTurnId } = useConversationRuntimeView(conversation_id);
+  const { isProcessing } = useConversationRuntimeView(conversation_id);
   const entries = useMemo(() => plan?.content.entries ?? [], [plan]);
   const completed = useMemo(() => entries.filter((entry) => entry.status === 'completed').length, [entries]);
-  const planVisible = Boolean(
-    plan && entries.length > 0 && isProcessing && (!plan.content.turn_id || plan.content.turn_id === activeTurnId)
-  );
   const slot =
     typeof document === 'undefined' ? null : document.querySelector(`[data-plan-card-slot="${conversation_id}"]`);
   const panelSlot =
@@ -67,12 +65,6 @@ const ConversationPlanCard: React.FC<{ conversation_id: string }> = ({ conversat
       window.removeEventListener(WORKSPACE_STATE_EVENT, syncPresentation);
     };
   }, []);
-
-  useEffect(() => {
-    if (!planVisible && presentation.section === 'plan' && !presentation.collapsed) {
-      openWorkbenchSection('files');
-    }
-  }, [planVisible, presentation]);
 
   useLayoutEffect(() => {
     if (!open || !slot) return;
@@ -105,7 +97,7 @@ const ConversationPlanCard: React.FC<{ conversation_id: string }> = ({ conversat
     };
   }, [open, slot]);
 
-  if (!slot || !planVisible) return null;
+  if (!slot) return null;
 
   const visibleEntries = showAll ? entries : entries.slice(0, 3);
   return createPortal(
@@ -141,24 +133,40 @@ const ConversationPlanCard: React.FC<{ conversation_id: string }> = ({ conversat
           >
             <div className='mb-14px flex items-center gap-8px text-14px font-medium text-t-primary'>
               <span>{t('conversation.planBar.title')}</span>
-              <span className='text-12px font-normal text-t-tertiary'>
-                {t('conversation.planBar.progress', { completed, total: entries.length })}
-              </span>
+              {entries.length > 0 && (
+                <span className='text-12px font-normal text-t-tertiary'>
+                  {t('conversation.planBar.progress', { completed, total: entries.length })}
+                </span>
+              )}
             </div>
-            <div className='flex flex-col gap-14px'>
-              {visibleEntries.map((entry, index) => (
-                <div key={`${index}-${entry.content}`} className='flex items-start gap-10px text-13px leading-20px'>
-                  {entry.status === 'completed' ? (
-                    <CheckOne theme='filled' size='17' className='mt-2px shrink-0 text-t-primary' />
-                  ) : (
-                    <span className='mt-5px size-12px shrink-0 rounded-full border-2 border-solid border-[var(--color-border-2)]' />
-                  )}
-                  <span className={entry.status === 'completed' ? 'text-t-tertiary line-through' : 'text-t-primary'}>
-                    {entry.content}
-                  </span>
-                </div>
-              ))}
-            </div>
+            {entries.length > 0 ? (
+              <div className='flex flex-col gap-14px'>
+                {visibleEntries.map((entry, index) => (
+                  <div
+                    key={`${index}-${entry.content}`}
+                    className='flex items-start gap-10px text-13px leading-20px'
+                    data-status={entry.status}
+                  >
+                    <span className='mt-2px inline-flex shrink-0'>
+                      <PlanStepIcon status={entry.status} size={16} processing={isProcessing} />
+                    </span>
+                    <span
+                      className={
+                        entry.status === 'completed'
+                          ? 'text-t-tertiary line-through'
+                          : entry.status === 'in_progress'
+                            ? 'text-t-primary'
+                            : 'text-t-secondary'
+                      }
+                    >
+                      {entry.content}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className='text-13px leading-20px text-t-tertiary'>{t('conversation.planBar.empty')}</div>
+            )}
             {entries.length > 3 && (
               <Button
                 type='text'

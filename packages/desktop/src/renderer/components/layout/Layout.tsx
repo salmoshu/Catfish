@@ -204,7 +204,10 @@ const Layout: React.FC<{
     dispatchWorkspaceToggleEvent();
   }, []);
   const explorerMobileWidthPx = Math.min(420, Math.max(280, Math.round(viewportWidth * 0.85)));
-  const workbenchWide = isPreviewOpen || workbenchSection === 'terminal' || workbenchSection === 'agents';
+  // Keep one width across every Workbench section. Terminal/agents previously
+  // borrowed the wider preview width, which made the sidebar jump when the user
+  // switched tabs; only an open preview (a separate region) still widens the host.
+  const workbenchWide = isPreviewOpen;
   const workbenchResizeActive = Boolean(currentProject) && !isMobile && workbenchWide && !explorerCollapsed;
   const previewMaximized =
     Boolean(currentProject) &&

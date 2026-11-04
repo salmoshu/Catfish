@@ -174,9 +174,7 @@ test.describe('Kimi-style conversation and Workbench', () => {
       .locator('#workbench-panel-agents')
       .evaluate((element) => element.clientWidth);
     expect(agentsPanelWidth).toBeCloseTo(agentsBodyWidth, 0);
-    expect(
-      await workbench.evaluate((element) => element.parentElement?.getBoundingClientRect().width ?? 0)
-    ).toBeGreaterThan(450);
+    const agentsHostWidth = await panelHost.evaluate((element) => element.getBoundingClientRect().width);
     for (const section of ['files', 'changes', 'preview', 'terminal', 'agents']) {
       await expect(page.locator(`#workbench-tab-${section}`)).toBeVisible();
     }
@@ -193,9 +191,15 @@ test.describe('Kimi-style conversation and Workbench', () => {
       .locator('#workbench-panel-terminal')
       .evaluate((element) => element.clientWidth);
     expect(terminalPanelWidth).toBeCloseTo(terminalBodyWidth, 0);
+    expect(await panelHost.evaluate((element) => element.getBoundingClientRect().width)).toBeCloseTo(
+      agentsHostWidth,
+      0
+    );
 
     await page.locator('#workbench-tab-files').click();
     await expect(page.locator('.workspace-tree').first()).toBeVisible();
+    const filesHostWidth = await panelHost.evaluate((element) => element.getBoundingClientRect().width);
+    expect(filesHostWidth).toBeCloseTo(agentsHostWidth, 0);
     await page.locator('#workbench-tab-changes').click();
     await expect(workbench).toHaveAttribute('data-active-section', 'changes');
     await page.locator('#workbench-tab-preview').click();
@@ -216,7 +220,7 @@ test.describe('Kimi-style conversation and Workbench', () => {
     await page.evaluate(() => document.fonts.ready);
     expect(
       await workbench.evaluate((element) => element.parentElement?.getBoundingClientRect().width ?? 0)
-    ).toBeGreaterThan(450);
+    ).toBeCloseTo(filesHostWidth, 0);
 
     await expect(page).toHaveScreenshot('workbench-light.png', {
       animations: 'disabled',

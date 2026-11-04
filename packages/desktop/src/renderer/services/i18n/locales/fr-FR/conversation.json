@@ -780,6 +780,7 @@
   "planBar": {
     "title": "Plan",
     "progress": "{{completed}}/{{total}}",
+    "empty": "Aucun plan pour le moment",
     "expand": "Développer le plan",
     "collapse": "Réduire le plan"
   }

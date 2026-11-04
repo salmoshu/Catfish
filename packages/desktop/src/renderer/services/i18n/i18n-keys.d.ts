@@ -785,6 +785,7 @@ export type I18nKey =
   | 'conversation.noModelConfigured'
   | 'conversation.notFound'
   | 'conversation.planBar.collapse'
+  | 'conversation.planBar.empty'
   | 'conversation.planBar.expand'
   | 'conversation.planBar.progress'
   | 'conversation.planBar.title'

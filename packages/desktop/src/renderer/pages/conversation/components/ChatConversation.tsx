@@ -209,6 +209,7 @@ const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; slid
     headerExtra: (
       <div className='flex items-center gap-8px'>
         <CronJobManager conversation_id={conversation.id} cron_job_id={cronJobId} />
+        <div data-plan-card-slot={conversation.id} className='inline-flex shrink-0' />
         {!isMobile && (
           <AionrsModelSelector
             selection={modelSelection}

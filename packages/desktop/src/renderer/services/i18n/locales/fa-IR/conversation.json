@@ -780,6 +780,7 @@
   "planBar": {
     "title": "برنامه",
     "progress": "{{completed}}/{{total}}",
+    "empty": "هنوز برنامه‌ای نیست",
     "expand": "گسترش برنامه",
     "collapse": "جمع کردن برنامه"
   }

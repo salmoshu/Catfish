@@ -780,6 +780,7 @@
   "planBar": {
     "title": "プラン",
     "progress": "{{completed}}/{{total}}",
+    "empty": "プランはまだありません",
     "expand": "プランを展開",
     "collapse": "プランを折りたたむ"
   }

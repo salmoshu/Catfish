@@ -47,7 +47,7 @@ describe('MessageToolGroup step presentation', () => {
     expect(screen.queryByText('file contents')).not.toBeInTheDocument();
   });
 
-  it('leaves space at both ends of the connector line between steps', () => {
+  it('uses a horizontal connector that extends on hover', () => {
     const stylesheet = readFileSync(
       join(
         __dirname,
@@ -55,7 +55,9 @@ describe('MessageToolGroup step presentation', () => {
       ),
       'utf8'
     );
-    expect(stylesheet).toMatch(/\.tool-row::before\s*{[^}]*top: 28px;[^}]*bottom: 8px;/s);
-    expect(stylesheet).toMatch(/\.tool-row:last-child::before\s*{[^}]*bottom: 8px;/s);
+    expect(stylesheet).toMatch(
+      /\.tool-row::before\s*{[^}]*inset-inline-start: 28px;[^}]*top: 25px;[^}]*height: 1px;[^}]*transform: scaleX\(0\.08\);/s
+    );
+    expect(stylesheet).toMatch(/\.tool-row:hover::before,\s*\.tool-row:focus-within::before\s*{[^}]*scaleX\(1\);/s);
   });
 });

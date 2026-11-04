@@ -3,10 +3,10 @@
  * Copyright 2025 AionUi (aionui.com)
  * SPDX-License-Identifier: Apache-2.0
  *
- * Reopening a conversation MID-TURN must restore the running turn's plan. The
- * paginated message load alone cannot: `upsert_message` does not refresh
- * `created_at`, so a plan row stays anchored at the START of its turn and a turn
- * with many tool calls buries it outside the default page.
+ * Reopening a conversation must restore its latest plan, including after a turn
+ * ended or was aborted. The paginated message load alone cannot: `upsert_message`
+ * does not refresh `created_at`, so a plan row stays anchored at the START of its
+ * turn and a turn with many tool calls buries it outside the default page.
  */
 
 import { renderHook, waitFor } from '@testing-library/react';
@@ -67,10 +67,10 @@ describe('usePlanRecovery', () => {
     expect(invoke).not.toHaveBeenCalled();
   });
 
-  it('does not fetch when no turn is running', () => {
+  it('restores the latest plan even when no turn is running', async () => {
     runtimeView.mockReturnValue({ hydrated: true, isProcessing: false });
     renderHook(() => usePlanRecovery('conv-1'));
-    expect(invoke).not.toHaveBeenCalled();
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith({ conversation_id: 'conv-1', type: 'plan' }));
   });
 
   it('fetches the latest plan while a turn is running', async () => {

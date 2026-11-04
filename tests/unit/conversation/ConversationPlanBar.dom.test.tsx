@@ -3,9 +3,9 @@
  * Copyright 2025 AionUi (aionui.com)
  * SPDX-License-Identifier: Apache-2.0
  *
- * The plan bar is a LIVE progress view, not history. It must render only while
- * the plan's own turn is still running — a finished turn's "all completed"
- * checklist lingering over the next turn is the failure mode this guards.
+ * The plan bar is a persistent progress view: it keeps the conversation's last
+ * plan visible after a turn ends or is aborted, and distinguishes running work
+ * from pending work. It has no inner collapse control.
  */
 
 import React from 'react';
@@ -68,30 +68,46 @@ afterEach(() => {
 });
 
 describe('ConversationPlanBar', () => {
-  it('renders the plan while its own turn is running', () => {
+  it('renders the plan and its progress', () => {
     setup({ plan: plan('turn-id-1'), isProcessing: true, activeTurnId: 'turn-id-1' });
     expect(screen.getByText('conversation.planBar.title')).toBeTruthy();
     expect(screen.getByText('conversation.planBar.progress:1/3')).toBeTruthy();
   });
 
-  it('renders nothing once the turn has ended', () => {
-    const { container } = setup({ plan: plan('turn-id-1'), isProcessing: false, activeTurnId: null });
-    expect(container.innerHTML).toBe('');
+  it('keeps the plan visible once the turn has ended', () => {
+    setup({ plan: plan('turn-id-1'), isProcessing: false, activeTurnId: null });
+    expect(screen.getByTestId('conversation-plan-bar')).toBeTruthy();
+    expect(screen.getByText('count the files')).toBeTruthy();
   });
 
-  it('renders nothing for a plan belonging to a previous turn', () => {
-    const { container } = setup({ plan: plan('turn-id-OLD'), isProcessing: true, activeTurnId: 'turn-id-NEW' });
-    expect(container.innerHTML).toBe('');
+  it('keeps a plan from an earlier turn visible after the task resumes', () => {
+    setup({ plan: plan('turn-id-OLD'), isProcessing: true, activeTurnId: 'turn-id-NEW' });
+    expect(screen.getByText('conversation.planBar.progress:1/3')).toBeTruthy();
+    expect(screen.getByText('count the files')).toBeTruthy();
   });
 
-  it('falls back to the isProcessing check when the plan carries no turn_id', () => {
-    setup({ plan: plan(undefined), isProcessing: true, activeTurnId: 'turn-id-1' });
-    expect(screen.getByText('conversation.planBar.title')).toBeTruthy();
+  it('renders an empty state when there is no plan', () => {
+    setup({ plan: undefined, isProcessing: false });
+    expect(screen.getByTestId('conversation-plan-bar')).toBeTruthy();
+    expect(screen.getByText('conversation.planBar.empty')).toBeTruthy();
   });
 
-  it('renders nothing when there is no plan at all', () => {
-    const { container } = setup({ plan: undefined, isProcessing: true, activeTurnId: 'turn-id-1' });
-    expect(container.innerHTML).toBe('');
+  it('marks the running step separately from pending steps', () => {
+    setup({ plan: plan('turn-id-1'), isProcessing: true, activeTurnId: 'turn-id-1' });
+    const running = screen.getByText('count the files').closest('[data-status]');
+    const pending = screen.getByText('summarize').closest('[data-status]');
+    expect(running).toHaveAttribute('data-status', 'in_progress');
+    expect(pending).toHaveAttribute('data-status', 'pending');
+    expect(running?.querySelector('[data-status="in_progress"]')).toBeTruthy();
+    expect(running).toHaveAttribute('aria-current', 'step');
+  });
+
+  it('has no collapse control and keeps every entry visible', () => {
+    setup({ plan: plan('turn-id-1'), isProcessing: true, activeTurnId: 'turn-id-1' });
+    for (const entry of ENTRIES) {
+      expect(screen.getByText(entry.content)).toBeTruthy();
+    }
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('uses the same width class as the send box so the bar does not overhang it', () => {
@@ -121,31 +137,16 @@ describe('ConversationPlanBar', () => {
     expect(scroller).toBeTruthy();
     expect(scroller.style.maxHeight).toContain('vh');
   });
-
-  it('is expanded by default so the live progress is visible without a click', () => {
-    setup({ plan: plan('turn-id-1'), isProcessing: true, activeTurnId: 'turn-id-1' });
-    for (const entry of ENTRIES) {
-      expect(screen.getByText(entry.content)).toBeTruthy();
-    }
-  });
-
-  it('collapses to the header on click and keeps the progress label', () => {
-    setup({ plan: plan('turn-id-1'), isProcessing: true, activeTurnId: 'turn-id-1' });
-    fireEvent.click(screen.getByRole('button'));
-
-    expect(screen.queryByText('read the readme')).toBeNull();
-    expect(screen.getByText('conversation.planBar.progress:1/3')).toBeTruthy();
-  });
 });
 
 describe('ConversationPlanCard', () => {
-  const setupCard = (sidebarOpen: boolean) => {
+  const setupCard = (sidebarOpen: boolean, entriesPlan: unknown = plan('turn-id-1')) => {
     document.body.innerHTML = `<div data-plan-card-slot="conv-1"></div><div data-project-panel-host data-collapsed="${!sidebarOpen}"><div data-workbench data-active-section="files"></div><div data-plan-panel-slot="conv-1"></div></div>`;
     const panel = document.querySelector<HTMLElement>('[data-project-panel-host]');
     if (!panel) throw new Error('Missing test workbench');
     vi.spyOn(panel, 'getBoundingClientRect').mockReturnValue({ left: 900, width: 320 } as DOMRect);
-    latestPlan.mockReturnValue(plan('turn-id-1'));
-    runtimeView.mockReturnValue({ isProcessing: true, activeTurnId: 'turn-id-1', hydrated: true });
+    latestPlan.mockReturnValue(entriesPlan);
+    runtimeView.mockReturnValue({ isProcessing: false, activeTurnId: null, hydrated: true });
     render(<ConversationPlanCard conversation_id='conv-1' />);
     fireEvent.click(screen.getByRole('button', { name: 'conversation.planBar.title' }));
     return screen.queryByRole('dialog', { name: 'conversation.planBar.title' });
@@ -155,6 +156,13 @@ describe('ConversationPlanCard', () => {
     const dialog = setupCard(true);
     expect(dialog).toHaveStyle({ position: 'fixed', boxSizing: 'border-box', left: '544px', width: '340px' });
     expect(screen.getByText('conversation.planBar.progress:1/3')).toBeInTheDocument();
+  });
+
+  it('keeps the plan button and shows an empty state when there is no plan', () => {
+    const dialog = setupCard(true, null);
+    expect(dialog).not.toBeNull();
+    expect(screen.getByText('conversation.planBar.empty')).toBeInTheDocument();
+    expect(screen.queryByText(/conversation\.planBar\.progress/)).toBeNull();
   });
 
   it('opens the collapsed workbench and renders the plan inside it', () => {

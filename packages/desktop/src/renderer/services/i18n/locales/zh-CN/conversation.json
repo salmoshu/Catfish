@@ -780,6 +780,7 @@
   "planBar": {
     "title": "计划",
     "progress": "{{completed}}/{{total}}",
+    "empty": "暂无计划",
     "expand": "展开计划",
     "collapse": "收起计划"
   }

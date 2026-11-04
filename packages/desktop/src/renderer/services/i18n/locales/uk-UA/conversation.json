@@ -796,6 +796,7 @@
   "planBar": {
     "title": "План",
     "progress": "{{completed}}/{{total}}",
+    "empty": "Плану ще немає",
     "expand": "Розгорнути план",
     "collapse": "Згорнути план"
   }

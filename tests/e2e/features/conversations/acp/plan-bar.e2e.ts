@@ -108,7 +108,7 @@ async function endPlanTurn(page: Page, conversationId: string): Promise<void> {
 }
 
 test.describe('conversation plan bar', () => {
-  test('shows live plan progress above the send box and clears it when the turn ends', async ({ page }) => {
+  test('shows live plan progress and keeps the completed plan visible', async ({ page }) => {
     let conversationId: string | null = null;
 
     try {
@@ -141,9 +141,13 @@ test.describe('conversation plan bar', () => {
       // 3. The plan must never render as a message row.
       await expect(page.locator('[data-message-type="plan"]')).toHaveCount(0);
 
-      // 4. The bar is a live view: once the turn ends it disappears entirely.
+      // 4. The plan persists after the turn ends and the bar has no inner
+      //    collapse control; the running step stays identifiable.
       await endPlanTurn(page, conversationId);
-      await expect(bar).toHaveCount(0, { timeout: 15_000 });
+      await expect(bar).toBeVisible({ timeout: 15_000 });
+      await expect(bar).toContainText('1/3');
+      await expect(bar.locator('[data-status="in_progress"]')).toHaveCount(1);
+      await expect(bar.getByRole('button')).toHaveCount(0);
     } finally {
       if (conversationId) {
         await httpDelete(page, `/api/conversations/${encodeURIComponent(conversationId)}`).catch(() => {});

@@ -10,23 +10,24 @@ import { useConversationRuntimeView } from '@renderer/pages/conversation/runtime
 import { useEffect, useRef } from 'react';
 
 /**
- * Restore the running turn's plan when a conversation is reopened mid-turn.
+ * Restore the conversation's latest plan when it is reopened.
  *
  * The paginated message load is not enough: `upsert_message` does not refresh
  * `created_at`, so a plan row stays anchored at the START of its turn and a turn
- * with many tool calls buries it outside the default page.
+ * with many tool calls buries it outside the default page. The plan persists
+ * across turns (and across an abort followed by a continuation), so recovery
+ * runs regardless of whether a turn is currently running.
  *
- * Gated on `hydrated`, NOT on the first `isProcessing` snapshot — the runtime
- * view resolves that flag asynchronously, so firing early reads a false `false`
- * and the bar silently stays empty in exactly the case this hook exists for.
+ * Gated on `hydrated` — the runtime view resolves asynchronously, and firing
+ * before it settles would query with stale conversation context.
  */
 export const usePlanRecovery = (conversation_id: string): void => {
   const update = useUpdateMessageList();
-  const { hydrated, isProcessing } = useConversationRuntimeView(conversation_id);
+  const { hydrated } = useConversationRuntimeView(conversation_id);
   const requestedRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!conversation_id || !hydrated || !isProcessing) return;
+    if (!conversation_id || !hydrated) return;
     if (requestedRef.current === conversation_id) return;
     requestedRef.current = conversation_id;
 
@@ -47,5 +48,5 @@ export const usePlanRecovery = (conversation_id: string): void => {
     return () => {
       cancelled = true;
     };
-  }, [conversation_id, hydrated, isProcessing, update]);
+  }, [conversation_id, hydrated, update]);
 };

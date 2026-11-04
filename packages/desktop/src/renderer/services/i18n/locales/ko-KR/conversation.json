@@ -780,6 +780,7 @@
   "planBar": {
     "title": "계획",
     "progress": "{{completed}}/{{total}}",
+    "empty": "아직 계획이 없습니다",
     "expand": "계획 펼치기",
     "collapse": "계획 접기"
   }

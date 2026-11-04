@@ -782,6 +782,7 @@
   "planBar": {
     "title": "Plan",
     "progress": "{{completed}}/{{total}}",
+    "empty": "Henüz plan yok",
     "expand": "Planı genişlet",
     "collapse": "Planı daralt"
   }

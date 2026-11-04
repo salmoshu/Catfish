@@ -423,9 +423,9 @@ export type IMessagePlan = IMessage<
     session_id: string;
     entries: PlanUpdate['update']['entries'];
     /**
-     * The turn this snapshot belongs to. The plan bar only renders while that
-     * turn is still running, so a finished turn's checklist cannot linger over
-     * the next one. Absent on rows written before this field existed.
+     * The turn this snapshot belongs to. Kept for provenance and history: the
+     * plan itself persists across turns so an aborted-then-resumed task keeps
+     * showing its progress. Absent on rows written before this field existed.
      */
     turn_id?: string;
   }
