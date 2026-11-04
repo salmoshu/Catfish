@@ -135,9 +135,7 @@ const EnvironmentProjects: React.FC<Props> = ({
                   stickyTop={28}
                   onToggle={() => toggleExpandedWorkspace(key, [project.workspace])}
                   leadingIcon={
-                    projectRunning ? (
-                      <Spin size={16} data-testid='cached-project-running' />
-                    ) : isRemote ? (
+                    isRemote ? (
                       <span role='img' aria-label={name} className={styles.environment}>
                         <KimiIcon name='globe' size={16} />
                       </span>
@@ -150,6 +148,7 @@ const EnvironmentProjects: React.FC<Props> = ({
                   }
                   trailing={
                     <span className='flex items-center gap-6px'>
+                      {projectRunning && <Spin size={14} data-testid='cached-project-running' />}
                       <Tooltip content={actionLabel} position='top'>
                         <span
                           role='button'

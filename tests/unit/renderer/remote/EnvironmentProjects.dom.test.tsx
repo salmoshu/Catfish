@@ -158,6 +158,7 @@ describe('projects across environments', () => {
     fireEvent.click(screen.getByText('RemoteProject'));
     expect(screen.getByTestId('cached-conversation-running')).toBeInTheDocument();
     expect(screen.getByTestId('cached-project-running')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'RemoteProject' })).toBeInTheDocument();
   });
 
   it('activates the remote backend only after a cached conversation is selected', async () => {

@@ -460,6 +460,9 @@ const GenericToolItem: React.FC<{
   const isLoading = isProcessing && status !== 'Success' && status !== 'Error' && status !== 'Canceled';
   const hasDetail = Boolean(description || result_display || status === 'Error');
   const [expanded, setExpanded] = useState(status === 'Error');
+  React.useEffect(() => {
+    if (!isProcessing) setExpanded(false);
+  }, [isProcessing]);
   const badgeStatus =
     status === 'Error' ? 'error' : isLoading ? 'processing' : status === 'Success' ? 'success' : 'default';
 

@@ -100,16 +100,17 @@ describe('showNotification', () => {
     expect(FakeElectronNotification.instances).toHaveLength(0);
   });
 
-  it('focuses the window and emits notification.clicked on click', async () => {
+  it('focuses the window and emits notification.clicked with its source environment on click', async () => {
     const win = makeWindow(false);
+    const environment = { type: 'remote', id: 'wsl-1', name: 'Ubuntu', kind: 'wsl' } as const;
     setNotificationMainWindow(win as never);
-    await showNotification({ title: 'AionUi', body: 'done', conversation_id: 'c1' });
+    await showNotification({ title: 'AionUi', body: 'done', conversation_id: 'c1', environment });
 
     FakeElectronNotification.instances[0].handlers.click?.();
 
     expect(win.show).toHaveBeenCalledTimes(1);
     expect(win.focus).toHaveBeenCalledTimes(1);
-    expect(clickedEmit).toHaveBeenCalledWith({ conversation_id: 'c1' });
+    expect(clickedEmit).toHaveBeenCalledWith({ conversation_id: 'c1', environment });
   });
 
   it('logs when skipping because notifications are disabled in settings', async () => {

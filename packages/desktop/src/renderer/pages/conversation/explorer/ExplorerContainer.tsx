@@ -25,6 +25,7 @@ import useSWR from 'swr';
 import { dispatchWorkspaceHasFilesEvent } from '@/renderer/utils/workspace/workspaceEvents';
 
 import { ipcBridge } from '@/common';
+import { getBackendEnvironment } from '@/common/adapter/httpBridge';
 import { usePreviewContext } from '@/renderer/pages/conversation/Preview';
 import WorkspaceOpenButton from '@/renderer/pages/conversation/components/ChatLayout/WorkspaceOpenButton';
 import { getFileTypeInfo } from '@/renderer/utils/file/fileType';
@@ -321,14 +322,22 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({
       .catch(() => Message.error(t('conversation.explorer.copyFailed')));
   };
 
-  // Copy the node's ABSOLUTE device path. The front end never holds it (project
-  // refs are pe_id + relative_path only) and never receives it: the backend
-  // resolves the path AND writes the clipboard itself (mirrors reveal), returning
-  // void — we only toast on success/failure. Desktop-only: the menu item is
-  // Electron-gated in ExplorerPanel, so this handler only runs there (a remote
-  // WebUI must not surface it). A pe-root node (rel '') resolves to the root
-  // folder's own absolute path server-side.
+  // Copy the node's absolute path. Local projects use the backend clipboard so
+  // the renderer never receives the path. Remote projects already expose the
+  // root's display_path for open-externally, and their backend may not provide a
+  // clipboard service (notably WSL), so copy the resolved remote path locally.
   const handleCopyAbsolutePath = (peId: string, rel: string): void => {
+    if (getBackendEnvironment()?.type === 'remote') {
+      const base = detail?.explorer.entries.find((entry) => entry.pe_id === peId)?.display_path;
+      if (base) {
+        const root = base.replace(/[\\/]+$/, '');
+        const absolutePath = rel ? `${root}/${rel}` : root;
+        void copyText(absolutePath)
+          .then(() => Message.success(t('conversation.explorer.pathCopied')))
+          .catch(() => Message.error(t('conversation.explorer.copyFailed')));
+        return;
+      }
+    }
     void ipcBridge.fs.copyAbsolutePath
       .invoke({ pe_id: peId, relative_path: rel })
       .then(() => Message.success(t('conversation.explorer.pathCopied')))

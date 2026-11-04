@@ -31,7 +31,8 @@ describe('MessageToolGroupSummary', () => {
 
     expect(screen.queryByTestId('tool-group-running')).not.toBeInTheDocument();
     expect(container.querySelector('.badge-breathing')).toBeNull();
-    expect(screen.getByRole('button', { name: /View Steps/ })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('button', { name: /View Steps/ })).toHaveAttribute('aria-expanded', 'false');
+    expect(container.querySelector('.tool-group-summary__body')).toBeNull();
   });
 
   it('loads full tool content when expanding a compact history item', async () => {

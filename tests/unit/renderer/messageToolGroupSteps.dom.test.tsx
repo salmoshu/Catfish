@@ -5,6 +5,8 @@
  */
 
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { IMessageToolGroup } from '@/common/chat/chatLib';
@@ -43,5 +45,17 @@ describe('MessageToolGroup step presentation', () => {
     fireEvent.click(step);
     expect(step).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByText('file contents')).not.toBeInTheDocument();
+  });
+
+  it('leaves space at both ends of the connector line between steps', () => {
+    const stylesheet = readFileSync(
+      join(
+        __dirname,
+        '../../../packages/desktop/src/renderer/pages/conversation/Messages/components/MessageToolGroupSummary.css'
+      ),
+      'utf8'
+    );
+    expect(stylesheet).toMatch(/\.tool-row::before\s*{[^}]*top: 28px;[^}]*bottom: 8px;/s);
+    expect(stylesheet).toMatch(/\.tool-row:last-child::before\s*{[^}]*bottom: 8px;/s);
   });
 });

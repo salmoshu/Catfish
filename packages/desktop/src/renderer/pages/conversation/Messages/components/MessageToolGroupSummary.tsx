@@ -32,6 +32,9 @@ const statusToBadge = (status: NormalizedToolStatus): BadgeProps['status'] => {
 const ToolItemDetail: React.FC<{ item: NormalizedToolCall; isProcessing: boolean }> = ({ item, isProcessing }) => {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    if (!isProcessing) setExpanded(false);
+  }, [isProcessing]);
   const [fullItem, setFullItem] = useState<NormalizedToolCall | null>(null);
   const [loadingFull, setLoadingFull] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -167,7 +170,7 @@ const MessageToolGroupSummary: React.FC<{ messages: ToolMessage[]; isProcessing?
   const [showMore, setShowMore] = useState(hasRunning);
 
   useEffect(() => {
-    if (hasRunning) setShowMore(true);
+    setShowMore(hasRunning);
   }, [hasRunning]);
 
   const tools = useMemo(() => normalizeToolMessages(messages), [messages]);

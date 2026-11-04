@@ -20,13 +20,13 @@ export const connectOrResumeEnvironment = async (id: string): Promise<RemoteOper
   return ipcBridge.remoteEnvironment.connect.invoke({ id });
 };
 
-/** Point the renderer at the selected backend and remount data providers without a document reload. */
+/** Point the renderer at the selected backend and refresh data without remounting the application. */
 export const syncBackendEnvironment = async (): Promise<void> => {
   const state = await ipcBridge.remoteEnvironment.state.invoke();
   if (!state.port) throw new Error('The selected backend has no available port');
   setBackendRuntime(state.active, state.port);
   resetBackendSocket();
-  configService.reset();
+  await configService.reload();
   emitter.emit('chat.history.refresh');
   window.dispatchEvent(new Event(BACKEND_ENVIRONMENT_CHANGED));
 };

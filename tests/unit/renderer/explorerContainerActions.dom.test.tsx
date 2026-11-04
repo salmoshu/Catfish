@@ -171,6 +171,7 @@ beforeEach(() => {
   copyText.mockReset().mockResolvedValue(undefined);
   copyAbsolutePath.mockReset().mockResolvedValue(undefined);
   activeConversationId = null;
+  window.__backendEnvironment = { type: 'local' };
   fsRead.mockReset().mockResolvedValue({ content: 'hello', encoding: 'utf-8' });
   readContent.mockReset().mockResolvedValue('hello');
   // Small file, well within the preview size ceiling.
@@ -398,6 +399,16 @@ describe('ExplorerContainer A-paste import', () => {
     renderIt();
     fireEvent.click(await screen.findByTestId('do-copy-abs-root'));
     await waitFor(() => expect(copyAbsolutePath).toHaveBeenCalledWith({ pe_id: 'peA', relative_path: '' }));
+    await waitFor(() => expect(Message.success).toHaveBeenCalledWith('conversation.explorer.pathCopied'));
+  });
+
+  it('copy absolute path: copies a remote display path locally instead of relying on the remote clipboard', async () => {
+    window.__backendEnvironment = { type: 'remote', id: 'wsl-1', name: 'Ubuntu', kind: 'wsl' };
+    renderIt();
+    fireEvent.click(await screen.findByTestId('do-copy-abs'));
+
+    await waitFor(() => expect(copyText).toHaveBeenCalledWith('/x/src/main.ts'));
+    expect(copyAbsolutePath).not.toHaveBeenCalled();
     await waitFor(() => expect(Message.success).toHaveBeenCalledWith('conversation.explorer.pathCopied'));
   });
 

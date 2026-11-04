@@ -28,7 +28,7 @@ vi.mock('@/common/adapter/httpBridge', () => ({
   resetBackendSocket: mocks.resetSocket,
   setBackendRuntime: mocks.setRuntime,
 }));
-vi.mock('@/common/config/configService', () => ({ configService: { reset: mocks.resetConfig } }));
+vi.mock('@/common/config/configService', () => ({ configService: { reload: mocks.resetConfig } }));
 vi.mock('@/renderer/utils/emitter', () => ({ emitter: { emit: mocks.emit } }));
 
 describe('backend environment switching', () => {

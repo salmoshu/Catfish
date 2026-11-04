@@ -46,7 +46,7 @@ import './components/workspace/registerWebFsPicker';
 import type { PropsWithChildren } from 'react';
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { SWRConfig } from 'swr';
+import { SWRConfig, useSWRConfig } from 'swr';
 import type { TFunction } from 'i18next';
 
 // Context providers
@@ -487,19 +487,24 @@ const BackendStartupFailureDialog: React.FC<{ failure: BackendStartupFailureInfo
   );
 };
 
-const BackendEnvironmentApp: React.FC = () => {
-  const [revision, setRevision] = useState(0);
+const BackendDataRefresh: React.FC = () => {
+  const { mutate } = useSWRConfig();
   useEffect(() => {
-    const remount = () => setRevision((current) => current + 1);
-    window.addEventListener(BACKEND_ENVIRONMENT_CHANGED, remount);
-    return () => window.removeEventListener(BACKEND_ENVIRONMENT_CHANGED, remount);
-  }, []);
-  return (
-    <AppProviders key={revision}>
-      <App />
-    </AppProviders>
-  );
+    const refresh = () => {
+      void mutate(() => true, undefined, { revalidate: true });
+    };
+    window.addEventListener(BACKEND_ENVIRONMENT_CHANGED, refresh);
+    return () => window.removeEventListener(BACKEND_ENVIRONMENT_CHANGED, refresh);
+  }, [mutate]);
+  return null;
 };
+
+const BackendEnvironmentApp: React.FC = () => (
+  <AppProviders>
+    <BackendDataRefresh />
+    <App />
+  </AppProviders>
+);
 
 void registerPwa();
 

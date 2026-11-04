@@ -1591,11 +1591,12 @@ export type INotificationOptions = {
   body: string;
   icon?: string;
   conversation_id?: string;
+  environment?: import('@/common/types/remote').BackendEnvironment;
 };
 
 export const notification = {
   show: bridge.buildProvider<void, INotificationOptions>('notification.show'),
-  clicked: bridge.buildEmitter<{ conversation_id?: string }>('notification.clicked'),
+  clicked: bridge.buildEmitter<Pick<INotificationOptions, 'conversation_id' | 'environment'>>('notification.clicked'),
 };
 
 // ---------------------------------------------------------------------------

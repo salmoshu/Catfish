@@ -126,6 +126,18 @@ class ConfigServiceImpl {
     this.initPromise = null;
   }
 
+  async reload(): Promise<void> {
+    const data = await fetchJson<Record<string, unknown>>('GET', '/api/settings/client');
+    this.cache.clear();
+    if (data) {
+      for (const [key, value] of Object.entries(data)) {
+        this.cache.set(key, value);
+        this.notify(key as ConfigKey, value);
+      }
+    }
+    this.initialized = true;
+  }
+
   private notify(key: ConfigKey, value: unknown): void {
     const subs = this.subscribers.get(key);
     if (subs) {

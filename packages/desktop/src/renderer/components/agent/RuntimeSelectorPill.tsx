@@ -56,7 +56,7 @@ const RuntimeSelectorPill = React.forwardRef<React.ElementRef<typeof Button>, Ru
       onClick={onClick}
       style={style}
     >
-      <span className='flex items-center gap-6px min-w-0 leading-[1.2]'>
+      <span className='flex items-center gap-6px min-w-0 leading-none'>
         {leading}
         {label && <MarqueePillLabel>{label}</MarqueePillLabel>}
         {loading ? <RuntimeSelectorLoadingIndicator /> : trailing}
