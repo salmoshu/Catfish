@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.4.14](https://github.com/salmoshu/Catfish/releases/tag/v0.4.14) (2026-11-04)
+
+### Desktop
+
+#### Features
+
+- **conversation:** replace the vertical tool-step guide with a horizontal line that extends on hover
+- **conversation:** fold a completed turn's thinking, progress, and tool work into one expandable summary and copy only the final reply
+- **pet:** replace the desktop pet artwork with the animated Catfish mascot
+
+#### Bug Fixes
+
+- **notification:** keep Windows task-completion toasts alive so clicking one focuses the app and opens the matching conversation
+- **conversation:** only treat real user scrolling as opting out of auto-follow so the timeline stays pinned to the bottom
+- **composer:** capitalize every word of thought-strength labels
+- **connection:** switch the renderer backend before navigating to prevent "Conversation not found" during remote/local switches
+
+---
+
 ## [0.4.13](https://github.com/salmoshu/Catfish/releases/tag/v0.4.13) (2026-11-04)
 
 ### Desktop
