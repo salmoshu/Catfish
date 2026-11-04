@@ -212,6 +212,41 @@ export const isErrorTipMessage = (message: IResponseMessage): boolean => {
   return tipData.type === 'error';
 };
 
+/**
+ * Upstream reasons a Codex retry tip can carry when the model itself has no
+ * capacity. The detail is the CLI's own line rather than a Catfish string, so
+ * it is matched case-insensitively instead of relying on a translation key.
+ */
+const CODEX_CAPACITY_MARKERS = ['at capacity', 'model_capacity_exhausted', 'no capacity available'];
+
+/**
+ * True for a Codex retry-progress tip whose upstream reason is the selected
+ * model being at capacity. Terminal error tips are excluded: that turn is
+ * already ending, so there is nothing left to cancel.
+ */
+export const isCodexCapacityRetryTip = (message: IResponseMessage): boolean => {
+  if (message.type !== 'tips' || !message.data || typeof message.data !== 'object') {
+    return false;
+  }
+
+  const tipData = message.data as { type?: unknown; code?: unknown; content?: unknown; params?: unknown };
+  if (tipData.type === 'error') {
+    return false;
+  }
+
+  const params =
+    tipData.params && typeof tipData.params === 'object' ? (tipData.params as { detail?: unknown }) : undefined;
+  const detail = [
+    typeof tipData.content === 'string' ? tipData.content : '',
+    typeof params?.detail === 'string' ? params.detail : '',
+  ]
+    .join(' ')
+    .toLowerCase();
+
+  const isRetryProgress = tipData.code === 'CODEX_RETRYING' || detail.includes('reconnecting...');
+  return isRetryProgress && CODEX_CAPACITY_MARKERS.some((marker) => detail.includes(marker));
+};
+
 export type IMessageToolCall = IMessage<
   'tool_call',
   {

@@ -51,7 +51,6 @@ import type { ChatFileRef } from '@/common/types/chatFile';
 import { Button, Message, Tag } from '@arco-design/web-react';
 import { Brain, Lightning, MagicHat, Shield } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { classifyConversationBusyError } from '../conversationBusyError';
 import { buildSendFailureError } from './buildSendFailureError';
@@ -117,7 +116,6 @@ const AcpSendBox: React.FC<{
   composerTools?: React.ReactNode;
   teamSendMessage?: (payload: { input: string; files: ChatFileRef[] }) => Promise<void>;
   teamRuntime?: TeamSendBoxRuntime;
-  commandQueueContainer?: HTMLElement | null;
 }> = ({
   conversation_id,
   backend,
@@ -127,7 +125,6 @@ const AcpSendBox: React.FC<{
   composerTools,
   teamSendMessage,
   teamRuntime,
-  commandQueueContainer,
 }) => {
   const {
     aiProcessing,
@@ -795,24 +792,20 @@ Please check your local CLI tool authentication status`,
 
   return (
     <div className={`${sendBoxWidthClass} flex flex-col mt-auto mb-16px`}>
-      {commandQueueContainer &&
-        createPortal(
-          <CommandQueuePanel
-            items={queuedCommands}
-            mode={queueMode}
-            isMobile={isMobile}
-            interactionLocked={isQueueInteractionLocked}
-            onInteractionLock={lockInteraction}
-            onInteractionUnlock={unlockInteraction}
-            onEdit={handleEditQueuedCommand}
-            onSendNow={handleSendNowQueued}
-            onToggleMode={toggleMode}
-            onReorder={reorder}
-            onRemove={remove}
-            onClear={clear}
-          />,
-          commandQueueContainer
-        )}
+      <CommandQueuePanel
+        items={queuedCommands}
+        mode={queueMode}
+        isMobile={isMobile}
+        interactionLocked={isQueueInteractionLocked}
+        onInteractionLock={lockInteraction}
+        onInteractionUnlock={unlockInteraction}
+        onEdit={handleEditQueuedCommand}
+        onSendNow={handleSendNowQueued}
+        onToggleMode={toggleMode}
+        onReorder={reorder}
+        onRemove={remove}
+        onClear={clear}
+      />
       <ThoughtDisplay
         running={teamRuntime?.loading ?? (aiProcessing && !hasThinkingMessage)}
         statusText={teamRuntime?.statusText}

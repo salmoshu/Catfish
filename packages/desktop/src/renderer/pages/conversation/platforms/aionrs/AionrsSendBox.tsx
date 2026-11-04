@@ -52,7 +52,6 @@ import type { AgentModeOption } from '@/renderer/utils/model/agentTypes';
 import { Button, Message, Tag } from '@arco-design/web-react';
 import { Brain, Lightning, MagicHat, Shield } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { classifyConversationBusyError } from '../conversationBusyError';
 import { useAionrsMessage } from './useAionrsMessage';
@@ -125,16 +124,7 @@ const AionrsSendBox: React.FC<{
   agent_name?: string;
   teamSendMessage?: (payload: { input: string; files: ChatFileRef[] }) => Promise<void>;
   teamRuntime?: TeamSendBoxRuntime;
-  commandQueueContainer?: HTMLElement | null;
-}> = ({
-  conversation_id,
-  modelSelection,
-  session_mode,
-  agent_name,
-  teamSendMessage,
-  teamRuntime,
-  commandQueueContainer,
-}) => {
+}> = ({ conversation_id, modelSelection, session_mode, agent_name, teamSendMessage, teamRuntime }) => {
   const [dynamicModes, setDynamicModes] = useState<AgentModeOption[]>([]);
   const [currentMode, setCurrentMode] = useState<string | undefined>(session_mode);
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
@@ -720,24 +710,20 @@ const AionrsSendBox: React.FC<{
 
   return (
     <div className={`${sendBoxWidthClass} flex flex-col mt-auto mb-16px`}>
-      {commandQueueContainer &&
-        createPortal(
-          <CommandQueuePanel
-            items={queuedCommands}
-            mode={queueMode}
-            isMobile={isMobile}
-            interactionLocked={isQueueInteractionLocked}
-            onInteractionLock={lockInteraction}
-            onInteractionUnlock={unlockInteraction}
-            onEdit={handleEditQueuedCommand}
-            onSendNow={handleSendNowQueued}
-            onToggleMode={toggleMode}
-            onReorder={reorder}
-            onRemove={remove}
-            onClear={clear}
-          />,
-          commandQueueContainer
-        )}
+      <CommandQueuePanel
+        items={queuedCommands}
+        mode={queueMode}
+        isMobile={isMobile}
+        interactionLocked={isQueueInteractionLocked}
+        onInteractionLock={lockInteraction}
+        onInteractionUnlock={unlockInteraction}
+        onEdit={handleEditQueuedCommand}
+        onSendNow={handleSendNowQueued}
+        onToggleMode={toggleMode}
+        onReorder={reorder}
+        onRemove={remove}
+        onClear={clear}
+      />
       <ThoughtDisplay
         thought={thought}
         running={teamRuntime?.loading ?? running}

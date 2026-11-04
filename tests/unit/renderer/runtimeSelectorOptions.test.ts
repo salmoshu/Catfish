@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   composeRuntimeSelectorLabel,
   formatThoughtLevelLabel,
+  RUNTIME_SUBMENU_TRIGGER_PROPS,
 } from '@/renderer/components/agent/runtimeSelectorOptions';
 
 describe('thought level labels', () => {
@@ -23,5 +24,12 @@ describe('thought level labels', () => {
         },
       })
     ).toBe('K3.1 Pro · Max');
+  });
+});
+
+describe('runtime selector submenu placement', () => {
+  it('aligns the flyout bottom with the hovered row instead of its top', () => {
+    expect(RUNTIME_SUBMENU_TRIGGER_PROPS.position).toBe('lb');
+    expect(RUNTIME_SUBMENU_TRIGGER_PROPS.autoFitPosition).toBe(true);
   });
 });

@@ -16,7 +16,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { IResponseMessage } from '@/common/adapter/ipcBridge';
-import { transformMessage, type IMessageTips, type TMessage } from '@/common/chat/chatLib';
+import { transformMessage, isCodexCapacityRetryTip, type IMessageTips, type TMessage } from '@/common/chat/chatLib';
 import {
   buildMessageIndex,
   composeMessageWithIndex,
@@ -151,5 +151,75 @@ describe('codex retry tip history fold', () => {
     const folded = foldSupersededTips([drift, ...persistedRun(), drift]);
 
     expect(folded.filter((message) => message.type === 'tips')).toHaveLength(4);
+  });
+});
+
+describe('codex capacity retry detection', () => {
+  const tipFrame = (data: Record<string, unknown>, overrides: Partial<IResponseMessage> = {}): IResponseMessage =>
+    ({
+      type: 'tips',
+      msg_id: 'tip-1',
+      conversation_id: 'conv-1',
+      data,
+      ...overrides,
+    }) as unknown as IResponseMessage;
+
+  it('detects the capacity reason on a retry-progress tip', () => {
+    expect(
+      isCodexCapacityRetryTip(
+        tipFrame({
+          type: 'warning',
+          code: 'CODEX_RETRYING',
+          content: 'Reconnecting... 1/5 — Selected model is at capacity. Please try a different model.',
+        })
+      )
+    ).toBe(true);
+  });
+
+  it('reads the detail from params as well as content', () => {
+    expect(
+      isCodexCapacityRetryTip(
+        tipFrame({
+          type: 'warning',
+          code: 'CODEX_RETRYING',
+          content: 'Reconnecting... 1/5',
+          params: {
+            detail: 'Selected model is at capacity. Please try a different model.',
+            attempts: 1,
+            elapsed: '0s',
+          },
+        })
+      )
+    ).toBe(true);
+  });
+
+  it('recognizes the CLI prefix even without the CODEX_RETRYING code', () => {
+    expect(
+      isCodexCapacityRetryTip(tipFrame({ type: 'warning', content: 'Reconnecting... 2/5 — model is at capacity' }))
+    ).toBe(true);
+  });
+
+  it('leaves other retry reasons alone', () => {
+    expect(
+      isCodexCapacityRetryTip(
+        tipFrame({
+          type: 'warning',
+          code: 'CODEX_RETRYING',
+          content: "Reconnecting... 1/5 — We're currently experiencing high demand",
+        })
+      )
+    ).toBe(false);
+  });
+
+  it('ignores terminal error tips and non-tip frames', () => {
+    expect(
+      isCodexCapacityRetryTip(
+        tipFrame({ type: 'error', code: 'CODEX_RETRYING', content: 'Selected model is at capacity' })
+      )
+    ).toBe(false);
+    expect(
+      isCodexCapacityRetryTip(tipFrame({ type: 'warning', code: 'CLI_VERSION_NEWER', content: 'at capacity' }))
+    ).toBe(false);
+    expect(isCodexCapacityRetryTip({ ...tipFrame({}), type: 'text' } as unknown as IResponseMessage)).toBe(false);
   });
 });

@@ -84,14 +84,12 @@ const AionrsChat: React.FC<{
     forkCapability,
   ]);
 
-  const [commandQueueContainer, setCommandQueueContainer] = React.useState<HTMLDivElement | null>(null);
-
   return (
     <ConversationProvider value={conversationValue}>
       <ConversationArtifactProvider conversation_id={conversation_id}>
         <div className={`${CHAT_SURFACE_CONTAINER_CLASS} flex-1 flex flex-col px-20px min-h-0`}>
           <FlexFullContainer>
-            <MessageList className='flex-1' emptySlot={emptySlot} queueSlotRef={setCommandQueueContainer} />
+            <MessageList className='flex-1' emptySlot={emptySlot} />
           </FlexFullContainer>
           <ConversationPlanCard conversation_id={conversation_id} />
           <AionrsSendBox
@@ -101,7 +99,6 @@ const AionrsChat: React.FC<{
             agent_name={agent_name}
             teamSendMessage={teamSendMessage}
             teamRuntime={teamRuntime}
-            commandQueueContainer={commandQueueContainer}
           />
         </div>
       </ConversationArtifactProvider>

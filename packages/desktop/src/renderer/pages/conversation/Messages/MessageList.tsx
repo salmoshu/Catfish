@@ -5,7 +5,13 @@
  */
 
 import type { IConversationArtifact } from '@/common/adapter/ipcBridge';
-import type { IMessageAcpToolCall, IMessageToolCall, IMessageToolGroup, TMessage } from '@/common/chat/chatLib';
+import type {
+  IMessageAcpToolCall,
+  IMessageText,
+  IMessageToolCall,
+  IMessageToolGroup,
+  TMessage,
+} from '@/common/chat/chatLib';
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import { useConversationRuntimeView } from '@/renderer/pages/conversation/runtime/useConversationRuntimeView';
 import { getChatSurfaceWidthClass } from '@/renderer/pages/conversation/utils/chatSurfaceWidth';
@@ -43,7 +49,7 @@ import MessageToolGroup from './components/MessageToolGroup';
 import MessageToolGroupSummary from './components/MessageToolGroupSummary';
 import MessageCronTrigger from './components/MessageCronTrigger';
 import MessageSkillSuggest from './components/MessageSkillSuggest';
-import MessageText from './components/MessageText';
+import MessageText, { MessageTextActions } from './components/MessageText';
 import MessageThinking from './components/MessageThinking';
 import type { WriteFileResult } from './types';
 import { useAutoScroll } from './useAutoScroll';
@@ -338,8 +344,7 @@ const MessageItem: React.FC<{
 const MessageList: React.FC<{
   className?: string;
   emptySlot?: React.ReactNode;
-  queueSlotRef?: React.Ref<HTMLDivElement>;
-}> = ({ emptySlot, queueSlotRef }) => {
+}> = ({ emptySlot }) => {
   const list = useMessageList();
   const isMessageListLoading = useMessageListLoading();
   const pagination = useMessagePaginationState();
@@ -482,10 +487,25 @@ const MessageList: React.FC<{
   // by tool blocks. While the conversation is still streaming, the final turn's
   // row is withheld (it would otherwise appear then shift down as more text
   // streams in); earlier, already-finished turns always keep their row.
-  const { copyRowIds: aiCopyRowTextIds, turnTextsById: aiTurnTextsById } = useMemo(
-    () => collectAiCopyRows(processedList as TurnCopyItem[], isProcessing),
-    [processedList, isProcessing]
-  );
+  const {
+    copyRowIds: aiCopyRowTextIds,
+    turnTextsById: aiTurnTextsById,
+    copyRowAnchorByTextId: aiCopyRowAnchorByTextId,
+  } = useMemo(() => collectAiCopyRows(processedList as TurnCopyItem[], isProcessing), [processedList, isProcessing]);
+
+  // Resolve each turn's row to the LAST item of that turn. When the turn ends
+  // in a View Steps / file summary card, the row renders after that card; only
+  // a turn that ends on the text itself keeps the row inline in the bubble.
+  const aiTurnActionsByAnchorId = useMemo(() => {
+    const actions = new Map<string, { message: IMessageText; turnTexts?: string[] }>();
+    for (const [textId, anchorId] of aiCopyRowAnchorByTextId) {
+      const source = list.find((message): message is IMessageText => message.id === textId && message.type === 'text');
+      if (source) {
+        actions.set(anchorId, { message: source, turnTexts: aiTurnTextsById.get(textId) });
+      }
+    }
+    return actions;
+  }, [aiCopyRowAnchorByTextId, aiTurnTextsById, list]);
 
   // The last REAL message in the visible timeline (pseudo entries like
   // file/tool summaries don't count). HEAD-fork backends (claude/ACP) only
@@ -689,6 +709,22 @@ const MessageList: React.FC<{
     scrollToBottom('smooth');
   };
 
+  const renderStandaloneTurnActions = (anchorId: string) => {
+    const actions = aiTurnActionsByAnchorId.get(anchorId);
+    if (!actions || actions.message.id === anchorId) return null;
+    return (
+      <div className={`${rowWidthClass} min-w-0 px-8px group`} data-testid={`turn-actions-${actions.message.id}`}>
+        <MessageTextActions
+          message={actions.message}
+          turnTexts={actions.turnTexts}
+          fallbackCopyText=''
+          isLastMessage={actions.message.id === lastMessageId}
+          hasForkAnchor={forkAnchoredIds.has(actions.message.id)}
+        />
+      </div>
+    );
+  };
+
   const renderItem = (_index: number, item: (typeof processedList)[0]) => {
     const highlighted = matchesTargetMessage(item, highlightedMessageId);
     if ('type' in item && item.type === 'artifact') {
@@ -711,34 +747,44 @@ const MessageList: React.FC<{
     }
     if ('type' in item && ['file_summary', 'tool_summary'].includes(item.type)) {
       return (
-        <div
-          key={item.id}
-          id={`message-${getProcessedItemAnchorId(item)}`}
-          className={`${rowWidthClass} min-w-0 message-item px-8px m-t-10px ${item.type}`}
-          style={highlighted ? highlightStyle : undefined}
-        >
-          {item.type === 'file_summary' && <MessageFileChanges diffsChanges={item.diffs} />}
-          {item.type === 'tool_summary' && (
-            <MessageToolGroupSummary messages={item.messages} isProcessing={isProcessing} />
-          )}
-        </div>
+        <>
+          <div
+            key={item.id}
+            id={`message-${getProcessedItemAnchorId(item)}`}
+            className={`${rowWidthClass} min-w-0 message-item px-8px m-t-10px ${item.type}`}
+            style={highlighted ? highlightStyle : undefined}
+          >
+            {item.type === 'file_summary' && <MessageFileChanges diffsChanges={item.diffs} />}
+            {item.type === 'tool_summary' && (
+              <MessageToolGroupSummary messages={item.messages} isProcessing={isProcessing} />
+            )}
+          </div>
+          {renderStandaloneTurnActions(item.id)}
+        </>
       );
     }
     const message = item as TMessage;
-    // User messages keep their own copy row; AI text only shows it at the turn end.
-    const showCopyRow = message.position !== 'left' || message.type !== 'text' || aiCopyRowTextIds.has(message.id);
+    // User messages keep their own copy row; AI text only shows it when the
+    // turn ends on that text (otherwise the row follows the turn's last card).
+    const showCopyRow =
+      message.position !== 'left' ||
+      message.type !== 'text' ||
+      (aiCopyRowTextIds.has(message.id) && aiCopyRowAnchorByTextId.get(message.id) === message.id);
     return (
-      <MessageItem
-        message={message}
-        key={message.id}
-        highlighted={highlighted}
-        rowWidthClass={rowWidthClass}
-        showCopyRow={showCopyRow}
-        isLastMessage={message.id === lastMessageId}
-        hasForkAnchor={forkAnchoredIds.has(message.id)}
-        isProcessing={isProcessing}
-        turnTexts={aiTurnTextsById.get(message.id)}
-      ></MessageItem>
+      <>
+        <MessageItem
+          message={message}
+          key={message.id}
+          highlighted={highlighted}
+          rowWidthClass={rowWidthClass}
+          showCopyRow={showCopyRow}
+          isLastMessage={message.id === lastMessageId}
+          hasForkAnchor={forkAnchoredIds.has(message.id)}
+          isProcessing={isProcessing}
+          turnTexts={aiTurnTextsById.get(message.id)}
+        ></MessageItem>
+        {renderStandaloneTurnActions(message.id)}
+      </>
     );
   };
 
@@ -779,13 +825,6 @@ const MessageList: React.FC<{
               {processedList.map((item, index) => (
                 <React.Fragment key={getProcessedItemAnchorId(item) || index}>{renderItem(index, item)}</React.Fragment>
               ))}
-              {queueSlotRef && (
-                <div
-                  ref={queueSlotRef}
-                  className={`${rowWidthClass} min-w-0`}
-                  data-testid='conversation-command-queue-slot'
-                />
-              )}
               <div className='h-20px' />
             </div>
           </div>

@@ -29,6 +29,10 @@ export interface AiCopyRows {
   copyRowIds: Set<string>;
   /** Copy-row id → raw contents of EVERY text segment in that turn, in order. */
   turnTextsById: Map<string, string[]>;
+  /** Copy-row text id → id of the timeline item the row should follow. This is
+   *  the turn's LAST item, so a turn ending in View Steps or a file summary
+   *  renders the row after that card rather than between text and tools. */
+  copyRowAnchorByTextId: Map<string, string>;
 }
 
 /** Pseudo timeline entries that neither end a turn nor carry copyable text. */
@@ -44,24 +48,37 @@ const PSEUDO_TYPES = new Set(['file_summary', 'tool_summary', 'artifact']);
 export function collectAiCopyRows(items: TurnCopyItem[], isProcessing: boolean): AiCopyRows {
   const copyRowIds = new Set<string>();
   const turnTextsById = new Map<string, string[]>();
+  const copyRowAnchorByTextId = new Map<string, string>();
   let pendingTextId: string | undefined;
   let turnTexts: string[] = [];
+  let lastItemId: string | undefined;
 
   const flush = () => {
     if (pendingTextId) {
       copyRowIds.add(pendingTextId);
       turnTextsById.set(pendingTextId, turnTexts);
+      if (lastItemId) {
+        copyRowAnchorByTextId.set(pendingTextId, lastItemId);
+      }
     }
     pendingTextId = undefined;
     turnTexts = [];
+    lastItemId = undefined;
   };
 
   for (const item of items) {
-    if (item.type && PSEUDO_TYPES.has(item.type)) {
-      continue;
-    }
     if (item.position === 'right') {
       flush();
+      continue;
+    }
+    // Artifacts (cron / skill suggestions) are app-level cards, not turn
+    // content, so they never become the row's anchor. Tool and file summaries
+    // DO: they are exactly the cards that used to land below the action row.
+    if (item.type === 'artifact') {
+      continue;
+    }
+    lastItemId = item.id;
+    if (item.type && PSEUDO_TYPES.has(item.type)) {
       continue;
     }
     if (item.type === 'text') {
@@ -78,8 +95,9 @@ export function collectAiCopyRows(items: TurnCopyItem[], isProcessing: boolean):
   if (isProcessing && lastTurnTextId) {
     copyRowIds.delete(lastTurnTextId);
     turnTextsById.delete(lastTurnTextId);
+    copyRowAnchorByTextId.delete(lastTurnTextId);
   }
-  return { copyRowIds, turnTextsById };
+  return { copyRowIds, turnTextsById, copyRowAnchorByTextId };
 }
 
 /**

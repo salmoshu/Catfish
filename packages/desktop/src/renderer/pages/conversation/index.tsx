@@ -99,9 +99,10 @@ const ChatConversationIndex: React.FC = () => {
   // 避免渲染空骨架。每个 id 只触发一次。
   // Conversation does not exist (e.g. navigating back to a deleted one via
   // browser history): show a toast and replace the route with home, so we
-  // don't render an empty skeleton. Fire at most once per id.
+  // don't render an empty skeleton. Fire at most once per id. `undefined`
+  // means the fetch has not settled yet; only an explicit `null` is a 404.
   useEffect(() => {
-    if (!id || isLoading || data || notFoundHandledIdRef.current === id) return;
+    if (!id || isLoading || data !== null || notFoundHandledIdRef.current === id) return;
     notFoundHandledIdRef.current = id;
     Message.warning(t('conversation.notFound'));
     navigate('/', { replace: true });

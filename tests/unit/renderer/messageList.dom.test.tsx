@@ -78,6 +78,7 @@ vi.mock('@/renderer/pages/conversation/Messages/components/MessageText', () => (
       {message.content.content}
     </div>
   ),
+  MessageTextActions: () => null,
 }));
 
 vi.mock('@/renderer/pages/conversation/Messages/components/MessageTips', () => ({
@@ -358,16 +359,12 @@ describe('MessageList', () => {
     expect(messageRow.className).not.toContain('justify-start');
   });
 
-  it('mounts the command queue slot inside the scrollable message timeline', () => {
-    const queueSlotRef = vi.fn();
-    render(<MessageList queueSlotRef={queueSlotRef} />, {
+  it('keeps the command queue out of the scrollable message timeline', () => {
+    render(<MessageList />, {
       wrapper: ({ children }) => <Wrapper>{children}</Wrapper>,
     });
 
-    const slot = screen.getByTestId('conversation-command-queue-slot');
-    expect(screen.getByTestId('message-list-content').contains(slot)).toBe(true);
-    expect(slot.className).toContain('chat-surface-fluid');
-    expect(queueSlotRef).toHaveBeenCalledWith(slot);
+    expect(screen.queryByTestId('conversation-command-queue-slot')).not.toBeInTheDocument();
   });
 
   it('uses the same container-responsive width in team mode', () => {
@@ -418,6 +415,24 @@ describe('MessageList', () => {
     expect(screen.getByTestId('msgtext-user-1').getAttribute('data-copy-row')).toBe('true');
     // Turn 2's only/last text keeps the row.
     expect(screen.getByTestId('msgtext-text-c').getAttribute('data-copy-row')).toBe('true');
+  });
+
+  it('moves the turn action row below a trailing View Steps card', () => {
+    const messages = [
+      { id: 'text-a', type: 'text', position: 'left', content: { content: 'answer' }, created_at: 1 },
+      createToolGroup([], 'tool-group-1'),
+    ] as unknown as IMessageText[];
+
+    render(<MessageList />, {
+      wrapper: ({ children }) => <Wrapper messages={messages}>{children}</Wrapper>,
+    });
+
+    // The text bubble no longer carries the row itself…
+    expect(screen.getByTestId('msgtext-text-a').getAttribute('data-copy-row')).toBe('false');
+    // …it is rendered AFTER the tool summary, so no content sits below it.
+    const actions = screen.getByTestId('turn-actions-text-a');
+    const summary = screen.getByTestId('tool-summary');
+    expect(summary.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('withholds the streaming turn copy row but keeps earlier finished turns', () => {

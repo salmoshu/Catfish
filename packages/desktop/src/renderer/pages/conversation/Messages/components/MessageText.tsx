@@ -84,6 +84,106 @@ const useFormatContent = (content: string) => {
   }, [content]);
 };
 
+/**
+ * Hover-revealed copy + fork + timestamp row. Kept separate from the text
+ * bubble so a turn whose LAST item is a tool/file summary can render the same
+ * row after that summary instead of leaving it between the text and the tools.
+ */
+export const MessageTextActions: React.FC<{
+  message: IMessageText;
+  /** Every text segment of the turn; when present, copying uses the whole turn. */
+  turnTexts?: string[];
+  /** Copy payload for a single message (used when no turn segments are given). */
+  fallbackCopyText: string;
+  isUserMessage?: boolean;
+  isLastMessage?: boolean;
+  hasForkAnchor?: boolean;
+}> = ({
+  message,
+  turnTexts,
+  fallbackCopyText,
+  isUserMessage = false,
+  isLastMessage = false,
+  hasForkAnchor = false,
+}) => {
+  const { t } = useTranslation();
+  const [showCopyAlert, setShowCopyAlert] = useState(false);
+  const conversationContext = useConversationContextSafe();
+  const forkConversation = useForkConversation(conversationContext?.conversation_id);
+  const layout = useLayoutContext();
+  const isMobile = layout?.isMobile ?? false;
+
+  // Mobile has no hover affordance, so the row is dropped entirely — system-
+  // level long-press still copies.
+  if (isMobile) return null;
+
+  const handleCopy = () => {
+    const textToCopy = turnTexts?.length ? buildTurnClipboardText(turnTexts) : fallbackCopyText;
+    copyText(textToCopy)
+      .then(() => {
+        setShowCopyAlert(true);
+        setTimeout(() => setShowCopyAlert(false), 2000);
+      })
+      .catch(() => {
+        Message.error(t('common.copyFailed'));
+      });
+  };
+
+  const showForkButton = isForkEnabled(conversationContext?.forkCapability, {
+    isLastMessage,
+    hasTurnAnchor: hasForkAnchor,
+  });
+
+  return (
+    <>
+      <div
+        className={classNames('h-32px flex items-center mt-4px gap-8px', {
+          'flex-row-reverse': isUserMessage,
+        })}
+      >
+        <Tooltip content={t('common.copy', { defaultValue: 'Copy' })}>
+          <Button
+            type='text'
+            size='mini'
+            aria-label={t('common.copy', { defaultValue: 'Copy' })}
+            className='p-4px rd-4px !text-t-secondary hover:!text-t-primary hover:!bg-fill-2 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
+            onClick={handleCopy}
+            icon={<Copy theme='outline' size='16' fill='currentColor' />}
+          />
+        </Tooltip>
+        {showForkButton && (
+          <Tooltip content={t('messages.fork.action')}>
+            <Button
+              type='text'
+              size='mini'
+              aria-label={t('messages.fork.action')}
+              className='p-4px rd-4px !text-t-secondary hover:!text-t-primary hover:!bg-fill-2 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
+              onClick={() => void forkConversation(message.msg_id ?? message.id)}
+              data-testid='message-fork-button'
+              icon={<ForkBranchIcon size={16} fill='currentColor' />}
+            />
+          </Tooltip>
+        )}
+        {message.created_at && (
+          <span className='text-12px text-t-secondary opacity-0 group-hover:opacity-100 transition-opacity select-none'>
+            {formatMessageTime(message.created_at)}
+          </span>
+        )}
+      </div>
+      {showCopyAlert && (
+        <Alert
+          type='success'
+          content={t('messages.copySuccess')}
+          showIcon
+          className='fixed top-20px left-50% transform -translate-x-50% z-9999 w-max max-w-[80%]'
+          style={{ boxShadow: '0px 2px 12px rgba(0,0,0,0.12)' }}
+          closable={false}
+        />
+      )}
+    </>
+  );
+};
+
 const MessageText: React.FC<{
   message: IMessageText;
   showCopyRow?: boolean;
@@ -112,7 +212,6 @@ const MessageText: React.FC<{
   }, [message.content.content]);
 
   const { t } = useTranslation();
-  const [showCopyAlert, setShowCopyAlert] = useState(false);
   const isUserMessage = message.position === 'right';
   // Delivered-but-not-yet-consumed marker for messages sent mid-turn to a
   // supporting backend (claude/codex). The message already reached the
@@ -154,9 +253,6 @@ const MessageText: React.FC<{
   const { data, json } = useFormatContent(renderedText);
   const shouldRenderPlainText = isUserMessage || Boolean(contextResetNotice);
   const conversationContext = useConversationContextSafe();
-  const forkConversation = useForkConversation(conversationContext?.conversation_id);
-  const layout = useLayoutContext();
-  const isMobile = layout?.isMobile ?? false;
   const handleLocalFileLink = useLocalFilePreview(conversationContext?.workspace);
   const resolvedFiles = useMemo(
     () => files.map((file_path) => resolveMessageFilePath(file_path, conversationContext?.workspace)),
@@ -168,55 +264,8 @@ const MessageText: React.FC<{
     return null;
   }
 
-  const handleCopy = () => {
-    const baseText = shouldRenderPlainText ? renderedText : json ? JSON.stringify(data, null, 2) : renderedText;
-    const fileList = files.length ? `Files:\n${files.map((path) => `- ${path}`).join('\n')}\n\n` : '';
-    // An AI turn split by tool calls / thinking stores several text messages;
-    // the row sits on the last one but must copy the whole reply.
-    const textToCopy = turnTexts?.length ? buildTurnClipboardText(turnTexts) : fileList + baseText;
-    copyText(textToCopy)
-      .then(() => {
-        setShowCopyAlert(true);
-        setTimeout(() => setShowCopyAlert(false), 2000);
-      })
-      .catch(() => {
-        Message.error(t('common.copyFailed'));
-      });
-  };
-
-  const copyButton = (
-    <Tooltip content={t('common.copy', { defaultValue: 'Copy' })}>
-      <Button
-        type='text'
-        size='mini'
-        aria-label={t('common.copy', { defaultValue: 'Copy' })}
-        className='p-4px rd-4px !text-t-secondary hover:!text-t-primary hover:!bg-fill-2 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
-        onClick={handleCopy}
-        icon={<Copy theme='outline' size='16' fill='currentColor' />}
-      />
-    </Tooltip>
-  );
-
-  // Fork entry point: only when the agent declares the capability, and only on
-  // messages the backend can actually fork at (any message for at_turn/codex,
-  // the last message otherwise) — see `isForkEnabled`.
-  const showForkButton = isForkEnabled(conversationContext?.forkCapability, {
-    isLastMessage,
-    hasTurnAnchor: hasForkAnchor,
-  });
-  const forkButton = showForkButton ? (
-    <Tooltip content={t('messages.fork.action')}>
-      <Button
-        type='text'
-        size='mini'
-        aria-label={t('messages.fork.action')}
-        className='p-4px rd-4px !text-t-secondary hover:!text-t-primary hover:!bg-fill-2 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
-        onClick={() => void forkConversation(message.msg_id ?? message.id)}
-        data-testid='message-fork-button'
-        icon={<ForkBranchIcon size={16} fill='currentColor' />}
-      />
-    </Tooltip>
-  ) : null;
+  const baseText = shouldRenderPlainText ? renderedText : json ? JSON.stringify(data, null, 2) : renderedText;
+  const fileList = files.length ? `Files:\n${files.map((path) => `- ${path}`).join('\n')}\n\n` : '';
 
   const cronMeta = message.content.cronMeta;
   const displaySenderName = senderName === 'team_system' ? t('team.systemNotice.sender') : senderName;
@@ -332,36 +381,19 @@ const MessageText: React.FC<{
             {t('messages.delivery.pending', { defaultValue: 'Unread' })}
           </div>
         )}
-        {/* Hover-revealed copy + timestamp row. Mobile has no hover affordance,
-            so we drop the row entirely — system-level long-press still copies.
-            For AI replies split across several text messages, only the last text
-            of the turn shows this row (showCopyRow); user messages always do. */}
-        {!isMobile && showCopyRow && (
-          <div
-            className={classNames('h-32px flex items-center mt-4px gap-8px', {
-              'flex-row-reverse': isUserMessage,
-            })}
-          >
-            {copyButton}
-            {forkButton}
-            {message.created_at && (
-              <span className='text-12px text-t-secondary opacity-0 group-hover:opacity-100 transition-opacity select-none'>
-                {formatMessageTime(message.created_at)}
-              </span>
-            )}
-          </div>
+        {/* For AI replies split across several text messages, only the turn's
+            action anchor shows this row (showCopyRow); user messages always do. */}
+        {showCopyRow && (
+          <MessageTextActions
+            message={message}
+            turnTexts={turnTexts}
+            fallbackCopyText={fileList + baseText}
+            isUserMessage={isUserMessage}
+            isLastMessage={isLastMessage}
+            hasForkAnchor={hasForkAnchor}
+          />
         )}
       </div>
-      {showCopyAlert && (
-        <Alert
-          type='success'
-          content={t('messages.copySuccess')}
-          showIcon
-          className='fixed top-20px left-50% transform -translate-x-50% z-9999 w-max max-w-[80%]'
-          style={{ boxShadow: '0px 2px 12px rgba(0,0,0,0.12)' }}
-          closable={false}
-        />
-      )}
     </>
   );
 };

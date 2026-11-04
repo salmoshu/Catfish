@@ -61,6 +61,21 @@ describe('collectAiCopyRows', () => {
     expect(turnTextsById.get('a2')).toEqual(['part A', 'part B']);
   });
 
+  it('anchors the row to the turn’s last item, including trailing tool summaries', () => {
+    const { copyRowAnchorByTextId } = collectAiCopyRows(
+      [
+        user('u1'),
+        aiText('a1', 'answer'),
+        { id: 'summary-1', type: 'tool_summary', position: 'left', content: {} },
+        user('u2'),
+        aiText('b1', 'plain'),
+      ],
+      false
+    );
+    expect(copyRowAnchorByTextId.get('a1')).toBe('summary-1');
+    expect(copyRowAnchorByTextId.get('b1')).toBe('b1');
+  });
+
   it('skips empty text segments', () => {
     const { turnTextsById } = collectAiCopyRows([user('u1'), aiText('a1', '  '), aiText('a2', 'real')], false);
     expect(turnTextsById.get('a2')).toEqual(['real']);

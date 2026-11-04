@@ -940,17 +940,14 @@ describe('AcpSendBox', () => {
     const queuedItem = { id: 'q1', input: 'queued draft', files: [], created_at: 1 };
 
     const renderWithQueue = (backend = 'claude') => {
-      const commandQueueContainer = document.createElement('div');
       render(
         <AcpSendBox
           conversation_id='conv-1'
           backend={backend}
           workspacePath='/tmp/workspace'
           messageState={makeMessageState()}
-          commandQueueContainer={commandQueueContainer}
         />
       );
-      return commandQueueContainer;
     };
 
     const getOnSendNow = () => {
@@ -960,9 +957,8 @@ describe('AcpSendBox', () => {
       return props.onSendNow;
     };
 
-    it('renders the queue through the message timeline portal', () => {
-      const commandQueueContainer = renderWithQueue();
-      expect(commandQueueContainer).toBeInstanceOf(HTMLDivElement);
+    it('renders the queue inline above the send box', () => {
+      renderWithQueue();
       expect(commandQueuePanelPropsSpy).toHaveBeenCalledWith(
         expect.objectContaining({ onSendNow: expect.any(Function) })
       );

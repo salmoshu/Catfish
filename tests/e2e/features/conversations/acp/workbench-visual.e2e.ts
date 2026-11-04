@@ -208,9 +208,8 @@ test.describe('Kimi-style conversation and Workbench', () => {
 
     await page.getByTestId('sendbox-input').fill('Queue a follow-up review');
     await page.getByTestId('sendbox-input').press('Enter');
-    await expect(
-      page.getByTestId('conversation-command-queue-slot').locator('[data-command-queue-list]')
-    ).toContainText('Queue a follow-up review');
+    await expect(page.locator('[data-command-queue-list]')).toContainText('Queue a follow-up review');
+    await expect(page.getByTestId('message-list-scroller').locator('[data-command-queue-list]')).toHaveCount(0);
     await page.locator('.chat-layout-header').click({ position: { x: 20, y: 20 } });
     await page.waitForTimeout(300);
     await page.mouse.move(0, 0);

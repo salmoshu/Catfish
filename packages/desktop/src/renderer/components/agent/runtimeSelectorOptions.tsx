@@ -13,8 +13,10 @@ import { useTranslation } from 'react-i18next';
 /** Above this option count a dropdown list gains a search box. Shared by every searchable dropdown. */
 export const DROPDOWN_SEARCH_THRESHOLD = 5;
 
-/** Trigger props for a Menu.SubMenu: fly out to the left, auto-flip when there is no room. */
-export const RUNTIME_SUBMENU_TRIGGER_PROPS = { position: 'lt', autoFitPosition: true } as const;
+/** Trigger props for a Menu.SubMenu: fly out to the left with the submenu's bottom
+ * aligned to the hovered row's bottom, so long option lists grow upward instead
+ * of running into the app window's bottom edge. Auto-flip when there is no room. */
+export const RUNTIME_SUBMENU_TRIGGER_PROPS = { position: 'lb', autoFitPosition: true } as const;
 
 type RuntimeSelectorModel = { id: string; label?: string; description?: string };
 
