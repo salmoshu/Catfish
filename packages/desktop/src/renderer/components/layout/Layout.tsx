@@ -41,6 +41,7 @@ import { getBackendEnvironment } from '@/common/adapter/httpBridge';
 import UpdateModal from '@/renderer/components/settings/UpdateModal';
 import KimiIcon from '@renderer/components/base/KimiIcon';
 import brandLogo from '@renderer/assets/logo.svg';
+import type { WorkbenchSection } from '@renderer/pages/conversation/Workbench/workbenchActivity';
 import '@renderer/styles/layout.css';
 
 declare const __APP_VERSION__: string;
@@ -184,9 +185,7 @@ const Layout: React.FC<{
   // [content | explorer] row, clamp the explorer width so chat (+ preview) keep
   // their reserve. Active only when a project is bound and on desktop.
   const currentProject = useCurrentProject();
-  const [workbenchSection, setWorkbenchSection] = useState<'files' | 'changes' | 'preview' | 'terminal' | 'agents'>(
-    'files'
-  );
+  const [workbenchSection, setWorkbenchSection] = useState<WorkbenchSection>('files');
   const { containerRef: mainRowRef, containerWidth: mainRowWidth } = useContainerWidth();
   const explorerActive = Boolean(currentProject) && !isMobile;
   const { widthPx: explorerWidthPx, createDragHandle: createExplorerDragHandle } = useProjectExplorerColumnWidth(

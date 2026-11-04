@@ -25,6 +25,22 @@ async function createProjectConversation(page: import('@playwright/test').Page, 
   });
   const conversationId = created?.id;
   if (!conversationId) throw new Error('Conversation creation returned no id');
+  await page.route(`**/api/conversations/${conversationId}`, async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    const response = await route.fetch();
+    const payload = (await response.json()) as { data?: Record<string, unknown> } & Record<string, unknown>;
+    const conversation = payload.data ?? payload;
+    conversation.runtime = {
+      state: 'running',
+      can_send_message: false,
+      has_task: true,
+      is_processing: true,
+      pending_confirmations: 0,
+      turn_id: 'e2e-plan-turn',
+      supports_midturn_delivery: false,
+    };
+    await route.fulfill({ response, json: payload });
+  });
   await httpGet(page, `/api/conversations/${conversationId}`);
 
   await page.evaluate(
@@ -87,8 +103,10 @@ test.describe('Kimi-style conversation and Workbench', () => {
   });
 
   test.afterEach(async ({ page }) => {
-    if (conversationId)
+    if (conversationId) {
+      await page.unroute(`**/api/conversations/${conversationId}`);
       await httpDelete(page, `/api/conversations/${encodeURIComponent(conversationId)}`).catch(() => {});
+    }
     conversationId = null;
   });
 
@@ -108,8 +126,31 @@ test.describe('Kimi-style conversation and Workbench', () => {
         { content: 'Verify the unified Workbench', status: 'in_progress' },
       ],
     ]);
-    await expect(page.getByTestId('conversation-plan-bar')).toBeVisible();
+    await expect(page.locator('[data-plan-card-slot] button')).toBeVisible();
     await expect(page.locator('.tool-group-summary__header').first()).toBeVisible();
+
+    const workbench = page.locator('[data-workbench]');
+    const panelHost = page.locator('[data-project-panel-host]');
+    const planTrigger = page.locator('[data-plan-card-slot] button');
+    await planTrigger.click();
+    await expect(page.getByTestId('conversation-plan-popup')).toBeVisible();
+    await page.locator('#workbench-tab-files').click();
+    await expect(page.getByTestId('conversation-plan-popup')).toHaveCount(0);
+    await page.evaluate(() => window.dispatchEvent(new CustomEvent('aionui-workspace-toggle', { cancelable: true })));
+    await expect(panelHost).toHaveAttribute('data-collapsed', 'true');
+    await invokeStream(page, id, 'emitPlan', [
+      [
+        { content: 'Inspect the existing workspace', status: 'completed' },
+        { content: 'Verify the unified Workbench', status: 'in_progress' },
+      ],
+    ]);
+    await planTrigger.click();
+    await expect(panelHost).toHaveAttribute('data-collapsed', 'false');
+    await expect(workbench).toHaveAttribute('data-active-section', 'plan');
+    await expect(workbench.getByTestId('conversation-plan-bar')).toHaveAttribute('data-variant', 'panel');
+    await expect(page.getByTestId('conversation-plan-popup')).toHaveCount(0);
+    await planTrigger.click();
+    await expect(workbench).toHaveAttribute('data-active-section', 'files');
 
     const scroller = page.getByTestId('message-list-scroller');
     await scroller.evaluate((element) => {
@@ -126,7 +167,6 @@ test.describe('Kimi-style conversation and Workbench', () => {
 
     await page.locator('.tool-group-summary__header').first().click();
     await page.locator('.tool-row__button').filter({ hasText: 'Task' }).first().click();
-    const workbench = page.locator('[data-workbench]');
     await expect(workbench).toHaveAttribute('data-active-section', 'agents');
     await expect(workbench.locator('.workbench-agent-card').first()).toContainText('Task');
     const agentsBodyWidth = await workbench.locator('.workbench-body').evaluate((element) => element.clientWidth);
@@ -145,6 +185,8 @@ test.describe('Kimi-style conversation and Workbench', () => {
 
     await page.locator('#workbench-tab-terminal').click();
     await expect(workbench).toHaveAttribute('data-active-section', 'terminal');
+    await expect(workbench.getByTestId('terminal-card-output')).toHaveCount(0);
+    await workbench.getByTestId('terminal-card-toggle').first().click();
     await expect(workbench.getByTestId('terminal-card-output')).toContainText('67 tests passed');
     const terminalBodyWidth = await workbench.locator('.workbench-body').evaluate((element) => element.clientWidth);
     const terminalPanelWidth = await workbench

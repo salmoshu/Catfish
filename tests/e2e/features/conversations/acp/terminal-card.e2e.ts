@@ -120,9 +120,11 @@ test.describe('ACP client-hosted terminal', () => {
     const approval = autoApprove(page, 60_000);
 
     // The terminal card shows the mono "$ <command>" header once
-    // terminal/create lands, and the output pane fills from the buffer.
+    // terminal/create lands. The output stays collapsed until requested.
     const commandHeader = page.getByTestId('terminal-card-command').filter({ hasText: 'terminal_card_ok' }).first();
     await expect(commandHeader).toBeVisible({ timeout: 120_000 });
+    await expect(page.getByTestId('terminal-card-output')).toHaveCount(0);
+    await page.getByTestId('terminal-card-toggle').first().click();
     const outputPane = page.getByTestId('terminal-card-output').filter({ hasText: 'terminal_card_ok' }).first();
     await expect(outputPane).toBeVisible({ timeout: 60_000 });
     await approval;
@@ -171,6 +173,7 @@ test.describe('ACP client-hosted terminal', () => {
       timeout: 30_000,
     });
     // The loop is killed early, so its tail must never appear.
+    await page.getByTestId('terminal-card-toggle').first().click();
     const output = await page.getByTestId('terminal-card-output').first().textContent();
     expect(output ?? '').not.toContain('tick_120');
 

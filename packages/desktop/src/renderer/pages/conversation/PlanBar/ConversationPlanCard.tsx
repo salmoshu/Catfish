@@ -6,25 +6,73 @@
 
 import { Button } from '@arco-design/web-react';
 import { Checklist, CheckOne, Down, Up } from '@icon-park/react';
-import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useConversationRuntimeView } from '@renderer/pages/conversation/runtime/useConversationRuntimeView';
+import type { WorkbenchSection } from '@renderer/pages/conversation/Workbench/workbenchActivity';
+import {
+  openWorkbenchSection,
+  WORKBENCH_OPEN_EVENT,
+  WORKBENCH_SECTION_EVENT,
+} from '@renderer/pages/conversation/Workbench/workbenchActivityStore';
+import { WORKSPACE_STATE_EVENT } from '@renderer/utils/workspace/workspaceEvents';
+import ConversationPlanBar from './ConversationPlanBar';
 import { useLatestPlan } from './useLatestPlan';
 
-/** Header-portalled plan summary; position is anchored to the conversation header, never to the composer. */
+const readWorkbenchPresentation = (): { collapsed: boolean; section: WorkbenchSection | null } => {
+  if (typeof document === 'undefined') return { collapsed: true, section: null };
+  const panel = document.querySelector<HTMLElement>('[data-project-panel-host]');
+  const workbench = document.querySelector<HTMLElement>('[data-workbench]');
+  return {
+    collapsed: panel?.dataset.collapsed !== 'false',
+    section: (workbench?.dataset.activeSection as WorkbenchSection | undefined) ?? null,
+  };
+};
+
+/** The plan remains in its conversation context when portalled into the Workbench. */
 const ConversationPlanCard: React.FC<{ conversation_id: string }> = ({ conversation_id }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [popupStyle, setPopupStyle] = useState<React.CSSProperties>();
+  const [presentation, setPresentation] = useState(readWorkbenchPresentation);
   const triggerRef = useRef<HTMLDivElement>(null);
   const plan = useLatestPlan();
   const { isProcessing, activeTurnId } = useConversationRuntimeView(conversation_id);
   const entries = useMemo(() => plan?.content.entries ?? [], [plan]);
   const completed = useMemo(() => entries.filter((entry) => entry.status === 'completed').length, [entries]);
+  const planVisible = Boolean(
+    plan && entries.length > 0 && isProcessing && (!plan.content.turn_id || plan.content.turn_id === activeTurnId)
+  );
   const slot =
     typeof document === 'undefined' ? null : document.querySelector(`[data-plan-card-slot="${conversation_id}"]`);
+  const panelSlot =
+    presentation.section === 'plan' && !presentation.collapsed
+      ? document.querySelector(`[data-plan-panel-slot="${conversation_id}"]`)
+      : null;
+
+  useEffect(() => {
+    const syncPresentation = () => {
+      const next = readWorkbenchPresentation();
+      setPresentation(next);
+      if (!next.collapsed) setOpen(false);
+    };
+    window.addEventListener(WORKBENCH_OPEN_EVENT, syncPresentation);
+    window.addEventListener(WORKBENCH_SECTION_EVENT, syncPresentation);
+    window.addEventListener(WORKSPACE_STATE_EVENT, syncPresentation);
+    return () => {
+      window.removeEventListener(WORKBENCH_OPEN_EVENT, syncPresentation);
+      window.removeEventListener(WORKBENCH_SECTION_EVENT, syncPresentation);
+      window.removeEventListener(WORKSPACE_STATE_EVENT, syncPresentation);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!planVisible && presentation.section === 'plan' && !presentation.collapsed) {
+      openWorkbenchSection('files');
+    }
+  }, [planVisible, presentation]);
 
   useLayoutEffect(() => {
     if (!open || !slot) return;
@@ -38,6 +86,7 @@ const ConversationPlanCard: React.FC<{ conversation_id: string }> = ({ conversat
       const top = Math.min(trigger.bottom + 8, Math.max(16, window.innerHeight - 120));
       setPopupStyle({
         position: 'fixed',
+        boxSizing: 'border-box',
         top,
         left: Math.max(16, left),
         width,
@@ -56,8 +105,7 @@ const ConversationPlanCard: React.FC<{ conversation_id: string }> = ({ conversat
     };
   }, [open, slot]);
 
-  if (!slot || !plan || entries.length === 0 || !isProcessing) return null;
-  if (plan.content.turn_id && plan.content.turn_id !== activeTurnId) return null;
+  if (!slot || !planVisible) return null;
 
   const visibleEntries = showAll ? entries : entries.slice(0, 3);
   return createPortal(
@@ -67,14 +115,26 @@ const ConversationPlanCard: React.FC<{ conversation_id: string }> = ({ conversat
         size='mini'
         className='h-28px w-28px !text-t-secondary hover:!text-t-primary hover:!bg-fill-2'
         aria-label={t('conversation.planBar.title')}
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open || Boolean(panelSlot)}
+        onClick={() => {
+          const current = readWorkbenchPresentation();
+          if (current.section === 'plan' && !current.collapsed) {
+            openWorkbenchSection('files');
+          } else if (current.collapsed && current.section !== null) {
+            setOpen(false);
+            openWorkbenchSection('plan');
+          } else {
+            setOpen((value) => !value);
+          }
+        }}
         icon={<Checklist theme='outline' size='16' fill='currentColor' />}
       />
+      {panelSlot && createPortal(<ConversationPlanBar conversation_id={conversation_id} variant='panel' />, panelSlot)}
       {open &&
         createPortal(
           <div
             role='dialog'
+            data-testid='conversation-plan-popup'
             aria-label={t('conversation.planBar.title')}
             style={popupStyle}
             className='z-70 rounded-16px border border-[var(--color-border-2)] bg-[var(--color-bg-popup)] p-16px shadow-lg'

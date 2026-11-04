@@ -13,7 +13,10 @@ import { useTranslation } from 'react-i18next';
 import { useLatestPlan } from './useLatestPlan';
 import styles from './ConversationPlanBar.module.css';
 
-const ConversationPlanBar: React.FC<{ conversation_id: string }> = ({ conversation_id }) => {
+const ConversationPlanBar: React.FC<{
+  conversation_id: string;
+  variant?: 'composer' | 'panel';
+}> = ({ conversation_id, variant = 'composer' }) => {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
   const plan = useLatestPlan();
@@ -26,7 +29,11 @@ const ConversationPlanBar: React.FC<{ conversation_id: string }> = ({ conversati
   if (plan.content.turn_id && plan.content.turn_id !== activeTurnId) return null;
 
   return (
-    <div data-testid='conversation-plan-bar' className={`${getChatSurfaceWidthClass()} ${styles.planBar}`}>
+    <div
+      data-testid='conversation-plan-bar'
+      data-variant={variant}
+      className={variant === 'panel' ? styles.planPanel : `${getChatSurfaceWidthClass()} ${styles.planBar}`}
+    >
       <Button
         type='text'
         className={styles.header}
@@ -40,8 +47,8 @@ const ConversationPlanBar: React.FC<{ conversation_id: string }> = ({ conversati
       </Button>
       {expanded && (
         <div
-          className='flex flex-col gap-6px pt-6px pl-30px pr-8px overflow-y-auto overscroll-contain'
-          style={{ maxHeight: 'min(22vh, 180px)' }}
+          className={`flex flex-col gap-6px pt-6px pl-30px pr-8px overflow-y-auto overscroll-contain ${variant === 'panel' ? 'flex-1 min-h-0' : ''}`}
+          style={variant === 'panel' ? undefined : { maxHeight: 'min(22vh, 180px)' }}
         >
           {entries.map((entry, index) => (
             <div key={`${index}-${entry.content}`} className={styles.step}>

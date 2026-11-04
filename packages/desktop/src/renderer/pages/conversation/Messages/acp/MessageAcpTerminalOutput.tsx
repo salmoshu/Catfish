@@ -7,6 +7,7 @@
 import { ipcBridge } from '@/common';
 import type { IMessageAcpTerminalOutput } from '@/common/chat/chatLib';
 import { Button, Card, Tag } from '@arco-design/web-react';
+import { Down, Right, Terminal } from '@icon-park/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { openWorkbenchSection } from '../../Workbench/workbenchActivityStore';
@@ -22,16 +23,16 @@ const MessageAcpTerminalOutput: React.FC<{ message: IMessageAcpTerminalOutput }>
   const { content, conversation_id } = message;
   const outputRef = useRef<HTMLPreElement>(null);
   const [killing, setKilling] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const running = !content?.exit_status;
 
-  // Tail-follow the output while the command runs.
   useEffect(() => {
     const el = outputRef.current;
-    if (el && running) {
+    if (el && running && expanded) {
       el.scrollTop = el.scrollHeight;
     }
-  }, [content?.output, running]);
+  }, [content?.output, expanded, running]);
 
   const handleStop = useCallback(async () => {
     if (!conversation_id || !content?.terminal_id) return;
@@ -65,17 +66,30 @@ const MessageAcpTerminalOutput: React.FC<{ message: IMessageAcpTerminalOutput }>
       {t('conversation.terminal.exited', { defaultValue: 'Exit {{code}}', code: exit?.exit_code ?? '?' })}
     </Tag>
   );
+  const preview = running ? content.output?.trimEnd().split(/\r?\n/).slice(-3).join('\n') : '';
 
   return (
-    <Card className='w-full mb-2' size='small' bordered>
-      <div className='flex items-center gap-2 mb-2 min-w-0'>
-        <code
-          dir='ltr'
-          className='text-13px font-mono text-t-primary truncate flex-1'
-          data-testid='terminal-card-command'
+    <Card className='w-full mb-8px overflow-hidden' size='small' bordered>
+      <div className='flex items-center gap-8px min-w-0'>
+        <Button
+          type='text'
+          size='mini'
+          className='!flex flex-1 min-w-0 items-center justify-start gap-6px !px-0 !text-start'
+          aria-expanded={expanded}
+          aria-label={content.command}
+          data-testid='terminal-card-toggle'
+          onClick={() => setExpanded((value) => !value)}
         >
-          $ {content.command}
-        </code>
+          {expanded ? <Down size='14' className='shrink-0' /> : <Right size='14' className='shrink-0' />}
+          <Terminal size='16' className='shrink-0 text-t-secondary' />
+          <code
+            dir='ltr'
+            className='min-w-0 truncate font-mono text-13px text-t-primary'
+            data-testid='terminal-card-command'
+          >
+            $ {content.command}
+          </code>
+        </Button>
         <Button
           type='text'
           size='mini'
@@ -91,18 +105,42 @@ const MessageAcpTerminalOutput: React.FC<{ message: IMessageAcpTerminalOutput }>
           </Button>
         )}
       </div>
-      {(content.output || running) && (
+      {preview && !expanded && (
         <pre
-          ref={outputRef}
-          data-testid='terminal-card-output'
+          data-testid='terminal-card-preview'
           dir='ltr'
-          className='bg-1 p-2 rounded text-xs font-mono overflow-x-auto overflow-y-auto max-h-320px whitespace-pre-wrap m-0'
+          className='m-0 mt-8px max-h-72px overflow-hidden whitespace-pre-wrap rounded-6px bg-1 p-8px font-mono text-12px leading-18px text-t-secondary'
         >
-          {content.truncated
-            ? `…${t('conversation.terminal.truncated', { defaultValue: '(earlier output truncated)' })}\n`
-            : ''}
-          {content.output || ''}
+          {preview}
         </pre>
+      )}
+      {expanded && (
+        <div className='mt-12px flex flex-col gap-12px' data-testid='terminal-card-details'>
+          <section>
+            <div className='mb-6px text-12px font-medium text-t-secondary'>{t('messages.toolGroup.input')}</div>
+            <pre
+              dir='ltr'
+              data-testid='terminal-card-request'
+              className='m-0 overflow-x-auto whitespace-pre-wrap rounded-6px bg-1 p-8px font-mono text-12px leading-18px'
+            >
+              {content.command}
+            </pre>
+          </section>
+          <section data-testid='terminal-card-response'>
+            <div className='mb-6px text-12px font-medium text-t-secondary'>{t('messages.toolGroup.output')}</div>
+            <pre
+              ref={outputRef}
+              data-testid='terminal-card-output'
+              dir='ltr'
+              className='m-0 max-h-320px overflow-auto whitespace-pre-wrap rounded-6px bg-1 p-8px font-mono text-12px leading-18px'
+            >
+              {content.truncated
+                ? `…${t('conversation.terminal.truncated', { defaultValue: '(earlier output truncated)' })}\n`
+                : ''}
+              {content.output || ''}
+            </pre>
+          </section>
+        </div>
       )}
     </Card>
   );

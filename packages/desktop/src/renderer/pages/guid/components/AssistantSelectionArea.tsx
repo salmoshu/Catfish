@@ -204,7 +204,7 @@ const AssistantSelectionArea: React.FC<AssistantSelectionAreaProps> = ({
         data-assistant-selected='true'
         className='sendbox-model-btn guid-config-btn'
       >
-        <span className='flex items-center gap-6px min-w-0 text-13px leading-none'>
+        <span className='flex items-center gap-6px min-w-0 text-13px leading-[1.4]'>
           <AssistantAvatar assistant={selectedAssistant} size={14} />
           <span className='guid-model-label'>{label}</span>
           <Down theme='outline' size={12} fill='currentColor' className='shrink-0' />

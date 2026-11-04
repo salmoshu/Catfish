@@ -30,27 +30,15 @@ import { isForkEnabled } from '@/common/chat/forkConversation';
 import { useForkConversation } from '@/renderer/hooks/chat/useForkConversation';
 import ForkBranchIcon from '@renderer/components/base/ForkBranchIcon';
 
-/**
- * Format a timestamp for message display.
- * Today: "HH:mm", older: "MM-DD HH:mm".
- */
+/** Format a message timestamp with its full local date and time. */
 export const formatMessageTime = (timestamp: number): string => {
   const date = new Date(timestamp);
-  const now = new Date();
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
   const hours = date.getHours().toString().padStart(2, '0');
   const minutes = date.getMinutes().toString().padStart(2, '0');
-  const time = `${hours}:${minutes}`;
-
-  if (
-    date.getFullYear() !== now.getFullYear() ||
-    date.getMonth() !== now.getMonth() ||
-    date.getDate() !== now.getDate()
-  ) {
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${month}-${day} ${time}`;
-  }
-  return time;
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
 };
 import MessageCronBadge from './MessageCronBadge';
 import { resolveAgentLogo, useAgentLogos } from '@/renderer/utils/model/agentLogo';

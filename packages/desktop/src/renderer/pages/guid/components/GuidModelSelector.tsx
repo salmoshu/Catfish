@@ -183,7 +183,7 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
           size='small'
           data-testid='guid-model-selector'
         >
-          <span className='flex items-center gap-6px min-w-0 leading-none'>
+          <span className='flex items-center gap-6px min-w-0 leading-[1.4]'>
             <Brain theme='outline' size='14' fill={iconColors.secondary} className='shrink-0' />
             <span className='guid-model-label'>{geminiButtonLabel}</span>
             <Down theme='outline' size='12' fill={iconColors.secondary} className='shrink-0' />
@@ -258,7 +258,7 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
           }
         >
           <Button className={'sendbox-model-btn guid-config-btn'} shape='round' size='small'>
-            <span className='flex items-center gap-6px min-w-0 leading-none'>
+            <span className='flex items-center gap-6px min-w-0 leading-[1.4]'>
               <Brain theme='outline' size='14' fill={iconColors.secondary} className='shrink-0' />
               <span className='guid-model-label'>{combinedAcpButtonLabel}</span>
               <Down theme='outline' size='12' fill={iconColors.secondary} className='shrink-0' />
@@ -276,7 +276,7 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
           size='small'
           style={{ cursor: 'default' }}
         >
-          <span className='flex items-center gap-6px min-w-0 leading-none'>
+          <span className='flex items-center gap-6px min-w-0 leading-[1.4]'>
             <Brain theme='outline' size='14' fill={iconColors.secondary} className='shrink-0' />
             <span className='guid-model-label'>{acpButtonLabel}</span>
           </span>
@@ -289,7 +289,7 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
   return (
     <Tooltip content={t('conversation.welcome.modelSwitchNotSupported')} position='top'>
       <Button className={'sendbox-model-btn guid-config-btn'} shape='round' size='small' style={{ cursor: 'default' }}>
-        <span className='flex items-center gap-6px min-w-0 leading-none'>
+        <span className='flex items-center gap-6px min-w-0 leading-[1.4]'>
           <Brain theme='outline' size='14' fill={iconColors.secondary} className='shrink-0' />
           <span className='guid-model-label'>{defaultModelLabel}</span>
         </span>

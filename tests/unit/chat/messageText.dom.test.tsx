@@ -11,6 +11,7 @@ import type { IMessageText } from '@/common/chat/chatLib';
 import { ipcBridge } from '@/common';
 import { ConversationProvider } from '@/renderer/hooks/context/ConversationContext';
 import MessageText, {
+  formatMessageTime,
   parseTeamContextResetNotice,
 } from '@/renderer/pages/conversation/Messages/components/MessageText';
 import { copyText } from '@/renderer/utils/ui/clipboard';
@@ -835,5 +836,12 @@ describe('MessageText fork entry point', () => {
       expect(forkMocks.navigate).toHaveBeenCalledWith('/conversation/conv-forked');
       expect(forkMocks.ensureRuntime).toHaveBeenCalledWith({ conversation_id: 'conv-forked' });
     });
+  });
+});
+
+describe('formatMessageTime', () => {
+  it('includes the full local date for both current and historical messages', () => {
+    expect(formatMessageTime(new Date(2026, 10, 4, 9, 5).getTime())).toBe('2026-11-04 09:05');
+    expect(formatMessageTime(new Date(2025, 0, 2, 18, 7).getTime())).toBe('2025-01-02 18:07');
   });
 });

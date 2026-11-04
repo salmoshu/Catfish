@@ -80,14 +80,14 @@ const MarqueePillLabel: React.FC<{
   return (
     <span
       ref={containerRef}
-      className='inline-block overflow-hidden whitespace-nowrap leading-[1.2] min-w-0 relative'
+      className='inline-block overflow-hidden whitespace-nowrap leading-[1.4] min-w-0 relative'
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {/* Hidden measurement span: full text width, not clipped */}
       <span
         ref={measureRef}
-        className='invisible absolute whitespace-nowrap leading-[1.2] pointer-events-none'
+        className='invisible absolute whitespace-nowrap leading-[1.4] pointer-events-none'
         aria-hidden='true'
       >
         {children}
@@ -97,10 +97,10 @@ const MarqueePillLabel: React.FC<{
       <span
         className={
           active
-            ? 'leading-[1.2] invisible'
+            ? 'leading-[1.4] invisible'
             : isMobile
-              ? 'leading-[1.2] block overflow-hidden text-ellipsis'
-              : 'leading-[1.2]'
+              ? 'leading-[1.4] block overflow-hidden text-ellipsis'
+              : 'leading-[1.4]'
         }
       >
         {children}
@@ -110,8 +110,8 @@ const MarqueePillLabel: React.FC<{
         ref={marqueeRef}
         className={
           active
-            ? 'whitespace-nowrap leading-[1.2] absolute start-0 top-0'
-            : 'invisible whitespace-nowrap leading-[1.2] absolute start-0 top-0'
+            ? 'whitespace-nowrap leading-[1.4] absolute start-0 top-0'
+            : 'invisible whitespace-nowrap leading-[1.4] absolute start-0 top-0'
         }
       >
         {children}

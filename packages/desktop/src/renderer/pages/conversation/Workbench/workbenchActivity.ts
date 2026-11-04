@@ -1,7 +1,7 @@
 import type { IMessageAcpTerminalOutput, TMessage } from '@/common/chat/chatLib';
 import { normalizeToolMessages, type NormalizedToolCall, type ToolMessage } from '@/common/chat/normalizeToolCall';
 
-export type WorkbenchSection = 'files' | 'changes' | 'preview' | 'terminal' | 'agents';
+export type WorkbenchSection = 'files' | 'changes' | 'preview' | 'terminal' | 'agents' | 'plan';
 
 export type WorkbenchActivity = {
   terminals: IMessageAcpTerminalOutput[];

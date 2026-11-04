@@ -12,10 +12,16 @@ const activities = new Map<string, WorkbenchActivity>();
 const listeners = new Set<() => void>();
 
 export const WORKBENCH_OPEN_EVENT = 'aionui-workbench-open';
+export const WORKBENCH_SECTION_EVENT = 'aionui-workbench-section';
 
 export const openWorkbenchSection = (section: WorkbenchSection): void => {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent<WorkbenchOpenDetail>(WORKBENCH_OPEN_EVENT, { detail: { section } }));
+};
+
+export const notifyWorkbenchSectionChange = (section: WorkbenchSection): void => {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent<WorkbenchOpenDetail>(WORKBENCH_SECTION_EVENT, { detail: { section } }));
 };
 
 export type WorkbenchOpenDetail = { section: WorkbenchSection };

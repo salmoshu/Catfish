@@ -140,7 +140,7 @@ describe('ConversationPlanBar', () => {
 
 describe('ConversationPlanCard', () => {
   const setupCard = (sidebarOpen: boolean) => {
-    document.body.innerHTML = `<div data-plan-card-slot="conv-1"></div><div data-project-panel-host data-collapsed="${!sidebarOpen}"></div>`;
+    document.body.innerHTML = `<div data-plan-card-slot="conv-1"></div><div data-project-panel-host data-collapsed="${!sidebarOpen}"><div data-workbench data-active-section="files"></div><div data-plan-panel-slot="conv-1"></div></div>`;
     const panel = document.querySelector<HTMLElement>('[data-project-panel-host]');
     if (!panel) throw new Error('Missing test workbench');
     vi.spyOn(panel, 'getBoundingClientRect').mockReturnValue({ left: 900, width: 320 } as DOMRect);
@@ -148,17 +148,34 @@ describe('ConversationPlanCard', () => {
     runtimeView.mockReturnValue({ isProcessing: true, activeTurnId: 'turn-id-1', hydrated: true });
     render(<ConversationPlanCard conversation_id='conv-1' />);
     fireEvent.click(screen.getByRole('button', { name: 'conversation.planBar.title' }));
-    return screen.getByRole('dialog', { name: 'conversation.planBar.title' });
+    return screen.queryByRole('dialog', { name: 'conversation.planBar.title' });
   };
 
-  it('floats to the left of an open workbench instead of covering it', () => {
+  it('floats over the conversation when the workbench is already open', () => {
     const dialog = setupCard(true);
-    expect(dialog).toHaveStyle({ position: 'fixed', left: '544px', width: '340px' });
+    expect(dialog).toHaveStyle({ position: 'fixed', boxSizing: 'border-box', left: '544px', width: '340px' });
     expect(screen.getByText('conversation.planBar.progress:1/3')).toBeInTheDocument();
   });
 
-  it('uses the right-side space when the workbench is collapsed', () => {
+  it('opens the collapsed workbench and renders the plan inside it', () => {
     const dialog = setupCard(false);
-    expect(dialog).toHaveStyle({ position: 'fixed', left: `${window.innerWidth - 356}px`, width: '340px' });
+    expect(dialog).toBeNull();
+    const panel = document.querySelector<HTMLElement>('[data-project-panel-host]');
+    const workbench = document.querySelector<HTMLElement>('[data-workbench]');
+    if (!panel || !workbench) throw new Error('Missing test workbench');
+    panel.dataset.collapsed = 'false';
+    workbench.dataset.activeSection = 'plan';
+    fireEvent(window, new CustomEvent('aionui-workbench-section'));
+
+    const embeddedPlan = screen.getByTestId('conversation-plan-bar');
+    expect(embeddedPlan).toHaveAttribute('data-variant', 'panel');
+    expect(embeddedPlan.parentElement).toHaveAttribute('data-plan-panel-slot', 'conv-1');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('closes the floating plan when the workbench expands', () => {
+    expect(setupCard(true)).not.toBeNull();
+    fireEvent(window, new CustomEvent('aionui-workspace-state'));
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

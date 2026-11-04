@@ -19,7 +19,7 @@ describe('composer text clipping regressions', () => {
   it('uses relaxed line-height for selector labels instead of clipping leading-none', () => {
     const source = readFileSync('packages/desktop/src/renderer/components/agent/MarqueePillLabel.tsx', 'utf8');
 
-    expect(source).toContain('leading-[1.2]');
+    expect(source).toContain('leading-[1.4]');
     expect(source).not.toContain('leading-none');
   });
 });

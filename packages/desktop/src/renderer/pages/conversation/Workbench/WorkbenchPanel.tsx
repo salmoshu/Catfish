@@ -9,10 +9,15 @@ import { useCurrentConversation } from '@/renderer/pages/conversation/explorer/c
 import MessageAcpTerminalOutput from '@/renderer/pages/conversation/Messages/acp/MessageAcpTerminalOutput';
 import { PreviewPanel, usePreviewContext } from '@/renderer/pages/conversation/Preview';
 import type { WorkbenchSection } from './workbenchActivity';
-import { useWorkbenchActivity, WORKBENCH_OPEN_EVENT, type WorkbenchOpenDetail } from './workbenchActivityStore';
+import {
+  notifyWorkbenchSectionChange,
+  useWorkbenchActivity,
+  WORKBENCH_OPEN_EVENT,
+  type WorkbenchOpenDetail,
+} from './workbenchActivityStore';
 import './workbench.css';
 
-const SECTIONS = new Set<WorkbenchSection>(['files', 'changes', 'preview', 'terminal', 'agents']);
+const SECTIONS = new Set<WorkbenchSection>(['files', 'changes', 'preview', 'terminal', 'agents', 'plan']);
 const sectionStorageKey = (projectId: string) => `workbench-section:${projectId}`;
 const readSection = (projectId: string): WorkbenchSection => {
   try {
@@ -103,6 +108,7 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({
 
   useEffect(() => {
     onSectionChange?.(activeSection);
+    notifyWorkbenchSectionChange(activeSection);
   }, [activeSection, onSectionChange]);
 
   useEffect(() => {
@@ -128,6 +134,7 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({
   const selectSection = useCallback(
     (section: WorkbenchSection) => {
       setActiveSection(section);
+      notifyWorkbenchSectionChange(section);
       if (section !== 'preview' || previewOpen) return;
       if (activeTab) {
         openPreview(activeTab.content, activeTab.content_type, activeTab.metadata);
@@ -143,14 +150,14 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({
       <div className='workbench-body'>
         <section
           id='workbench-panel-files'
-          role={activeSection === 'preview' ? 'complementary' : 'tabpanel'}
+          role={activeSection === 'preview' || activeSection === 'plan' ? 'complementary' : 'tabpanel'}
           aria-labelledby='workbench-tab-files'
-          hidden={activeSection === 'preview'}
+          hidden={activeSection === 'preview' || activeSection === 'plan'}
         >
           <ExplorerContainer
             projectId={projectId}
             activeSection={activeSection}
-            contentHidden={activeSection === 'terminal' || activeSection === 'agents'}
+            contentHidden={activeSection === 'terminal' || activeSection === 'agents' || activeSection === 'plan'}
             onSectionChange={selectSection}
           />
         </section>
@@ -175,6 +182,14 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({
               </Button>
             </div>
           )}
+        </section>
+        <section
+          id='workbench-panel-plan'
+          role='tabpanel'
+          aria-label={t('conversation.planBar.title')}
+          hidden={activeSection !== 'plan'}
+        >
+          {conversationId && <div data-plan-panel-slot={conversationId} className='h-full min-h-0 flex-1' />}
         </section>
         <section
           id='workbench-panel-terminal'
