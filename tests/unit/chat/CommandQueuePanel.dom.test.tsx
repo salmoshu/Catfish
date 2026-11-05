@@ -57,12 +57,14 @@ vi.mock('@arco-design/web-react', () => {
 vi.mock('@icon-park/react', () => ({
   CornerDownRight: () => <span data-testid='corner-down-right-icon' />,
   Delete: () => <span data-testid='delete-icon' />,
+  Down: () => <span data-testid='down-icon' />,
   Drag: () => <span data-testid='drag-icon' />,
   Edit: () => <span data-testid='edit-icon' />,
   Inbox: () => <span data-testid='inbox-icon' />,
   SortTwo: () => <span data-testid='sort-two-icon' />,
   MoreOne: () => <span data-testid='more-icon' />,
   SendOne: () => <span data-testid='send-icon' />,
+  Up: () => <span data-testid='up-icon' />,
 }));
 
 const item: ConversationCommandQueueItem = {
