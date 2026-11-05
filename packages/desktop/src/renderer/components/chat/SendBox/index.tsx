@@ -70,6 +70,7 @@ import { appendSpeechTranscript } from '@/renderer/hooks/system/useSpeechInput';
 import { createChainedDispatch, useLiveTranscriptInsertion } from '@/renderer/hooks/system/useLiveTranscriptInsertion';
 import { getConversationInputHistory, isCaretOnFirstLine } from '@/renderer/utils/chat/messageHistory';
 import './sendbox.css';
+import styles from './SendBox.module.css';
 import KimiIcon from '@renderer/components/base/KimiIcon';
 
 const constVoid = (): void => undefined;
@@ -2121,7 +2122,7 @@ const SendBox: React.FC<{
                     : 'flex-shrink-0 sendbox-tools'
               }
             >
-              <span className='sendbox-left-tool-group'>
+              <span className={styles.toolGroup}>
                 {renderedTools}
                 {draftActionButton}
               </span>
@@ -2210,7 +2211,7 @@ const SendBox: React.FC<{
           )}
         </div>
         {!isSingleLine && (
-          <div className='flex items-center justify-between gap-2 w-full'>
+          <div className={styles.toolbar}>
             <div
               className={
                 isMobileCompact
@@ -2220,12 +2221,12 @@ const SendBox: React.FC<{
                     : 'sendbox-tools'
               }
             >
-              <span className='sendbox-left-tool-group'>
+              <span className={styles.toolGroup}>
                 {renderedTools}
                 {draftActionButton}
               </span>
             </div>
-            <div className='sendbox-actions flex items-center gap-1'>
+            <div className={`sendbox-actions ${styles.actions}`}>
               {renderedRightTools}
               {renderedSpeechButton}
               {sendButtonPrefix}

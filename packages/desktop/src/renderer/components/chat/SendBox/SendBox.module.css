@@ -1,0 +1,43 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  width: 100%;
+}
+
+.toolGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  padding-block: 2px;
+}
+
+.toolGroup > div {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.toolGroup :global(.agent-mode-compact-pill) {
+  flex-basis: auto !important;
+  flex-grow: 0 !important;
+  height: auto !important;
+  min-height: 28px;
+  padding-block: 4px !important;
+}
+
+.toolGroup :global(.arco-btn-content) {
+  line-height: 20px;
+}
+
+.actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: auto;
+}
