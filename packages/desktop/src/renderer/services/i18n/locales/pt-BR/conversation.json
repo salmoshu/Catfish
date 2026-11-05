@@ -89,7 +89,9 @@
     "archiveProject": "Archive project",
     "archiveProjectTitle": "Archive project",
     "archiveProjectConfirm": "Archive project \"{{name}}\"? Its {{count}} conversation(s) will be archived too. You can restore or delete them from Archived in Settings.",
-    "archiving": "Archiving..."
+    "archiving": "Archiving...",
+    "expandAllProjects": "Expandir todas as conversas do projeto",
+    "collapseAllProjects": "Recolher todas as conversas do projeto"
   },
   "historySearch": {
     "tooltip": "Pesquisar mensagens",
@@ -789,5 +791,9 @@
     "empty": "Nenhum plano ainda",
     "expand": "Expandir plano",
     "collapse": "Recolher plano"
+  },
+  "fileTabs": {
+    "label": "Arquivos da conversa",
+    "agent": "Agente"
   }
 }

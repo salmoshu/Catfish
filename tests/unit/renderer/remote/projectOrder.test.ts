@@ -64,4 +64,19 @@ describe('cross-environment project order', () => {
     );
     expect(order.get('remote:wsl:/home/CatfishCore')).toBe(5);
   });
+
+  it('uses recent conversation activity even when no stream transition was observed', () => {
+    const recentHistory: EnvironmentProjects[] = [
+      {
+        environment: local,
+        projects: [{ workspace: 'E:/LocalA', conversations: [{ id: 'a', name: 'A', modifiedAt: 20 }] }],
+      },
+      {
+        environment: remote,
+        projects: [{ workspace: '/home/RemoteA', conversations: [{ id: 'ra', name: 'RA', modifiedAt: 100 }] }],
+      },
+    ];
+    const order = buildProjectOrder(recentHistory, [], new Map());
+    expect(keys(order)).toEqual(['remote:wsl:/home/RemoteA', 'local:E:/LocalA']);
+  });
 });

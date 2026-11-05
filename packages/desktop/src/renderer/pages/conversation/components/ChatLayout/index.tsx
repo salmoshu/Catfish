@@ -4,6 +4,7 @@ import FlexFullContainer from '@/renderer/components/layout/FlexFullContainer';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useResizableSplit } from '@/renderer/hooks/ui/useResizableSplit';
 import ChatTitleEditor from '@/renderer/pages/conversation/components/ChatTitleEditor';
+import ConversationFileTabs from './ConversationFileTabs';
 import MobileWorkspaceOverlay from './MobileWorkspaceOverlay';
 import WorkspacePanelHeader from './WorkspacePanelHeader';
 import { useContainerWidth } from '@/renderer/pages/conversation/hooks/useContainerWidth';
@@ -71,7 +72,7 @@ const ChatLayout: React.FC<{
   const isMobile = Boolean(layout?.isMobile);
 
   // Preview panel state
-  const { isOpen: isPreviewOpenRaw, isMaximized } = usePreviewContext();
+  const { isOpen: isPreviewOpenRaw } = usePreviewContext();
   // Only hoist to the Layout host on desktop. On mobile (narrow width < 768) the
   // host is not rendered (`previewRegionActive` in Layout.tsx is gated on
   // `!isMobile`), so hoisting there would leave the preview with no renderer at
@@ -83,14 +84,6 @@ const ChatLayout: React.FC<{
   // ChatLayout must behave as if there is no preview: chat fills, no split, no
   // preview panel. Everywhere below uses `isPreviewOpen` for that local decision.
   const isPreviewOpen = isPreviewOpenRaw && !previewHosted;
-  // 最大化（仅桌面）：隐藏聊天区、让内联预览铺满；工作区右栏保持不变。
-  // 项目会话的预览被提升到 Layout host（previewHosted），其最大化在 Layout 处理，
-  // 这里的 isPreviewOpen 已排除该情况。
-  // Maximized (desktop only): hide the chat area so the inline preview fills it;
-  // the right workspace sider stays unchanged. Project conversations hoist the
-  // preview to the Layout host (previewHosted) and handle maximizing there —
-  // isPreviewOpen already excludes that case here.
-  const previewMaximized = isDesktop && isPreviewOpen && isMaximized;
 
   // --- Hook A: workspace collapse ---
   const { rightSiderCollapsed, setRightSiderCollapsed } = useWorkspaceCollapse({
@@ -141,11 +134,7 @@ const ChatLayout: React.FC<{
     isMobile,
   });
 
-  const {
-    splitRatio: chatSplitRatio,
-    setSplitRatio: setChatSplitRatio,
-    createDragHandle: createPreviewDragHandle,
-  } = useResizableSplit({
+  const { splitRatio: chatSplitRatio, setSplitRatio: setChatSplitRatio } = useResizableSplit({
     defaultWidth: 60,
     minWidth: dynamicChatMinRatio,
     maxWidth: dynamicChatMaxRatio,
@@ -238,6 +227,7 @@ const ChatLayout: React.FC<{
         ? mobileActionsSlot && props.headerExtra && createPortal(props.headerExtra, mobileActionsSlot)
         : desktopHeader}
       {props.tabsSlot}
+      <ConversationFileTabs agentLabel={display_name} />
     </>
   );
 
@@ -267,10 +257,9 @@ const ChatLayout: React.FC<{
                 flexGrow: isPreviewOpen && isDesktop ? 0 : 1,
                 flexShrink: 0,
                 flexBasis: isPreviewOpen && isDesktop ? `${chatFlex}%` : 0,
-                // 最大化时（桌面）隐藏聊天区，预览铺满；移动端预览打开即覆盖聊天区。
-                // Hidden when maximized (desktop) so the preview fills; on mobile an
-                // open preview already covers the chat.
-                display: (isPreviewOpen && isMobile) || previewMaximized ? 'none' : 'flex',
+                // Files use the main surface; the Agent tab restores the chat without
+                // unmounting it, so streaming state and scroll position stay intact.
+                display: isPreviewOpen ? 'none' : 'flex',
                 minWidth: '240px',
               }}
               onClick={() => {
@@ -297,29 +286,15 @@ const ChatLayout: React.FC<{
                   flexGrow: 1,
                   flexShrink: 1,
                   flexBasis: 0,
-                  // 桌面端只用左边框分界；移动端覆盖层保留完整描边
-                  // Desktop: left divider only. Mobile overlay keeps a full border.
-                  ...(isDesktop ? { borderLeft: '1px solid var(--bg-3)' } : { border: '1px solid var(--bg-3)' }),
-                  minWidth: isDesktop ? '260px' : 0,
+                  ...(isDesktop ? {} : { border: '1px solid var(--bg-3)' }),
+                  minWidth: 0,
                   maxWidth: isMobile ? 'calc(100% - 16px)' : undefined,
                   width: isMobile ? 'calc(100% - 16px)' : undefined,
                   boxSizing: 'border-box',
                 }}
               >
-                {/* 最大化时聊天区隐藏，拖拽把手无处可拖，隐藏之。
-                    While maximized the chat is hidden, so the resize handle has
-                    nothing to drag against — hide it. */}
-                {isDesktop &&
-                  !previewMaximized &&
-                  createPreviewDragHandle({
-                    className: 'absolute top-0 bottom-0 z-30',
-                    style: { width: '20px', left: '-20px' },
-                    linePlacement: 'end',
-                    lineClassName: 'opacity-30 group-hover:opacity-100 group-active:opacity-100',
-                    lineStyle: { width: '2px' },
-                  })}
                 <div className={classNames('h-full w-full overflow-hidden', isDesktop ? '' : 'rounded-[15px]')}>
-                  <PreviewPanel />
+                  <PreviewPanel hideTabs />
                 </div>
               </div>
             )}

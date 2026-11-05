@@ -89,7 +89,9 @@
     "archiveProject": "歸檔專案",
     "archiveProjectTitle": "歸檔專案",
     "archiveProjectConfirm": "確定歸檔專案「{{name}}」嗎？專案下的 {{count}} 個對話也會一起歸檔。歸檔後可在設定的歸檔頁恢復或刪除。",
-    "archiving": "歸檔中..."
+    "archiving": "歸檔中...",
+    "expandAllProjects": "展開全部專案會話",
+    "collapseAllProjects": "摺疊全部專案會話"
   },
   "historySearch": {
     "tooltip": "搜尋訊息",
@@ -783,5 +785,9 @@
     "empty": "暫無計劃",
     "expand": "展開計劃",
     "collapse": "收合計劃"
+  },
+  "fileTabs": {
+    "label": "會話檔案",
+    "agent": "智慧代理"
   }
 }

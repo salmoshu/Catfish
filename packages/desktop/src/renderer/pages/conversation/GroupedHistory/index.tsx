@@ -13,7 +13,7 @@ import { restrictToVerticalAxis } from '@/renderer/utils/ui/dndModifiers';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Button, Dropdown, Empty, Menu, Spin, Tooltip } from '@arco-design/web-react';
-import { FolderClose, MoreOne, Plus, Right } from '@icon-park/react';
+import { DoubleDown, DoubleUp, FolderClose, MoreOne, Plus, Right } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -35,6 +35,7 @@ import {
 } from '@/renderer/utils/workspace/environmentProjects';
 import { buildProjectOrder } from '@/renderer/utils/workspace/projectOrder';
 import { getBackendEnvironment } from '@/common/adapter/httpBridge';
+import { writeExpandedWorkspaces } from './hooks/useWorkspaceExpansionState';
 
 const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
   onSessionClick,
@@ -257,10 +258,58 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
         environment,
         workspace: group.workspace,
         conversationIds: group.conversations.map((conversation) => conversation.id),
+        lastActivityAt: Math.max(
+          0,
+          ...group.conversations.map((conversation) => conversation.modified_at ?? conversation.created_at ?? 0)
+        ),
       })),
       conversationActivityAt
     );
   }, [conversationActivityAt, environmentHistory, projectGroups]);
+
+  const allProjectKeys = useMemo(() => {
+    const environment = getBackendEnvironment() ?? { type: 'local' as const };
+    return [
+      ...projectGroups.map((group) => environmentProjectKey(environment, group.workspace)),
+      ...environmentHistory.flatMap((entry) =>
+        entry.projects.map((project) => environmentProjectKey(entry.environment, project.workspace))
+      ),
+    ];
+  }, [environmentHistory, projectGroups]);
+
+  const projectSectionControls = (
+    <span className='flex items-center gap-2px'>
+      <Tooltip content={t('conversation.history.expandAllProjects')} position='top'>
+        <Button
+          type='text'
+          size='mini'
+          aria-label={t('conversation.history.expandAllProjects')}
+          className='!size-20px !p-0 text-t-tertiary hover:text-t-primary'
+          icon={<DoubleDown size={13} />}
+          onClick={() => {
+            if (collapsedSections.has('projects')) toggleSection('projects');
+            writeExpandedWorkspaces([...new Set([...expandedWorkspaces, ...allProjectKeys])]);
+          }}
+        />
+      </Tooltip>
+      <Tooltip content={t('conversation.history.collapseAllProjects')} position='top'>
+        <Button
+          type='text'
+          size='mini'
+          aria-label={t('conversation.history.collapseAllProjects')}
+          className='!size-20px !p-0 text-t-tertiary hover:text-t-primary'
+          icon={<DoubleUp size={13} />}
+          onClick={() => {
+            const projectKeys = new Set(allProjectKeys);
+            const legacyWorkspaces = new Set(projectGroups.map((group) => group.workspace));
+            writeExpandedWorkspaces(
+              expandedWorkspaces.filter((key) => !projectKeys.has(key) && !legacyWorkspaces.has(key))
+            );
+          }}
+        />
+      </Tooltip>
+    </span>
+  );
 
   // Conversations section: keep timeline grouping (today/yesterday/...) but only show non-workspace conversations.
   const conversationOnlySections = useMemo(
@@ -281,7 +330,13 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
         <EnvironmentProjects
           collapsed={collapsed}
           heading={
-            !collapsed && <SectionLabel sectionKey='projects' label={t('conversation.history.projectsSection')} />
+            !collapsed && (
+              <SectionLabel
+                sectionKey='projects'
+                label={t('conversation.history.projectsSection')}
+                trailing={projectSectionControls}
+              />
+            )
           }
           hidden={collapsedSections.has('projects')}
           emptyContent={
@@ -427,7 +482,13 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
         <div className='flex flex-col'>
           {projectGroups.length > 0 && (
             <div className='contents'>
-              {!collapsed && <SectionLabel sectionKey='projects' label={t('conversation.history.projectsSection')} />}
+              {!collapsed && (
+                <SectionLabel
+                  sectionKey='projects'
+                  label={t('conversation.history.projectsSection')}
+                  trailing={projectSectionControls}
+                />
+              )}
               {!collapsedSections.has('projects') &&
                 projectGroups.map((group) => {
                   const environment = getBackendEnvironment() ?? { type: 'local' as const };
@@ -470,9 +531,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
                         stickyHeader
                         stickyTop={28}
                         leadingIcon={
-                          showProjectActivity ? (
-                            <Spin size={16} />
-                          ) : getBackendEnvironment()?.type === 'remote' ? (
+                          getBackendEnvironment()?.type === 'remote' ? (
                             <span role='img' aria-label={group.displayName} className='inline-flex items-center'>
                               <KimiIcon name='globe' size={16} />
                             </span>
@@ -485,6 +544,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
                         }
                         trailing={
                           <span className='flex items-center gap-6px'>
+                            {showProjectActivity && <Spin size={14} data-testid='active-project-running' />}
                             <Tooltip content={t('conversation.history.newConversationInProject')} position='top'>
                               <span
                                 role='button'
@@ -544,7 +604,13 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
             collapsed={collapsed}
             heading={
               projectGroups.length === 0 &&
-              !collapsed && <SectionLabel sectionKey='projects' label={t('conversation.history.projectsSection')} />
+              !collapsed && (
+                <SectionLabel
+                  sectionKey='projects'
+                  label={t('conversation.history.projectsSection')}
+                  trailing={projectSectionControls}
+                />
+              )
             }
             hidden={collapsedSections.has('projects')}
             getProjectOrder={(environment, project) =>

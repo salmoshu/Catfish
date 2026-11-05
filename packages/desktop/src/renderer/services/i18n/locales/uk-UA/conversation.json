@@ -93,7 +93,9 @@
     "archiveProject": "Archive project",
     "archiveProjectTitle": "Archive project",
     "archiveProjectConfirm": "Archive project \"{{name}}\"? Its {{count}} conversation(s) will be archived too. You can restore or delete them from Archived in Settings.",
-    "archiving": "Archiving..."
+    "archiving": "Archiving...",
+    "expandAllProjects": "Розгорнути всі розмови проєктів",
+    "collapseAllProjects": "Згорнути всі розмови проєктів"
   },
   "historySearch": {
     "tooltip": "Пошук повідомлень",
@@ -799,5 +801,9 @@
     "empty": "Плану ще немає",
     "expand": "Розгорнути план",
     "collapse": "Згорнути план"
+  },
+  "fileTabs": {
+    "label": "Файли розмови",
+    "agent": "Агент"
   }
 }

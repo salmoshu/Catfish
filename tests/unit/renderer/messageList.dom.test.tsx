@@ -168,6 +168,7 @@ vi.mock('@/renderer/pages/conversation/Messages/components/SelectionReplyButton'
 vi.mock('@icon-park/react', () => ({
   Down: () => <span>down</span>,
   Checklist: () => <span>checklist</span>,
+  Fish: () => <span data-testid='turn-work-fish-icon'>fish</span>,
   Right: () => <span>right</span>,
 }));
 
@@ -420,6 +421,8 @@ describe('MessageList', () => {
 
     const workSummary = screen.getByTestId('turn-work-summary');
     expect(workSummary).toHaveTextContent('Worked for 3s');
+    expect(screen.getByTestId('turn-work-fish-icon')).toBeInTheDocument();
+    expect(workSummary.querySelector('button')).toHaveClass('!text-t-secondary');
     expect(screen.queryByTestId('msgtext-text-a')).not.toBeInTheDocument();
     expect(screen.queryByTestId('tool-summary')).not.toBeInTheDocument();
     expect(screen.getByTestId('msgtext-text-b').getAttribute('data-copy-row')).toBe('true');

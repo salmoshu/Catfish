@@ -212,8 +212,6 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
               className='line-height-0 flex-shrink-0 text-warning animate-wiggle'
               data-testid={`conversation-waiting-confirmation-${conversation.id}`}
             />
-          ) : isGenerating && !batchMode ? (
-            <Spin size={16} />
           ) : (
             renderLeadingIcon()
           )}
@@ -298,6 +296,11 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
           )}
         </FlexFullContainer>
 
+        {isGenerating && !batchMode && !showWaitingConfirmation && (
+          <span className='absolute end-30px top-1/2 flex -translate-y-1/2 items-center group-hover:end-30px'>
+            <Spin size={14} data-testid={`conversation-running-${conversation.id}`} />
+          </span>
+        )}
         {renderCompletionUnreadDot()}
         {!batchMode && !editingTitle && (
           <div

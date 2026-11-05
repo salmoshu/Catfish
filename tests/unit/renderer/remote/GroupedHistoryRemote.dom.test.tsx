@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TChatConversation } from '@/common/config/storage';
 import WorkspaceGroupedHistory from '@/renderer/pages/conversation/GroupedHistory';
+import { WORKSPACE_EXPANSION_STORAGE_KEY } from '@/renderer/pages/conversation/GroupedHistory/hooks/useWorkspaceExpansionState';
 
 const mocks = vi.hoisted(() => ({
   history: vi.fn(),
@@ -15,6 +16,8 @@ const mocks = vi.hoisted(() => ({
   list: vi.fn(),
   connect: vi.fn(),
   activate: vi.fn(),
+  progressOn: vi.fn(() => () => {}),
+  disconnectedOn: vi.fn(() => () => {}),
 }));
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
@@ -29,6 +32,8 @@ vi.mock('@/common', () => ({
       list: { invoke: mocks.list },
       connect: { invoke: mocks.connect },
       activate: { invoke: mocks.activate },
+      progress: { on: mocks.progressOn },
+      disconnected: { on: mocks.disconnectedOn },
     },
   },
 }));
@@ -92,6 +97,7 @@ beforeEach(() => {
   localStorage.clear();
   window.__backendEnvironment = { type: 'remote', id: 'wsl-1', name: 'Ubuntu-20.04', kind: 'wsl' };
   mocks.local.mockResolvedValue([]);
+  mocks.list.mockResolvedValue([]);
   mocks.history.mockReturnValue({
     conversations: [conversation],
     isConversationGenerating: () => false,
@@ -151,6 +157,17 @@ afterEach(() => {
 });
 
 describe('active remote grouped history', () => {
+  it('expands and collapses every project conversation from the Projects header', () => {
+    render(<WorkspaceGroupedHistory />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'conversation.history.collapseAllProjects' }));
+    expect(JSON.parse(localStorage.getItem(WORKSPACE_EXPANSION_STORAGE_KEY) ?? '[]')).toEqual([]);
+    fireEvent.click(screen.getByRole('button', { name: 'conversation.history.expandAllProjects' }));
+    expect(JSON.parse(localStorage.getItem(WORKSPACE_EXPANSION_STORAGE_KEY) ?? '[]')).toContain(
+      'remote:wsl-1:/home/user/RemoteProject'
+    );
+  });
+
   it('uses active project actions without offering offline reconnect', async () => {
     render(<WorkspaceGroupedHistory />);
 
@@ -213,7 +230,8 @@ describe('active remote grouped history', () => {
     const { container } = render(<WorkspaceGroupedHistory />);
 
     expect(container.querySelector('.workspace-collapse .arco-spin')).not.toBeNull();
-    expect(screen.queryByRole('img', { name: 'RemoteProject' })).not.toBeInTheDocument();
+    expect(screen.getByTestId('active-project-running')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'RemoteProject' })).toBeInTheDocument();
   });
 
   it('keeps the remote globe instead of a spinner while the project is expanded', () => {

@@ -64,10 +64,12 @@ describe('ConversationRow leading icon', () => {
     expect(container.querySelector('.arco-spin')).toBeNull();
   });
 
-  it('shows the generating spinner when generating but not waiting', () => {
+  it('keeps the agent identity icon and adds a trailing spinner when generating', () => {
     const { container } = renderRow({ isWaitingConfirmation: false, isGenerating: true });
     expect(screen.queryByTestId('conversation-waiting-confirmation-conv-1')).toBeNull();
+    expect(screen.getByTestId('conversation-running-conv-1')).toBeInTheDocument();
     expect(container.querySelector('.arco-spin')).not.toBeNull();
+    expect(container.querySelector('svg')).not.toBeNull();
   });
 
   it('shows neither the waiting icon nor the spinner when idle', () => {

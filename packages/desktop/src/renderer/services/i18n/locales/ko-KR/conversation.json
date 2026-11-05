@@ -89,7 +89,9 @@
     "archiveProject": "Archive project",
     "archiveProjectTitle": "Archive project",
     "archiveProjectConfirm": "Archive project \"{{name}}\"? Its {{count}} conversation(s) will be archived too. You can restore or delete them from Archived in Settings.",
-    "archiving": "Archiving..."
+    "archiving": "Archiving...",
+    "expandAllProjects": "모든 프로젝트 대화 펼치기",
+    "collapseAllProjects": "모든 프로젝트 대화 접기"
   },
   "historySearch": {
     "tooltip": "메시지 검색",
@@ -783,5 +785,9 @@
     "empty": "아직 계획이 없습니다",
     "expand": "계획 펼치기",
     "collapse": "계획 접기"
+  },
+  "fileTabs": {
+    "label": "대화 파일",
+    "agent": "에이전트"
   }
 }

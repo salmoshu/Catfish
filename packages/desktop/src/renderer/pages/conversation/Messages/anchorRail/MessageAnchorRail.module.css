@@ -118,26 +118,35 @@
 .tickMark {
   display: block;
   flex: none;
-  width: 3px;
-  height: 14px;
+  width: 12px;
+  height: 2px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--color-text-3) 72%, transparent);
+  background: color-mix(in srgb, var(--color-text-3) 62%, transparent);
+  transform-origin: left center;
   transition:
-    height 120ms ease,
-    background-color 120ms ease;
+    width 180ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    background-color 160ms ease,
+    opacity 160ms ease;
 }
 
 .tickActive .tickMark {
-  height: 18px;
+  width: 26px;
   background: var(--text-primary);
 }
 
 .tickNear .tickMark {
-  background: color-mix(in srgb, var(--color-text-2) 78%, transparent);
+  width: 18px;
+  background: color-mix(in srgb, var(--color-text-2) 72%, transparent);
 }
 
 .tickFar .tickMark {
-  background: color-mix(in srgb, var(--color-text-3) 62%, transparent);
+  width: 14px;
+}
+
+.tick:hover .tickMark,
+.tick:focus-visible .tickMark {
+  width: 30px;
+  background: var(--text-primary);
 }
 
 .tickLabel {
@@ -168,12 +177,12 @@
 
 .scrollHint {
   position: absolute;
-  inset-inline-start: 6px;
-  width: 3px;
+  inset-inline-start: 10px;
+  width: 12px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
+  gap: 3px;
   pointer-events: none;
 }
 
@@ -183,8 +192,8 @@
 
 .scrollHintDot {
   display: block;
-  width: 3px;
-  height: 8px;
+  width: 12px;
+  height: 2px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-text-3) 62%, transparent);
 }

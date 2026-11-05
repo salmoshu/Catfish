@@ -180,40 +180,6 @@ const buildTrayContextMenu = async (): Promise<Electron.Menu> => {
           }
         },
       },
-      { type: 'separator' as const },
-      {
-        label: i18n.t('pet.sizeSmall', { px: 200 }),
-        click: async () => {
-          try {
-            const { resizePetWindow } = await import('../pet/petManager');
-            resizePetWindow(200);
-          } catch {
-            /* ignore */
-          }
-        },
-      },
-      {
-        label: i18n.t('pet.sizeMedium', { px: 280 }),
-        click: async () => {
-          try {
-            const { resizePetWindow } = await import('../pet/petManager');
-            resizePetWindow(280);
-          } catch {
-            /* ignore */
-          }
-        },
-      },
-      {
-        label: i18n.t('pet.sizeLarge', { px: 360 }),
-        click: async () => {
-          try {
-            const { resizePetWindow } = await import('../pet/petManager');
-            resizePetWindow(360);
-          } catch {
-            /* ignore */
-          }
-        },
-      },
     ],
   });
   template.push({ type: 'separator' });

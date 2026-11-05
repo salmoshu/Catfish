@@ -4,7 +4,7 @@ import { Plus, Refresh } from '@icon-park/react';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
-import type { RemoteEnvironmentSummary } from '@/common/types/remote';
+import type { RemoteEnvironmentStatus, RemoteEnvironmentSummary } from '@/common/types/remote';
 import KimiIcon from '@/renderer/components/base/KimiIcon';
 import WorkspaceCollapse from '@/renderer/pages/conversation/components/WorkspaceCollapse';
 import { ConversationIdentityIcon } from '@/renderer/pages/conversation/GroupedHistory/ConversationRow';
@@ -47,6 +47,7 @@ const EnvironmentProjects: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const [history, setHistory] = useState(readEnvironmentProjects);
+  const [remoteStatuses, setRemoteStatuses] = useState<Record<string, RemoteEnvironmentStatus>>({});
   const expandedWorkspaces = useWorkspaceExpansionState();
   const [connection, setConnection] = useState<{ environment: RemoteEnvironmentSummary; route: string }>();
   const [switchingKey, setSwitchingKey] = useState<string | null>(null);
@@ -55,6 +56,37 @@ const EnvironmentProjects: React.FC<Props> = ({
   const otherHistory = active
     ? history.filter((entry) => environmentKey(entry.environment) !== environmentKey(active))
     : [];
+  const visibleHistory = otherHistory.filter(
+    (entry) => entry.environment.type === 'local' || remoteStatuses[entry.environment.id] === 'connected'
+  );
+
+  useEffect(() => {
+    let mounted = true;
+    const refreshConnections = async () => {
+      try {
+        const environments = await ipcBridge.remoteEnvironment.list.invoke();
+        if (!mounted) return;
+        setRemoteStatuses(Object.fromEntries(environments.map((environment) => [environment.id, environment.status])));
+      } catch {
+        // An unavailable status service must not resurrect disconnected projects.
+      }
+    };
+    void refreshConnections();
+    const removeProgressListener = ipcBridge.remoteEnvironment.progress.on((progress) => {
+      setRemoteStatuses((current) => ({
+        ...current,
+        [progress.environmentId]: progress.stage === 'connected' ? 'connected' : 'connecting',
+      }));
+    });
+    const removeDisconnectListener = ipcBridge.remoteEnvironment.disconnected.on(({ environmentId }) => {
+      setRemoteStatuses((current) => ({ ...current, [environmentId]: 'disconnected' }));
+    });
+    return () => {
+      mounted = false;
+      removeProgressListener();
+      removeDisconnectListener();
+    };
+  }, []);
 
   useEffect(() => {
     const refresh = () => setHistory(readEnvironmentProjects());
@@ -111,12 +143,12 @@ const EnvironmentProjects: React.FC<Props> = ({
     }
   };
 
-  const hasProjects = otherHistory.some((entry) => entry.projects.length > 0);
+  const hasProjects = visibleHistory.some((entry) => entry.projects.length > 0);
   return (
     <>
       {hasProjects ? heading : emptyContent}
       {!hidden &&
-        otherHistory.map((entry) =>
+        visibleHistory.map((entry) =>
           entry.projects.map((project) => {
             const key = environmentProjectKey(entry.environment, project.workspace);
             const isRemote = entry.environment.type === 'remote';
@@ -148,7 +180,7 @@ const EnvironmentProjects: React.FC<Props> = ({
                   }
                   trailing={
                     <span className='flex items-center gap-6px'>
-                      {projectRunning && <Spin size={14} data-testid='cached-project-running' />}
+                      {projectRunning && !projectExpanded && <Spin size={14} data-testid='cached-project-running' />}
                       <Tooltip content={actionLabel} position='top'>
                         <span
                           role='button'
@@ -215,13 +247,12 @@ const EnvironmentProjects: React.FC<Props> = ({
                         onClick={() => void open(entry, project.workspace, conversation.id)}
                       >
                         <span className='size-22px flex items-center justify-center shrink-0 leading-none'>
-                          {isConversationGenerating?.(conversation.id) ? (
-                            <Spin size={14} data-testid='cached-conversation-running' />
-                          ) : (
-                            <ConversationIdentityIcon conversation={cachedConversation} />
-                          )}
+                          <ConversationIdentityIcon conversation={cachedConversation} />
                         </span>
                         <span className={styles.conversationName}>{conversation.name}</span>
+                        {isConversationGenerating?.(conversation.id) && (
+                          <Spin size={14} className='ms-auto shrink-0' data-testid='cached-conversation-running' />
+                        )}
                       </Button>
                     );
                   })}

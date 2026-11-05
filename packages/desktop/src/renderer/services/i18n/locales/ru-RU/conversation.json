@@ -93,7 +93,9 @@
     "archiveProject": "Archive project",
     "archiveProjectTitle": "Archive project",
     "archiveProjectConfirm": "Archive project \"{{name}}\"? Its {{count}} conversation(s) will be archived too. You can restore or delete them from Archived in Settings.",
-    "archiving": "Archiving..."
+    "archiving": "Archiving...",
+    "expandAllProjects": "Развернуть все чаты проектов",
+    "collapseAllProjects": "Свернуть все чаты проектов"
   },
   "historySearch": {
     "tooltip": "Поиск сообщений",
@@ -799,5 +801,9 @@
     "empty": "Плана пока нет",
     "expand": "Развернуть план",
     "collapse": "Свернуть план"
+  },
+  "fileTabs": {
+    "label": "Файлы беседы",
+    "agent": "Агент"
   }
 }

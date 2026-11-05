@@ -85,7 +85,7 @@ class SaveRefusedError extends Error {
   }
 }
 
-const PreviewPanel: React.FC = () => {
+const PreviewPanel: React.FC<{ hideTabs?: boolean }> = ({ hideTabs = false }) => {
   const { t, i18n } = useTranslation();
   const {
     isOpen,
@@ -1206,30 +1206,21 @@ const PreviewPanel: React.FC = () => {
           onCancelCloseTab={handleCancelCloseTab}
         />
 
-        {/* Tab 栏 / Tab bar */}
-        {/* eslint-disable-next-line max-len */}
-        <PreviewTabs
-          tabs={previewTabs}
-          activeTabId={activeTabId}
-          tabFadeState={tabFadeState}
-          tabsContainerRef={tabsContainerRef}
-          onSwitchTab={switchTab}
-          onCloseTab={handleCloseTab}
-          onContextMenu={handleTabContextMenu}
-          onClosePanel={handleClosePanel}
-          isMaximized={isMaximized}
-          // 移动端预览本就是全屏覆盖层，最大化无意义 —— 不提供回调即隐藏该按钮。
-          // On mobile the preview is already a full overlay, so maximizing is
-          // meaningless; omitting the callback hides the button.
-          onToggleMaximize={layout?.isMobile ? undefined : toggleMaximized}
-          // 只要面板里已经有任意 tab（文件或浏览器），就露出「新建浏览器 tab」的加号，
-          // 不必等用户先手动开过一次浏览器。面板本身为空时才隐藏，避免出现一个没有
-          // 上下文的孤立加号。
-          // Show the "new browser tab" plus as soon as the panel holds any tab (file or
-          // browser) instead of requiring the user to open a browser first. It stays
-          // hidden only while the panel is empty, so the plus never appears alone.
-          onNewBrowserTab={previewTabs.length > 0 ? handleNewBrowserTab : undefined}
-        />
+        {!hideTabs && (
+          <PreviewTabs
+            tabs={previewTabs}
+            activeTabId={activeTabId}
+            tabFadeState={tabFadeState}
+            tabsContainerRef={tabsContainerRef}
+            onSwitchTab={switchTab}
+            onCloseTab={handleCloseTab}
+            onContextMenu={handleTabContextMenu}
+            onClosePanel={handleClosePanel}
+            isMaximized={isMaximized}
+            onToggleMaximize={layout?.isMobile ? undefined : toggleMaximized}
+            onNewBrowserTab={previewTabs.length > 0 ? handleNewBrowserTab : undefined}
+          />
+        )}
 
         {/* 工具栏（URL / 浏览器 类型不显示工具栏，因为不需要下载/编辑等功能）
             Toolbar (hidden for URL and browser types — no download/edit needed) */}

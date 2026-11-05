@@ -22,7 +22,6 @@ import { setCurrentConversation } from '@renderer/pages/conversation/explorer/cu
 import { useContainerWidth } from '@renderer/pages/conversation/hooks/useContainerWidth';
 import { useProjectExplorerColumnWidth } from '@renderer/hooks/ui/useProjectExplorerColumnWidth';
 import { useResizableSplit } from '@renderer/hooks/ui/useResizableSplit';
-import { useProjectPreviewRegionWidth } from '@renderer/hooks/ui/useProjectPreviewRegionWidth';
 import { useProjectPanelCollapse } from '@renderer/hooks/ui/useProjectPanelCollapse';
 import { dispatchWorkspaceToggleEvent } from '@renderer/utils/workspace/workspaceEvents';
 import { LayoutContext } from '@renderer/hooks/context/LayoutContext';
@@ -41,7 +40,6 @@ import { getBackendEnvironment } from '@/common/adapter/httpBridge';
 import UpdateModal from '@/renderer/components/settings/UpdateModal';
 import KimiIcon from '@renderer/components/base/KimiIcon';
 import brandLogo from '@renderer/assets/logo.svg';
-import type { WorkbenchSection } from '@renderer/pages/conversation/Workbench/workbenchActivity';
 import '@renderer/styles/layout.css';
 
 declare const __APP_VERSION__: string;
@@ -176,16 +174,11 @@ const Layout: React.FC<{
   // Use closePreview directly — closePreviewIfScopeChanged skips the call
   // when lastScopeRef is already null (e.g. on team routes where it was
   // never updated), which would leave the panel open.
-  const {
-    closePreview: closePreviewOnRouteChange,
-    isOpen: isPreviewOpen,
-    isMaximized: isPreviewMaximized,
-  } = usePreviewContext();
+  const { closePreview: closePreviewOnRouteChange, isOpen: isPreviewOpen } = usePreviewContext();
   // Layout-level explorer column width engine (stage3 FULL / P2): measure the
   // [content | explorer] row, clamp the explorer width so chat (+ preview) keep
   // their reserve. Active only when a project is bound and on desktop.
   const currentProject = useCurrentProject();
-  const [workbenchSection, setWorkbenchSection] = useState<WorkbenchSection>('files');
   const { containerRef: mainRowRef, containerWidth: mainRowWidth } = useContainerWidth();
   const explorerActive = Boolean(currentProject) && !isMobile;
   const { widthPx: explorerWidthPx, createDragHandle: createExplorerDragHandle } = useProjectExplorerColumnWidth(
@@ -204,24 +197,9 @@ const Layout: React.FC<{
     dispatchWorkspaceToggleEvent();
   }, []);
   const explorerMobileWidthPx = Math.min(420, Math.max(280, Math.round(viewportWidth * 0.85)));
-  // Keep one width across every Workbench section. Terminal/agents previously
-  // borrowed the wider preview width, which made the sidebar jump when the user
-  // switched tabs; only an open preview (a separate region) still widens the host.
-  const workbenchWide = isPreviewOpen;
-  const workbenchResizeActive = Boolean(currentProject) && !isMobile && workbenchWide && !explorerCollapsed;
-  const previewMaximized =
-    Boolean(currentProject) &&
-    !isMobile &&
-    isPreviewOpen &&
-    workbenchSection === 'preview' &&
-    !explorerCollapsed &&
-    isPreviewMaximized;
-  const { widthPx: previewWidthPx, createDragHandle: createPreviewRegionDragHandle } = useProjectPreviewRegionWidth(
-    mainRowWidth,
-    0,
-    workbenchResizeActive
-  );
-  const workbenchWidthPx = workbenchWide ? previewWidthPx : explorerWidthPx;
+  // Preview files live in the conversation surface, so every Workbench section
+  // keeps the same explorer width and the chat never gets hidden by a preview.
+  const workbenchWidthPx = explorerWidthPx;
   const routeLayoutMountedRef = useRef(false);
   useEffect(() => {
     if (!routeLayoutMountedRef.current) {
@@ -483,17 +461,7 @@ const Layout: React.FC<{
                 onClick={() => {
                   if (isMobile && !collapsed) setCollapsed(true);
                 }}
-                style={
-                  isMobile
-                    ? {
-                        width: '100%',
-                      }
-                    : previewMaximized
-                      ? // 最大化时聊天区隐藏（保持挂载不卸载，还原后即刻恢复）
-                        // Hidden while maximized (kept mounted so restoring is instant)
-                        { display: 'none' }
-                      : undefined
-                }
+                style={isMobile ? { width: '100%' } : undefined}
               >
                 <Outlet />
                 <PwaPullToRefresh />
@@ -504,25 +472,13 @@ const Layout: React.FC<{
                 <ProjectPanelHost
                   widthPx={workbenchWidthPx}
                   collapsed={explorerCollapsed}
-                  maximized={previewMaximized}
+                  maximized={false}
                   onCollapse={() => setExplorerCollapsed(true)}
                   onExpand={() => setExplorerCollapsed(false)}
-                  onSectionChange={setWorkbenchSection}
-                  dragHandle={
-                    workbenchWide
-                      ? createPreviewRegionDragHandle({
-                          className: 'absolute start-0 top-0 bottom-0 z-20',
-                          style: { width: '20px', left: '-20px' },
-                          reverse: true,
-                          linePlacement: 'end',
-                          lineClassName: 'opacity-30 group-hover:opacity-100 group-active:opacity-100',
-                          lineStyle: { width: '2px' },
-                        })
-                      : createExplorerDragHandle({
-                          className: 'absolute start-0 top-0 bottom-0 z-20',
-                          reverse: true,
-                        })
-                  }
+                  dragHandle={createExplorerDragHandle({
+                    className: 'absolute start-0 top-0 bottom-0 z-20',
+                    reverse: true,
+                  })}
                 />
               )}
             </div>

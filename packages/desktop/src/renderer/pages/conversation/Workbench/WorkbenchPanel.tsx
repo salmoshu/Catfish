@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { NormalizedToolCall, NormalizedToolStatus } from '@/common/chat/normalizeToolCall';
 import { useLatestRef } from '@/renderer/hooks/ui/useLatestRef';
-import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { ExplorerContainer } from '@/renderer/pages/conversation/explorer/ExplorerContainer';
 import { useCurrentConversation } from '@/renderer/pages/conversation/explorer/currentConversationStore';
 import MessageAcpTerminalOutput from '@/renderer/pages/conversation/Messages/acp/MessageAcpTerminalOutput';
@@ -89,10 +88,8 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({
   const conversationId = useCurrentConversation();
   const activity = useWorkbenchActivity(conversationId);
   const { isOpen: previewOpen, activeTab, openPreview, openBrowserTab } = usePreviewContext();
-  const isMobile = Boolean(useLayoutContext()?.isMobile);
   const collapsedRef = useLatestRef(collapsed);
   const onExpandRef = useLatestRef(onExpand);
-  const isMobileRef = useLatestRef(isMobile);
 
   useEffect(() => {
     setActiveSection(readSection(projectId));
@@ -112,13 +109,10 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({
   }, [activeSection, onSectionChange]);
 
   useEffect(() => {
-    if (previewOpen && !isMobileRef.current) {
-      setActiveSection('preview');
-      if (collapsedRef.current) onExpandRef.current?.();
-    } else {
+    if (!previewOpen) {
       setActiveSection((current) => (current === 'preview' ? 'files' : current));
     }
-  }, [previewOpen, collapsedRef, onExpandRef, isMobileRef]);
+  }, [previewOpen]);
 
   useEffect(() => {
     const handleOpen = (event: Event) => {

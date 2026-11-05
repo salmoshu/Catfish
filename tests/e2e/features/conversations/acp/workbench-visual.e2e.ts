@@ -175,7 +175,7 @@ test.describe('Kimi-style conversation and Workbench', () => {
       .evaluate((element) => element.clientWidth);
     expect(agentsPanelWidth).toBeCloseTo(agentsBodyWidth, 0);
     const agentsHostWidth = await panelHost.evaluate((element) => element.getBoundingClientRect().width);
-    for (const section of ['files', 'changes', 'preview', 'terminal', 'agents']) {
+    for (const section of ['files', 'changes', 'terminal', 'agents']) {
       await expect(page.locator(`#workbench-tab-${section}`)).toBeVisible();
     }
     await workbench.locator('.workbench-agent-card__header').first().click();
@@ -202,12 +202,16 @@ test.describe('Kimi-style conversation and Workbench', () => {
     expect(filesHostWidth).toBeCloseTo(agentsHostWidth, 0);
     await page.locator('#workbench-tab-changes').click();
     await expect(workbench).toHaveAttribute('data-active-section', 'changes');
-    await page.locator('#workbench-tab-preview').click();
-    await expect(workbench).toHaveAttribute('data-active-section', 'preview');
-    await expect(page.locator('[data-project-preview-region]')).toBeVisible();
-    await expect(page.locator('.workspace-tree').first()).toBeVisible();
+    await page.locator('#workbench-tab-files').click();
     await page.getByText('README.md', { exact: true }).first().click();
-    await page.getByTestId('preview-collapse-panel').click();
+    await expect(page.getByTestId('conversation-file-tabs')).toBeVisible();
+    await expect(page.getByTestId('conversation-agent-tab')).toHaveAttribute('aria-selected', 'false');
+    await expect(workbench).toHaveAttribute('data-active-section', 'files');
+    await page.getByTestId('conversation-agent-tab').click();
+    await expect(page.getByTestId('conversation-agent-tab')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByTestId('conversation-file-tabs')).toBeVisible();
+    await page.locator('[data-testid^="conversation-file-close-"]').click();
+    await expect(page.getByTestId('conversation-file-tabs')).toHaveCount(0);
     await page.locator('#workbench-tab-agents').click();
 
     await page.getByTestId('sendbox-input').fill('Queue a follow-up review');

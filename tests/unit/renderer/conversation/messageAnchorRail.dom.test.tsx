@@ -79,5 +79,8 @@ describe('MessageAnchorRail', () => {
       'utf8'
     );
     expect(stylesheet).toContain('@container (min-width: 816px)');
+    expect(stylesheet).toMatch(/\.tickMark\s*{[^}]*width: 12px;[^}]*height: 2px;/s);
+    expect(stylesheet).toMatch(/\.tickActive \.tickMark\s*{[^}]*width: 26px;/s);
+    expect(stylesheet).toMatch(/\.tick:hover \.tickMark,[\s\S]*?width: 30px;/);
   });
 });

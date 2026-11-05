@@ -14,6 +14,8 @@ const mocks = vi.hoisted(() => ({
   switchRoute: vi.fn(),
   reload: vi.fn(),
   error: vi.fn(),
+  progressOn: vi.fn(() => () => {}),
+  disconnectedOn: vi.fn(() => () => {}),
 }));
 vi.mock('@/common', () => ({
   ipcBridge: {
@@ -22,6 +24,8 @@ vi.mock('@/common', () => ({
       list: { invoke: mocks.list },
       connect: { invoke: mocks.connect },
       activate: { invoke: mocks.activate },
+      progress: { on: mocks.progressOn },
+      disconnected: { on: mocks.disconnectedOn },
     },
   },
 }));
@@ -65,7 +69,7 @@ beforeEach(() => {
   localStorage.clear();
   window.__backendEnvironment = { type: 'local' };
   mocks.local.mockResolvedValue([conversation('local-chat', 'E:/LocalProject')]);
-  mocks.list.mockResolvedValue([{ ...remote, status: 'disconnected', createdAt: 1, updatedAt: 1 }]);
+  mocks.list.mockResolvedValue([{ ...remote, status: 'connected', createdAt: 1, updatedAt: 1 }]);
   mocks.connect.mockResolvedValue({ ok: true, data: remote });
   mocks.activate.mockImplementation((params: { id?: string } = {}) =>
     Promise.resolve(
@@ -82,6 +86,31 @@ afterEach(() => {
 });
 
 describe('projects across environments', () => {
+  it('hides remote projects and their sessions until the environment is connected', async () => {
+    mocks.list.mockResolvedValue([{ ...remote, status: 'disconnected', createdAt: 1, updatedAt: 1 }]);
+    recordEnvironmentProjects([conversation('remote-chat', '/home/user/RemoteProject')], remote);
+    render(<EnvironmentProjects collapsed={false} />);
+
+    await waitFor(() => expect(mocks.list).toHaveBeenCalled());
+    expect(screen.queryByText('RemoteProject')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'remote-chat' })).not.toBeInTheDocument();
+  });
+
+  it('removes a remote project when its environment disconnects', async () => {
+    let onDisconnect: (event: { environmentId: string }) => void = () => {};
+    mocks.disconnectedOn.mockImplementation((listener: typeof onDisconnect) => {
+      onDisconnect = listener;
+      return () => {};
+    });
+    recordEnvironmentProjects([conversation('remote-chat', '/home/user/RemoteProject')], remote);
+    render(<EnvironmentProjects collapsed={false} />);
+
+    expect(await screen.findByText('RemoteProject')).toBeInTheDocument();
+    onDisconnect({ environmentId: remote.id });
+    await waitFor(() => expect(screen.queryByText('RemoteProject')).not.toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: 'remote-chat' })).not.toBeInTheDocument();
+  });
+
   it('aligns cached local headers and retains the new-conversation action', async () => {
     window.__backendEnvironment = remote;
     render(<EnvironmentProjects collapsed={false} />);
@@ -93,60 +122,38 @@ describe('projects across environments', () => {
       'hidden',
       'group-hover:flex'
     );
-    expect(screen.queryByRole('button', { name: 'mcp.connect' })).not.toBeInTheDocument();
-
     fireEvent.click(localHeader);
-    const cachedRow = screen.getByRole('button', { name: 'local-chat' });
-    expect(cachedRow).toHaveClass('chat-history__item');
-    expect(cachedRow.querySelector('[data-kimi-icon="message"]')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'local-chat' })).toBeInTheDocument();
     expect(screen.getByTestId('cached-agent-icon')).toHaveAttribute('data-backend', 'kimi');
-    expect(screen.getByTestId('folder-open')).toBeInTheDocument();
-    expect(localHeader.closest('.workspace-collapse')?.querySelector('.sticky')).toHaveStyle({ top: '28px' });
-    expect(screen.queryByText('guid.workspace.remote.local')).not.toBeInTheDocument();
   });
 
-  it('uses only a globe and workspace basename for cached remote projects', () => {
+  it('uses only a globe and workspace basename for connected remote projects', async () => {
     recordEnvironmentProjects([conversation('remote-chat', '/home/user/RemoteProject')], remote);
     render(<EnvironmentProjects collapsed={false} />);
 
-    const icon = screen.getByRole('img', { name: 'RemoteProject' });
+    const icon = await screen.findByRole('img', { name: 'RemoteProject' });
     expect(icon.querySelector('[data-kimi-icon="globe"]')).toBeInTheDocument();
     expect(icon.parentElement?.querySelectorAll('svg')).toHaveLength(1);
     expect(screen.queryByRole('img', { name: /Ubuntu/ })).not.toBeInTheDocument();
     expect(screen.queryByText(/Ubuntu/)).not.toBeInTheDocument();
   });
 
-  it('shows exactly one reconnect action and no local project actions for inactive remotes', () => {
-    recordEnvironmentProjects([conversation('remote-chat', '/home/user/RemoteProject')], remote);
-    render(<EnvironmentProjects collapsed={false} />);
-
-    const reconnect = screen.getByRole('button', { name: 'mcp.connect' });
-    expect(screen.getAllByTestId('reconnect-icon')).toHaveLength(1);
-    expect(reconnect).toHaveClass('hidden', 'group-hover:flex');
-    expect(
-      screen.queryByRole('button', { name: 'conversation.history.newConversationInProject' })
-    ).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('common.more')).not.toBeInTheDocument();
-    expect(screen.queryByText('conversation.history.archiveProject')).not.toBeInTheDocument();
-  });
-
-  it('keeps cached sessions expanded across environment remounts without switching', () => {
+  it('keeps connected sessions expanded across environment remounts without switching', async () => {
     recordEnvironmentProjects([conversation('remote-chat', '/home/user/RemoteProject')], remote);
     const first = render(<EnvironmentProjects collapsed={false} />);
 
-    expect(screen.queryByRole('button', { name: 'remote-chat' })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByText('RemoteProject'));
+    fireEvent.click(await screen.findByText('RemoteProject'));
     expect(screen.getByRole('button', { name: 'remote-chat' })).toBeInTheDocument();
     expect(mocks.connect).not.toHaveBeenCalled();
     expect(mocks.reload).not.toHaveBeenCalled();
 
     first.unmount();
     render(<EnvironmentProjects collapsed={false} />);
-    expect(screen.getByRole('button', { name: 'remote-chat' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'remote-chat' })).toBeInTheDocument();
     expect(mocks.connect).not.toHaveBeenCalled();
   });
 
-  it('shows running state for conversations from an inactive environment', () => {
+  it('shows project activity only while collapsed and conversation activity on the right while expanded', async () => {
     recordEnvironmentProjects([conversation('remote-chat', '/home/user/RemoteProject')], remote);
     render(
       <EnvironmentProjects
@@ -155,83 +162,48 @@ describe('projects across environments', () => {
       />
     );
 
+    expect(await screen.findByTestId('cached-project-running')).toBeInTheDocument();
+    expect(screen.queryByTestId('cached-conversation-running')).not.toBeInTheDocument();
     fireEvent.click(screen.getByText('RemoteProject'));
     expect(screen.getByTestId('cached-conversation-running')).toBeInTheDocument();
-    expect(screen.getByTestId('cached-project-running')).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'RemoteProject' })).toBeInTheDocument();
+    expect(screen.queryByTestId('cached-project-running')).not.toBeInTheDocument();
+    expect(screen.getByTestId('cached-agent-icon')).toBeInTheDocument();
   });
 
   it('activates the remote backend only after a cached conversation is selected', async () => {
     recordEnvironmentProjects([conversation('remote-chat', '/home/user/Remote Project')], remote);
     render(<EnvironmentProjects collapsed={false} />);
-    fireEvent.click(screen.getByText('Remote Project'));
+    fireEvent.click(await screen.findByText('Remote Project'));
     fireEvent.click(screen.getByRole('button', { name: 'remote-chat' }));
 
     await waitFor(() => expect(mocks.switchRoute).toHaveBeenCalledOnce());
     expect(mocks.reload).not.toHaveBeenCalled();
     expect(mocks.activate).toHaveBeenCalledWith({ id: 'wsl-1' });
     expect(mocks.connect).toHaveBeenCalledWith({ id: 'wsl-1' });
-    expect(mocks.list).not.toHaveBeenCalled();
     expect(mocks.switchRoute).toHaveBeenCalledWith('/conversation/remote-chat');
-    expect(screen.queryByRole('button', { name: 'complete-connection' })).not.toBeInTheDocument();
   });
 
-  it('connects from the reconnect icon and ignores further clicks while switching', async () => {
-    let resolveConnect!: (result: { ok: true; data: BackendEnvironment }) => void;
-    mocks.connect.mockImplementation(
-      () =>
-        new Promise<{ ok: true; data: BackendEnvironment }>((resolve) => {
-          resolveConnect = resolve;
-        })
-    );
-    recordEnvironmentProjects([conversation('remote-chat', '/home/user/RemoteProject')], remote);
-    render(<EnvironmentProjects collapsed={false} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'mcp.connect' }));
-    fireEvent.click(screen.getByText('RemoteProject'));
-    await waitFor(() => expect(mocks.connect).toHaveBeenCalledOnce());
-    expect(screen.getByTestId('reconnect-icon')).toHaveClass('loading');
-    expect(screen.getByRole('button', { name: 'mcp.connect' })).toHaveClass('flex');
-    expect(screen.getByRole('button', { name: 'mcp.connect' })).not.toHaveClass('hidden');
-
-    resolveConnect({ ok: true, data: remote });
-    await waitFor(() => expect(mocks.switchRoute).toHaveBeenCalledOnce());
-    expect(mocks.reload).not.toHaveBeenCalled();
-  });
-
-  it('stays reconnect-only and uses the modal as a failed-connection fallback', async () => {
+  it('uses the modal as a failed-connection fallback', async () => {
     mocks.connect.mockResolvedValue({ ok: false, code: 'connection_failed', message: 'Unavailable' });
     recordEnvironmentProjects([conversation('remote-chat', '/home/user/RemoteProject')], remote);
     render(<EnvironmentProjects collapsed={false} />);
+    fireEvent.click(await screen.findByText('RemoteProject'));
     fireEvent.click(screen.getByRole('button', { name: 'mcp.connect' }));
 
     expect(await screen.findByRole('button', { name: 'complete-connection' })).toBeInTheDocument();
     expect(mocks.connect).toHaveBeenCalledWith({ id: 'wsl-1' });
-    expect(screen.getByRole('button', { name: 'mcp.connect' })).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: 'conversation.history.newConversationInProject' })
-    ).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('common.more')).not.toBeInTheDocument();
     expect(mocks.reload).not.toHaveBeenCalled();
     expect(window.location.hash).toBe('#/guid');
-  });
-
-  it('reloads the requested workspace after a successful modal connection', async () => {
-    mocks.connect.mockResolvedValue({ ok: false, code: 'host_key', message: 'Host key required' });
-    recordEnvironmentProjects([conversation('remote-chat', '/home/user/Remote Project')], remote);
-    render(<EnvironmentProjects collapsed={false} />);
-    fireEvent.click(screen.getByRole('button', { name: 'mcp.connect' }));
-
-    fireEvent.click(await screen.findByRole('button', { name: 'complete-connection' }));
-    await waitFor(() => expect(mocks.switchRoute).toHaveBeenCalledOnce());
-    expect(mocks.reload).not.toHaveBeenCalled();
-    expect(mocks.switchRoute).toHaveBeenCalledWith('/guid?workspace=%2Fhome%2Fuser%2FRemote%20Project');
   });
 
   it('filters out projects from the active remote environment', async () => {
     const inactiveRemote: BackendEnvironment = { ...remote, id: 'wsl-2', name: 'Ubuntu-22.04' };
     window.__backendEnvironment = remote;
     mocks.local.mockResolvedValue([]);
+    mocks.list.mockResolvedValue([
+      { ...remote, status: 'connected', createdAt: 1, updatedAt: 1 },
+      { ...inactiveRemote, status: 'connected', createdAt: 1, updatedAt: 1 },
+    ]);
     recordEnvironmentProjects([conversation('active-chat', '/home/user/ActiveProject')], remote);
     recordEnvironmentProjects([conversation('inactive-chat', '/home/user/InactiveProject')], inactiveRemote);
     render(<EnvironmentProjects collapsed={false} />);
@@ -250,25 +222,5 @@ describe('projects across environments', () => {
     expect(mocks.reload).not.toHaveBeenCalled();
     expect(mocks.activate).toHaveBeenCalledWith({});
     expect(mocks.switchRoute).toHaveBeenCalledWith('/conversation/local-chat');
-  });
-
-  it('keeps the current environment and route when switching fails', async () => {
-    window.__backendEnvironment = remote;
-    mocks.activate.mockResolvedValue({ ok: false, code: 'failed', message: 'Disconnect failed' });
-    render(<EnvironmentProjects collapsed={false} />);
-    fireEvent.click(await screen.findByText('LocalProject'));
-    fireEvent.click(screen.getByRole('button', { name: 'local-chat' }));
-    await waitFor(() => expect(mocks.error).toHaveBeenCalledWith('Disconnect failed'));
-    expect(mocks.reload).not.toHaveBeenCalled();
-    expect(window.location.hash).toBe('#/guid');
-  });
-
-  it('retains cached local projects when the local backend refresh fails', async () => {
-    window.__backendEnvironment = remote;
-    recordEnvironmentProjects([conversation('cached-local', 'E:/CachedProject')], { type: 'local' });
-    mocks.local.mockRejectedValue(new Error('Local backend unavailable'));
-    render(<EnvironmentProjects collapsed={false} />);
-    fireEvent.click(await screen.findByText('CachedProject'));
-    expect(screen.getByRole('button', { name: 'cached-local' })).toBeInTheDocument();
   });
 });

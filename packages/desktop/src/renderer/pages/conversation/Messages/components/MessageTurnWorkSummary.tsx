@@ -5,7 +5,7 @@
  */
 
 import { Button } from '@arco-design/web-react';
-import { Checklist, Right } from '@icon-park/react';
+import { Fish, Right } from '@icon-park/react';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -38,11 +38,17 @@ const MessageTurnWorkSummary: React.FC<{
     <div className='turn-work-summary min-w-0' data-testid='turn-work-summary'>
       <Button
         type='text'
-        className='flex h-32px w-full items-center justify-start gap-6px px-0 text-left text-13px text-t-secondary hover:text-t-primary'
+        className='flex h-32px w-full items-center justify-start gap-6px px-0 text-left text-13px !text-t-secondary hover:!text-t-primary'
         aria-expanded={expanded}
         onClick={() => setExpanded((current) => !current)}
       >
-        <Checklist theme='outline' size='14' fill='currentColor' className='shrink-0' />
+        <Fish
+          theme='outline'
+          size='16'
+          fill='currentColor'
+          className='shrink-0 text-t-tertiary'
+          data-testid='turn-work-fish-icon'
+        />
         <span className='min-w-0 truncate'>{label}</span>
         <Right
           theme='outline'

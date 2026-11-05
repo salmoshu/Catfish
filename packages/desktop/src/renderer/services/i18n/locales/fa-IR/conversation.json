@@ -89,7 +89,9 @@
     "archiveProject": "Archive project",
     "archiveProjectTitle": "Archive project",
     "archiveProjectConfirm": "Archive project \"{{name}}\"? Its {{count}} conversation(s) will be archived too. You can restore or delete them from Archived in Settings.",
-    "archiving": "Archiving..."
+    "archiving": "Archiving...",
+    "expandAllProjects": "باز کردن همه گفتگوهای پروژه",
+    "collapseAllProjects": "بستن همه گفتگوهای پروژه"
   },
   "historySearch": {
     "tooltip": "جستجوی پیام‌ها",
@@ -783,5 +785,9 @@
     "empty": "هنوز برنامه‌ای نیست",
     "expand": "گسترش برنامه",
     "collapse": "جمع کردن برنامه"
+  },
+  "fileTabs": {
+    "label": "فایل‌های گفتگو",
+    "agent": "عامل"
   }
 }

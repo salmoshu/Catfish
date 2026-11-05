@@ -19,6 +19,80 @@
   border-radius: 6px;
 }
 
+.conversation-file-tabs {
+  display: flex;
+  min-width: 0;
+  height: 38px;
+  align-items: stretch;
+  gap: 2px;
+  padding: 0 10px;
+  overflow-x: auto;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border-2) 48%, transparent);
+  background: var(--bg-1);
+  scrollbar-width: none;
+}
+
+.conversation-file-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.conversation-file-tab.arco-btn,
+.conversation-file-tab {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 200px;
+  height: 38px;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.conversation-file-tab--agent.arco-btn {
+  min-width: 96px;
+  justify-content: flex-start;
+}
+
+.conversation-file-tab--active.arco-btn,
+.conversation-file-tab--active {
+  border-bottom-color: var(--text-primary);
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.conversation-file-tab__select.arco-btn {
+  min-width: 0;
+  height: 36px;
+  flex: 1;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+}
+
+.conversation-file-tab__close.arco-btn {
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 4px;
+  color: var(--text-tertiary);
+}
+
+.conversation-file-tab__dirty {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--text-secondary);
+}
+
 /* Workspace open button dropdown styles */
 .workspace-open-dropdown {
   background-color: var(--color-bg-2);

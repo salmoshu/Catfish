@@ -442,7 +442,6 @@ function registerIpcHandlers(): void {
   ipcMain.on('pet:context-menu', () => {
     if (!petHitWindow || petHitWindow.isDestroyed()) return;
 
-    const sizeKeys = { 200: 'pet.sizeSmall', 280: 'pet.sizeMedium', 360: 'pet.sizeLarge' } as const;
     const menu = Menu.buildFromTemplate([
       {
         label: i18n.t('pet.pat'),
@@ -452,16 +451,6 @@ function registerIpcHandlers(): void {
             stateMachine.requestState('happy');
           }
         },
-      },
-      { type: 'separator' },
-      {
-        label: i18n.t('pet.size'),
-        submenu: ([200, 280, 360] as PetSize[]).map((size) => ({
-          label: i18n.t(sizeKeys[size], { px: size }),
-          type: 'radio' as const,
-          checked: currentSize === size,
-          click: () => resizePet(size),
-        })),
       },
       { type: 'separator' },
       {
