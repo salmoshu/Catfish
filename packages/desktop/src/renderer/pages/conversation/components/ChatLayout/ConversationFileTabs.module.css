@@ -1,0 +1,32 @@
+.fileTab {
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.select:global(.arco-btn) {
+  display: flex;
+  overflow: hidden;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.select :global(.arco-btn-content) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.label {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.close:global(.arco-btn) {
+  flex: 0 0 18px;
+}

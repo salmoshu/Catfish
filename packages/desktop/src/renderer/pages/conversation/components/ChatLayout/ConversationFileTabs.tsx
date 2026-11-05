@@ -5,6 +5,7 @@ import { Close } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import styles from './ConversationFileTabs.module.css';
 
 const ConversationFileTabs: React.FC<{ agentLabel?: string; agentIcon?: React.ReactNode }> = ({
   agentLabel,
@@ -74,7 +75,7 @@ const ConversationFileTabs: React.FC<{ agentLabel?: string; agentIcon?: React.Re
           return (
             <div
               key={tab.id}
-              className={classNames('conversation-file-tab conversation-file-tab--file', {
+              className={classNames('conversation-file-tab conversation-file-tab--file', styles.fileTab, {
                 'conversation-file-tab--active': active,
               })}
             >
@@ -82,11 +83,11 @@ const ConversationFileTabs: React.FC<{ agentLabel?: string; agentIcon?: React.Re
                 type='text'
                 role='tab'
                 aria-selected={active}
-                className='conversation-file-tab__select'
+                className={classNames('conversation-file-tab__select', styles.select)}
                 title={tab.title}
                 onClick={() => openPreview(tab.content, tab.content_type, tab.metadata)}
               >
-                <span className='truncate'>{tab.title}</span>
+                <span className={styles.label}>{tab.title}</span>
                 {tab.isDirty && <span className='conversation-file-tab__dirty' aria-hidden='true' />}
               </Button>
               <Button
@@ -94,7 +95,7 @@ const ConversationFileTabs: React.FC<{ agentLabel?: string; agentIcon?: React.Re
                 size='mini'
                 aria-label={t('preview.closeTabTitle')}
                 data-testid={`conversation-file-close-${tab.id}`}
-                className='conversation-file-tab__close'
+                className={classNames('conversation-file-tab__close', styles.close)}
                 icon={<Close size={12} />}
                 onClick={() => requestClose(tab)}
               />
