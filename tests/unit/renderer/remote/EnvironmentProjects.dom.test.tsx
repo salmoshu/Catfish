@@ -9,6 +9,7 @@ import EnvironmentProjects from '@/renderer/components/remote/EnvironmentProject
 const mocks = vi.hoisted(() => ({
   local: vi.fn(),
   list: vi.fn(),
+  conversations: vi.fn(),
   connect: vi.fn(),
   activate: vi.fn(),
   switchRoute: vi.fn(),
@@ -16,12 +17,14 @@ const mocks = vi.hoisted(() => ({
   error: vi.fn(),
   progressOn: vi.fn(() => () => {}),
   disconnectedOn: vi.fn(() => () => {}),
+  reconcile: vi.fn(),
 }));
 vi.mock('@/common', () => ({
   ipcBridge: {
     remoteEnvironment: {
       localConversations: { invoke: mocks.local },
       list: { invoke: mocks.list },
+      conversations: { invoke: mocks.conversations },
       connect: { invoke: mocks.connect },
       activate: { invoke: mocks.activate },
       progress: { on: mocks.progressOn },
@@ -32,6 +35,10 @@ vi.mock('@/common', () => ({
 vi.mock('@/renderer/utils/workspace/backendSwitch', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/renderer/utils/workspace/backendSwitch')>()),
   switchBackendRoute: mocks.switchRoute,
+}));
+vi.mock('@/renderer/pages/conversation/GroupedHistory/hooks/useConversationListSync', () => ({
+  getConversationStreamRevision: () => 0,
+  reconcileGeneratingFromRuntime: mocks.reconcile,
 }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('@arco-design/web-react', async (original) => ({
@@ -70,6 +77,7 @@ beforeEach(() => {
   window.__backendEnvironment = { type: 'local' };
   mocks.local.mockResolvedValue([conversation('local-chat', 'E:/LocalProject')]);
   mocks.list.mockResolvedValue([{ ...remote, status: 'connected', createdAt: 1, updatedAt: 1 }]);
+  mocks.conversations.mockResolvedValue([]);
   mocks.connect.mockResolvedValue({ ok: true, data: remote });
   mocks.activate.mockImplementation((params: { id?: string } = {}) =>
     Promise.resolve(
@@ -86,17 +94,17 @@ afterEach(() => {
 });
 
 describe('projects across environments', () => {
-  it('hides remote projects and their sessions until the environment is connected', async () => {
+  it('keeps the remote project entry after reinstall but hides its sessions while disconnected', async () => {
     mocks.list.mockResolvedValue([{ ...remote, status: 'disconnected', createdAt: 1, updatedAt: 1 }]);
     recordEnvironmentProjects([conversation('remote-chat', '/home/user/RemoteProject')], remote);
     render(<EnvironmentProjects collapsed={false} />);
 
     await waitFor(() => expect(mocks.list).toHaveBeenCalled());
-    expect(screen.queryByText('RemoteProject')).not.toBeInTheDocument();
+    expect(screen.getByText('RemoteProject')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'remote-chat' })).not.toBeInTheDocument();
   });
 
-  it('removes a remote project when its environment disconnects', async () => {
+  it('hides sessions on disconnect without deleting the saved project entry', async () => {
     let onDisconnect: (event: { environmentId: string }) => void = () => {};
     mocks.disconnectedOn.mockImplementation((listener: typeof onDisconnect) => {
       onDisconnect = listener;
@@ -105,10 +113,22 @@ describe('projects across environments', () => {
     recordEnvironmentProjects([conversation('remote-chat', '/home/user/RemoteProject')], remote);
     render(<EnvironmentProjects collapsed={false} />);
 
-    expect(await screen.findByText('RemoteProject')).toBeInTheDocument();
+    fireEvent.click(await screen.findByText('RemoteProject'));
+    expect(screen.getByRole('button', { name: 'remote-chat' })).toBeInTheDocument();
     onDisconnect({ environmentId: remote.id });
-    await waitFor(() => expect(screen.queryByText('RemoteProject')).not.toBeInTheDocument());
-    expect(screen.queryByRole('button', { name: 'remote-chat' })).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'remote-chat' })).not.toBeInTheDocument());
+    expect(screen.getByText('RemoteProject')).toBeInTheDocument();
+  });
+
+  it('reconciles a completed remote runtime instead of leaving a stale spinner', async () => {
+    mocks.conversations.mockResolvedValue([
+      { ...conversation('remote-chat', '/home/user/RemoteProject'), runtime: { is_processing: false } },
+    ] as TChatConversation[]);
+    recordEnvironmentProjects([conversation('remote-chat', '/home/user/RemoteProject')], remote);
+    render(<EnvironmentProjects collapsed={false} />);
+
+    await waitFor(() => expect(mocks.conversations).toHaveBeenCalledWith({ id: remote.id }));
+    expect(mocks.reconcile).toHaveBeenCalledWith('remote-chat', false, 0);
   });
 
   it('aligns cached local headers and retains the new-conversation action', async () => {

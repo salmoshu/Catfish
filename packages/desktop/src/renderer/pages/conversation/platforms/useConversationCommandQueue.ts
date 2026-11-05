@@ -97,12 +97,12 @@ const logCommandQueue = (conversation_id: string, event: string, payload: Record
     .catch(() => {});
 };
 
-const normalizeQueueMode = (mode: unknown): ConversationCommandQueueMode => (mode === 'auto' ? 'auto' : 'manual');
+const normalizeQueueMode = (mode: unknown): ConversationCommandQueueMode => (mode === 'manual' ? 'manual' : 'auto');
 
 const createDefaultQueueState = (): ConversationCommandQueueState => ({
   items: [],
   isPaused: false,
-  mode: 'manual',
+  mode: 'auto',
 });
 
 const queueStore = new Map<string, ConversationCommandQueueState>();

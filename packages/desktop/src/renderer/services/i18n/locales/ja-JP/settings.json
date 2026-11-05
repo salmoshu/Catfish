@@ -1162,7 +1162,7 @@
     "localAgentsDescription": "このデバイスで利用できる AI コーディングエージェントを管理します。Catfish CLI は組み込みでアプリに同梱されており、インストール不要です。他のエージェントは対応する CLI をローカルにインストールした後にのみ検出されます。",
     "localAgentsSetupLink": "セットアップガイド",
     "goToChat": "チャットを開始",
-    "remoteAgentsDescription": "現在は OpenClaw のリモート接続のみ対応しています。その他のエージェントは開発中です。",
+    "remoteAgentsDescription": "選択したリモート環境の Agent を確認し、その環境で接続をテストします。",
     "advancedConfig": "高度な設定",
     "geminiDescription": "Google Gemini AI コマンドラインツール",
     "connectRemoteAgent": "リモートエージェントに接続",
@@ -1227,7 +1227,10 @@
     "boundAssistantsEmpty": "このエージェントにバインドされたアシスタントはまだありません。",
     "viewAssistant": "詳細",
     "searchPlaceholder": "エージェントを検索...",
-    "noSearchResults": "一致するエージェントはありません。"
+    "noSearchResults": "一致するエージェントはありません。",
+    "environment": "環境",
+    "remoteAgentsEmpty": "この環境に Agent が見つかりません。",
+    "remoteAgentsLoadFailed": "この環境の Agent を読み込めませんでした。リモート接続を確認して再試行してください。"
   },
   "repair": {
     "pathLabel": "起動パス",

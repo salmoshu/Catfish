@@ -1172,7 +1172,7 @@
     "localAgentsDescription": "Gemini CLI est intégré. Les autres agents sont auto-détectés après installation locale.",
     "localAgentsSetupLink": "Guide d'installation",
     "goToChat": "Démarrer le chat",
-    "remoteAgentsDescription": "Seules les connexions OpenClaw distantes sont supportées pour l'instant. D'autres agents sont en développement.",
+    "remoteAgentsDescription": "Consultez les agents de l’environnement distant sélectionné et testez-les sur place.",
     "advancedConfig": "Configuration avancée",
     "geminiDescription": "Outil en ligne de commande Google Gemini AI",
     "connectRemoteAgent": "Connecter un agent distant",
@@ -1237,7 +1237,10 @@
     "boundAssistantsEmpty": "Aucun assistant n'est encore lié à cet agent.",
     "viewAssistant": "Voir",
     "searchPlaceholder": "Rechercher des agents...",
-    "noSearchResults": "Aucun agent correspondant."
+    "noSearchResults": "Aucun agent correspondant.",
+    "environment": "Environnement",
+    "remoteAgentsEmpty": "Aucun agent trouvé dans cet environnement.",
+    "remoteAgentsLoadFailed": "Impossible de charger les agents de cet environnement. Vérifiez la connexion distante et réessayez."
   },
   "repair": {
     "pathLabel": "Chemin de lancement",

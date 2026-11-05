@@ -782,7 +782,6 @@ const AionrsSendBox: React.FC<{
               dynamicModes={dynamicModes}
               compactLeadingIcon={<Shield theme='outline' size='14' fill={iconColors.secondary} />}
               modeLabelFormatter={(mode) => mode.value}
-              compactLabelPrefix={t('agentMode.permission')}
               hideCompactLabelPrefixOnMobile
               onModeChanged={propagateMode}
               beforeRuntimeSync={prepareRuntimeConfig}

@@ -187,6 +187,7 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
           {
             'hover:bg-fill-3': !batchMode && !selected,
             '!bg-fill-3': selected,
+            '!pe-40px': !collapsed && isGenerating && !batchMode,
             'bg-[rgba(var(--primary-6),0.08)]': batchMode && checked,
           }
         )}
@@ -297,7 +298,7 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
         </FlexFullContainer>
 
         {isGenerating && !batchMode && !showWaitingConfirmation && (
-          <span className='absolute end-30px top-1/2 flex -translate-y-1/2 items-center group-hover:end-30px'>
+          <span className='absolute end-8px top-1/2 flex -translate-y-1/2 items-center group-hover:hidden group-focus-within:hidden'>
             <Spin size={14} data-testid={`conversation-running-${conversation.id}`} />
           </span>
         )}

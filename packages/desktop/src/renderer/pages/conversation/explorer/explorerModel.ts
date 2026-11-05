@@ -405,9 +405,9 @@ export function buildRenameRequest(dialog: RenameRequest, rawName: string): FsOp
   return { method: 'fs/rename', params: { from: ref(dialog.origRel), to: ref(rel) } };
 }
 
-/** Build the WS fs/remove request for deleting an entry. */
-export function buildRemoveRequest(peId: string, relativePath: string): FsOpRequest {
-  return { method: 'fs/remove', params: { target: { pe_id: peId, relative_path: relativePath } } };
+/** Build the WS fs/remove request; non-empty directories require the backend's recursive flag. */
+export function buildRemoveRequest(peId: string, relativePath: string, recursive = false): FsOpRequest {
+  return { method: 'fs/remove', params: { target: { pe_id: peId, relative_path: relativePath }, recursive } };
 }
 
 /**

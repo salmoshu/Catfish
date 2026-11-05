@@ -1160,7 +1160,7 @@
     "localAgentsDescription": "Gestiona los agentes de programación con IA disponibles en este dispositivo. Catfish CLI está integrado y viene con la app, sin instalación; los demás agentes solo se detectan tras instalar su CLI localmente.",
     "localAgentsSetupLink": "Guía de configuración",
     "goToChat": "Iniciar chat",
-    "remoteAgentsDescription": "Solo se admiten conexiones remotas de OpenClaw por ahora. Otros agentes están en desarrollo.",
+    "remoteAgentsDescription": "Consulta los agentes del entorno remoto seleccionado y pruébalos allí.",
     "advancedConfig": "Configuración avanzada",
     "geminiDescription": "Herramienta de línea de comandos de Google Gemini AI",
     "connectRemoteAgent": "Conectar agente remoto",
@@ -1225,7 +1225,10 @@
     "boundAssistantsEmpty": "No assistants are bound to this agent yet.",
     "viewAssistant": "View",
     "searchPlaceholder": "Buscar agentes...",
-    "noSearchResults": "No hay agentes coincidentes."
+    "noSearchResults": "No hay agentes coincidentes.",
+    "environment": "Entorno",
+    "remoteAgentsEmpty": "No se encontraron agentes en este entorno.",
+    "remoteAgentsLoadFailed": "No se pudieron cargar los agentes de este entorno. Comprueba la conexión remota e inténtalo de nuevo."
   },
   "remoteAgent": {
     "title": "Agentes remotos",

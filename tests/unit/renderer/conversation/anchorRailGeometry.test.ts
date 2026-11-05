@@ -106,16 +106,14 @@ describe('resolveStackTop / resolveSearchButtonTop', () => {
     }
   });
 
-  it('centres button and strip when the group fits and anchors a taller group at the top', () => {
-    for (const count of [10]) {
+  it('centres button and strip for short and capped conversations', () => {
+    for (const count of [2, 10, MAX_VISIBLE_TICKS, 50, 200]) {
       const buttonTop = resolveSearchButtonTop(RAIL, count);
       const stackTop = resolveStackTop(RAIL, count);
       const viewport = resolveViewportHeight(RAIL, count);
       expect(buttonTop).toBeGreaterThan(0);
-      // Equal breathing room above the button and below the strip.
       expect(buttonTop).toBeCloseTo(RAIL - (stackTop + viewport));
     }
-    expect(resolveSearchButtonTop(RAIL, 200)).toBe(0);
   });
 
   it('keeps the strip compact rather than filling a tall rail', () => {
@@ -193,44 +191,7 @@ describe('resolveTickIndexAtOffset', () => {
   });
 });
 
-describe('scroll hint visibility', () => {
-  // The hints mirror what the component derives from scroll position. Pinning the
-  // arithmetic here documents the rule: a hint shows only while that direction
-  // still has anchors left, so a fully-scrolled rail never lies about its extent.
-  const RAIL = 400;
-  const COUNT = 100;
-  const viewport = resolveViewportHeight(RAIL, COUNT);
-  const stack = tickStackHeight(COUNT);
-  const maxScroll = stack - viewport;
-
-  const hints = (scrollTop: number) => ({
-    up: scrollTop > 1,
-    down: scrollTop + viewport < stack - 1,
-  });
-
-  it('offers only "down" at the very top', () => {
-    expect(hints(0)).toEqual({ up: false, down: true });
-  });
-
-  it('offers both while in the middle', () => {
-    expect(hints(Math.floor(maxScroll / 2))).toEqual({ up: true, down: true });
-  });
-
-  it('offers only "up" at the very bottom', () => {
-    expect(hints(maxScroll)).toEqual({ up: true, down: false });
-  });
-
-  it('offers neither when the stack fits and cannot scroll', () => {
-    const shortCount = 3;
-    const fitViewport = resolveViewportHeight(RAIL, shortCount);
-    expect(needsScroll(RAIL, shortCount)).toBe(false);
-    expect(tickStackHeight(shortCount) - fitViewport).toBeLessThanOrEqual(0);
-  });
-});
-
 describe('pointer selection survives scrolling', () => {
-  // Item 3: the pointer does not move, but scrolling slides a different tick under
-  // it. Selection must follow the wheel rather than riding away with the stack.
   const COUNT = 100;
 
   it('resolves a different tick for the same pointer position after scrolling', () => {
@@ -245,32 +206,18 @@ describe('pointer selection survives scrolling', () => {
     const pointerY = 30;
     for (const scrollTop of [0, 60, 240, 600]) {
       const index = resolveTickIndexAtOffset(pointerY + scrollTop, COUNT);
-      // The selected tick's centre lands within half a stride of the pointer.
       const centreInViewport = tickCenterOffset(index as number) - scrollTop;
       expect(Math.abs(centreInViewport - pointerY)).toBeLessThanOrEqual(STRIDE / 2 + 1);
     }
   });
 });
 
-describe('search button band leaves room for the scroll hint', () => {
-  // Regression: at 26px the band fitted the 16px button but not the "more above"
-  // hint that appears between it and the ticks, so the two overlapped by 4px.
-  const BUTTON_HEIGHT = 16;
-  const HINT_HEIGHT = 28;
-
-  it('fits the button and the hint without them colliding', () => {
-    expect(SEARCH_BUTTON_BAND).toBeGreaterThanOrEqual(BUTTON_HEIGHT + HINT_HEIGHT);
+describe('compact strip limits', () => {
+  it('shows at most seventeen ticks', () => {
+    expect(MAX_VISIBLE_TICKS).toBe(17);
   });
 
-  it('leaves breathing room between the button, the hint and the first tick', () => {
-    const slack = SEARCH_BUTTON_BAND - BUTTON_HEIGHT - HINT_HEIGHT;
-    // Enough to read as separate elements rather than a smudge...
-    expect(slack).toBeGreaterThanOrEqual(4);
-    // ...without the button drifting so far it stops reading as the stack's head.
-    expect(SEARCH_BUTTON_BAND).toBeLessThanOrEqual(56);
-  });
-
-  it('still places the viewport clear of the band', () => {
+  it('places the compact strip directly below the search band', () => {
     for (const count of [2, 20, 200]) {
       expect(resolveStackTop(600, count) - resolveSearchButtonTop(600, count)).toBe(SEARCH_BUTTON_BAND);
     }

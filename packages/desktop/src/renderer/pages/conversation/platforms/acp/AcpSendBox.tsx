@@ -865,7 +865,6 @@ Please check your local CLI tool authentication status`,
                 initialMode={session_mode}
                 compactLeadingIcon={<Shield theme='outline' size='14' fill={iconColors.secondary} />}
                 modeLabelFormatter={(mode) => mode.value}
-                compactLabelPrefix={t('agentMode.permission')}
                 hideCompactLabelPrefixOnMobile
                 onModeChanged={isLeaderInTeam ? teamPermission?.propagateMode : undefined}
                 beforeRuntimeSync={prepareRuntimeConfig}

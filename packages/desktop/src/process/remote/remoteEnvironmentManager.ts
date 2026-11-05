@@ -81,6 +81,11 @@ export class RemoteEnvironmentManager {
     return this.activeRuntime?.backend.port ?? null;
   }
 
+  /** Read a connected runtime's loopback port without changing the active environment. */
+  portFor(id: string): number | null {
+    return this.runtimes.get(id)?.backend.port ?? null;
+  }
+
   getState(): RemoteEnvironmentState {
     return {
       active: this.active,

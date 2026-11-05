@@ -107,15 +107,12 @@ describe('Layout sider brand Home button', () => {
     vi.unstubAllGlobals();
   });
 
-  it.each(['/guid', '/settings/about'])('shows a noninteractive version badge on %s', (pathname) => {
+  it.each(['/guid', '/settings/about'])('keeps the version badge out of the sider on %s', (pathname) => {
     currentPathname = pathname;
     renderLayout();
 
-    const badge = screen.getByText('v0.4.2');
-    expect(badge).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'v0.4.2' })).not.toBeInTheDocument();
-    fireEvent.click(badge);
-    expect(navigate).not.toHaveBeenCalled();
+    expect(screen.queryByText('v0.4.2')).not.toBeInTheDocument();
+    expect(screen.getByText('Catfish')).toBeInTheDocument();
   });
 
   it('navigates to the recorded last non-settings path when clicked in a settings route', () => {

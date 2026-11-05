@@ -6,6 +6,7 @@
 
 import { ipcBridge } from '@/common';
 import { parseError } from '@/common/utils';
+import type { RemoteEnvironmentSummary } from '@/common/types/remote';
 import {
   formatManagedAgentDiagnosticMessage,
   managedAgentSearchText,
@@ -16,9 +17,10 @@ import { AionSearchInput } from '@/renderer/components/base';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useManagedAgents } from '@/renderer/hooks/agent/useManagedAgents';
 import { openExternalUrl } from '@/renderer/utils/platform';
-import { Button, Message, Typography } from '@arco-design/web-react';
+import { Button, Dropdown, Menu, Message, Typography } from '@arco-design/web-react';
+import { Down } from '@icon-park/react';
 import TalkToButlerButton from '@/renderer/components/base/TalkToButlerButton';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AgentCard from './AgentCard';
 import { isDeprecatedRuntimeAgentType } from '@/renderer/utils/model/agentTypeSupportPolicy';
@@ -42,13 +44,56 @@ const LocalAgents: React.FC = () => {
   const [testingAgentId, setTestingAgentId] = useState<string | null>(null);
   const [agentFilter, setAgentFilter] = useState<AgentAvailabilityFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [location, setLocation] = useState('local');
+  const [environments, setEnvironments] = useState<RemoteEnvironmentSummary[]>([]);
+  const [remoteAgents, setRemoteAgents] = useState<ManagedAgent[]>([]);
+  const [remoteLoading, setRemoteLoading] = useState(false);
   const { assistants } = useAssistantsForAgents();
 
-  // Management view: includes user-disabled custom agents so they stay
-  // listed (greyed) with a working re-enable toggle. `refreshCatalog`
-  // also refreshes assistant list caches because generated-assistant availability
-  // can change after health checks or custom-agent mutations.
-  const { agents: allAgents, isRefreshing, refreshCatalog } = useManagedAgents();
+  const {
+    agents: localAgents,
+    isRefreshing: localRefreshing,
+    refreshCatalog: refreshLocalCatalog,
+  } = useManagedAgents();
+  const isRemote = location !== 'local';
+
+  useEffect(() => {
+    const provider = ipcBridge.remoteEnvironment?.list;
+    if (!provider) return;
+    void provider
+      .invoke()
+      .then(setEnvironments)
+      .catch(() => setEnvironments([]));
+  }, []);
+
+  const refreshCatalog = useCallback(async (): Promise<ManagedAgent[] | undefined> => {
+    if (!isRemote) return refreshLocalCatalog();
+    const agents = await ipcBridge.remoteEnvironment.agents.invoke({ id: location });
+    setRemoteAgents(agents);
+    return agents;
+  }, [isRemote, location, refreshLocalCatalog]);
+
+  useEffect(() => {
+    if (!isRemote) return;
+    let cancelled = false;
+    setRemoteLoading(true);
+    void refreshCatalog()
+      .catch(() => {
+        if (!cancelled) {
+          setRemoteAgents([]);
+          Message.error(t('settings.agentManagement.remoteAgentsLoadFailed'));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setRemoteLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isRemote, refreshCatalog, t]);
+
+  const allAgents = isRemote ? remoteAgents : localAgents;
+  const isRefreshing = localRefreshing || remoteLoading;
 
   // Hide deprecated runtime backends (nanobot / openclaw-gateway / remote / gemini)
   // — they are no longer offered as agents and shouldn't appear on the detection page.
@@ -56,7 +101,9 @@ const LocalAgents: React.FC = () => {
     (a) => a.agent_source !== 'custom' && !isDeprecatedRuntimeAgentType(a.agent_type)
   );
 
-  const customAgents: ManagedAgent[] = allAgents.filter((a) => a.agent_source === 'custom');
+  const customAgents: ManagedAgent[] = allAgents
+    .filter((a) => a.agent_source === 'custom')
+    .toSorted((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: 'base' }));
 
   const [editorVisible, setEditorVisible] = useState(false);
   const [editingAgent, setEditingAgent] = useState<ManagedAgent | null>(null);
@@ -125,20 +172,7 @@ const LocalAgents: React.FC = () => {
 
   const sortedOfficialAgents = useMemo(
     () =>
-      officialAgents.toSorted((left, right) => {
-        const leftIsAionrs = left.agent_type === 'aionrs' || left.backend === 'aionrs';
-        const rightIsAionrs = right.agent_type === 'aionrs' || right.backend === 'aionrs';
-        if (leftIsAionrs !== rightIsAionrs) {
-          return leftIsAionrs ? -1 : 1;
-        }
-        // Strategic partner: pin Kimi right after the builtin aionrs agent.
-        const leftIsKimi = left.backend === 'kimi';
-        const rightIsKimi = right.backend === 'kimi';
-        if (leftIsKimi !== rightIsKimi) {
-          return leftIsKimi ? -1 : 1;
-        }
-        return left.name.localeCompare(right.name);
-      }),
+      officialAgents.toSorted((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: 'base' })),
     [officialAgents]
   );
   const officialFilterStats = getAgentAvailabilityFilterStats(sortedOfficialAgents);
@@ -168,7 +202,9 @@ const LocalAgents: React.FC = () => {
     async (agentId: string) => {
       try {
         setTestingAgentId(agentId);
-        const result = await ipcBridge.acpConversation.checkManagedAgentHealthById.invoke({ id: agentId });
+        const result = isRemote
+          ? await ipcBridge.remoteEnvironment.checkAgent.invoke({ environmentId: location, agentId })
+          : await ipcBridge.acpConversation.checkManagedAgentHealthById.invoke({ id: agentId });
         await refreshCatalog();
         switch (result.status) {
           case 'online':
@@ -197,17 +233,52 @@ const LocalAgents: React.FC = () => {
         setTestingAgentId(null);
       }
     },
-    [refreshCatalog, t]
+    [isRemote, location, refreshCatalog, t]
+  );
+
+  const locationLabel = isRemote
+    ? (environments.find((environment) => environment.id === location)?.name ?? location)
+    : t('guid.workspace.remote.local');
+  const locationMenu = (
+    <Menu onClickMenuItem={(key) => setLocation(String(key))}>
+      <Menu.Item key='local'>{t('guid.workspace.remote.local')}</Menu.Item>
+      {environments.map((environment) => (
+        <Menu.Item key={environment.id}>
+          {environment.name} · {environment.kind.toUpperCase()}
+        </Menu.Item>
+      ))}
+    </Menu>
   );
 
   return (
     <div data-testid='agent-management-page' className='flex flex-col gap-16px'>
       <SettingsPageHeader
         data-testid='agent-management-header'
-        title={t('settings.agents', { defaultValue: 'Agents' })}
+        title={
+          <span className='inline-flex items-center gap-6px'>
+            {t('settings.agents', { defaultValue: 'Agents' })}
+            <Dropdown droplist={locationMenu} trigger='click'>
+              <Button
+                type='text'
+                size='mini'
+                aria-label={t('settings.agentManagement.environment')}
+                className='!h-24px !px-6px !text-12px !font-normal !text-t-secondary'
+              >
+                {locationLabel}
+                <Down size={11} className='ms-4px' />
+              </Button>
+            </Dropdown>
+          </span>
+        }
         description={
           <>
-            <span>{t('settings.agentManagement.localAgentsDescription')} </span>
+            <span>
+              {t(
+                isRemote
+                  ? 'settings.agentManagement.remoteAgentsDescription'
+                  : 'settings.agentManagement.localAgentsDescription'
+              )}{' '}
+            </span>
             <Button
               type='text'
               size='mini'
@@ -231,16 +302,18 @@ const LocalAgents: React.FC = () => {
                 onChange={setSearchQuery}
               />
             )}
-            <TalkToButlerButton
-              label={t('settings.agentManagement.addCustomAgent', { defaultValue: 'Add custom Agent' })}
-              chatLabel={t('settings.talkToButler.addViaChat', { defaultValue: 'Add via chat' })}
-              onManual={openCustomAgentEditor}
-              manualLabel={t('settings.talkToButler.addManually', { defaultValue: 'Add manually' })}
-              prompt={t('settings.talkToButler.prompt.addCustomAgent', {
-                defaultValue: 'Help me add a custom Agent.',
-              })}
-              data-testid='btn-add-custom-agent'
-            />
+            {!isRemote && (
+              <TalkToButlerButton
+                label={t('settings.agentManagement.addCustomAgent', { defaultValue: 'Add custom Agent' })}
+                chatLabel={t('settings.talkToButler.addViaChat', { defaultValue: 'Add via chat' })}
+                onManual={openCustomAgentEditor}
+                manualLabel={t('settings.talkToButler.addManually', { defaultValue: 'Add manually' })}
+                prompt={t('settings.talkToButler.prompt.addCustomAgent', {
+                  defaultValue: 'Help me add a custom Agent.',
+                })}
+                data-testid='btn-add-custom-agent'
+              />
+            )}
           </>
         }
         tabs={[
@@ -276,9 +349,9 @@ const LocalAgents: React.FC = () => {
               key={agent.id}
               type='official'
               agent={agent}
-              boundAssistants={getBoundAssistants(agent, assistants)}
+              boundAssistants={isRemote ? [] : getBoundAssistants(agent, assistants)}
               onTestConnection={() => void handleTestConnection(agent.id)}
-              onConfigure={() => openAgentConfig(agent.id)}
+              onConfigure={isRemote ? undefined : () => openAgentConfig(agent.id)}
               isTesting={testingAgentId === agent.id}
             />
           ))}
@@ -286,21 +359,26 @@ const LocalAgents: React.FC = () => {
             <Typography.Text type='secondary' className='block py-16px text-center text-12px'>
               {normalizedSearchQuery
                 ? t('settings.agentManagement.noSearchResults', { defaultValue: 'No matching agents.' })
-                : t('settings.agentManagement.localAgentsEmpty')}
+                : t(
+                    isRemote
+                      ? 'settings.agentManagement.remoteAgentsEmpty'
+                      : 'settings.agentManagement.localAgentsEmpty'
+                  )}
             </Typography.Text>
           )}
         </div>
       </div>
 
-      {/* Custom Agents section */}
-      <div data-testid='agent-management-custom-header' className='flex flex-col gap-2px'>
-        <Typography.Text className='text-13px font-medium text-t-secondary block'>
-          {t('settings.agentManagement.customAgents', { defaultValue: 'Custom Agents' })}
-        </Typography.Text>
-        <Typography.Text className='block text-12px text-t-tertiary'>
-          {t('settings.agentManagement.customEmptyDescription')}
-        </Typography.Text>
-      </div>
+      {!isRemote && (
+        <div data-testid='agent-management-custom-header' className='flex flex-col gap-2px'>
+          <Typography.Text className='text-13px font-medium text-t-secondary block'>
+            {t('settings.agentManagement.customAgents', { defaultValue: 'Custom Agents' })}
+          </Typography.Text>
+          <Typography.Text className='block text-12px text-t-tertiary'>
+            {t('settings.agentManagement.customEmptyDescription')}
+          </Typography.Text>
+        </div>
+      )}
 
       <AionModal
         visible={editorVisible}
@@ -341,34 +419,36 @@ const LocalAgents: React.FC = () => {
         )}
       </AionModal>
 
-      <div data-testid='agent-management-custom-section'>
-        <div className='flex flex-col gap-8px rounded-12px border border-border-2 bg-2 p-8px md:rounded-16px md:p-10px'>
-          {visibleCustomAgents?.map((agent) => (
-            <AgentCard
-              key={agent.id}
-              type='custom'
-              agent={agent}
-              boundAssistants={getBoundAssistants(agent, assistants)}
-              onTestConnection={() => void handleTestConnection(agent.id)}
-              onConfigure={() => openAgentConfig(agent.id)}
-              isTesting={testingAgentId === agent.id}
-              onEdit={() => {
-                setEditingAgent(agent);
-                setEditorVisible(true);
-              }}
-              onDelete={() => void handleDeleteCustomAgent(agent.id)}
-              onToggle={(enabled) => void handleToggleCustomAgent(agent.id, enabled)}
-            />
-          ))}
-          {visibleCustomAgents.length === 0 ? (
-            <Typography.Text type='secondary' className='block py-12px text-center text-12px'>
-              {normalizedSearchQuery
-                ? t('settings.agentManagement.noSearchResults', { defaultValue: 'No matching agents.' })
-                : t('settings.agentManagement.customEmpty')}
-            </Typography.Text>
-          ) : null}
+      {!isRemote && (
+        <div data-testid='agent-management-custom-section'>
+          <div className='flex flex-col gap-8px rounded-12px border border-border-2 bg-2 p-8px md:rounded-16px md:p-10px'>
+            {visibleCustomAgents.map((agent) => (
+              <AgentCard
+                key={agent.id}
+                type='custom'
+                agent={agent}
+                boundAssistants={getBoundAssistants(agent, assistants)}
+                onTestConnection={() => void handleTestConnection(agent.id)}
+                onConfigure={() => openAgentConfig(agent.id)}
+                isTesting={testingAgentId === agent.id}
+                onEdit={() => {
+                  setEditingAgent(agent);
+                  setEditorVisible(true);
+                }}
+                onDelete={() => void handleDeleteCustomAgent(agent.id)}
+                onToggle={(enabled) => void handleToggleCustomAgent(agent.id, enabled)}
+              />
+            ))}
+            {visibleCustomAgents.length === 0 ? (
+              <Typography.Text type='secondary' className='block py-12px text-center text-12px'>
+                {normalizedSearchQuery
+                  ? t('settings.agentManagement.noSearchResults', { defaultValue: 'No matching agents.' })
+                  : t('settings.agentManagement.customEmpty')}
+              </Typography.Text>
+            ) : null}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

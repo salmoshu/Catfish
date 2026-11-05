@@ -1173,7 +1173,7 @@
     "localAgentsDescription": "管理本机可用的 AI 编程 Agent。Catfish CLI 为内置，App 自带、无需安装；其它 Agent 需先在本地安装对应 CLI 才能被识别。",
     "localAgentsSetupLink": "查看安装指南",
     "goToChat": "开始对话",
-    "remoteAgentsDescription": "目前只支持远程连接 OpenClaw，其他 Agent 正在开发中。",
+    "remoteAgentsDescription": "查看所选远程环境中的 Agent，并在该环境中测试连接。",
     "advancedConfig": "高级配置",
     "geminiDescription": "Google Gemini AI 命令行工具",
     "connectRemoteAgent": "连接远端 Agent",
@@ -1238,7 +1238,10 @@
     "boundAssistantsTooltip_one": "{{count}} 个助手：{{names}}",
     "boundAssistantsTooltip_other": "{{count}} 个助手：{{names}}",
     "boundAssistantsEmpty": "暂无助手绑定此 Agent。",
-    "viewAssistant": "查看详情"
+    "viewAssistant": "查看详情",
+    "environment": "环境",
+    "remoteAgentsEmpty": "此环境中没有找到 Agent。",
+    "remoteAgentsLoadFailed": "无法加载此环境的 Agent，请检查远程连接后重试。"
   },
   "repair": {
     "pathLabel": "启动路径",

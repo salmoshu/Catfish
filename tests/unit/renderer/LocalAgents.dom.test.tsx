@@ -61,8 +61,7 @@ vi.mock('@renderer/hooks/agent/useManagedAgents', () => ({
   useManagedAgents: () => useManagedAgents(),
 }));
 
-// Bridge is only touched by user-action handlers, not on render — stub the
-// shape the handlers reference so the import resolves.
+// Stub both local mutation handlers and the remote environment list read on render.
 vi.mock('@/common', () => ({
   ipcBridge: {
     acpConversation: {
@@ -75,6 +74,11 @@ vi.mock('@/common', () => ({
     // Bound-assistant avatar stacks fetch the assistant list via SWR.
     assistants: {
       list: { invoke: vi.fn().mockResolvedValue([]) },
+    },
+    remoteEnvironment: {
+      list: { invoke: vi.fn().mockResolvedValue([]) },
+      agents: { invoke: vi.fn().mockResolvedValue([]) },
+      checkAgent: { invoke: vi.fn() },
     },
   },
 }));
@@ -346,7 +350,7 @@ describe('LocalAgents', () => {
     expect(getBoundAssistants(aionrsAgent, assistants)).toEqual([]);
   });
 
-  it('pins Kimi right after the aionrs agent in the official list', () => {
+  it('sorts official agents alphabetically without pinning preferred backends', () => {
     useManagedAgents.mockReturnValue({
       agents: [
         ...makeAgents(),
@@ -368,13 +372,40 @@ describe('LocalAgents', () => {
 
     render(<LocalAgents />);
 
-    // Alphabetically Claude Code < Kimi, so this order proves the pin rule:
-    // aionrs stays first, Kimi jumps ahead of the localeCompare ordering.
-    const aion = screen.getByText('Catfish CLI');
-    const kimi = screen.getByText('Kimi');
-    const claude = screen.getByText('Claude Code');
-    expect(kimi.compareDocumentPosition(aion) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
-    expect(claude.compareDocumentPosition(kimi) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    const rows = screen
+      .getByTestId('agent-management-official-section')
+      .querySelectorAll(':scope > div > [data-testid^="agent-row-"]');
+    expect([...rows].map((row) => row.getAttribute('data-testid'))).toEqual([
+      'agent-row-aionrs',
+      'agent-row-acp-claude',
+      'agent-row-acp-kimi',
+    ]);
+  });
+
+  it('loads and tests agents in the selected remote environment', async () => {
+    useManagedAgents.mockReturnValue({ agents: [], revalidate: vi.fn(), refreshCatalog: vi.fn() });
+    vi.mocked(ipcBridge.remoteEnvironment.list.invoke).mockResolvedValue([
+      { id: 'remote-1', name: 'Ubuntu', kind: 'wsl', status: 'connected', createdAt: 1, updatedAt: 1 },
+    ]);
+    const remoteAgent = { ...makeAgents()[0], id: 'remote-zed', name: 'Remote Zed', backend: 'codex' };
+    vi.mocked(ipcBridge.remoteEnvironment.agents.invoke).mockResolvedValue([remoteAgent]);
+    vi.mocked(ipcBridge.remoteEnvironment.checkAgent.invoke).mockResolvedValue(remoteAgent);
+
+    render(<LocalAgents />);
+    fireEvent.click(await screen.findByRole('button', { name: 'settings.agentManagement.environment' }));
+    fireEvent.click(await screen.findByText('Ubuntu · WSL'));
+
+    await waitFor(() => expect(ipcBridge.remoteEnvironment.agents.invoke).toHaveBeenCalledWith({ id: 'remote-1' }));
+    expect(await screen.findByText('Remote Zed')).toBeInTheDocument();
+    expect(screen.queryByTestId('agent-management-custom-section')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('agent-row-test-remote-zed'));
+    await waitFor(() =>
+      expect(ipcBridge.remoteEnvironment.checkAgent.invoke).toHaveBeenCalledWith({
+        environmentId: 'remote-1',
+        agentId: 'remote-zed',
+      })
+    );
   });
 
   it('renders agent management as a single diagnostics page without local/remote tabs', () => {

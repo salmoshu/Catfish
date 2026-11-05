@@ -119,6 +119,17 @@ describe('agentLogo', () => {
     });
   });
 
+  describe('Codex brand override', () => {
+    it('uses the bundled OpenAI logo instead of the legacy Codex icon', () => {
+      const logo = resolveAgentLogo(LOGOS, { backend: 'codex', icon: '/api/legacy/codex.svg' });
+      expect(logo).toMatch(/^data:image\/svg\+xml/);
+      expect(decodeURIComponent(logo ?? '')).toContain('M22.2819 9.8211');
+      expect(resolveAgentAvatar(LOGOS, { backend: 'codex' })).toEqual(
+        expect.objectContaining({ kind: 'image', value: expect.stringMatching(/^data:image\/svg\+xml/) })
+      );
+    });
+  });
+
   describe('fetchAgentLogos', () => {
     it('builds the logo catalog from /api/agents/management rows', async () => {
       bridgeMocks.getManagedAgents.mockResolvedValue([

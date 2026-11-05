@@ -10,6 +10,7 @@ import { addEventListener } from '@/renderer/utils/emitter';
 import { useAutoTitle } from '@/renderer/hooks/chat/useAutoTitle';
 import { hasAssistantRulesPrefix } from '@/renderer/utils/chat/autoTitle';
 import { recordEnvironmentProjects } from '@/renderer/utils/workspace/environmentProjects';
+import { getActiveBackendEnvironment, isActiveBackendEnvironment } from '@/renderer/utils/workspace/backendCache';
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
 /**
@@ -348,10 +349,18 @@ export const getSnapshotConversationName = (conversation_id: string): string | u
   return name ? name : undefined;
 };
 
+let conversationListRequestSequence = 0;
+
 const refreshConversations = () => {
+  const sequence = ++conversationListRequestSequence;
+  const environment = getActiveBackendEnvironment();
+  const isCurrentRequest = () =>
+    sequence === conversationListRequestSequence && isActiveBackendEnvironment(environment);
+
   void ipcBridge.database.getUserConversations
     .invoke({ limit: 10000 })
     .then((result) => {
+      if (!isCurrentRequest()) return;
       const items = result?.items;
       if (items && Array.isArray(items)) {
         const filteredData = items.filter((conv) => {
@@ -363,7 +372,7 @@ const refreshConversations = () => {
           return extra?.is_health_check !== true && extra?.side_chat !== true && !extra?.team_id && !extra?.teamId;
         });
         conversationsState = filteredData;
-        recordEnvironmentProjects(filteredData);
+        recordEnvironmentProjects(filteredData, environment);
         // Use ALL conversation IDs (including team/legacy health-check rows) so the
         // responseStream listener recognises them as known and doesn't
         // trigger an infinite refreshConversations loop.
@@ -381,6 +390,7 @@ const refreshConversations = () => {
       emitStoreChange();
     })
     .catch((error) => {
+      if (!isCurrentRequest()) return;
       console.error('[WorkspaceGroupedHistory] Failed to load conversations:', error);
       conversationsState = [];
       conversation_idsState = new Set();

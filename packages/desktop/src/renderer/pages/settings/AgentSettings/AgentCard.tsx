@@ -24,7 +24,7 @@ type AgentCardProps =
       agent: ManagedAgent;
       boundAssistants: Assistant[];
       onTestConnection: () => void;
-      onConfigure: () => void;
+      onConfigure?: () => void;
       isTesting?: boolean;
     }
   | {
@@ -32,7 +32,7 @@ type AgentCardProps =
       agent: ManagedAgent;
       boundAssistants: Assistant[];
       onTestConnection: () => void;
-      onConfigure: () => void;
+      onConfigure?: () => void;
       isTesting?: boolean;
       onEdit: () => void;
       onDelete: () => void;
@@ -123,7 +123,7 @@ const AgentCard: React.FC<AgentCardProps> = (props) => {
   return (
     <div
       data-testid={`agent-row-${agent.id}`}
-      className='group flex cursor-pointer items-center justify-between gap-12px rounded-12px border border-solid border-transparent bg-base px-14px py-10px transition-all duration-180 hover:border-border-1 hover:bg-fill-1'
+      className={`group flex items-center justify-between gap-12px rounded-12px border border-solid border-transparent bg-base px-14px py-10px transition-all duration-180 hover:border-border-1 hover:bg-fill-1 ${onConfigure ? 'cursor-pointer' : 'cursor-default'}`}
       onClick={onConfigure}
     >
       <div className={`flex min-w-0 flex-1 items-center gap-12px ${isDisabled ? 'opacity-50' : ''}`}>
@@ -178,18 +178,17 @@ const AgentCard: React.FC<AgentCardProps> = (props) => {
         >
           {t('settings.agentManagement.testConnection')}
         </Button>
-        {/* Both agent kinds get an explicit Edit button that opens the same
-            configuration page the whole row links to (status, path/env
-            overrides, bound assistants). */}
-        <Button
-          data-testid={`agent-row-edit-${agent.id}`}
-          size='small'
-          type='outline'
-          onClick={onConfigure}
-          className='!h-30px !rounded-8px !border-border-2 !bg-base !px-10px !text-12px !font-500 !text-t-primary hover:!border-border-1 hover:!bg-fill-1'
-        >
-          {t('common.edit', { defaultValue: 'Edit' })}
-        </Button>
+        {onConfigure && (
+          <Button
+            data-testid={`agent-row-edit-${agent.id}`}
+            size='small'
+            type='outline'
+            onClick={onConfigure}
+            className='!h-30px !rounded-8px !border-border-2 !bg-base !px-10px !text-12px !font-500 !text-t-primary hover:!border-border-1 hover:!bg-fill-1'
+          >
+            {t('common.edit', { defaultValue: 'Edit' })}
+          </Button>
+        )}
         {props.type === 'custom' ? (
           <>
             {/* Custom agents add the definition editor (command/args/env) plus

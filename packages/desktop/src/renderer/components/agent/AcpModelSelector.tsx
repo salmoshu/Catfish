@@ -91,6 +91,7 @@ const AcpModelSelector: React.FC<{
     isSetting,
     selectModel,
     thoughtLevel,
+    speed,
     setStatus,
     setConfigOption,
     isConfigOptionBlocked = () => false,
@@ -145,6 +146,27 @@ const AcpModelSelector: React.FC<{
       }
     },
     [isConfigOptionBlocked, isRuntimeSetting, setConfigOption, thoughtLevel, t]
+  );
+  const handleSpeedSelect = useCallback(
+    async (value: string) => {
+      if (!speed || value === speed.currentValue || isRuntimeSetting || isConfigOptionBlocked(speed.id)) return;
+      try {
+        await setConfigOption(speed.id, value);
+        Message.success(t('agent.speed.switchSuccess'));
+      } catch (error) {
+        Message.error(t(configErrorMessageKey(error)));
+      }
+    },
+    [isConfigOptionBlocked, isRuntimeSetting, setConfigOption, speed, t]
+  );
+  const speedOptionLabel = useCallback(
+    (item: { value: string; label: string }): string => {
+      const value = item.value.toLowerCase();
+      if (value === 'true' || value === 'fast') return t('agent.speed.fast');
+      if (value === 'false' || value === 'default' || value === 'standard') return t('agent.speed.standard');
+      return item.label || item.value;
+    },
+    [t]
   );
   const tooltipContent = combinedLabel;
 
@@ -226,10 +248,8 @@ const AcpModelSelector: React.FC<{
       {...(isMobileHeaderCompact ? { getPopupContainer: () => document.body } : {})}
       droplist={
         <Menu>
-          {thoughtLevel ? (
+          {thoughtLevel || speed ? (
             <>
-              {/* Two-level layout: first level shows model + thought-level rows;
-                  each expands into a left-side submenu with the full option list. */}
               <Menu.SubMenu
                 key='model'
                 triggerProps={RUNTIME_SUBMENU_TRIGGER_PROPS}
@@ -247,38 +267,68 @@ const AcpModelSelector: React.FC<{
                   onSelect={selectModel}
                 />
               </Menu.SubMenu>
-              <Menu.SubMenu
-                key='thought-level'
-                triggerProps={RUNTIME_SUBMENU_TRIGGER_PROPS}
-                title={
-                  <RuntimeSelectorSubMenuTitle
-                    label={t('agent.thoughtLevel.label')}
-                    value={getCurrentThoughtLevelLabel(thoughtLevel)}
-                  />
-                }
-              >
-                {thoughtLevel.options.map((item) => (
-                  <Menu.Item
-                    key={item.value}
-                    className={item.value === thoughtLevel.currentValue ? 'bg-2!' : ''}
-                    onClick={() => {
-                      if (!isRuntimeSetting && !isConfigOptionBlocked(thoughtLevel.id)) {
-                        void handleThoughtLevelSelect(item.value);
-                      }
-                    }}
-                  >
-                    <RuntimeSelectorCheckedItem
-                      selected={item.value === thoughtLevel.currentValue}
-                      description={item.description}
+              {thoughtLevel && (
+                <Menu.SubMenu
+                  key='thought-level'
+                  triggerProps={RUNTIME_SUBMENU_TRIGGER_PROPS}
+                  title={
+                    <RuntimeSelectorSubMenuTitle
+                      label={t('agent.thoughtLevel.label')}
+                      value={getCurrentThoughtLevelLabel(thoughtLevel)}
+                    />
+                  }
+                >
+                  {thoughtLevel.options.map((item) => (
+                    <Menu.Item
+                      key={item.value}
+                      className={item.value === thoughtLevel.currentValue ? 'bg-2!' : ''}
+                      onClick={() => {
+                        if (!isRuntimeSetting && !isConfigOptionBlocked(thoughtLevel.id)) {
+                          void handleThoughtLevelSelect(item.value);
+                        }
+                      }}
                     >
-                      {formatThoughtLevelLabel(item.label)}
-                    </RuntimeSelectorCheckedItem>
-                  </Menu.Item>
-                ))}
-              </Menu.SubMenu>
+                      <RuntimeSelectorCheckedItem
+                        selected={item.value === thoughtLevel.currentValue}
+                        description={item.description}
+                      >
+                        {formatThoughtLevelLabel(item.label)}
+                      </RuntimeSelectorCheckedItem>
+                    </Menu.Item>
+                  ))}
+                </Menu.SubMenu>
+              )}
+              {speed && (
+                <Menu.SubMenu
+                  key='speed'
+                  triggerProps={RUNTIME_SUBMENU_TRIGGER_PROPS}
+                  title={
+                    <RuntimeSelectorSubMenuTitle
+                      label={t('agent.speed.label')}
+                      value={speedOptionLabel(
+                        speed.options.find((item) => item.value === speed.currentValue) ?? {
+                          value: speed.currentValue ?? '',
+                          label: '',
+                        }
+                      )}
+                    />
+                  }
+                >
+                  {speed.options.map((item) => (
+                    <Menu.Item
+                      key={item.value}
+                      className={item.value === speed.currentValue ? 'bg-2!' : ''}
+                      onClick={() => void handleSpeedSelect(item.value)}
+                    >
+                      <RuntimeSelectorCheckedItem selected={item.value === speed.currentValue}>
+                        {speedOptionLabel(item)}
+                      </RuntimeSelectorCheckedItem>
+                    </Menu.Item>
+                  ))}
+                </Menu.SubMenu>
+              )}
             </>
           ) : (
-            /* No thought level: the dropdown is the model list directly. */
             <RuntimeSelectorModelList
               models={model_info.available_models}
               currentModelId={model_info.current_model_id}

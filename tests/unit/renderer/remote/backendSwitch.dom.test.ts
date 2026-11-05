@@ -92,4 +92,36 @@ describe('backend environment switching', () => {
     expect(mocks.activate).toHaveBeenCalledWith({ id: 'wsl' });
     expect(mocks.connect).toHaveBeenCalledWith({ id: 'wsl' });
   });
+
+  it('ignores an older slow switch after the latest route has been applied', async () => {
+    type State = { active: import('@/common/types/remote').BackendEnvironment; port: number };
+    const deferred = () => {
+      let resolve!: (value: State) => void;
+      const promise = new Promise<State>((r) => {
+        resolve = r;
+      });
+      return { promise, resolve };
+    };
+    const first = deferred();
+    const second = deferred();
+    mocks.state.mockReset().mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    mocks.resetConfig.mockResolvedValue(undefined);
+
+    const firstRoute = switchBackendRoute('/conversation/first');
+    const secondRoute = switchBackendRoute('/conversation/second');
+    second.resolve({ active: { type: 'local' }, port: 41001 });
+    await secondRoute;
+    expect(window.location.hash).toBe('/conversation/second');
+
+    first.resolve({
+      active: { type: 'remote', id: 'wsl', name: 'WSL', kind: 'wsl' },
+      port: 42000,
+    });
+    await firstRoute;
+
+    expect(window.location.hash).toBe('/conversation/second');
+    expect(mocks.setRuntime).toHaveBeenCalledTimes(1);
+    expect(mocks.setRuntime).toHaveBeenCalledWith({ type: 'local' }, 41001);
+    expect(mocks.emit).toHaveBeenCalledTimes(1);
+  });
 });

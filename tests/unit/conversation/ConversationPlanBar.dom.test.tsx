@@ -186,4 +186,20 @@ describe('ConversationPlanCard', () => {
     fireEvent(window, new CustomEvent('aionui-workspace-state'));
     expect(screen.queryByRole('dialog')).toBeNull();
   });
+
+  it('collapses the workbench again when closing a plan opened from the collapsed state', () => {
+    expect(setupCard(false)).toBeNull();
+    const panel = document.querySelector<HTMLElement>('[data-project-panel-host]');
+    const workbench = document.querySelector<HTMLElement>('[data-workbench]');
+    if (!panel || !workbench) throw new Error('Missing test workbench');
+    panel.dataset.collapsed = 'false';
+    workbench.dataset.activeSection = 'plan';
+    fireEvent(window, new CustomEvent('aionui-workbench-section'));
+
+    const toggle = vi.fn((event: Event) => event.preventDefault());
+    window.addEventListener('aionui-workspace-toggle', toggle);
+    fireEvent.click(screen.getByRole('button', { name: 'conversation.planBar.title' }));
+    expect(toggle).toHaveBeenCalledOnce();
+    window.removeEventListener('aionui-workspace-toggle', toggle);
+  });
 });

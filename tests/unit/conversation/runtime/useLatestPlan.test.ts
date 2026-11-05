@@ -44,6 +44,15 @@ describe('selectLatestPlan', () => {
   it('carries turn_id through so the caller can gate on the running turn', () => {
     expect(selectLatestPlan([plan('turn-a', 1, 'turn-id-1')])?.content.turn_id).toBe('turn-id-1');
   });
+
+  it('keeps the latest non-empty plan when a transient empty update arrives', () => {
+    const empty = {
+      ...plan('turn-empty', 400),
+      content: { entries: [] },
+    } as TMessage;
+    expect(selectLatestPlan([plan('turn-a', 100), empty])?.msg_id).toBe('turn-a');
+    expect(selectLatestPlan([empty])?.msg_id).toBe('turn-empty');
+  });
 });
 
 describe('plan turn_id passthrough', () => {

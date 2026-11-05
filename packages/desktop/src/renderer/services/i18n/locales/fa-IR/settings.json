@@ -1172,7 +1172,7 @@
     "localAgentsDescription": "عامل‌های برنامه‌نویسی هوش مصنوعی موجود در این دستگاه را مدیریت کنید. Catfish CLI داخلی است و همراه برنامه ارائه می‌شود — بدون نیاز به نصب؛ سایر عامل‌ها تنها پس از نصب محلی CLI آن‌ها شناسایی می‌شوند.",
     "localAgentsSetupLink": "راهنمای راه‌اندازی",
     "goToChat": "شروع چت",
-    "remoteAgentsDescription": "فعلاً فقط اتصالات ریموت OpenClaw پشتیبانی می‌شوند. سایر ایجنت‌ها در حال توسعه هستند.",
+    "remoteAgentsDescription": "عامل‌های محیط راه دور انتخاب‌شده را ببینید و همان‌جا آزمایش کنید.",
     "advancedConfig": "پیکربندی پیشرفته",
     "geminiDescription": "ابزار خط فرمان هوش مصنوعی گوگل جمینای",
     "connectRemoteAgent": "اتصال ایجنت ریموت",
@@ -1237,7 +1237,10 @@
     "boundAssistantsEmpty": "هنوز دستیاری به این ایجنت متصل نیست.",
     "viewAssistant": "مشاهده",
     "searchPlaceholder": "جستجوی ایجنت‌ها...",
-    "noSearchResults": "هیچ ایجنت منطبقی وجود ندارد."
+    "noSearchResults": "هیچ ایجنت منطبقی وجود ندارد.",
+    "environment": "محیط",
+    "remoteAgentsEmpty": "عاملی در این محیط یافت نشد.",
+    "remoteAgentsLoadFailed": "بارگیری عامل‌های این محیط ناموفق بود. اتصال از راه دور را بررسی و دوباره تلاش کنید."
   },
   "repair": {
     "pathLabel": "مسیر راه‌اندازی",

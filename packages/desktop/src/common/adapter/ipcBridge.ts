@@ -1332,6 +1332,14 @@ export const remoteAgent = {
 
 export const remoteEnvironment = {
   localConversations: bridge.buildProvider<TChatConversation[], void>('remote-environment.local-conversations'),
+  conversations: bridge.buildProvider<TChatConversation[], { id: string }>('remote-environment.conversations'),
+  agents: bridge.buildProvider<import('@/renderer/utils/model/agentTypes').ManagedAgent[], { id: string }>(
+    'remote-environment.agents'
+  ),
+  checkAgent: bridge.buildProvider<
+    import('@/renderer/utils/model/agentTypes').ManagedAgent,
+    { environmentId: string; agentId: string }
+  >('remote-environment.check-agent'),
   list: bridge.buildProvider<import('@/common/types/remote').RemoteEnvironmentSummary[], void>(
     'remote-environment.list'
   ),

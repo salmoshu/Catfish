@@ -6,14 +6,14 @@
  * 统一的 Agent Logo 工具
  * Unified Agent Logo utility
  *
- * Logo 真值由后端 `/api/agents/management` 提供（投影自 agent_metadata.icon/avatar）。
- * 前端不再维护任何 backend -> 资源路径的硬编码映射。
+ * Logo 主要由后端 `/api/agents/management` 提供（投影自 agent_metadata.icon/avatar）。
+ * Codex 使用随应用打包的 OpenAI 品牌图标，避免后端旧资源覆盖官方标识。
  *
  * 使用方式：组件用 {@link useAgentLogos} 取得 `backend -> url` 映射，再用纯函数
  * {@link resolveAgentLogo} 解析。非组件的工具函数应把映射作为参数传入。
  *
- * Logo truth lives in the backend (`/api/agents/management`, projected from
- * `agent_metadata.icon/avatar`); the frontend owns no path map. Components read the
+ * Logo truth primarily lives in the backend (`/api/agents/management`, projected from
+ * `agent_metadata.icon/avatar`), with an explicit bundled OpenAI override for Codex. Components read the
  * `backend -> url` map via {@link useAgentLogos} and resolve with the pure
  * {@link resolveAgentLogo}; non-React utilities receive the map as an argument.
  */
@@ -28,6 +28,9 @@ import {
 import type { ManagedAgent } from '@/renderer/utils/model/agentTypes';
 import { resolveBackendAssetUrl } from '@/renderer/utils/platform';
 import useSWR from 'swr';
+import openaiLogo from '@renderer/assets/logos/openai.svg';
+
+const AGENT_LOGO_OVERRIDES: Record<string, string> = { codex: openaiLogo };
 
 /** Map of lowercased backend id -> logo URL. */
 export type AgentLogoMap = Record<string, string>;
@@ -49,7 +52,7 @@ export async function fetchAgentLogos(): Promise<AgentLogoMap> {
     if (Array.isArray(agents)) {
       const map: AgentLogoMap = {};
       for (const agent of agents as ManagedAgent[]) {
-        const logo = agent.avatar || agent.icon;
+        const logo = AGENT_LOGO_OVERRIDES[agent.backend] ?? agent.avatar ?? agent.icon;
         if (!logo) continue;
 
         for (const key of collectManagedAgentLogoKeys(agent)) {
@@ -106,10 +109,11 @@ function lookupBackendAvatar(logos: AgentLogoMap, backend: string | undefined | 
  * Resolve the best available logo for an agent from the backend logo catalog.
  *
  * Pure — pass the map from {@link useAgentLogos}. Priority:
- *   1. Explicit icon/avatar (if provided)
- *   2. Adapter ID from custom_agent_id (`ext:extensionName:adapterId`) → catalog
- *   3. Backend ID → catalog
- *   4. null (caller renders its own fallback)
+ *   1. Official bundled brand override (currently Codex → OpenAI)
+ *   2. Explicit icon/avatar (if provided)
+ *   3. Adapter ID from custom_agent_id (`ext:extensionName:adapterId`) → catalog
+ *   4. Backend ID → catalog
+ *   5. null (caller renders its own fallback)
  */
 export function resolveAgentLogo(
   logos: AgentLogoMap,
@@ -120,6 +124,8 @@ export function resolveAgentLogo(
     isExtension?: boolean;
   }
 ): string | null {
+  const override = opts.backend ? AGENT_LOGO_OVERRIDES[opts.backend.toLowerCase()] : undefined;
+  if (override) return override;
   if (opts.icon) return normalizeLogoUrl(opts.icon);
 
   if (opts.isExtension && opts.custom_agent_id) {
@@ -140,6 +146,8 @@ export function resolveAgentAvatar(
     isExtension?: boolean;
   }
 ): AssistantAvatar {
+  const override = opts.backend ? AGENT_LOGO_OVERRIDES[opts.backend.toLowerCase()] : undefined;
+  if (override) return { kind: 'image', value: override };
   const explicitAvatar = resolveAssistantAvatar(opts.icon || undefined);
   if (explicitAvatar.kind !== 'fallback') return explicitAvatar;
 

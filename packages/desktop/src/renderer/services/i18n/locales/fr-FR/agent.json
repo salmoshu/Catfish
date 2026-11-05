@@ -55,5 +55,11 @@
     "failed": "Échec de la reconnexion de l'agent",
     "initializingTooltip": "L'agent est en cours d'initialisation. Reconnectez-le lorsqu'il sera prêt",
     "processingTooltip": "Attendez la fin de la réponse en cours avant de reconnecter"
+  },
+  "speed": {
+    "label": "Vitesse",
+    "fast": "Rapide",
+    "standard": "Standard",
+    "switchSuccess": "Mode de vitesse modifié"
   }
 }

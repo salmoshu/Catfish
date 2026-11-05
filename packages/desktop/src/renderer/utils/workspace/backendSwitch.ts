@@ -12,6 +12,9 @@ import { emitter } from '@/renderer/utils/emitter';
 
 export const BACKEND_ENVIRONMENT_CHANGED = 'catfish:backend-environment-changed';
 
+let backendSyncSequence = 0;
+let routeSwitchSequence = 0;
+
 /** Resume an existing runtime before starting a new remote connection. */
 export const connectOrResumeEnvironment = async (id: string): Promise<RemoteOperationResult<BackendEnvironment>> => {
   const resumed = await ipcBridge.remoteEnvironment.activate.invoke({ id });
@@ -21,20 +24,26 @@ export const connectOrResumeEnvironment = async (id: string): Promise<RemoteOper
 };
 
 /** Point the renderer at the selected backend and refresh data without remounting the application. */
-export const syncBackendEnvironment = async (): Promise<void> => {
+export const syncBackendEnvironment = async (): Promise<boolean> => {
+  const sequence = ++backendSyncSequence;
   const state = await ipcBridge.remoteEnvironment.state.invoke();
+  if (sequence !== backendSyncSequence) return false;
   if (!state.port) throw new Error('The selected backend has no available port');
   setBackendRuntime(state.active, state.port);
   resetBackendSocket();
   await configService.reload();
+  if (sequence !== backendSyncSequence) return false;
   emitter.emit('chat.history.refresh');
   window.dispatchEvent(new Event(BACKEND_ENVIRONMENT_CHANGED));
+  return true;
 };
 
 /** Switch the renderer backend before navigating, while preserving the current document and theme. */
 export const switchBackendRoute = async (route: string): Promise<void> => {
+  const sequence = ++routeSwitchSequence;
   // Navigating first would fetch the target conversation from the outgoing
   // backend and turn the environment switch into a spurious 404 redirect home.
-  await syncBackendEnvironment();
+  const applied = await syncBackendEnvironment();
+  if (!applied || sequence !== routeSwitchSequence) return;
   window.location.hash = route;
 };

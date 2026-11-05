@@ -1,22 +1,7 @@
+import { getBaseUrl } from '@/common/adapter/httpBridge';
 import type { ConfigKey, ConfigKeyMap } from './configKeys';
 
 type Subscriber = (value: unknown) => void;
-
-declare global {
-  interface Window {
-    __backendPort?: number;
-  }
-}
-
-function getBaseUrl(): string {
-  // WebUI browser mode: no preload, fetch same-origin so web-host's
-  // static-server reverse-proxies /api/* to the backend.
-  if (typeof window !== 'undefined' && typeof document !== 'undefined' && !(window as Window).__backendPort) {
-    return '';
-  }
-  const port = typeof window !== 'undefined' ? (window as Window).__backendPort || 13400 : 13400;
-  return `http://127.0.0.1:${port}`;
-}
 
 async function fetchJson<T>(method: string, path: string, body?: unknown): Promise<T> {
   const url = `${getBaseUrl()}${path}`;
@@ -49,27 +34,13 @@ class ConfigServiceImpl {
   private subscribers = new Map<string, Set<Subscriber>>();
   private initialized = false;
   private initPromise: Promise<void> | null = null;
+  private loadRevision = 0;
 
   // Idempotent: concurrent callers share the same in-flight promise, and a
   // resolved init returns immediately. Modules that need persisted settings on
   // module load (theme/language) await whenReady() before reading.
   initialize(): Promise<void> {
-    if (this.initPromise) return this.initPromise;
-    this.initPromise = (async () => {
-      const data = await fetchJson<Record<string, unknown>>('GET', '/api/settings/client');
-      this.cache.clear();
-      if (data) {
-        for (const [key, value] of Object.entries(data)) {
-          this.cache.set(key, value);
-        }
-      }
-      this.initialized = true;
-    })();
-    this.initPromise.catch(() => {
-      // Allow a future caller to retry after a transient failure
-      this.initPromise = null;
-    });
-    return this.initPromise;
+    return this.load(false);
   }
 
   whenReady(): Promise<void> {
@@ -120,6 +91,7 @@ class ConfigServiceImpl {
   }
 
   reset(): void {
+    this.loadRevision += 1;
     this.cache.clear();
     this.subscribers.clear();
     this.initialized = false;
@@ -127,15 +99,29 @@ class ConfigServiceImpl {
   }
 
   async reload(): Promise<void> {
-    const data = await fetchJson<Record<string, unknown>>('GET', '/api/settings/client');
-    this.cache.clear();
-    if (data) {
-      for (const [key, value] of Object.entries(data)) {
-        this.cache.set(key, value);
-        this.notify(key as ConfigKey, value);
+    return this.load(true);
+  }
+
+  private load(force: boolean): Promise<void> {
+    if (!force && this.initPromise) return this.initPromise;
+    const revision = ++this.loadRevision;
+    const promise = (async () => {
+      const data = await fetchJson<Record<string, unknown>>('GET', '/api/settings/client');
+      if (revision !== this.loadRevision) return;
+      this.cache.clear();
+      if (data) {
+        for (const [key, value] of Object.entries(data)) {
+          this.cache.set(key, value);
+          this.notify(key as ConfigKey, value);
+        }
       }
-    }
-    this.initialized = true;
+      this.initialized = true;
+    })();
+    this.initPromise = promise;
+    promise.catch(() => {
+      if (this.initPromise === promise) this.initPromise = null;
+    });
+    return promise;
   }
 
   private notify(key: ConfigKey, value: unknown): void {

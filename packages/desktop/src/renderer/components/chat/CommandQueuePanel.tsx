@@ -542,7 +542,7 @@ const CommandQueuePanel: React.FC<CommandQueuePanelProps> = ({
               data-drag-bounds='queue'
               className='p-6px flex flex-col gap-4px overflow-y-auto overscroll-contain'
               style={{
-                maxHeight: isMobile ? 'min(48vh, 320px)' : 'min(36vh, 320px)',
+                maxHeight: isMobile ? 'min(48vh, 140px)' : '140px',
               }}
             >
               {items.map((item) => {

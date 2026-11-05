@@ -42,8 +42,6 @@ import KimiIcon from '@renderer/components/base/KimiIcon';
 import brandLogo from '@renderer/assets/logo.svg';
 import '@renderer/styles/layout.css';
 
-declare const __APP_VERSION__: string;
-
 const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 18, strokeWidth: _strokeWidth }) => (
   <KimiIcon name='panel-collapse' size={size} style={{ display: 'inline-block', verticalAlign: 'middle' }} />
 );
@@ -416,9 +414,6 @@ const Layout: React.FC<{
                   ) : (
                     <div className='text-16px text-t-primary font-semibold'>Catfish</div>
                   )}
-                  <span className='px-4px py-1px rd-4px text-10px leading-14px bg-fill-2 text-t-secondary select-none'>
-                    v{__APP_VERSION__}
-                  </span>
                 </div>
                 {isMobile && !collapsed && (
                   <button

@@ -27,6 +27,10 @@ import {
   toggleExpandedWorkspace,
   useWorkspaceExpansionState,
 } from '@/renderer/pages/conversation/GroupedHistory/hooks/useWorkspaceExpansionState';
+import {
+  getConversationStreamRevision,
+  reconcileGeneratingFromRuntime,
+} from '@/renderer/pages/conversation/GroupedHistory/hooks/useConversationListSync';
 
 type Props = {
   collapsed: boolean;
@@ -56,9 +60,9 @@ const EnvironmentProjects: React.FC<Props> = ({
   const otherHistory = active
     ? history.filter((entry) => environmentKey(entry.environment) !== environmentKey(active))
     : [];
-  const visibleHistory = otherHistory.filter(
-    (entry) => entry.environment.type === 'local' || remoteStatuses[entry.environment.id] === 'connected'
-  );
+  // Keep known project entries after reinstall/restart, even while disconnected.
+  // Their sessions become available only after the remote runtime reconnects.
+  const visibleHistory = otherHistory;
 
   useEffect(() => {
     let mounted = true;
@@ -87,6 +91,45 @@ const EnvironmentProjects: React.FC<Props> = ({
       removeDisconnectListener();
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    let inFlight = false;
+    const reconcile = async () => {
+      if (inFlight || !ipcBridge.remoteEnvironment.conversations) return;
+      inFlight = true;
+      const remoteEntries = history.filter((entry) => entry.environment.type === 'remote');
+      await Promise.all(
+        remoteEntries.map(async (entry) => {
+          if (entry.environment.type !== 'remote') return;
+          const ids = entry.projects.flatMap((project) => project.conversations.map((conversation) => conversation.id));
+          const revisions = new Map(ids.map((id) => [id, getConversationStreamRevision(id)]));
+          try {
+            const conversations = await ipcBridge.remoteEnvironment.conversations.invoke({ id: entry.environment.id });
+            if (cancelled) return;
+            const byId = new Map(conversations.map((conversation) => [conversation.id, conversation]));
+            for (const id of ids) {
+              const runtime = byId.get(id)?.runtime;
+              if (runtime) {
+                reconcileGeneratingFromRuntime(id, runtime.is_processing === true, revisions.get(id));
+              }
+            }
+          } catch {
+            // Keep the last known state during a transient remote read failure.
+          }
+        })
+      );
+      inFlight = false;
+    };
+    void reconcile();
+    const timer = window.setInterval(() => {
+      void reconcile();
+    }, 4000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [history]);
 
   useEffect(() => {
     const refresh = () => setHistory(readEnvironmentProjects());
@@ -155,9 +198,11 @@ const EnvironmentProjects: React.FC<Props> = ({
             const name = getLastDirectoryName(project.workspace);
             const actionLabel = isRemote ? t('mcp.connect') : t('conversation.history.newConversationInProject');
             const projectExpanded = expandedWorkspaces.includes(key) || expandedWorkspaces.includes(project.workspace);
-            const projectRunning = project.conversations.some((conversation) =>
-              isConversationGenerating?.(conversation.id)
-            );
+            const remoteConnected =
+              entry.environment.type === 'local' || remoteStatuses[entry.environment.id] === 'connected';
+            const projectRunning =
+              remoteConnected &&
+              project.conversations.some((conversation) => isConversationGenerating?.(conversation.id));
             return (
               <div key={key} style={{ order: getProjectOrder?.(entry.environment, project) }}>
                 <WorkspaceCollapse
@@ -180,7 +225,9 @@ const EnvironmentProjects: React.FC<Props> = ({
                   }
                   trailing={
                     <span className='flex items-center gap-6px'>
-                      {projectRunning && !projectExpanded && <Spin size={14} data-testid='cached-project-running' />}
+                      {projectRunning && !projectExpanded && (
+                        <Spin size={14} className='group-hover:hidden' data-testid='cached-project-running' />
+                      )}
                       <Tooltip content={actionLabel} position='top'>
                         <span
                           role='button'
@@ -218,44 +265,45 @@ const EnvironmentProjects: React.FC<Props> = ({
                     </span>
                   }
                 >
-                  {project.conversations.map((conversation) => {
-                    const cachedConversation = {
-                      id: conversation.id,
-                      name: conversation.name,
-                      type: conversation.type ?? 'acp',
-                      created_at: conversation.modifiedAt,
-                      modified_at: conversation.modifiedAt,
-                      assistant: conversation.assistant,
-                      extra: {
-                        workspace: project.workspace,
-                        custom_workspace: true,
-                        backend: conversation.backend,
-                        assistant_id: conversation.assistant_id,
-                        preset_assistant_id: conversation.preset_assistant_id,
-                        custom_agent_id: conversation.custom_agent_id,
-                        agent_id: conversation.agent_id,
-                        agent_name: conversation.agent_name,
-                      },
-                    } as TChatConversation;
-                    return (
-                      <Button
-                        key={conversation.id}
-                        type='text'
-                        className={`chat-history__item ${styles.conversation}`}
-                        disabled={switching}
-                        title={conversation.name}
-                        onClick={() => void open(entry, project.workspace, conversation.id)}
-                      >
-                        <span className='size-22px flex items-center justify-center shrink-0 leading-none'>
-                          <ConversationIdentityIcon conversation={cachedConversation} />
-                        </span>
-                        <span className={styles.conversationName}>{conversation.name}</span>
-                        {isConversationGenerating?.(conversation.id) && (
-                          <Spin size={14} className='ms-auto shrink-0' data-testid='cached-conversation-running' />
-                        )}
-                      </Button>
-                    );
-                  })}
+                  {remoteConnected &&
+                    project.conversations.map((conversation) => {
+                      const cachedConversation = {
+                        id: conversation.id,
+                        name: conversation.name,
+                        type: conversation.type ?? 'acp',
+                        created_at: conversation.modifiedAt,
+                        modified_at: conversation.modifiedAt,
+                        assistant: conversation.assistant,
+                        extra: {
+                          workspace: project.workspace,
+                          custom_workspace: true,
+                          backend: conversation.backend,
+                          assistant_id: conversation.assistant_id,
+                          preset_assistant_id: conversation.preset_assistant_id,
+                          custom_agent_id: conversation.custom_agent_id,
+                          agent_id: conversation.agent_id,
+                          agent_name: conversation.agent_name,
+                        },
+                      } as TChatConversation;
+                      return (
+                        <Button
+                          key={conversation.id}
+                          type='text'
+                          className={`chat-history__item ${styles.conversation}`}
+                          disabled={switching}
+                          title={conversation.name}
+                          onClick={() => void open(entry, project.workspace, conversation.id)}
+                        >
+                          <span className='size-22px flex items-center justify-center shrink-0 leading-none'>
+                            <ConversationIdentityIcon conversation={cachedConversation} />
+                          </span>
+                          <span className={styles.conversationName}>{conversation.name}</span>
+                          {isConversationGenerating?.(conversation.id) && (
+                            <Spin size={14} className='ms-auto shrink-0' data-testid='cached-conversation-running' />
+                          )}
+                        </Button>
+                      );
+                    })}
                 </WorkspaceCollapse>
               </div>
             );

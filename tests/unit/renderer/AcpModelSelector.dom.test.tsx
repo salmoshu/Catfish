@@ -25,6 +25,7 @@ type MockAcpModelInfoResult = {
   isSetting: boolean;
   selectModel: (modelId: string) => void;
   thoughtLevel: AcpDerivedOption | null;
+  speed: AcpDerivedOption | null;
   setStatus: AcpConfigSetStatus;
   setConfigOption: (optionId: string, value: string) => Promise<unknown>;
 };
@@ -56,6 +57,7 @@ const makeResult = (overrides: Partial<MockAcpModelInfoResult> = {}): MockAcpMod
   isSetting: false,
   selectModel: vi.fn(),
   thoughtLevel,
+  speed: null,
   setStatus: { state: 'idle' },
   setConfigOption: vi.fn().mockResolvedValue(undefined),
   ...overrides,
@@ -410,6 +412,30 @@ describe('AcpModelSelector runtime options', () => {
       expect(setConfigOption).toHaveBeenCalledWith('thought_level', 'low');
     });
     expect(messageSuccessMock).toHaveBeenCalledWith('agent.thoughtLevel.switchSuccess');
+  });
+
+  it('sets fast mode through the existing config option setter', async () => {
+    const setConfigOption = vi.fn().mockResolvedValue(undefined);
+    useAcpModelInfoMock.mockReturnValue(
+      makeResult({
+        setConfigOption,
+        speed: {
+          id: 'service_tier',
+          category: 'speed',
+          currentValue: 'default',
+          options: [
+            { value: 'default', label: 'Default' },
+            { value: 'fast', label: 'Fast' },
+          ],
+        },
+      })
+    );
+
+    render(<AcpModelSelector conversation_id='conversation-1' backend='codex' />);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'agent.speed.fast' }));
+
+    await waitFor(() => expect(setConfigOption).toHaveBeenCalledWith('service_tier', 'fast'));
+    expect(messageSuccessMock).toHaveBeenCalledWith('agent.speed.switchSuccess');
   });
 
   it('keeps the old thought value and shows an error when config update fails', async () => {

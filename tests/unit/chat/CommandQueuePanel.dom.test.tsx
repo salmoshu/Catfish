@@ -148,7 +148,7 @@ describe('CommandQueuePanel', () => {
 
     const list = document.querySelector('[data-command-queue-list="true"]') as HTMLElement | null;
     expect(list).not.toBeNull();
-    expect(list).toHaveStyle({ maxHeight: 'min(36vh, 320px)' });
+    expect(list).toHaveStyle({ maxHeight: '140px' });
     expect(list).toHaveClass('overflow-y-auto');
   });
 

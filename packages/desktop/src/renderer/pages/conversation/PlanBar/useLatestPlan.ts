@@ -17,13 +17,21 @@ import { useMemo } from 'react';
  */
 export const selectLatestPlan = (list: TMessage[]): IMessagePlan | undefined => {
   let latest: IMessagePlan | undefined;
+  let latestWithEntries: IMessagePlan | undefined;
   for (const message of list) {
     if (message.type !== 'plan') continue;
     if (!latest || (message.created_at ?? 0) > (latest.created_at ?? 0)) {
       latest = message;
     }
+    if (
+      (message.content.entries?.length ?? 0) > 0 &&
+      (!latestWithEntries || (message.created_at ?? 0) > (latestWithEntries.created_at ?? 0))
+    ) {
+      latestWithEntries = message;
+    }
   }
-  return latest;
+  // A transient empty update must not blank a plan that was already captured.
+  return latestWithEntries ?? latest;
 };
 
 export const useLatestPlan = (): IMessagePlan | undefined => {

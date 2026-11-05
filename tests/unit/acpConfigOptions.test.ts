@@ -3,7 +3,10 @@ import { BackendHttpError } from '@/common/adapter/httpBridge';
 import {
   classifyConfigSetError,
   deriveSelectOption,
+  deriveSpeedOption,
+  getOptionCurrentValue,
   hasObservedValue,
+  isMissingCodexRolloutError,
 } from '@/renderer/hooks/agent/useAcpConfigOptions';
 import { describe, expect, it } from 'vitest';
 
@@ -93,5 +96,44 @@ describe('ACP config option derivation', () => {
     });
 
     expect(classifyConfigSetError(error)).toBe('config_update_in_progress');
+  });
+
+  it('accepts selected_value when an agent omits current_value', () => {
+    expect(getOptionCurrentValue({ id: 'reasoning_effort', selected_value: 'high', options: [] })).toBe('high');
+  });
+
+  it('derives select and boolean fast-mode options only when the agent exposes them', () => {
+    const select = deriveSpeedOption([
+      {
+        id: 'service_tier',
+        type: 'select',
+        current_value: 'default',
+        options: [
+          { value: 'default', name: 'Default' },
+          { value: 'fast', name: 'Fast' },
+        ],
+      },
+    ]);
+    expect(select?.id).toBe('service_tier');
+    expect(select?.options.map((item) => item.value)).toEqual(['default', 'fast']);
+
+    const toggle = deriveSpeedOption([{ id: 'fast_mode', type: 'boolean', current_value: 'true', options: [] }]);
+    expect(toggle?.options.map((item) => item.value)).toEqual(['true', 'false']);
+    expect(deriveSpeedOption(options)).toBeNull();
+  });
+
+  it('recognizes only the confirmed Codex missing-rollout diagnostic', () => {
+    const error = new BackendHttpError({
+      method: 'PUT',
+      path: '/api/conversations/c1/config-options/model',
+      status: 400,
+      body: {
+        success: false,
+        error: 'session not found: codex thread/resume failed: no rollout found for thread id abc',
+        code: 'BAD_REQUEST',
+      },
+    });
+    expect(isMissingCodexRolloutError(error)).toBe(true);
+    expect(isMissingCodexRolloutError(new Error('network failed'))).toBe(false);
   });
 });

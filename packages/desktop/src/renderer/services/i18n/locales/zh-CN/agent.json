@@ -55,5 +55,11 @@
     "failed": "代理重连失败",
     "initializingTooltip": "代理正在初始化，请稍后再重连",
     "processingTooltip": "请等当前回复结束后再重连"
+  },
+  "speed": {
+    "label": "速度",
+    "fast": "快速",
+    "standard": "标准",
+    "switchSuccess": "速度模式已切换"
   }
 }

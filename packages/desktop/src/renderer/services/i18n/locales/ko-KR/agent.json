@@ -55,5 +55,11 @@
     "failed": "에이전트 다시 연결에 실패했습니다",
     "initializingTooltip": "에이전트를 초기화하는 중입니다. 완료된 후 다시 연결하세요",
     "processingTooltip": "현재 답변이 완료된 후 다시 연결하세요"
+  },
+  "speed": {
+    "label": "속도",
+    "fast": "고속",
+    "standard": "표준",
+    "switchSuccess": "속도 모드를 변경했습니다"
   }
 }

@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { useCallback } from 'react';
 import { useSWRConfig } from 'swr';
 import { getConversationOrNull } from '@/renderer/pages/conversation/utils/conversationCache';
+import { backendCacheKey, getActiveBackendEnvironment } from '@/renderer/utils/workspace/backendCache';
 
 export type WorkspaceEventPrefix = 'acp' | 'codex';
 
@@ -32,7 +33,8 @@ export const useWorkspaceSelector = (conversation_id: string, eventPrefix: Works
       }
 
       // 获取最新的会话数据 / Fetch latest conversation data
-      const conversation = await getConversationOrNull(conversation_id);
+      const environment = getActiveBackendEnvironment();
+      const conversation = await getConversationOrNull(conversation_id, environment);
       if (!conversation) {
         Message.error(t('common.saveFailed'));
         return;
@@ -50,7 +52,11 @@ export const useWorkspaceSelector = (conversation_id: string, eventPrefix: Works
       }
 
       // 手动刷新 SWR 缓存以及广播给工作区和会话列表 / Refresh SWR cache and notify workspace/history
-      await mutate(`conversation/${conversation_id}`, { ...conversation, extra: nextExtra }, false);
+      await mutate(
+        backendCacheKey('conversation', conversation_id, environment),
+        { ...conversation, extra: nextExtra },
+        false
+      );
       emitter.emit(`${eventPrefix}.workspace.refresh`);
       emitter.emit('chat.history.refresh');
       Message.success(t('common.saveSuccess'));

@@ -472,7 +472,14 @@ describe('buildRemoveRequest', () => {
   it('builds fs/remove targeting the entry', () => {
     expect(buildRemoveRequest('peY', 'a/b.txt')).toEqual({
       method: 'fs/remove',
-      params: { target: { pe_id: 'peY', relative_path: 'a/b.txt' } },
+      params: { target: { pe_id: 'peY', relative_path: 'a/b.txt' }, recursive: false },
+    });
+  });
+
+  it('uses recursive removal for directories', () => {
+    expect(buildRemoveRequest('peY', 'a/folder', true)).toEqual({
+      method: 'fs/remove',
+      params: { target: { pe_id: 'peY', relative_path: 'a/folder' }, recursive: true },
     });
   });
 });

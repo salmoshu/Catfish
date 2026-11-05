@@ -1162,7 +1162,7 @@
     "localAgentsDescription": "이 기기에서 사용할 수 있는 AI 코딩 에이전트를 관리합니다. Catfish CLI는 내장되어 앱과 함께 제공되므로 설치가 필요 없습니다. 다른 에이전트는 해당 CLI를 로컬에 설치한 후에만 감지됩니다.",
     "localAgentsSetupLink": "설치 가이드",
     "goToChat": "채팅 시작",
-    "remoteAgentsDescription": "현재는 OpenClaw 원격 연결만 지원하며, 다른 에이전트는 개발 중입니다.",
+    "remoteAgentsDescription": "선택한 원격 환경의 Agent를 확인하고 해당 환경에서 연결을 테스트합니다.",
     "advancedConfig": "고급 설정",
     "geminiDescription": "Google Gemini AI 명령줄 도구",
     "connectRemoteAgent": "원격 에이전트 연결",
@@ -1227,7 +1227,10 @@
     "boundAssistantsEmpty": "이 에이전트에 연결된 어시스턴트가 아직 없습니다.",
     "viewAssistant": "보기",
     "searchPlaceholder": "에이전트 검색...",
-    "noSearchResults": "일치하는 에이전트가 없습니다."
+    "noSearchResults": "일치하는 에이전트가 없습니다.",
+    "environment": "환경",
+    "remoteAgentsEmpty": "이 환경에서 Agent를 찾을 수 없습니다.",
+    "remoteAgentsLoadFailed": "이 환경의 Agent를 불러오지 못했습니다. 원격 연결을 확인하고 다시 시도하세요."
   },
   "repair": {
     "pathLabel": "시작 경로",

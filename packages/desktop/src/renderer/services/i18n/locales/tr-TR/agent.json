@@ -55,5 +55,11 @@
     "failed": "Aracı yeniden bağlanamadı",
     "initializingTooltip": "Aracı başlatılıyor. Hazır olduğunda yeniden bağlanın",
     "processingTooltip": "Yeniden bağlanmadan önce mevcut yanıtın bitmesini bekleyin"
+  },
+  "speed": {
+    "label": "Hız",
+    "fast": "Hızlı",
+    "standard": "Standart",
+    "switchSuccess": "Hız modu değiştirildi"
   }
 }

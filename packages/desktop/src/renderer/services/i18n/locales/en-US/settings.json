@@ -1172,7 +1172,7 @@
     "localAgentsDescription": "Manage the AI coding agents available on this device. Catfish CLI is built in and ships with the app — no install needed; other agents are detected only after their CLI is installed locally.",
     "localAgentsSetupLink": "Setup guide",
     "goToChat": "Start Chat",
-    "remoteAgentsDescription": "Only remote OpenClaw connections are supported for now. Other agents are in development.",
+    "remoteAgentsDescription": "Browse agents in the selected remote environment and test them there.",
     "advancedConfig": "Advanced Config",
     "geminiDescription": "Google Gemini AI command-line tool",
     "connectRemoteAgent": "Connect Remote Agent",
@@ -1237,7 +1237,10 @@
     "boundAssistantsTooltip_one": "{{count}} assistant: {{names}}",
     "boundAssistantsTooltip_other": "{{count}} assistants: {{names}}",
     "boundAssistantsEmpty": "No assistants are bound to this agent yet.",
-    "viewAssistant": "View"
+    "viewAssistant": "View",
+    "environment": "Environment",
+    "remoteAgentsEmpty": "No agents found in this environment.",
+    "remoteAgentsLoadFailed": "Failed to load agents from this environment. Check the remote connection and try again."
   },
   "repair": {
     "pathLabel": "Launch Path",

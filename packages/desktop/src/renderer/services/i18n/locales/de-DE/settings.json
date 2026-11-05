@@ -1162,7 +1162,7 @@
     "localAgentsDescription": "Verwalte die auf diesem Gerät verfügbaren KI-Coding-Agenten. Catfish CLI ist integriert und wird mit der App geliefert – keine Installation nötig; andere Agenten werden erst nach lokaler CLI-Installation erkannt.",
     "localAgentsSetupLink": "Einrichtungsanleitung",
     "goToChat": "Chat starten",
-    "remoteAgentsDescription": "Derzeit werden nur Remote-OpenClaw-Verbindungen unterstützt. Andere Agenten sind in Entwicklung.",
+    "remoteAgentsDescription": "Agenten in der ausgewählten Remote-Umgebung anzeigen und dort testen.",
     "advancedConfig": "Erweiterte Konfiguration",
     "geminiDescription": "Google Gemini KI-Kommandozeilentool",
     "connectRemoteAgent": "Remote-Agent verbinden",
@@ -1227,7 +1227,10 @@
       "version_drift_newer": "Die installierte CLI ist neuer als die von Catfish verifizierte Version. Sie sollte weiterhin funktionieren; melden Sie ungewöhnliches Verhalten."
     },
     "searchPlaceholder": "Agenten suchen...",
-    "noSearchResults": "Keine passenden Agenten."
+    "noSearchResults": "Keine passenden Agenten.",
+    "environment": "Umgebung",
+    "remoteAgentsEmpty": "Keine Agenten in dieser Umgebung gefunden.",
+    "remoteAgentsLoadFailed": "Agenten konnten aus dieser Umgebung nicht geladen werden. Prüfen Sie die Remote-Verbindung und versuchen Sie es erneut."
   },
   "remoteAgent": {
     "title": "Remote-Agenten",

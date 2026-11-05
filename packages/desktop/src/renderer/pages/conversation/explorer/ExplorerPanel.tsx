@@ -60,7 +60,7 @@ export type ExplorerPanelProps = {
   /** Open a file (leaf) in the preview panel. Called when a file node is selected. */
   onOpenFile?: (peId: string, relativePath: string) => void;
   /** Delete an entry. Omit to hide the corresponding context-menu item. */
-  onDelete?: (peId: string, relativePath: string, name: string) => void;
+  onDelete?: (peId: string, relativePath: string, name: string, isDirectory: boolean) => void;
   /** Create a new empty file inside the directory `dirRelativePath` (a pe root
    * uses `''`). The name is collected in a dialog by the handler. Only offered on
    * directory / root nodes. Omit to hide the item. */
@@ -427,7 +427,7 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
         else if (menuKey === 'newFile') onNewFile?.(peId, rel);
         else if (menuKey === 'newDir') onNewDir?.(peId, rel);
         else if (menuKey === 'rename') startRename(key, peId, rel, name);
-        else if (menuKey === 'delete') onDelete?.(peId, rel, name);
+        else if (menuKey === 'delete') onDelete?.(peId, rel, name, !isFile);
         else if (menuKey === 'remove' && removable) onRemoveRoot?.(peId);
         else if (menuKey === 'revealInFolder') onRevealInFolder?.(peId, rel);
         else if (menuKey === 'copyRelativePath') onCopyRelativePath?.(peId, rel, name);

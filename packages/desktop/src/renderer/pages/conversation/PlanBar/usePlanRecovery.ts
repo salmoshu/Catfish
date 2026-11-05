@@ -21,32 +21,46 @@ import { useEffect, useRef } from 'react';
  * Gated on `hydrated` — the runtime view resolves asynchronously, and firing
  * before it settles would query with stale conversation context.
  */
+const PLAN_RETRY_DELAYS_MS = [250, 750];
+
 export const usePlanRecovery = (conversation_id: string): void => {
   const update = useUpdateMessageList();
-  const { hydrated } = useConversationRuntimeView(conversation_id);
+  const { hydrated, isProcessing, activeTurnId } = useConversationRuntimeView(conversation_id);
   const requestedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!conversation_id || !hydrated) return;
-    if (requestedRef.current === conversation_id) return;
-    requestedRef.current = conversation_id;
+    const requestKey = `${conversation_id}:${activeTurnId ?? 'idle'}`;
+    if (requestedRef.current === requestKey) return;
+    requestedRef.current = requestKey;
 
     let cancelled = false;
-    void ipcBridge.database.getLatestConversationMessageOfType
-      .invoke({ conversation_id, type: 'plan' })
-      .then((message) => {
-        if (cancelled || !message) return;
-        const normalized = normalizeDbMessage(message);
-        update((list) => (list.some((item) => item.id === normalized.id) ? list : list.concat(normalized)));
-      })
-      .catch(() => {
-        // Best-effort: the bar still fills in from the next live plan frame, and
-        // clearing the latch lets a later mount retry.
-        requestedRef.current = null;
-      });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const recover = (attempt: number) => {
+      void ipcBridge.database.getLatestConversationMessageOfType
+        .invoke({ conversation_id, type: 'plan' })
+        .then((message) => {
+          if (cancelled) return;
+          if (message) {
+            const normalized = normalizeDbMessage(message);
+            update((list) => (list.some((item) => item.id === normalized.id) ? list : list.concat(normalized)));
+            return;
+          }
+          if (attempt < PLAN_RETRY_DELAYS_MS.length) {
+            timer = setTimeout(() => recover(attempt + 1), PLAN_RETRY_DELAYS_MS[attempt]);
+          } else {
+            requestedRef.current = null;
+          }
+        })
+        .catch(() => {
+          if (!cancelled) requestedRef.current = null;
+        });
+    };
+    recover(0);
 
     return () => {
       cancelled = true;
+      if (timer) clearTimeout(timer);
     };
-  }, [conversation_id, hydrated, update]);
+  }, [conversation_id, hydrated, isProcessing, activeTurnId, update]);
 };

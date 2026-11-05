@@ -5,7 +5,7 @@
  */
 
 import { Button } from '@arco-design/web-react';
-import { Checklist, Down, Up } from '@icon-park/react';
+import { Down, Up } from '@icon-park/react';
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -16,10 +16,21 @@ import {
   WORKBENCH_OPEN_EVENT,
   WORKBENCH_SECTION_EVENT,
 } from '@renderer/pages/conversation/Workbench/workbenchActivityStore';
-import { WORKSPACE_STATE_EVENT } from '@renderer/utils/workspace/workspaceEvents';
+import { dispatchWorkspaceToggleEvent, WORKSPACE_STATE_EVENT } from '@renderer/utils/workspace/workspaceEvents';
 import ConversationPlanBar from './ConversationPlanBar';
 import PlanStepIcon from './PlanStepIcon';
 import { useLatestPlan } from './useLatestPlan';
+
+const PlanProgressIcon: React.FC = () => (
+  <svg width='16' height='16' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
+    {[5, 12, 19].map((y) => (
+      <g key={y}>
+        <circle cx='7' cy={y} r='2.25' stroke='currentColor' strokeWidth='1.5' />
+        <path d={`M11.5 ${y}H18`} stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+      </g>
+    ))}
+  </svg>
+);
 
 const readWorkbenchPresentation = (): { collapsed: boolean; section: WorkbenchSection | null } => {
   if (typeof document === 'undefined') return { collapsed: true, section: null };
@@ -112,6 +123,7 @@ const ConversationPlanCard: React.FC<{ conversation_id: string }> = ({ conversat
           const current = readWorkbenchPresentation();
           if (current.section === 'plan' && !current.collapsed) {
             openWorkbenchSection('files');
+            dispatchWorkspaceToggleEvent();
           } else if (current.collapsed && current.section !== null) {
             setOpen(false);
             openWorkbenchSection('plan');
@@ -119,7 +131,7 @@ const ConversationPlanCard: React.FC<{ conversation_id: string }> = ({ conversat
             setOpen((value) => !value);
           }
         }}
-        icon={<Checklist theme='outline' size='16' fill='currentColor' />}
+        icon={<PlanProgressIcon />}
       />
       {panelSlot && createPortal(<ConversationPlanBar conversation_id={conversation_id} variant='panel' />, panelSlot)}
       {open &&

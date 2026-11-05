@@ -45,7 +45,7 @@ export type AcpConfigSetErrorKind =
 const optionLabel = (option: AcpConfigSelectOptionDto): string => option.name || option.label || option.value;
 
 export function getOptionCurrentValue(option: AcpConfigOptionDto | null | undefined): string | null {
-  return option?.current_value ?? null;
+  return option?.current_value ?? option?.selected_value ?? null;
 }
 
 export function findConfigOption(
@@ -80,6 +80,24 @@ export function deriveSelectOption(
   };
 }
 
+export function deriveSpeedOption(options: AcpConfigOptionDto[] | null | undefined): AcpDerivedOption | null {
+  const option = findConfigOption(options, 'speed', ['service_tier', 'fast_mode', 'fast']);
+  if (!option) return null;
+  if ((option.option_type ?? option.type) === 'boolean') {
+    const current = getOptionCurrentValue(option);
+    return {
+      id: option.id,
+      category: 'speed',
+      currentValue: current === null ? null : String(current),
+      options: [
+        { value: 'true', label: '' },
+        { value: 'false', label: '' },
+      ],
+    };
+  }
+  return deriveSelectOption(options, 'speed', ['service_tier', 'fast_mode', 'fast']);
+}
+
 export function hasObservedValue(
   response: SetConfigOptionResponse,
   optionId: string,
@@ -88,6 +106,13 @@ export function hasObservedValue(
   if (response.confirmation !== 'observed') return false;
   const option = response.config_options?.find((candidate) => candidate.id === optionId);
   return getOptionCurrentValue(option) === requestedValue;
+}
+
+export function isMissingCodexRolloutError(error: unknown): boolean {
+  return (
+    isBackendHttpError(error) &&
+    /codex thread\/(?:resume|fork) failed: no rollout found for thread id/i.test(error.backendMessage)
+  );
 }
 
 export function classifyConfigSetError(error: unknown): AcpConfigSetErrorKind {
@@ -368,13 +393,31 @@ export function useAcpConfigOptions({
         const beforeSet = await fetchConfigOptionsOnce(key, configOptionsPort);
         if (beforeSet) replaceSnapshot(beforeSet);
         if (isConfigOptionBlocked(optionId)) throw new Error('config_update_in_progress');
-        const response = configOptionsPort.setConfigOption
-          ? await configOptionsPort.setConfigOption(conversation_id, optionId, value)
-          : await ipcBridge.acpConversation.setConfigOption.invoke({
-              conversation_id,
-              option_id: optionId,
-              value,
-            });
+        const apply = () =>
+          configOptionsPort.setConfigOption
+            ? configOptionsPort.setConfigOption(conversation_id, optionId, value)
+            : ipcBridge.acpConversation.setConfigOption.invoke({
+                conversation_id,
+                option_id: optionId,
+                value,
+              });
+        let response: SetConfigOptionResponse;
+        try {
+          response = await apply();
+        } catch (error) {
+          // A stale Codex thread cannot be repaired by resending the same option.
+          // Rebuild its runtime once, then retry the user's requested value.
+          if (
+            configOptionsPort.setConfigOption ||
+            getConversationRuntimeViewSnapshot(conversation_id).isProcessing ||
+            !isMissingCodexRolloutError(error)
+          ) {
+            throw error;
+          }
+          const restarted = await ipcBridge.conversation.restartRuntime.invoke({ conversation_id });
+          replaceSnapshot(restarted.config_options);
+          response = await apply();
+        }
         const confirmation = response.confirmation;
         // Accepted, but the agent applies it only from the next turn. NOT an error: the
         // request landed, it just is not governing yet. Record it as pending so the
@@ -436,6 +479,7 @@ export function useAcpConfigOptions({
     mode: deriveSelectOption(configOptions, 'mode', ['mode']),
     model: deriveSelectOption(configOptions, 'model', ['model']),
     thoughtLevel: deriveSelectOption(configOptions, 'thought_level', ['thought_level', 'reasoning_effort']),
+    speed: deriveSpeedOption(configOptions),
     reload,
     setConfigOption,
     isConfigOptionBlocked,

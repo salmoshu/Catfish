@@ -96,6 +96,7 @@ import { ipcBridge } from '@/common';
 import { repairAllCronJobTimeZonesOnce } from '@renderer/pages/cron/repairCronJobTimeZone';
 import { bootstrapRendererConfig } from '@renderer/services/bootstrapRenderer';
 import { BACKEND_ENVIRONMENT_CHANGED } from '@renderer/utils/workspace/backendSwitch';
+import { shouldRevalidateBackendCacheKey } from '@renderer/utils/workspace/backendCache';
 
 // Components and utilities
 import BackendStartingView from './components/layout/BackendStartingView';
@@ -491,7 +492,7 @@ const BackendDataRefresh: React.FC = () => {
   const { mutate } = useSWRConfig();
   useEffect(() => {
     const refresh = () => {
-      void mutate(() => true, undefined, { revalidate: true });
+      void mutate(shouldRevalidateBackendCacheKey, undefined, { revalidate: true });
     };
     window.addEventListener(BACKEND_ENVIRONMENT_CHANGED, refresh);
     return () => window.removeEventListener(BACKEND_ENVIRONMENT_CHANGED, refresh);

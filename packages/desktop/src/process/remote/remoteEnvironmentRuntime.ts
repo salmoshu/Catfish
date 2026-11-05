@@ -16,6 +16,7 @@ import { RemoteEnvironmentManager } from './remoteEnvironmentManager';
 import { httpRequest } from '@/common/adapter/httpBridge';
 import { fromApiConversation } from '@/common/adapter/apiModelMapper';
 import type { TChatConversation } from '@/common/config/storage';
+import type { ManagedAgent } from '@/renderer/utils/model/agentTypes';
 
 let manager: RemoteEnvironmentManager | undefined;
 
@@ -40,12 +41,32 @@ export function peekRemoteEnvironmentManager(): RemoteEnvironmentManager | undef
   return manager;
 }
 
+async function requestRemoteRuntime<T>(id: string, path: string, method: 'GET' | 'POST' = 'GET'): Promise<T> {
+  const port = getRemoteEnvironmentManager().portFor(id);
+  if (!port) throw new Error('Remote environment is not connected');
+  const response = await fetch(`http://127.0.0.1:${port}${path}`, { method });
+  if (!response.ok) throw new Error(`Remote runtime request failed (${response.status})`);
+  return (await response.json()) as T;
+}
+
 export function initRemoteEnvironmentBridge(): void {
   const remote = ipcBridge.remoteEnvironment;
   remote.localConversations.provider(async () => {
     const result = await httpRequest<{ items: TChatConversation[] }>('GET', '/api/conversations?limit=10000');
     return result.items.map(fromApiConversation);
   });
+  remote.conversations.provider(async ({ id }) => {
+    const port = getRemoteEnvironmentManager().portFor(id);
+    if (!port) return [];
+    const response = await fetch(`http://127.0.0.1:${port}/api/conversations?limit=10000`);
+    if (!response.ok) throw new Error(`Remote conversation query failed (${response.status})`);
+    const result = (await response.json()) as { items: TChatConversation[] };
+    return result.items.map(fromApiConversation);
+  });
+  remote.agents.provider(({ id }) => requestRemoteRuntime<ManagedAgent[]>(id, '/api/agents/management'));
+  remote.checkAgent.provider(({ environmentId, agentId }) =>
+    requestRemoteRuntime<ManagedAgent>(environmentId, `/api/agents/${encodeURIComponent(agentId)}/health-check`, 'POST')
+  );
   let subscribed = false;
   const getManager = () => {
     const instance = getRemoteEnvironmentManager();

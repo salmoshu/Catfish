@@ -55,5 +55,11 @@
     "failed": "Error al reconectar el agente",
     "initializingTooltip": "El agente se está inicializando. Reconéctalo cuando esté listo",
     "processingTooltip": "Espera a que termine la respuesta actual antes de reconectar"
+  },
+  "speed": {
+    "label": "Velocidad",
+    "fast": "Rápida",
+    "standard": "Estándar",
+    "switchSuccess": "Modo de velocidad cambiado"
   }
 }

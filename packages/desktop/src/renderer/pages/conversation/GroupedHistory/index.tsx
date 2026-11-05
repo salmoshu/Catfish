@@ -13,7 +13,7 @@ import { restrictToVerticalAxis } from '@/renderer/utils/ui/dndModifiers';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Button, Dropdown, Empty, Menu, Spin, Tooltip } from '@arco-design/web-react';
-import { DoubleDown, DoubleUp, FolderClose, MoreOne, Plus, Right } from '@icon-park/react';
+import { FolderClose, MoreOne, Plus, Right } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -36,6 +36,24 @@ import {
 import { buildProjectOrder } from '@/renderer/utils/workspace/projectOrder';
 import { getBackendEnvironment } from '@/common/adapter/httpBridge';
 import { writeExpandedWorkspaces } from './hooks/useWorkspaceExpansionState';
+
+const ProjectExpandIcon: React.FC = () => (
+  <svg width='16' height='16' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
+    <path
+      d='M5 11.0996C5.49693 11.0996 5.90018 11.5031 5.90039 12V18C5.90039 18.0552 5.94477 18.0996 6 18.0996H12C12.4969 18.0996 12.9002 18.5031 12.9004 19C12.9004 19.4971 12.4971 19.9004 12 19.9004H6C4.95066 19.9004 4.09961 19.0493 4.09961 18V12C4.09982 11.5031 4.50307 11.0996 5 11.0996ZM18 4.09961C19.0492 4.09961 19.9002 4.95084 19.9004 6V12C19.9004 12.4971 19.4971 12.9004 19 12.9004C18.5029 12.9004 18.0996 12.4971 18.0996 12V6C18.0994 5.94495 18.0551 5.90039 18 5.90039H12C11.5029 5.90039 11.0996 5.49706 11.0996 5C11.0998 4.50312 11.5031 4.09961 12 4.09961H18Z'
+      fill='currentColor'
+    />
+  </svg>
+);
+
+const ProjectCollapseIcon: React.FC = () => (
+  <svg width='16' height='16' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
+    <path
+      d='M9.85815 11.957C10.9074 11.957 11.7583 12.8083 11.7585 13.8574V19.8574C11.7585 20.3545 11.3552 20.7578 10.8582 20.7578C10.3611 20.7578 9.95776 20.3545 9.95776 19.8574V13.8574C9.95755 13.8024 9.91325 13.7578 9.85815 13.7578H3.85815C3.3611 13.7578 2.95776 13.3545 2.95776 12.8574C2.95798 12.3605 3.36123 11.957 3.85815 11.957H9.85815ZM12.8582 2.95703C13.3551 2.95703 13.7583 3.36054 13.7585 3.85742V9.85742C13.7585 9.91265 13.8029 9.95703 13.8582 9.95703H19.8582C20.3551 9.95703 20.7583 10.3605 20.7585 10.8574C20.7585 11.3545 20.3552 11.7578 19.8582 11.7578H13.8582C12.8088 11.7578 11.9578 10.9068 11.9578 9.85742V3.85742C11.958 3.36054 12.3612 2.95703 12.8582 2.95703Z'
+      fill='currentColor'
+    />
+  </svg>
+);
 
 const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
   onSessionClick,
@@ -285,7 +303,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
           size='mini'
           aria-label={t('conversation.history.expandAllProjects')}
           className='!size-20px !p-0 text-t-tertiary hover:text-t-primary'
-          icon={<DoubleDown size={13} />}
+          icon={<ProjectExpandIcon />}
           onClick={() => {
             if (collapsedSections.has('projects')) toggleSection('projects');
             writeExpandedWorkspaces([...new Set([...expandedWorkspaces, ...allProjectKeys])]);
@@ -298,7 +316,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
           size='mini'
           aria-label={t('conversation.history.collapseAllProjects')}
           className='!size-20px !p-0 text-t-tertiary hover:text-t-primary'
-          icon={<DoubleUp size={13} />}
+          icon={<ProjectCollapseIcon />}
           onClick={() => {
             const projectKeys = new Set(allProjectKeys);
             const legacyWorkspaces = new Set(projectGroups.map((group) => group.workspace));
@@ -544,7 +562,9 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
                         }
                         trailing={
                           <span className='flex items-center gap-6px'>
-                            {showProjectActivity && <Spin size={14} data-testid='active-project-running' />}
+                            {showProjectActivity && (
+                              <Spin size={14} className='group-hover:hidden' data-testid='active-project-running' />
+                            )}
                             <Tooltip content={t('conversation.history.newConversationInProject')} position='top'>
                               <span
                                 role='button'

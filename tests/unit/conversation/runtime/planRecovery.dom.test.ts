@@ -54,6 +54,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.clearAllMocks();
 });
 
@@ -100,5 +101,28 @@ describe('usePlanRecovery', () => {
     renderHook(() => usePlanRecovery('conv-1'));
     await waitFor(() => expect(invoke).toHaveBeenCalled());
     expect(updateMessageList).not.toHaveBeenCalled();
+  });
+
+  it('retries when the first plan update has not been persisted yet', async () => {
+    vi.useFakeTimers();
+    invoke.mockResolvedValueOnce(null).mockResolvedValueOnce(PLAN_ROW);
+    renderHook(() => usePlanRecovery('conv-1'));
+
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
+    await vi.advanceTimersByTimeAsync(250);
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledTimes(2));
+    expect(updateMessageList).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('queries again when a new turn starts', async () => {
+    const view = { hydrated: true, isProcessing: true, activeTurnId: 'turn-a' };
+    runtimeView.mockImplementation(() => view);
+    const { rerender } = renderHook(() => usePlanRecovery('conv-1'));
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
+
+    view.activeTurnId = 'turn-b';
+    rerender();
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(2));
   });
 });

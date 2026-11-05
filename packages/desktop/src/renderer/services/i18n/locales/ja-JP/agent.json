@@ -55,5 +55,11 @@
     "failed": "エージェントの再接続に失敗しました",
     "initializingTooltip": "エージェントを初期化中です。完了してから再接続してください",
     "processingTooltip": "現在の返信が完了してから再接続してください"
+  },
+  "speed": {
+    "label": "速度",
+    "fast": "高速",
+    "standard": "標準",
+    "switchSuccess": "速度モードを切り替えました"
   }
 }

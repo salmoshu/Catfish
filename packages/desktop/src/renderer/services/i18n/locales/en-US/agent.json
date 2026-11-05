@@ -55,5 +55,11 @@
     "failed": "Failed to reconnect agent",
     "initializingTooltip": "The agent is initializing. Reconnect when it is ready",
     "processingTooltip": "Wait for the current reply to finish before reconnecting"
+  },
+  "speed": {
+    "label": "Speed",
+    "fast": "Fast",
+    "standard": "Standard",
+    "switchSuccess": "Speed mode switched"
   }
 }

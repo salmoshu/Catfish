@@ -13,6 +13,7 @@ import { useAutoTitle } from '@/renderer/hooks/chat/useAutoTitle';
 import { hasAssistantRulesPrefix } from '@/renderer/utils/chat/autoTitle';
 import { getConversationOrNull } from '@/renderer/pages/conversation/utils/conversationCache';
 import { getSnapshotConversationProjectId } from '@/renderer/pages/conversation/GroupedHistory/hooks/useConversationListSync';
+import { backendCacheKey, getActiveBackendEnvironment } from '@/renderer/utils/workspace/backendCache';
 
 const ChatConversationIndex: React.FC = () => {
   const { id } = useParams();
@@ -20,11 +21,13 @@ const ChatConversationIndex: React.FC = () => {
   const navigate = useNavigate();
   const { closePreviewIfScopeChanged } = usePreviewContext();
   const { syncTitleFromHistory } = useAutoTitle();
-  const notFoundHandledIdRef = useRef<string | undefined>(undefined);
+  const notFoundHandledKeyRef = useRef<string | undefined>(undefined);
   const defaultConversationTitle = t('conversation.welcome.newConversation');
+  const environment = getActiveBackendEnvironment();
+  const cacheKey = id ? backendCacheKey('conversation', id, environment) : null;
 
-  const { data, isLoading, mutate } = useSWR(id ? `conversation/${id}` : null, () => {
-    return getConversationOrNull(id!);
+  const { data, isLoading, mutate } = useSWR(cacheKey, () => {
+    return getConversationOrNull(id!, environment);
   });
 
   // Close preview only when the isolation scope changes, not on every
@@ -96,17 +99,18 @@ const ChatConversationIndex: React.FC = () => {
   }, [data, defaultConversationTitle, syncTitleFromHistory]);
 
   // 会话不存在（例如从历史栈回到已删除会话）时，提示并替换路由到首页，
-  // 避免渲染空骨架。每个 id 只触发一次。
+  // 避免渲染空骨架。每个环境的会话缓存键只触发一次。
   // Conversation does not exist (e.g. navigating back to a deleted one via
   // browser history): show a toast and replace the route with home, so we
-  // don't render an empty skeleton. Fire at most once per id. `undefined`
-  // means the fetch has not settled yet; only an explicit `null` is a 404.
+  // don't render an empty skeleton. Fire at most once per environment-scoped
+  // cache key. `undefined` means the fetch has not settled yet; only an
+  // explicit `null` is a 404.
   useEffect(() => {
-    if (!id || isLoading || data !== null || notFoundHandledIdRef.current === id) return;
-    notFoundHandledIdRef.current = id;
+    if (!cacheKey || isLoading || data !== null || notFoundHandledKeyRef.current === cacheKey) return;
+    notFoundHandledKeyRef.current = cacheKey;
     Message.warning(t('conversation.notFound'));
     navigate('/', { replace: true });
-  }, [id, isLoading, data, navigate, t]);
+  }, [cacheKey, isLoading, data, navigate, t]);
 
   if (isLoading) return <Spin loading></Spin>;
   return <ChatConversation conversation={data ?? undefined}></ChatConversation>;

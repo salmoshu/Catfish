@@ -49,6 +49,8 @@ const RuntimeSelectorPill = React.forwardRef<React.ElementRef<typeof Button>, Ru
       {...buttonProps}
       ref={ref}
       data-testid={testId}
+      title={label}
+      aria-label={label}
       className={className}
       shape='round'
       size='small'

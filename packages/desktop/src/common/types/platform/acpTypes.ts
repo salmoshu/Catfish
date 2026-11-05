@@ -217,6 +217,7 @@ export type AcpConfigOptionDto = {
   type?: AcpConfigOptionType;
   option_type?: AcpConfigOptionType;
   current_value?: string | null;
+  selected_value?: string | null;
   options: AcpConfigSelectOptionDto[];
 };
 

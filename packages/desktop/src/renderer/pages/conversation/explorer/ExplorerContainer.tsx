@@ -26,6 +26,7 @@ import { dispatchWorkspaceHasFilesEvent } from '@/renderer/utils/workspace/works
 
 import { ipcBridge } from '@/common';
 import { getBackendEnvironment } from '@/common/adapter/httpBridge';
+import { backendCacheKey, getActiveBackendEnvironment } from '@/renderer/utils/workspace/backendCache';
 import { usePreviewContext } from '@/renderer/pages/conversation/Preview';
 import WorkspaceOpenButton from '@/renderer/pages/conversation/components/ChatLayout/WorkspaceOpenButton';
 import { getFileTypeInfo } from '@/renderer/utils/file/fileType';
@@ -159,12 +160,11 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({
   const { t } = useTranslation();
   const { openPreview } = usePreviewContext();
   const activeConversationId = useCurrentConversation();
-  const { data, isLoading, mutate } = useSWR(projectId ? `explorer-project/${projectId}` : null, (key: string) => {
-    // Derive the project id from the SWR key, not the captured `projectId`
-    // closure, so a fetch's result can never be filed under a different key.
-    const id = key.slice('explorer-project/'.length);
-    return ipcBridge.project.get.invoke({ project_id: id });
-  });
+  const environment = getActiveBackendEnvironment();
+  const { data, isLoading, mutate } = useSWR(
+    projectId ? backendCacheKey('explorer-project', projectId, environment) : null,
+    () => ipcBridge.project.get.invoke({ project_id: projectId! })
+  );
   // Apply-time guard: only feed the store roots whose detail actually belongs to
   // the current project. Combined with the per-project remount (this component is
   // keyed by `projectId` in ProjectPanelHost), a stale/other-project detail can
@@ -260,14 +260,14 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({
     }
   };
 
-  const handleDelete = (peId: string, rel: string, name: string): void => {
+  const handleDelete = (peId: string, rel: string, name: string, isDirectory: boolean): void => {
     Modal.confirm({
       title: t('common.confirmDelete'),
       content: t('conversation.explorer.deleteConfirm', { name }),
       okText: t('common.delete'),
       cancelText: t('common.cancel'),
       onOk: async () => {
-        const request = buildRemoveRequest(peId, rel);
+        const request = buildRemoveRequest(peId, rel, isDirectory);
         try {
           await initExplorerRuntime().request(request.method, request.params);
         } catch {

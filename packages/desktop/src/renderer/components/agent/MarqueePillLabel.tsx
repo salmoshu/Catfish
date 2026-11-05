@@ -81,6 +81,7 @@ const MarqueePillLabel: React.FC<{
     <span
       ref={containerRef}
       className='inline-block overflow-hidden whitespace-nowrap leading-[1.4] min-w-0 relative'
+      title={children}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -93,16 +94,8 @@ const MarqueePillLabel: React.FC<{
         {children}
       </span>
       {/* Static text: visible by default, hidden when marquee is active.
-          On mobile we clip with ellipsis since hover marquee never fires. */}
-      <span
-        className={
-          active
-            ? 'leading-[1.4] invisible'
-            : isMobile
-              ? 'leading-[1.4] block overflow-hidden text-ellipsis'
-              : 'leading-[1.4]'
-        }
-      >
+          Ellipsize on every platform instead of clipping a glyph in half. */}
+      <span className={active ? 'leading-[1.4] invisible' : 'leading-[1.4] block overflow-hidden text-ellipsis'}>
         {children}
       </span>
       {/* Marquee track: overlaid via absolute, visible only when active */}

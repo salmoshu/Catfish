@@ -184,10 +184,7 @@ describe('useConversationCommandQueue drain', () => {
       onExecute,
     });
 
-    act(() => {
-      result.current.toggleMode();
-    });
-    await waitFor(() => expect(result.current.mode).toBe('auto'));
+    expect(result.current.mode).toBe('auto');
 
     act(() => {
       result.current.enqueue({ input: 'queued follow-up', files: [] });
@@ -269,10 +266,7 @@ describe('useConversationCommandQueue drain', () => {
       onExecute,
     });
 
-    act(() => {
-      result.current.toggleMode();
-    });
-    await waitFor(() => expect(result.current.mode).toBe('auto'));
+    expect(result.current.mode).toBe('auto');
 
     act(() => {
       result.current.enqueue({ input: 'queued after switch', files: [] });
@@ -297,7 +291,10 @@ describe('useConversationCommandQueue drain', () => {
       onExecute,
     });
 
-    expect(result.current.mode).toBe('manual');
+    act(() => {
+      result.current.toggleMode();
+    });
+    await waitFor(() => expect(result.current.mode).toBe('manual'));
 
     act(() => {
       result.current.enqueue({ input: 'send only when requested', files: [] });
@@ -351,10 +348,7 @@ describe('useConversationCommandQueue drain', () => {
       onExecute,
     });
 
-    act(() => {
-      result.current.toggleMode();
-    });
-    await waitFor(() => expect(result.current.mode).toBe('auto'));
+    expect(result.current.mode).toBe('auto');
 
     act(() => {
       result.current.enqueue({ input: 'first queued command', files: [] });
@@ -384,10 +378,7 @@ describe('useConversationCommandQueue drain', () => {
       onExecute,
     });
 
-    act(() => {
-      result.current.toggleMode();
-    });
-    await waitFor(() => expect(result.current.mode).toBe('auto'));
+    expect(result.current.mode).toBe('auto');
 
     act(() => {
       result.current.enqueue({ input: 'retry me later', files: [] });
@@ -413,10 +404,7 @@ describe('useConversationCommandQueue drain', () => {
       onExecute,
     });
 
-    act(() => {
-      result.current.toggleMode();
-    });
-    await waitFor(() => expect(result.current.mode).toBe('auto'));
+    expect(result.current.mode).toBe('auto');
 
     act(() => {
       result.current.enqueue({ input: 'queued while busy', files: [] });
@@ -453,10 +441,7 @@ describe('useConversationCommandQueue drain', () => {
     });
     rerenderQueueRef.current = rerender;
 
-    act(() => {
-      result.current.toggleMode();
-    });
-    await waitFor(() => expect(result.current.mode).toBe('auto'));
+    expect(result.current.mode).toBe('auto');
 
     act(() => {
       result.current.enqueue({ input: 'retry after already observed blocked gate', files: [] });
@@ -487,10 +472,7 @@ describe('useConversationCommandQueue drain', () => {
       { initialProps: { gate: processingGate, execute: firstExecute }, wrapper }
     );
 
-    act(() => {
-      result.current.toggleMode();
-    });
-    await waitFor(() => expect(result.current.mode).toBe('auto'));
+    expect(result.current.mode).toBe('auto');
 
     act(() => {
       result.current.enqueue({ input: 'send once', files: [] });
@@ -515,10 +497,7 @@ describe('useConversationCommandQueue drain', () => {
       onExecute,
     });
 
-    act(() => {
-      result.current.toggleMode();
-    });
-    await waitFor(() => expect(result.current.mode).toBe('auto'));
+    expect(result.current.mode).toBe('auto');
 
     act(() => {
       result.current.enqueue({ input: 'queued while runtime closes', files: [] });
@@ -545,10 +524,7 @@ describe('useConversationCommandQueue drain', () => {
       onExecute,
     });
 
-    act(() => {
-      result.current.toggleMode();
-    });
-    await waitFor(() => expect(result.current.mode).toBe('auto'));
+    expect(result.current.mode).toBe('auto');
 
     act(() => {
       result.current.enqueue({ input: 'retry after turn completion', files: [] });
