@@ -264,6 +264,7 @@ const conversationConfigOptionsPort: AcpConfigOptionsPort = {
 };
 
 const configOptionsInFlight = new Map<string, Promise<AcpConfigOptionDto[] | null>>();
+const snapshotRevisions = new Map<string, number>();
 
 function fetchConfigOptionsOnce(
   key: AcpConfigOptionsKey,
@@ -344,10 +345,11 @@ export function useAcpConfigOptions({
 
   const replaceSnapshot = useCallback(
     (next: AcpConfigOptionDto[]) => {
+      snapshotRevisions.set(conversation_id, (snapshotRevisions.get(conversation_id) ?? 0) + 1);
       optionsRef.current = next;
       void mutate(next, false);
     },
-    [mutate]
+    [conversation_id, mutate]
   );
 
   const isConfigOptionBlocked = useCallback(
@@ -363,12 +365,15 @@ export function useAcpConfigOptions({
 
   const reload = useCallback(async () => {
     const runtimeGeneration = runtimeGenerationRef.current;
+    const revision = snapshotRevisions.get(conversation_id) ?? 0;
     setIsReloading(true);
     try {
       await prepareRuntime?.();
       const next = await fetchConfigOptionsOnce(key, configOptionsPort);
       if (next) {
-        replaceSnapshot(next);
+        // A stream confirmation or config write may have landed while this
+        // request was in flight. Its snapshot is newer than this read.
+        if ((snapshotRevisions.get(conversation_id) ?? 0) === revision) replaceSnapshot(next);
         if (runtimeGenerationRef.current === runtimeGeneration) {
           setLoadedRuntimeGeneration(runtimeGeneration);
         }
@@ -379,7 +384,7 @@ export function useAcpConfigOptions({
       setIsReloading(false);
       throw error;
     }
-  }, [key, configOptionsPort, prepareRuntime, replaceSnapshot]);
+  }, [conversation_id, key, configOptionsPort, prepareRuntime, replaceSnapshot]);
 
   const setConfigOption = useCallback(
     async (optionId: string, value: string) => {
@@ -390,8 +395,9 @@ export function useAcpConfigOptions({
       try {
         await (prepareSetRuntime ?? prepareRuntime)?.();
         if (isConfigOptionBlocked(optionId)) throw new Error('config_update_in_progress');
+        const revision = snapshotRevisions.get(conversation_id) ?? 0;
         const beforeSet = await fetchConfigOptionsOnce(key, configOptionsPort);
-        if (beforeSet) replaceSnapshot(beforeSet);
+        if (beforeSet && (snapshotRevisions.get(conversation_id) ?? 0) === revision) replaceSnapshot(beforeSet);
         if (isConfigOptionBlocked(optionId)) throw new Error('config_update_in_progress');
         const apply = () =>
           configOptionsPort.setConfigOption

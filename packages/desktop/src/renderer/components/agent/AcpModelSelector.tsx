@@ -162,7 +162,7 @@ const AcpModelSelector: React.FC<{
   const speedOptionLabel = useCallback(
     (item: { value: string; label: string }): string => {
       const value = item.value.toLowerCase();
-      if (value === 'true' || value === 'fast') return t('agent.speed.fast');
+      if (value === 'true' || value === 'fast' || value === 'priority') return t('agent.speed.fast');
       if (value === 'false' || value === 'default' || value === 'standard') return t('agent.speed.standard');
       return item.label || item.value;
     },
@@ -221,7 +221,7 @@ const AcpModelSelector: React.FC<{
     );
   };
 
-  if (!model_info && isLoading) {
+  if (isLoading && (!model_info || rawDisplayLabel === model_info.current_model_id)) {
     return (
       <div
         data-testid='acp-model-selector-loading'

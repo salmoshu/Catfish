@@ -19,6 +19,9 @@ const { ensureRuntimeInvokeMock, setConfigOptionInvokeMock, responseStreamHandle
   responseStreamHandlers: [] as Array<(message: IResponseMessage) => void>,
 }));
 
+const catalog = vi.hoisted(() => ({ agents: [] as Array<Record<string, unknown>> }));
+vi.mock('@/renderer/hooks/agent/useManagedAgents', () => ({ useManagedAgentRuntimeCatalog: () => catalog.agents }));
+
 vi.mock('@/common', () => ({
   ipcBridge: {
     conversation: {
@@ -113,6 +116,7 @@ const renderUseAcpModelInfo = (params: Parameters<typeof useAcpModelInfo>[0]) =>
 describe('useAcpModelInfo', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    catalog.agents = [];
     responseStreamHandlers.length = 0;
     resetEnsureConversationRuntimeStateForTests();
     ensureRuntimeInvokeMock.mockReset();
@@ -146,6 +150,65 @@ describe('useAcpModelInfo', () => {
     expect(result.current.model_info?.available_models.map((model) => model.id)).toEqual(['sonnet-4', 'opus-4']);
     expect(result.current.canSwitch).toBe(true);
     expect(ensureRuntimeInvokeMock).toHaveBeenCalledWith({ conversation_id: 'conv-1' });
+  });
+
+  it('uses the cached display name from the first render while a new runtime starts', async () => {
+    catalog.agents = [
+      {
+        backend: 'codex',
+        available_models: {
+          current_model_id: 'gpt-6.1-sol',
+          available_models: [{ id: 'gpt-6.1-sol', label: 'GPT-6.1-Sol' }],
+        },
+      },
+    ];
+    const loading = deferred<{ config_options: AcpConfigOptionDto[] }>();
+    const { result } = renderUseAcpModelInfo({
+      conversation_id: 'cached-codex-label',
+      backend: 'codex',
+      initialModelId: 'gpt-6.1-sol',
+      configOptionsPort: { load: () => loading.promise.then((value) => value.config_options) },
+    });
+    expect(result.current.model_info?.current_model_label).toBe('GPT-6.1-Sol');
+    await act(async () =>
+      loading.resolve({
+        config_options: [
+          {
+            id: 'model',
+            category: 'model',
+            option_type: 'select',
+            current_value: 'gpt-6.1-sol',
+            options: [{ value: 'gpt-6.1-sol', label: 'GPT-6.1-Sol' }],
+          },
+        ],
+      })
+    );
+    await waitFor(() => expect(result.current.isRuntimeReady).toBe(true));
+    expect(result.current.model_info?.current_model_label).toBe('GPT-6.1-Sol');
+  });
+
+  it('keeps a model confirmation when an older runtime read finishes afterwards', async () => {
+    const loading = deferred<AcpConfigOptionDto[]>();
+    const load = vi.fn().mockResolvedValueOnce(buildConfigOptions()).mockReturnValueOnce(loading.promise);
+    const { result } = renderUseAcpModelInfo({ conversation_id: 'model-read-race', configOptionsPort: { load } });
+    await waitFor(() => expect(result.current.isRuntimeReady).toBe(true));
+    act(() =>
+      emitStream({
+        conversation_id: 'model-read-race',
+        type: 'agent_status',
+        data: { status: 'session_active' },
+      } as IResponseMessage)
+    );
+    await waitFor(() => expect(load).toHaveBeenCalledTimes(2));
+    act(() =>
+      emitStream({
+        conversation_id: 'model-read-race',
+        type: 'acp_config_option',
+        data: { config_options: buildConfigOptions('opus-4') },
+      } as IResponseMessage)
+    );
+    await act(async () => loading.resolve(buildConfigOptions()));
+    expect(result.current.model_info?.current_model_id).toBe('opus-4');
   });
 
   it('uses an injected config option loader without starting standalone runtime', async () => {

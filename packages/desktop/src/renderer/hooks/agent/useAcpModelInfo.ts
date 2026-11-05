@@ -14,6 +14,8 @@ import {
   useAcpConfigOptions,
 } from './useAcpConfigOptions';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useManagedAgentRuntimeCatalog } from './useManagedAgents';
+import { buildAgentRuntimeModelInfo } from '@/renderer/utils/model/agentRuntimeCatalog';
 
 type UseAcpModelInfoArgs = {
   conversation_id: string;
@@ -68,7 +70,7 @@ function normalizeInitialModel(info: AcpModelInfo, initialModelId?: string): Acp
 
 export const useAcpModelInfo = ({
   conversation_id,
-  backend: _backend,
+  backend,
   initialModelId,
   prepareRuntime,
   prepareSetRuntime,
@@ -77,6 +79,12 @@ export const useAcpModelInfo = ({
   onSelectModelSuccess,
   onSelectModelFailed,
 }: UseAcpModelInfoArgs): UseAcpModelInfoResult => {
+  const agentCatalog = useManagedAgentRuntimeCatalog();
+  const cachedModels = useMemo(() => {
+    if (!backend) return null;
+    const agent = agentCatalog.find((item) => item.backend === backend || item.id === backend);
+    return buildAgentRuntimeModelInfo(agent);
+  }, [agentCatalog, backend]);
   const runtimeConfig = useAcpConfigOptions({
     conversation_id,
     prepareRuntime,
@@ -105,10 +113,11 @@ export const useAcpModelInfo = ({
     if (!initialModelId) return null;
     return {
       current_model_id: initialModelId,
-      current_model_label: initialModelId,
+      current_model_label:
+        cachedModels?.available_models.find((item) => item.id === initialModelId)?.label || initialModelId,
       available_models: [],
     };
-  }, [initialModelId]);
+  }, [cachedModels, initialModelId]);
 
   useEffect(() => {
     if (!enabled) {

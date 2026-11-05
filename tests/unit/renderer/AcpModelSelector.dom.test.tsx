@@ -425,7 +425,7 @@ describe('AcpModelSelector runtime options', () => {
           currentValue: 'default',
           options: [
             { value: 'default', label: 'Default' },
-            { value: 'fast', label: 'Fast' },
+            { value: 'priority', label: 'Fast' },
           ],
         },
       })
@@ -434,7 +434,7 @@ describe('AcpModelSelector runtime options', () => {
     render(<AcpModelSelector conversation_id='conversation-1' backend='codex' />);
     fireEvent.click(screen.getByRole('menuitem', { name: 'agent.speed.fast' }));
 
-    await waitFor(() => expect(setConfigOption).toHaveBeenCalledWith('service_tier', 'fast'));
+    await waitFor(() => expect(setConfigOption).toHaveBeenCalledWith('service_tier', 'priority'));
     expect(messageSuccessMock).toHaveBeenCalledWith('agent.speed.switchSuccess');
   });
 
