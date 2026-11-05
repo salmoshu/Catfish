@@ -57,7 +57,10 @@ import ConversationSearchPopover from '@/renderer/pages/conversation/GroupedHist
 import { useMinimapPanel } from '@/renderer/pages/conversation/components/ConversationTitleMinimap/useMinimapPanel';
 import { useWorkspaceCollapse } from '@/renderer/pages/conversation/hooks/useWorkspaceCollapse';
 import { isShortcutBlockedByTarget } from '@/renderer/utils/ui/keyboardShortcuts';
-import { dispatchWorkspaceToggleEvent } from '@/renderer/utils/workspace/workspaceEvents';
+import {
+  dispatchWorkspaceHasFilesEvent,
+  dispatchWorkspaceToggleEvent,
+} from '@/renderer/utils/workspace/workspaceEvents';
 
 const dispatchShortcut = (target: EventTarget, init: KeyboardEventInit): KeyboardEvent => {
   const event = new KeyboardEvent('keydown', {
@@ -90,6 +93,7 @@ const renderConversationShortcuts = ({
 
 describe('common desktop UI shortcuts', () => {
   beforeEach(() => {
+    localStorage.clear();
     testState.pathname = '/conversation/conversation-1';
     testState.desktop = true;
     testState.mac = true;
@@ -182,6 +186,26 @@ describe('common desktop UI shortcuts', () => {
 
     expect(result.current.rightSiderCollapsed).toBe(false);
     expect(event.defaultPrevented).toBe(true);
+  });
+
+  it('keeps a new conversation closed after its selected workspace is initially scanned', () => {
+    const { result } = renderHook(() =>
+      useWorkspaceCollapse({ workspaceEnabled: true, isMobile: false, conversation_id: 'new', preferenceKey: 'new' })
+    );
+    act(() => dispatchWorkspaceHasFilesEvent(true, 'new', true));
+    expect(result.current.rightSiderCollapsed).toBe(true);
+  });
+
+  it('restores a manual workspace preference and resets it for the next conversation', () => {
+    localStorage.setItem('workspace-preference-previous', 'expanded');
+    const { result, rerender } = renderHook(
+      ({ id }) =>
+        useWorkspaceCollapse({ workspaceEnabled: true, isMobile: false, conversation_id: id, preferenceKey: id }),
+      { initialProps: { id: 'previous' } }
+    );
+    expect(result.current.rightSiderCollapsed).toBe(false);
+    rerender({ id: 'next' });
+    expect(result.current.rightSiderCollapsed).toBe(true);
   });
 
   it('leaves Cmd/Ctrl+L untouched when the conversation has no enabled workspace', () => {
