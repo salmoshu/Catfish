@@ -525,6 +525,8 @@
     "helpManual": ": kept here without sending; send each with Send now.",
     "clearConfirmTitle": "Clear queued messages?",
     "clearConfirmContent": "All pending messages will be removed. This cannot be undone.",
+    "collapse": "Collapse queued commands",
+    "expand": "Expand queued commands",
     "mode": {
       "auto": "Auto send",
       "manual": "Manual send"

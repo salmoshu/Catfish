@@ -15,8 +15,8 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button, Dropdown, Menu, Modal, Tooltip, Typography } from '@arco-design/web-react';
-import { CornerDownRight, Delete, Drag, Edit, MoreOne, SendOne, SortTwo } from '@icon-park/react';
-import React, { useMemo, useRef } from 'react';
+import { CornerDownRight, Delete, Down, Drag, Edit, MoreOne, SendOne, SortTwo, Up } from '@icon-park/react';
+import React, { useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 const getCommandPreview = (input: string): string => input.replace(/\s+/g, ' ').trim();
 
@@ -339,6 +339,8 @@ const CommandQueuePanel: React.FC<CommandQueuePanelProps> = ({
   onClear,
 }) => {
   const { t } = useTranslation();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const queueListId = `conversation-command-queue-list-${useId().replace(/:/g, '')}`;
   const queueContainerRef = useRef<HTMLDivElement | null>(null);
   const activeDragHandleRef = useRef<HTMLButtonElement | null>(null);
   // Desktop: drag starts after moving 8px from the handle.
@@ -388,6 +390,9 @@ const CommandQueuePanel: React.FC<CommandQueuePanelProps> = ({
   );
 
   const title = t('conversation.commandQueue.title', { defaultValue: 'Waiting to send' });
+  const collapseLabel = isCollapsed
+    ? t('conversation.commandQueue.expand', { defaultValue: 'Expand queued commands' })
+    : t('conversation.commandQueue.collapse', { defaultValue: 'Collapse queued commands' });
   const modeLabel =
     mode === 'auto'
       ? t('conversation.commandQueue.mode.auto', { defaultValue: 'Auto send' })
@@ -486,6 +491,30 @@ const CommandQueuePanel: React.FC<CommandQueuePanelProps> = ({
             </span>
           </div>
           <div className='flex items-center gap-4px shrink-0'>
+            <Tooltip content={collapseLabel} position='top'>
+              <Button
+                size='mini'
+                type='text'
+                shape='circle'
+                className='w-22px h-22px min-w-22px p-0 opacity-72 hover:opacity-100 flex items-center justify-center'
+                aria-label={collapseLabel}
+                aria-expanded={!isCollapsed}
+                aria-controls={queueListId}
+                disabled={interactionLocked}
+                onClick={() => setIsCollapsed((collapsed) => !collapsed)}
+              >
+                <span
+                  className='inline-flex items-center justify-center leading-none'
+                  style={{ color: 'var(--color-text-3)', fontSize: 0 }}
+                >
+                  {isCollapsed ? (
+                    <Down theme='outline' size='15' strokeWidth={2.5} />
+                  ) : (
+                    <Up theme='outline' size='15' strokeWidth={2.5} />
+                  )}
+                </span>
+              </Button>
+            </Tooltip>
             {/* The mode toggle doubles as the help affordance: hovering it shows what
                 Auto vs Manual mean, so no separate "?" button is needed. */}
             <Tooltip content={helpContent} position='top'>
@@ -526,57 +555,59 @@ const CommandQueuePanel: React.FC<CommandQueuePanelProps> = ({
             </Dropdown>
           </div>
         </div>
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          onDragCancel={handleDragCancel}
-          modifiers={dragModifiers}
-        >
-          <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
-            <div
-              ref={queueContainerRef}
-              data-command-queue-list='true'
-              data-drag-axis='vertical'
-              data-drag-bounds='queue'
-              className='p-6px flex flex-col gap-4px overflow-y-auto overscroll-contain'
-              style={{
-                maxHeight: isMobile ? 'min(48vh, 140px)' : '140px',
-              }}
-            >
-              {items.map((item) => {
-                const preview = getCommandPreview(item.input);
-                const fileCountLabel =
-                  item.files.length > 0
-                    ? t('conversation.commandQueue.files', {
-                        count: item.files.length,
-                        defaultValue: `${item.files.length} files`,
-                      })
-                    : null;
+        <div id={queueListId} hidden={isCollapsed}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+            modifiers={dragModifiers}
+          >
+            <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+              <div
+                ref={queueContainerRef}
+                data-command-queue-list='true'
+                data-drag-axis='vertical'
+                data-drag-bounds='queue'
+                className='p-6px flex flex-col gap-4px overflow-y-auto overscroll-contain'
+                style={{
+                  maxHeight: isMobile ? 'min(48vh, 140px)' : '140px',
+                }}
+              >
+                {items.map((item) => {
+                  const preview = getCommandPreview(item.input);
+                  const fileCountLabel =
+                    item.files.length > 0
+                      ? t('conversation.commandQueue.files', {
+                          count: item.files.length,
+                          defaultValue: `${item.files.length} files`,
+                        })
+                      : null;
 
-                return (
-                  <SortableQueueItem
-                    key={item.id}
-                    item={item}
-                    dragDisabled={false}
-                    dragViaCard={isMobile}
-                    dragHandleLabel={dragHandleLabel}
-                    preview={preview}
-                    fileCountLabel={fileCountLabel}
-                    t={t}
-                    onEdit={onEdit}
-                    onSendNow={onSendNow}
-                    onRemove={onRemove}
-                    onDragHandlePointerDown={(event) => {
-                      activeDragHandleRef.current = event.currentTarget;
-                    }}
-                  />
-                );
-              })}
-            </div>
-          </SortableContext>
-        </DndContext>
+                  return (
+                    <SortableQueueItem
+                      key={item.id}
+                      item={item}
+                      dragDisabled={false}
+                      dragViaCard={isMobile}
+                      dragHandleLabel={dragHandleLabel}
+                      preview={preview}
+                      fileCountLabel={fileCountLabel}
+                      t={t}
+                      onEdit={onEdit}
+                      onSendNow={onSendNow}
+                      onRemove={onRemove}
+                      onDragHandlePointerDown={(event) => {
+                        activeDragHandleRef.current = event.currentTarget;
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </SortableContext>
+          </DndContext>
+        </div>
       </div>
     </div>
   );
