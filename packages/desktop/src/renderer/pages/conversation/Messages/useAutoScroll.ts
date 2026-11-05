@@ -16,7 +16,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { TMessage } from '@/common/chat/chatLib';
 
-const PROGRAMMATIC_SCROLL_GUARD_MS = 150;
 const AT_BOTTOM_THRESHOLD_PX = 100;
 const FOLLOW_BOTTOM_THRESHOLD_PX = 4;
 
@@ -56,26 +55,15 @@ export function useAutoScroll({ messages, itemCount }: UseAutoScrollOptions): Us
   const lastScrollTopRef = useRef(0);
   const previousListLengthRef = useRef(messages.length);
   const previousLastMessageRef = useRef<TMessage | undefined>(messages[messages.length - 1]);
-  const lastProgrammaticScrollTimeRef = useRef(0);
   const initialScrollDoneRef = useRef(false);
   const pendingAutoFollowFrameRef = useRef<number | null>(null);
   const userInputActiveRef = useRef(false);
-
-  const markProgrammaticScroll = useCallback(() => {
-    lastProgrammaticScrollTimeRef.current = Date.now();
-  }, []);
 
   const updateBottomState = useCallback((element: HTMLDivElement) => {
     const bottomGap = getBottomGap(element);
     const withinButtonThreshold = bottomGap <= AT_BOTTOM_THRESHOLD_PX;
     const pinnedToBottom = bottomGap <= FOLLOW_BOTTOM_THRESHOLD_PX;
     setShowScrollButton(!withinButtonThreshold);
-
-    if (pinnedToBottom) {
-      userScrolledRef.current = false;
-      userInputActiveRef.current = false;
-      lastProgrammaticScrollTimeRef.current = Date.now() - (PROGRAMMATIC_SCROLL_GUARD_MS - 50);
-    }
 
     return pinnedToBottom;
   }, []);
@@ -84,7 +72,6 @@ export function useAutoScroll({ messages, itemCount }: UseAutoScrollOptions): Us
     (behavior: ScrollBehavior = 'smooth') => {
       if (itemCount <= 0 || !scrollerEl) return;
 
-      markProgrammaticScroll();
       scrollerEl.scrollTo({
         top: scrollerEl.scrollHeight - scrollerEl.clientHeight,
         behavior,
@@ -92,7 +79,7 @@ export function useAutoScroll({ messages, itemCount }: UseAutoScrollOptions): Us
       userScrolledRef.current = false;
       setShowScrollButton(false);
     },
-    [itemCount, markProgrammaticScroll, scrollerEl]
+    [itemCount, scrollerEl]
   );
 
   const scheduleAutoFollow = useCallback(() => {
@@ -121,21 +108,17 @@ export function useAutoScroll({ messages, itemCount }: UseAutoScrollOptions): Us
     setContentEl(ref);
   }, []);
 
-  const scrollElementIntoView = useCallback(
-    (element: HTMLElement | null, options?: ScrollElementIntoViewOptions) => {
-      if (!element) return;
+  const scrollElementIntoView = useCallback((element: HTMLElement | null, options?: ScrollElementIntoViewOptions) => {
+    if (!element) return;
 
-      userScrolledRef.current = false;
-      setShowScrollButton(false);
-      markProgrammaticScroll();
-      element.scrollIntoView({
-        behavior: options?.behavior ?? 'smooth',
-        block: options?.block ?? 'start',
-        inline: 'nearest',
-      });
-    },
-    [markProgrammaticScroll]
-  );
+    userScrolledRef.current = true;
+    setShowScrollButton(false);
+    element.scrollIntoView({
+      behavior: options?.behavior ?? 'smooth',
+      block: options?.block ?? 'start',
+      inline: 'nearest',
+    });
+  }, []);
 
   const handleScroll = useCallback(
     (e: React.UIEvent<HTMLDivElement>) => {
@@ -154,6 +137,7 @@ export function useAutoScroll({ messages, itemCount }: UseAutoScrollOptions): Us
       }
 
       if (pinnedToBottom) {
+        userScrolledRef.current = false;
         userInputActiveRef.current = false;
       } else if (Math.abs(delta) > 2) {
         userInputActiveRef.current = false;
@@ -165,21 +149,39 @@ export function useAutoScroll({ messages, itemCount }: UseAutoScrollOptions): Us
     [updateBottomState]
   );
 
-  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
-    if (Math.abs(e.deltaY) > 0 || Math.abs(e.deltaX) > 0) {
-      userInputActiveRef.current = true;
+  const cancelAutoFollow = useCallback(() => {
+    userScrolledRef.current = true;
+    if (pendingAutoFollowFrameRef.current !== null) {
+      cancelAnimationFrame(pendingAutoFollowFrameRef.current);
+      pendingAutoFollowFrameRef.current = null;
     }
   }, []);
+
+  const handleWheel = useCallback(
+    (e: React.WheelEvent<HTMLDivElement>) => {
+      if (Math.abs(e.deltaY) > 0 || Math.abs(e.deltaX) > 0) {
+        userInputActiveRef.current = true;
+      }
+      // Wheel intent arrives before the browser emits scroll. Cancel a pending
+      // follow now so collapsing a completed turn cannot win that race.
+      if (e.deltaY < 0) cancelAutoFollow();
+    },
+    [cancelAutoFollow]
+  );
 
   const handlePointerDown = useCallback(() => {
     userInputActiveRef.current = true;
   }, []);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) {
-      userInputActiveRef.current = true;
-    }
-  }, []);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) {
+        userInputActiveRef.current = true;
+      }
+      if (['ArrowUp', 'PageUp', 'Home'].includes(e.key) || (e.key === ' ' && e.shiftKey)) cancelAutoFollow();
+    },
+    [cancelAutoFollow]
+  );
 
   useEffect(() => {
     if (!scrollerEl || !contentEl) return;

@@ -398,6 +398,44 @@ describe('useAutoScroll', () => {
     });
   });
 
+  it('lets an upward wheel gesture cancel a resize follow before the scroll event arrives', () => {
+    const scroller = createScroller({ scrollTop: 600 });
+    const { result } = renderHook(() => useAutoScroll({ messages: [createLeftMessage('done')], itemCount: 1 }));
+    attachElements(result, scroller, createContent());
+    act(() => vi.runAllTimers());
+    vi.mocked(scroller.scrollTo).mockClear();
+
+    scroller.scrollHeight = 1200;
+    act(() => {
+      resizeObserverCallback?.([], {} as ResizeObserver);
+      result.current.handleWheel({ deltaX: 0, deltaY: -80 } as React.WheelEvent<HTMLDivElement>);
+      vi.runAllTimers();
+    });
+
+    expect(scroller.scrollTo).not.toHaveBeenCalled();
+    fireScroll(result.current.handleScroll, scroller, 520);
+    expect(result.current.showScrollButton).toBe(true);
+  });
+
+  it('does not resume following when a completed turn collapses during an upward wheel gesture', () => {
+    const scroller = createScroller({ scrollTop: 600 });
+    const { result } = renderHook(() => useAutoScroll({ messages: [createLeftMessage('done')], itemCount: 1 }));
+    attachElements(result, scroller, createContent());
+    act(() => vi.runAllTimers());
+    vi.mocked(scroller.scrollTo).mockClear();
+
+    act(() => result.current.handleWheel({ deltaX: 0, deltaY: -80 } as React.WheelEvent<HTMLDivElement>));
+    act(() => resizeObserverCallback?.([], {} as ResizeObserver));
+    fireScroll(result.current.handleScroll, scroller, 500);
+    scroller.scrollHeight = 1100;
+    act(() => {
+      resizeObserverCallback?.([], {} as ResizeObserver);
+      vi.runAllTimers();
+    });
+
+    expect(scroller.scrollTo).not.toHaveBeenCalled();
+  });
+
   it('scrolls a target element into view for explicit message jumps', () => {
     const { result } = renderHook(() =>
       useAutoScroll({
