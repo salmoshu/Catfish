@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.4.17](https://github.com/salmoshu/Catfish/releases/tag/v0.4.17) (2026-11-05)
+
+### Desktop
+
+#### Features
+
+- **projects:** preserve saved remote project entries across reinstalls while requiring a connection before showing their sessions
+- **projects:** use the supplied expand/collapse artwork and a three-row plan icon, and prevent activity indicators from overlapping actions
+- **conversation:** default queued commands to Auto send, keep the visible queue to about three scrollable rows, and remove the collapsed permission prefix
+- **agents:** browse and health-check agents in local or connected remote environments, with alphabetical ordering
+- **models:** support Agent-exposed `service_tier` / `fast_mode` options for OpenAI Fast mode and use the bundled OpenAI logo for Codex
+- **conversation:** use a neutral filled active state for Agent/file tabs and restrict the message directory flyout to its tick marks
+
+#### Bug Fixes
+
+- **explorer:** pass the backend-supported recursive flag when deleting directories
+- **codex:** rebuild a stale runtime and retry once when Codex reports a missing rollout during a config change
+- **models:** accept `selected_value` as the current thought level when `current_value` is absent
+- **plan:** retry plan recovery for new turns and preserve the latest non-empty plan across transient empty updates
+- **workbench:** collapse a plan-opened Workbench when the plan closes and reconcile remote runtime activity after environment switches
+- **composer:** prevent project-name descenders and selector labels from clipping glyphs
+- **layout:** remove the sidebar version badge; About still shows the running version
+
+---
+
 ## [0.4.16](https://github.com/salmoshu/Catfish/releases/tag/v0.4.16) (2026-11-05)
 
 ### Desktop
