@@ -158,10 +158,13 @@ afterEach(() => {
 
 describe('active remote grouped history', () => {
   it('expands and collapses every project conversation from the Projects header', () => {
-    render(<WorkspaceGroupedHistory />);
+    const { rerender } = render(<WorkspaceGroupedHistory />);
 
     fireEvent.click(screen.getByRole('button', { name: 'conversation.history.collapseAllProjects' }));
     expect(JSON.parse(localStorage.getItem(WORKSPACE_EXPANSION_STORAGE_KEY) ?? '[]')).toEqual([]);
+    mocks.history.mockReturnValue({ ...mocks.history(), expandedWorkspaces: [] });
+    rerender(<WorkspaceGroupedHistory />);
+    expect(screen.queryByRole('button', { name: 'conversation.history.collapseAllProjects' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'conversation.history.expandAllProjects' }));
     expect(JSON.parse(localStorage.getItem(WORKSPACE_EXPANSION_STORAGE_KEY) ?? '[]')).toContain(
       'remote:wsl-1:/home/user/RemoteProject'
