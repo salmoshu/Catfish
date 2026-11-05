@@ -226,6 +226,7 @@ dist-server/
 .claude/skills/officecli
 .claude/skills/skill-creator
 .codex/skills/
+.zcode/
 
 # Local Sentry feedback triage artifacts (analysis notes + case ledger).
 feedback-diagnostics-db-json.md
