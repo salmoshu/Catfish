@@ -13,6 +13,7 @@ import { SWRConfig } from 'swr';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   type ConversationCommandQueueRuntimeGate,
+  pauseConversationCommandQueue,
   resetConversationCommandQueueBackgroundRunnerForTest,
   useConversationCommandQueue,
 } from '@/renderer/pages/conversation/platforms/useConversationCommandQueue';
@@ -553,5 +554,35 @@ describe('useConversationCommandQueue drain', () => {
         mode: 'auto',
       })
     );
+  });
+
+  it('keeps every pending command queued when Codex capacity pauses the queue', async () => {
+    const onExecute = vi.fn().mockResolvedValue(undefined);
+    const { result, rerender } = renderHook(
+      ({ gate }) =>
+        useConversationCommandQueue({
+          conversation_id: 'conv-capacity-pending',
+          enabled: true,
+          isBusy: gate.isProcessing,
+          runtimeGate: gate,
+          onExecute,
+        }),
+      { initialProps: { gate: processingGate } }
+    );
+
+    act(() => {
+      result.current.enqueue({ input: 'first', files: [] });
+      result.current.enqueue({ input: 'second', files: [] });
+      result.current.enqueue({ input: 'third', files: [] });
+    });
+    await waitFor(() => expect(result.current.items).toHaveLength(3));
+
+    act(() => pauseConversationCommandQueue('conv-capacity-pending'));
+    await waitFor(() => expect(result.current.isPaused).toBe(true));
+    rerender({ gate: idleGate });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(onExecute).not.toHaveBeenCalled();
+    expect(result.current.items.map((item) => item.input)).toEqual(['first', 'second', 'third']);
   });
 });

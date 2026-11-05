@@ -72,6 +72,23 @@ describe('resolveConversationLeadingMark', () => {
     });
   });
 
+  it('uses the OpenAI brand for Codex even when an assistant avatar exists', () => {
+    const result = resolveConversationLeadingMark(
+      makeConversation({ extra: { backend: 'codex' } }),
+      {
+        name: 'Custom Codex',
+        logo: '/api/assistants/custom-codex/avatar',
+        isEmoji: false,
+        backend: 'codex',
+        assistantId: 'custom-codex',
+      },
+      TEST_LOGOS
+    );
+
+    expect(result.kind).toBe('image');
+    expect(decodeURIComponent(result.kind === 'image' ? result.value : '')).toContain('M22.2819 9.8211');
+  });
+
   it('returns the generic fallback when neither assistant info nor backend logo exists', () => {
     const result = resolveConversationLeadingMark(
       makeConversation({

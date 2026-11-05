@@ -22,8 +22,12 @@ import type { IResponseMessage } from '@/common/adapter/ipcBridge';
 
 let registered: ((message: IResponseMessage) => void) | null = null;
 const stopInvoke = vi.fn();
+const sendContinue = vi.fn();
 const getConversation = vi.fn();
+const pauseQueue = vi.fn();
+const localStarted = vi.fn();
 let activeTurnId: string | null = null;
+let autoContinue = false;
 
 vi.mock('@/common', () => ({
   ipcBridge: {
@@ -37,8 +41,16 @@ vi.mock('@/common', () => ({
         },
       },
       stop: { invoke: (params: unknown) => stopInvoke(params) },
+      turnCompleted: { on: vi.fn(() => () => {}) },
+    },
+    acpConversation: {
+      sendMessage: { invoke: (params: unknown) => sendContinue(params) },
     },
   },
+}));
+
+vi.mock('@/common/config/configService', () => ({
+  configService: { get: () => autoContinue },
 }));
 
 vi.mock('@/renderer/pages/conversation/utils/conversationCache', () => ({
@@ -47,6 +59,13 @@ vi.mock('@/renderer/pages/conversation/utils/conversationCache', () => ({
 
 vi.mock('@/renderer/pages/conversation/runtime/conversationRuntimeViewStore', () => ({
   getConversationRuntimeViewSnapshot: () => ({ activeTurnId }),
+  localSendStarted: (conversationId: string) => localStarted(conversationId),
+  localSendAccepted: vi.fn(),
+  localSendFailed: vi.fn(),
+}));
+
+vi.mock('@/renderer/pages/conversation/platforms/useConversationCommandQueue', () => ({
+  pauseConversationCommandQueue: (conversationId: string) => pauseQueue(conversationId),
 }));
 
 const { useCodexCapacityAutoStop } = await import('@/renderer/pages/conversation/runtime/useCodexCapacityAutoStop');
@@ -87,8 +106,10 @@ beforeEach(async () => {
   registered = null;
   activeTurnId = null;
   messageSeq = 0;
+  autoContinue = false;
   getConversation.mockResolvedValue(null);
   stopInvoke.mockResolvedValue({ runtime: {} });
+  sendContinue.mockResolvedValue({ msg_id: 'msg-continue', turn_id: 'turn-continue', runtime: {} });
   render(<Host />);
   await waitFor(() => expect(registered).not.toBeNull());
 });
@@ -139,6 +160,35 @@ describe('useCodexCapacityAutoStop', () => {
     await waitFor(() =>
       expect(stopInvoke).toHaveBeenCalledWith({ conversation_id: 'conv-1', turn_id: 'turn-from-backend' })
     );
+  });
+
+  it('pauses pending commands before stopping the capacity-stalled turn', async () => {
+    await emit(capacityTip());
+
+    await waitFor(() => expect(stopInvoke).toHaveBeenCalled());
+    expect(pauseQueue).toHaveBeenCalledWith('conv-1');
+  });
+
+  it('sends one continuation through ACP after stopping when the setting is enabled', async () => {
+    autoContinue = true;
+    await emit(capacityTip());
+
+    await waitFor(() =>
+      expect(sendContinue).toHaveBeenCalledWith({ conversation_id: 'conv-1', input: '继续', files: [] })
+    );
+    expect(localStarted).toHaveBeenCalledWith('conv-1');
+    expect(pauseQueue).not.toHaveBeenCalled();
+  });
+
+  it('pauses instead of looping when the continuation also hits capacity', async () => {
+    autoContinue = true;
+    await emit(capacityTip());
+    await waitFor(() => expect(sendContinue).toHaveBeenCalledTimes(1));
+
+    await emit(capacityTip({ turn_id: 'turn-after-continue' }));
+
+    await waitFor(() => expect(pauseQueue).toHaveBeenCalledWith('conv-1'));
+    expect(sendContinue).toHaveBeenCalledTimes(1);
   });
 
   it('does nothing when no turn id can be resolved', async () => {

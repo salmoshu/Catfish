@@ -1418,5 +1418,7 @@
   "crossSessionMessageDesc": "允许 Agent 向你的其他会话发送消息。关闭后，输入框的 @@ 会话提及与投递能力同时停用。",
   "crossSessionMessageDisabledBanner": "跨会话消息已关闭，输入框的 @@ 会话提及不可用。",
   "crossSessionMessageResume": "重新开启",
-  "crossSessionMessageUpdateFailed": "跨会话消息设置更新失败"
+  "crossSessionMessageUpdateFailed": "跨会话消息设置更新失败",
+  "codexAutoContinueOnCapacity": "Codex 容量不足时自动继续",
+  "codexAutoContinueOnCapacityDesc": "检测到 Selected model is at capacity 时停止当前响应并自动发送“继续”。若再次失败，则暂停等待队列。"
 }

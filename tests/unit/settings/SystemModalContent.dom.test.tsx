@@ -290,6 +290,20 @@ describe('SystemModalContent directory settings', () => {
     expect(configServiceMock.get).not.toHaveBeenCalledWith('acp.agentIdleTimeout');
   });
 
+  it('persists the Codex capacity continuation switch', async () => {
+    const user = userEvent.setup();
+    renderContent();
+
+    const row = (await screen.findByText('settings.codexAutoContinueOnCapacity')).closest('.flex.items-center');
+    const toggle = within(row as HTMLElement).getByRole('switch');
+    expect(toggle).toBeChecked();
+    await user.click(toggle);
+
+    await waitFor(() => {
+      expect(configServiceMock.set).toHaveBeenCalledWith('codex.autoContinueOnCapacity', false);
+    });
+  });
+
   it('persists ACP timeout changes through backend client settings', async () => {
     const user = userEvent.setup();
     renderContent();

@@ -1431,5 +1431,7 @@
   "crossSessionMessageDesc": "Разрешить агентам отправлять сообщения в ваши другие беседы. При отключении также отключается упоминание @@ в поле ввода.",
   "crossSessionMessageDisabledBanner": "Сообщения между беседами отключены, упоминание @@ недоступно.",
   "crossSessionMessageResume": "Включить снова",
-  "crossSessionMessageUpdateFailed": "Не удалось обновить настройку сообщений между беседами"
+  "crossSessionMessageUpdateFailed": "Не удалось обновить настройку сообщений между беседами",
+  "codexAutoContinueOnCapacity": "Автоматически продолжать при переполнении Codex",
+  "codexAutoContinueOnCapacityDesc": "При ошибке Selected model is at capacity текущий ответ останавливается и один раз отправляется команда «Продолжить». При повторной ошибке очередь приостанавливается."
 }

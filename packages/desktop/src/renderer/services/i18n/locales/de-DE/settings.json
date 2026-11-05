@@ -1417,5 +1417,7 @@
   "crossSessionMessageDesc": "Erlaubt Agenten, Nachrichten an Ihre anderen Unterhaltungen zu senden. Beim Ausschalten wird auch die @@-Erwähnung im Eingabefeld deaktiviert.",
   "crossSessionMessageDisabledBanner": "Nachrichten zwischen Unterhaltungen sind aus, die @@-Erwähnung ist nicht verfügbar.",
   "crossSessionMessageResume": "Wieder einschalten",
-  "crossSessionMessageUpdateFailed": "Einstellung konnte nicht aktualisiert werden"
+  "crossSessionMessageUpdateFailed": "Einstellung konnte nicht aktualisiert werden",
+  "codexAutoContinueOnCapacity": "Bei ausgelastetem Codex automatisch fortsetzen",
+  "codexAutoContinueOnCapacityDesc": "Bei Selected model is at capacity wird die aktuelle Antwort gestoppt und einmal Fortsetzen gesendet. Bei erneutem Fehler wird die Warteschlange pausiert."
 }

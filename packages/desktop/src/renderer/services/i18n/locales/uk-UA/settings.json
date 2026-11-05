@@ -1432,5 +1432,7 @@
   "crossSessionMessageDesc": "Дозволяє агентам надсилати повідомлення до ваших інших розмов. Вимкнення також відключає згадку @@ у полі введення.",
   "crossSessionMessageDisabledBanner": "Повідомлення між розмовами вимкнено, згадка @@ недоступна.",
   "crossSessionMessageResume": "Увімкнути знову",
-  "crossSessionMessageUpdateFailed": "Не вдалося оновити налаштування повідомлень між розмовами"
+  "crossSessionMessageUpdateFailed": "Не вдалося оновити налаштування повідомлень між розмовами",
+  "codexAutoContinueOnCapacity": "Автоматично продовжувати при переповненні Codex",
+  "codexAutoContinueOnCapacityDesc": "Після Selected model is at capacity поточна відповідь зупиняється і один раз надсилається команда «Продовжити». Після повторної помилки черга призупиняється."
 }

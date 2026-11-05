@@ -1417,5 +1417,7 @@
   "crossSessionMessageDesc": "Let agents send messages to your other conversations. Turning this off also disables the @@ conversation mention in the input box.",
   "crossSessionMessageDisabledBanner": "Cross-conversation messages are off, so the @@ conversation mention is unavailable.",
   "crossSessionMessageResume": "Turn back on",
-  "crossSessionMessageUpdateFailed": "Failed to update the cross-conversation message setting"
+  "crossSessionMessageUpdateFailed": "Failed to update the cross-conversation message setting",
+  "codexAutoContinueOnCapacity": "Continue automatically when Codex is at capacity",
+  "codexAutoContinueOnCapacityDesc": "When Codex reports Selected model is at capacity, stop the current turn and send Continue once. If it fails again, pause the queued commands."
 }

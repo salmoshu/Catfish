@@ -66,6 +66,12 @@ export function resolveConversationLeadingMark(
   assistantInfo: PresetAssistantInfo | undefined,
   logos: AgentLogoMap
 ): ConversationLeadingMark {
+  const backendKey = resolveConversationBackend(conversation, assistantInfo?.backend)?.trim() || 'agent';
+  if (backendKey.toLowerCase() === 'codex') {
+    const logo = resolveAgentLogo(logos, { backend: 'codex' });
+    if (logo) return { kind: 'image', value: logo, label: 'codex' };
+  }
+
   if (assistantInfo) {
     if (assistantInfo.isFallback) {
       return {
@@ -111,7 +117,6 @@ export function resolveConversationLeadingMark(
     };
   }
 
-  const backendKey = resolveConversationBackend(conversation)?.trim() || 'agent';
   const logo = resolveAgentLogo(logos, { backend: backendKey });
   if (logo) {
     return {

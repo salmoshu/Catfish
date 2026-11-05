@@ -19,3 +19,20 @@ export const filterAgentsByAvailability = (agents: ManagedAgent[], filter: Agent
   }
   return agents;
 };
+
+const managedAgentCatalogKey = (agent: ManagedAgent): string =>
+  agent.agent_source === 'custom'
+    ? `custom:${agent.id}`
+    : `${agent.agent_type}:${agent.backend?.trim().toLowerCase() || agent.id}`;
+
+/** Keep the local catalog visible in a remote view; remote health data wins for shared identities. */
+export const mergeManagedAgentCatalogs = (
+  localAgents: ManagedAgent[],
+  remoteAgents: ManagedAgent[]
+): ManagedAgent[] => {
+  const merged = new Map<string, ManagedAgent>();
+  for (const agent of [...localAgents, ...remoteAgents]) {
+    merged.set(managedAgentCatalogKey(agent), agent);
+  }
+  return [...merged.values()];
+};

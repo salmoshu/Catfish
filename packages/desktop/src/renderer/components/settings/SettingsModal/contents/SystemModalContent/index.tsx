@@ -58,6 +58,7 @@ const SystemModalContent: React.FC = () => {
   const [gpuStatus, setGpuStatus] = useState<IGpuStatus | null>(null);
   const [notificationEnabled, setNotificationEnabled] = useState(true);
   const [cronNotificationEnabled, setCronNotificationEnabled] = useState(false);
+  const [codexAutoContinueOnCapacity, setCodexAutoContinueOnCapacity] = useState(true);
   const [promptTimeout, setPromptTimeout] = useState<number>(300);
   const [agentIdleTimeout, setAgentIdleTimeout] = useState<number>(5);
   /**
@@ -113,6 +114,7 @@ const SystemModalContent: React.FC = () => {
     }
     setNotificationEnabled(configService.get('system.notificationEnabled') ?? true);
     setCronNotificationEnabled(configService.get('system.cronNotificationEnabled') ?? false);
+    setCodexAutoContinueOnCapacity(configService.get('codex.autoContinueOnCapacity') ?? true);
     setSaveUploadToWorkspace(configService.get('upload.saveToWorkspace') ?? false);
   }, [isDesktop]);
 
@@ -257,6 +259,14 @@ const SystemModalContent: React.FC = () => {
     configService.set('system.cronNotificationEnabled', checked).catch(() => {
       setCronNotificationEnabled(!checked);
       configService.setLocal('system.cronNotificationEnabled', !checked);
+    });
+  }, []);
+
+  const handleCodexAutoContinueChange = useCallback((checked: boolean) => {
+    setCodexAutoContinueOnCapacity(checked);
+    configService.set('codex.autoContinueOnCapacity', checked).catch(() => {
+      setCodexAutoContinueOnCapacity(!checked);
+      configService.setLocal('codex.autoContinueOnCapacity', !checked);
     });
   }, []);
 
@@ -417,6 +427,12 @@ const SystemModalContent: React.FC = () => {
           suffix='min'
         />
       ),
+    },
+    {
+      key: 'codexAutoContinueOnCapacity',
+      label: t('settings.codexAutoContinueOnCapacity'),
+      description: t('settings.codexAutoContinueOnCapacityDesc'),
+      component: <Switch checked={codexAutoContinueOnCapacity} onChange={handleCodexAutoContinueChange} />,
     },
     {
       key: 'previewTextSizeLimit',

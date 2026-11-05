@@ -10,7 +10,7 @@ import { useAddEventListener } from '@/renderer/utils/emitter';
 import { Message } from '@arco-design/web-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import useSWR from 'swr';
+import useSWR, { mutate as mutateQueueCache } from 'swr';
 import { classifyConversationBusyError } from './conversationBusyError';
 
 export type ConversationCommandQueueItem = {
@@ -564,6 +564,19 @@ export const resetConversationCommandQueueBackgroundRunnerForTest = (): void => 
   backgroundRunners.clear();
   backgroundTurnCompletedUnsubscribe?.();
   backgroundTurnCompletedUnsubscribe = null;
+};
+
+/** Preserve pending commands when an accepted Codex turn stops for model capacity. */
+export const pauseConversationCommandQueue = (conversation_id: string): void => {
+  const state = readPersistedQueueState(conversation_id);
+  if (state.items.length === 0) return;
+
+  const nextState = { ...state, isPaused: true };
+  persistQueueState(conversation_id, nextState);
+  logCommandQueue(conversation_id, 'capacity-paused', { itemCount: state.items.length });
+  void mutateQueueCache([`/conversation-command-queue/${conversation_id}`, conversation_id, true], nextState, {
+    revalidate: false,
+  });
 };
 
 const getQueueValidationMessage = (

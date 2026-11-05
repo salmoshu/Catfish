@@ -1417,5 +1417,7 @@
   "crossSessionMessageDesc": "به عامل‌ها اجازه می‌دهد به گفتگوهای دیگر شما پیام بفرستند. با خاموش کردن، منشن @@ در کادر ورودی نیز غیرفعال می‌شود.",
   "crossSessionMessageDisabledBanner": "پیام‌های بین گفتگوها خاموش است، منشن @@ در دسترس نیست.",
   "crossSessionMessageResume": "روشن کردن دوباره",
-  "crossSessionMessageUpdateFailed": "به‌روزرسانی تنظیم پیام‌های بین گفتگوها ناموفق بود"
+  "crossSessionMessageUpdateFailed": "به‌روزرسانی تنظیم پیام‌های بین گفتگوها ناموفق بود",
+  "codexAutoContinueOnCapacity": "ادامه خودکار هنگام پر بودن ظرفیت Codex",
+  "codexAutoContinueOnCapacityDesc": "هنگام گزارش Selected model is at capacity پاسخ فعلی متوقف می‌شود و دستور «ادامه» یک بار ارسال می‌شود. اگر دوباره شکست بخورد، صف دستورها متوقف می‌شود."
 }

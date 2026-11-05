@@ -31,6 +31,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   filterAgentsByAvailability,
   getAgentAvailabilityFilterStats,
+  mergeManagedAgentCatalogs,
   type AgentAvailabilityFilter,
 } from './agentFilters';
 
@@ -92,7 +93,7 @@ const LocalAgents: React.FC = () => {
     };
   }, [isRemote, refreshCatalog, t]);
 
-  const allAgents = isRemote ? remoteAgents : localAgents;
+  const allAgents = isRemote ? mergeManagedAgentCatalogs(localAgents, remoteAgents) : localAgents;
   const isRefreshing = localRefreshing || remoteLoading;
 
   // Hide deprecated runtime backends (nanobot / openclaw-gateway / remote / gemini)
@@ -255,7 +256,7 @@ const LocalAgents: React.FC = () => {
       <SettingsPageHeader
         data-testid='agent-management-header'
         title={
-          <span className='inline-flex items-center gap-6px'>
+          <span className='inline-flex h-26px items-center gap-6px align-middle'>
             {t('settings.agents', { defaultValue: 'Agents' })}
             <Dropdown droplist={locationMenu} trigger='click'>
               <Button

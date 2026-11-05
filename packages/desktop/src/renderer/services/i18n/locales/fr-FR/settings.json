@@ -1417,5 +1417,7 @@
   "crossSessionMessageDesc": "Permet aux agents d'envoyer des messages à vos autres conversations. La désactivation coupe aussi la mention @@ dans la zone de saisie.",
   "crossSessionMessageDisabledBanner": "Les messages entre conversations sont désactivés, la mention @@ est indisponible.",
   "crossSessionMessageResume": "Réactiver",
-  "crossSessionMessageUpdateFailed": "Échec de la mise à jour du réglage des messages entre conversations"
+  "crossSessionMessageUpdateFailed": "Échec de la mise à jour du réglage des messages entre conversations",
+  "codexAutoContinueOnCapacity": "Continuer automatiquement lorsque Codex est saturé",
+  "codexAutoContinueOnCapacityDesc": "Quand Codex signale Selected model is at capacity, la réponse en cours est interrompue et Continuer est envoyé une fois. En cas de nouvel échec, la file de commandes est mise en pause."
 }

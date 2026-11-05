@@ -2005,6 +2005,8 @@ export type I18nKey =
   | 'settings.clickToValidate'
   | 'settings.closeDevTools'
   | 'settings.closeToTray'
+  | 'settings.codexAutoContinueOnCapacity'
+  | 'settings.codexAutoContinueOnCapacityDesc'
   | 'settings.command'
   | 'settings.commandHelp'
   | 'settings.commandLabel'

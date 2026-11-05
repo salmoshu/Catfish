@@ -1419,5 +1419,7 @@
   "crossSessionMessageDesc": "エージェントが他の会話にメッセージを送れるようにします。オフにすると入力欄の @@ 会話メンションも無効になります。",
   "crossSessionMessageDisabledBanner": "会話間メッセージはオフです。入力欄の @@ 会話メンションは使用できません。",
   "crossSessionMessageResume": "再度オンにする",
-  "crossSessionMessageUpdateFailed": "会話間メッセージ設定の更新に失敗しました"
+  "crossSessionMessageUpdateFailed": "会話間メッセージ設定の更新に失敗しました",
+  "codexAutoContinueOnCapacity": "Codex の容量不足時に自動で継続",
+  "codexAutoContinueOnCapacityDesc": "Selected model is at capacity を検出すると現在の応答を停止し、「続き」を一度送信します。再度失敗した場合は待機キューを一時停止します。"
 }

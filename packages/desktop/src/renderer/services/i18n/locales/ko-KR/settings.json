@@ -1419,5 +1419,7 @@
   "crossSessionMessageDesc": "에이전트가 다른 대화로 메시지를 보낼 수 있게 합니다. 끄면 입력창의 @@ 대화 멘션도 비활성화됩니다.",
   "crossSessionMessageDisabledBanner": "대화 간 메시지가 꺼져 있어 입력창의 @@ 대화 멘션을 사용할 수 없습니다.",
   "crossSessionMessageResume": "다시 켜기",
-  "crossSessionMessageUpdateFailed": "대화 간 메시지 설정 업데이트에 실패했습니다"
+  "crossSessionMessageUpdateFailed": "대화 간 메시지 설정 업데이트에 실패했습니다",
+  "codexAutoContinueOnCapacity": "Codex 용량 부족 시 자동으로 계속",
+  "codexAutoContinueOnCapacityDesc": "Selected model is at capacity가 감지되면 현재 응답을 중지하고 계속 명령을 한 번 본냅니다. 다시 실패하면 대기 큐를 일시 중지합니다."
 }

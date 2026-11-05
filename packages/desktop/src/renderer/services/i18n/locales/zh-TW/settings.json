@@ -1419,5 +1419,7 @@
   "crossSessionMessageDesc": "允許 Agent 向你的其他對話傳送訊息。關閉後，輸入框的 @@ 對話提及與投遞功能會同時停用。",
   "crossSessionMessageDisabledBanner": "跨對話訊息已關閉，輸入框的 @@ 對話提及不可用。",
   "crossSessionMessageResume": "重新開啟",
-  "crossSessionMessageUpdateFailed": "跨對話訊息設定更新失敗"
+  "crossSessionMessageUpdateFailed": "跨對話訊息設定更新失敗",
+  "codexAutoContinueOnCapacity": "Codex 容量不足時自動繼續",
+  "codexAutoContinueOnCapacityDesc": "偵測到 Selected model is at capacity 時停止目前回應並自動傳送「繼續」。若再次失敗，則暫停等待佇列。"
 }

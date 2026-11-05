@@ -481,4 +481,28 @@ describe('LocalAgents', () => {
     expect(screen.queryByText('Catfish CLI')).toBeNull();
     expect(screen.getByText('Claude Code')).toBeInTheDocument();
   });
+
+  it('keeps local Codex and Kimi Code visible and available when a WSL catalog is empty', async () => {
+    const localCatalog = [
+      { ...makeAgents()[1], id: 'codex', name: 'Codex', backend: 'codex', status: 'online', installed: true },
+      { ...makeAgents()[1], id: 'kimi', name: 'Kimi Code', backend: 'kimi', status: 'online', installed: true },
+    ];
+    useManagedAgents.mockReturnValue({ agents: localCatalog, revalidate: vi.fn(), refreshCatalog: vi.fn() });
+    vi.mocked(ipcBridge.remoteEnvironment.list.invoke).mockResolvedValue([
+      { id: 'wsl-20', name: 'Ubuntu 20.04', kind: 'wsl', status: 'connected', createdAt: 1, updatedAt: 1 },
+    ]);
+    vi.mocked(ipcBridge.remoteEnvironment.agents.invoke).mockResolvedValue([]);
+
+    render(<LocalAgents />);
+    fireEvent.click(await screen.findByRole('button', { name: 'settings.agentManagement.environment' }));
+    fireEvent.click(await screen.findByText('Ubuntu 20.04 · WSL'));
+
+    await waitFor(() => expect(ipcBridge.remoteEnvironment.agents.invoke).toHaveBeenCalledWith({ id: 'wsl-20' }));
+    expect(await screen.findByText('Codex')).toBeInTheDocument();
+    expect(screen.getByText('Kimi Code')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('settings-tab-available'));
+    expect(screen.getByText('Codex')).toBeInTheDocument();
+    expect(screen.getByText('Kimi Code')).toBeInTheDocument();
+  });
 });

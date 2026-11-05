@@ -14,7 +14,7 @@
   position: absolute;
   inset-inline-start: 0;
   width: 44px;
-  pointer-events: none;
+  pointer-events: auto;
   cursor: pointer;
   overflow: hidden;
   overscroll-behavior: contain;
@@ -56,7 +56,7 @@
   background: transparent;
   box-shadow: none;
   color: var(--color-text-2) !important;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .tick:hover,
