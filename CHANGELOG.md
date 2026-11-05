@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.4.16](https://github.com/salmoshu/Catfish/releases/tag/v0.4.16) (2026-11-05)
+
+### Desktop
+
+#### Features
+
+- **projects:** show remote projects only while connected, order local and remote projects by their latest conversation activity, and add expand/collapse-all controls
+- **conversation:** open files in the main conversation surface with a pinned Agent tab and closable file tabs
+- **conversation:** use neutral horizontal message-anchor marks and a fish icon with neutral text for folded work summaries
+- **workbench:** scroll terminal and agent activity without shrinking expanded cards
+
+#### Bug Fixes
+
+- **projects:** keep agent identity icons visible, move running indicators to the row's trailing edge, and show project activity only while its conversations are collapsed
+- **pet:** remove size controls outside Settings so dragging and context menus cannot change the pet's configured size
+
+---
+
 ## [0.4.15](https://github.com/salmoshu/Catfish/releases/tag/v0.4.15) (2026-11-04)
 
 ### Desktop
