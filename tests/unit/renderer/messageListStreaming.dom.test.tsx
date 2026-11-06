@@ -270,6 +270,7 @@ describe('MessageList streaming scroll behavior', () => {
     scroller.scrollTop = 480;
     fireEvent.wheel(scroller, { deltaY: -100 });
     fireEvent.scroll(scroller);
+    vi.mocked(scroller.scrollTo).mockClear();
 
     rerender(
       <Wrapper messages={[createTextMessage('hello world'.repeat(10))]}>

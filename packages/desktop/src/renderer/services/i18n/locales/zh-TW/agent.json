@@ -60,6 +60,8 @@
     "label": "速度",
     "fast": "快速",
     "standard": "標準",
-    "switchSuccess": "速度模式已切換"
+    "switchSuccess": "速度模式已切換",
+    "costNotice": "高速檔位可能消耗更多額度或產生額外費用。變更對後續請求生效。",
+    "pendingNextTurn": "速度變更將在下一輪生效。"
   }
 }

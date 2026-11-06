@@ -126,7 +126,13 @@
     "errorParentUnbound": "此對話尚無可分叉的後端工作階段",
     "errorPointUnsupported": "此智慧代理僅支援從最新訊息分叉",
     "errorUnsupported": "此智慧代理不支援對話分叉",
-    "errorGeneric": "分叉失敗：{{message}}"
+    "errorGeneric": "分叉失敗：{{message}}",
+    "toAnotherAgent": "Fork 到其他 Agent",
+    "startContinuation": "開始續作",
+    "targetAgent": "目標 Agent",
+    "handoffDescription": "新對話接收任務摘要並繼續下一步，來源對話保持執行。",
+    "errorTargetUnavailable": "目標 Agent 目前無法使用。",
+    "errorOperationConflict": "此操作編號已用於另一項 Fork。"
   },
   "askSubmit": "提交",
   "askDecline": "不回答",

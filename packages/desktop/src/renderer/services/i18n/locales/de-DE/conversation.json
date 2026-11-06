@@ -536,7 +536,9 @@
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
     "midturnBlockedSendHint": "This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.",
-    "addToQueueBusyHint": "Zur Warteschlange hinzufügen und später senden."
+    "addToQueueBusyHint": "Zur Warteschlange hinzufügen und später senden.",
+    "expand": "Befehlswarteschlange aufklappen",
+    "collapse": "Befehlswarteschlange zuklappen"
   },
   "contextUsage": {
     "contextUsed": "Kontext verwendet",
@@ -785,7 +787,8 @@
     "progress": "{{completed}}/{{total}}",
     "empty": "Noch kein Plan",
     "expand": "Plan ausklappen",
-    "collapse": "Plan einklappen"
+    "collapse": "Plan einklappen",
+    "priorityHigh": "Hohe Priorität"
   },
   "fileTabs": {
     "label": "Dateien der Unterhaltung",

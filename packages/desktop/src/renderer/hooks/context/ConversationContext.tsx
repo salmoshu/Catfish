@@ -65,8 +65,8 @@ export interface ConversationContextValue {
 
   /**
    * Session-fork capability from the conversation detail response
-   * (`fork_capability`). Absent = the agent cannot fork → hide the message
-   * fork entry point. See `common/chat/forkConversation.ts`.
+   * (`fork_capability`). Absent = use a summary handoff at the latest message.
+   * See `common/chat/forkConversation.ts`.
    */
   forkCapability?: { at_turn: boolean };
 

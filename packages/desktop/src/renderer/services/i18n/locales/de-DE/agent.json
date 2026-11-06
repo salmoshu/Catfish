@@ -60,6 +60,8 @@
     "label": "Geschwindigkeit",
     "fast": "Schnell",
     "standard": "Standard",
-    "switchSuccess": "Geschwindigkeitsmodus geändert"
+    "switchSuccess": "Geschwindigkeitsmodus geändert",
+    "costNotice": "Schnellere Modi können mehr Kontingent verbrauchen oder mehr kosten. Änderungen gelten für nachfolgende Anfragen.",
+    "pendingNextTurn": "Die Geschwindigkeitsänderung gilt ab dem nächsten Durchgang."
   }
 }

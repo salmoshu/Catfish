@@ -45,11 +45,14 @@ export const getCurrentThoughtLevelLabel = (thoughtLevel: AcpDerivedOption | nul
 export const composeRuntimeSelectorLabel = ({
   modelLabel,
   thoughtLevel,
+  fallbackThoughtLevel,
 }: {
   modelLabel: string;
   thoughtLevel?: AcpDerivedOption | null;
+  fallbackThoughtLevel?: string;
 }): string => {
-  const thoughtLevelLabel = getCurrentThoughtLevelLabel(thoughtLevel);
+  const thoughtLevelLabel =
+    getCurrentThoughtLevelLabel(thoughtLevel) || formatThoughtLevelLabel(fallbackThoughtLevel ?? '');
   if (!thoughtLevelLabel) return modelLabel;
   return `${modelLabel} · ${thoughtLevelLabel}`;
 };

@@ -7,7 +7,7 @@
 import { ipcBridge } from '@/common';
 import { normalizeDbMessage, useUpdateMessageList } from '@renderer/pages/conversation/Messages/hooks';
 import { useConversationRuntimeView } from '@renderer/pages/conversation/runtime/useConversationRuntimeView';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 /**
  * Restore the conversation's latest plan when it is reopened.
@@ -26,13 +26,9 @@ const PLAN_RETRY_DELAYS_MS = [250, 750];
 export const usePlanRecovery = (conversation_id: string): void => {
   const update = useUpdateMessageList();
   const { hydrated, isProcessing, activeTurnId } = useConversationRuntimeView(conversation_id);
-  const requestedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!conversation_id || !hydrated) return;
-    const requestKey = `${conversation_id}:${activeTurnId ?? 'idle'}`;
-    if (requestedRef.current === requestKey) return;
-    requestedRef.current = requestKey;
 
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -43,22 +39,38 @@ export const usePlanRecovery = (conversation_id: string): void => {
           if (cancelled) return;
           if (message) {
             const normalized = normalizeDbMessage(message);
-            update((list) => (list.some((item) => item.id === normalized.id) ? list : list.concat(normalized)));
+            update((list) => {
+              const index = list.findIndex((item) => item.id === normalized.id);
+              if (index < 0) return list.concat(normalized);
+              const existing = list[index];
+              if (normalized.type !== 'plan' || existing.type !== 'plan') return list;
+              if ((normalized.content.updated_at ?? 0) <= (existing.content.updated_at ?? 0)) return list;
+              const next = list.slice();
+              next[index] = normalized;
+              return next;
+            });
             return;
           }
           if (attempt < PLAN_RETRY_DELAYS_MS.length) {
             timer = setTimeout(() => recover(attempt + 1), PLAN_RETRY_DELAYS_MS[attempt]);
-          } else {
-            requestedRef.current = null;
           }
         })
         .catch(() => {
-          if (!cancelled) requestedRef.current = null;
+          if (!cancelled && attempt < PLAN_RETRY_DELAYS_MS.length) {
+            timer = setTimeout(() => recover(attempt + 1), PLAN_RETRY_DELAYS_MS[attempt]);
+          }
         });
     };
     recover(0);
+    const refresh = () => {
+      if (!document.hidden) recover(0);
+    };
+    window.addEventListener('focus', refresh);
+    window.addEventListener('online', refresh);
 
     return () => {
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('online', refresh);
       cancelled = true;
       if (timer) clearTimeout(timer);
     };

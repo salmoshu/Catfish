@@ -8,8 +8,8 @@ import { describe, expect, it } from 'vitest';
 import { isForkEnabled } from '@/common/chat/forkConversation';
 
 describe('isForkEnabled', () => {
-  it('is disabled without a declared capability', () => {
-    expect(isForkEnabled(undefined, { isLastMessage: true, hasTurnAnchor: true })).toBe(false);
+  it('uses summary handoff at HEAD without a native fork capability', () => {
+    expect(isForkEnabled(undefined, { isLastMessage: true, hasTurnAnchor: true })).toBe(true);
     expect(isForkEnabled(undefined, { isLastMessage: false, hasTurnAnchor: false })).toBe(false);
   });
 

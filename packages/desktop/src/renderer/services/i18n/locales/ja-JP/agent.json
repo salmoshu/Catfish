@@ -60,6 +60,8 @@
     "label": "速度",
     "fast": "高速",
     "standard": "標準",
-    "switchSuccess": "速度モードを切り替えました"
+    "switchSuccess": "速度モードを切り替えました",
+    "costNotice": "高速モードでは使用量や料金が増える場合があります。変更は以降のリクエストに適用されます。",
+    "pendingNextTurn": "速度の変更は次のターンから適用されます。"
   }
 }

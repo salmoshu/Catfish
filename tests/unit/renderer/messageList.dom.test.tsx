@@ -5,8 +5,9 @@
  */
 
 import React, { type PropsWithChildren } from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { MessageCursorPage } from '@/common/adapter/ipcBridge';
 import type { IMessageAcpToolCall, IMessageText, IMessageToolGroup, TMessage } from '@/common/chat/chatLib';
 import type { MessageFileChangesProps } from '@/renderer/pages/conversation/Messages/MessageFileChanges';
 import {
@@ -14,12 +15,23 @@ import {
   MessageListProvider,
   MessagePaginationProvider,
   useUpdateMessageList,
+  type MessagePaginationState,
 } from '@/renderer/pages/conversation/Messages/hooks';
 import MessageList from '@/renderer/pages/conversation/Messages/MessageList';
 
-const { parseDiffMock, useTeamPermissionMock } = vi.hoisted(() => ({
+const { parseDiffMock, useTeamPermissionMock, loadHistoryMock } = vi.hoisted(() => ({
   parseDiffMock: vi.fn(),
   useTeamPermissionMock: vi.fn(),
+  loadHistoryMock: vi.fn(),
+}));
+
+vi.mock('@/renderer/utils/chat/messagePagination', () => ({
+  DEFAULT_MESSAGE_PAGE_LIMIT: 50,
+  loadConversationMessagePage: loadHistoryMock,
+}));
+
+vi.mock('@/renderer/pages/conversation/Messages/anchorRail/useConversationAnchors', () => ({
+  useConversationAnchors: () => [],
 }));
 
 vi.mock('react-i18next', () => ({
@@ -245,11 +257,22 @@ function Wrapper({
   children,
   messages = [createTextMessage()],
   loading = false,
-}: PropsWithChildren<{ messages?: TMessage[]; loading?: boolean }>): JSX.Element {
+  pagination = {},
+}: PropsWithChildren<{
+  messages?: TMessage[];
+  loading?: boolean;
+  pagination?: Partial<MessagePaginationState>;
+}>): JSX.Element {
   return (
     <MessageListLoadingProvider value={loading}>
       <MessagePaginationProvider
-        value={{ hasMoreBefore: false, hasMoreAfter: false, isLoadingBefore: false, isLoadingAnchor: false }}
+        value={{
+          hasMoreBefore: false,
+          hasMoreAfter: false,
+          isLoadingBefore: false,
+          isLoadingAnchor: false,
+          ...pagination,
+        }}
       >
         <MessageListProvider value={messages}>{children}</MessageListProvider>
       </MessagePaginationProvider>
@@ -274,6 +297,132 @@ describe('MessageList', () => {
       diff: 'diff',
     });
     useTeamPermissionMock.mockReturnValue(null);
+    loadHistoryMock.mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('loads through collapsed history pages until the conversation can scroll', async () => {
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600);
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.querySelector('[data-testid="msgtext-earlier-question"]') ? 900 : 160;
+    });
+    const messages: TMessage[] = [
+      { ...createAcpToolCall(), created_at: 1000 },
+      { ...createTextMessage(), created_at: 796000 },
+    ];
+    loadHistoryMock
+      .mockResolvedValueOnce({
+        items: [{ ...createAcpToolCall({ id: 'older-work' }), created_at: 500 }],
+        oldest_cursor: 'page-2',
+        newest_cursor: 'page-3',
+        has_more_before: true,
+        has_more_after: true,
+      })
+      .mockResolvedValueOnce({
+        items: [{ ...createTextMessage(), id: 'earlier-question', msg_id: 'earlier-question', position: 'right' }],
+        oldest_cursor: 'page-1',
+        newest_cursor: 'page-2',
+        has_more_before: true,
+        has_more_after: true,
+      });
+
+    render(<MessageList />, {
+      wrapper: ({ children }) => (
+        <Wrapper messages={messages} pagination={{ hasMoreBefore: true, oldestCursor: 'page-3' }}>
+          {children}
+        </Wrapper>
+      ),
+    });
+
+    expect(screen.getByTestId('turn-work-summary')).toHaveTextContent('Worked for 13m 15s');
+    await waitFor(() => expect(screen.getByTestId('msgtext-earlier-question')).toBeInTheDocument());
+    expect(loadHistoryMock).toHaveBeenCalledTimes(2);
+    expect(loadHistoryMock).toHaveBeenNthCalledWith(1, 'conversation-1', {
+      before: 'page-3',
+      limit: 50,
+      contentMode: 'compact',
+    });
+    expect(loadHistoryMock).toHaveBeenNthCalledWith(2, 'conversation-1', {
+      before: 'page-2',
+      limit: 50,
+      contentMode: 'compact',
+    });
+  });
+
+  it('loads history on an upward wheel at the top without needing a scroll event', async () => {
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600);
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(900);
+    let resolvePage!: (page: MessageCursorPage<TMessage>) => void;
+    loadHistoryMock.mockImplementation(
+      () =>
+        new Promise<MessageCursorPage<TMessage>>((resolve) => {
+          resolvePage = resolve;
+        })
+    );
+    render(<MessageList />, {
+      wrapper: ({ children }) => (
+        <Wrapper pagination={{ hasMoreBefore: true, oldestCursor: 'page-2' }}>{children}</Wrapper>
+      ),
+    });
+    expect(loadHistoryMock).not.toHaveBeenCalled();
+    const scroller = screen.getByTestId('message-list-scroller');
+    fireEvent.wheel(scroller, { deltaY: -80 });
+    fireEvent.wheel(scroller, { deltaY: -80 });
+    expect(loadHistoryMock).toHaveBeenCalledTimes(1);
+    fireEvent.scroll(scroller);
+    expect(loadHistoryMock).toHaveBeenCalledTimes(1);
+    await act(async () =>
+      resolvePage({
+        items: [],
+        oldest_cursor: null,
+        newest_cursor: null,
+        has_more_before: false,
+        has_more_after: false,
+      })
+    );
+  });
+
+  it('does not repeatedly retry a failed automatic history request', async () => {
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600);
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(160);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    loadHistoryMock.mockRejectedValue(new Error('History unavailable'));
+    render(<MessageList />, {
+      wrapper: ({ children }) => (
+        <Wrapper pagination={{ hasMoreBefore: true, oldestCursor: 'page-2' }}>{children}</Wrapper>
+      ),
+    });
+    await waitFor(() => expect(console.error).toHaveBeenCalledTimes(1));
+    expect(loadHistoryMock).toHaveBeenCalledTimes(1);
+    fireEvent.wheel(screen.getByTestId('message-list-scroller'), { deltaY: -80 });
+    await waitFor(() => expect(console.error).toHaveBeenCalledTimes(2));
+  });
+
+  it('preserves the visible message position when older history is prepended', async () => {
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600);
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.querySelector('[data-testid="msgtext-earlier-question"]') ? 1100 : 900;
+    });
+    loadHistoryMock.mockResolvedValue({
+      items: [{ ...createTextMessage(), id: 'earlier-question', msg_id: 'earlier-question', position: 'right' }],
+      oldest_cursor: 'page-1',
+      newest_cursor: 'page-2',
+      has_more_before: false,
+      has_more_after: true,
+    });
+    render(<MessageList />, {
+      wrapper: ({ children }) => (
+        <Wrapper pagination={{ hasMoreBefore: true, oldestCursor: 'page-2' }}>{children}</Wrapper>
+      ),
+    });
+    const scroller = screen.getByTestId('message-list-scroller');
+    scroller.scrollTop = 120;
+    fireEvent.wheel(scroller, { deltaY: -80 });
+    await waitFor(() => expect(scroller.scrollTop).toBe(320));
+    expect(loadHistoryMock).toHaveBeenCalledTimes(1);
   });
 
   it('never renders a plan as a stream row (it belongs to ConversationPlanBar)', () => {

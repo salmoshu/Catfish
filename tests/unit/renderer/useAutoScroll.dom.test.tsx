@@ -353,6 +353,7 @@ describe('useAutoScroll', () => {
         deltaY: -320,
       } as React.WheelEvent<HTMLDivElement>);
     });
+    vi.mocked(scroller.scrollTo).mockClear();
     fireScroll(result.current.handleScroll, scroller, 260);
 
     act(() => {
@@ -409,6 +410,7 @@ describe('useAutoScroll', () => {
     act(() => {
       resizeObserverCallback?.([], {} as ResizeObserver);
       result.current.handleWheel({ deltaX: 0, deltaY: -80 } as React.WheelEvent<HTMLDivElement>);
+      vi.mocked(scroller.scrollTo).mockClear();
       vi.runAllTimers();
     });
 
@@ -425,6 +427,7 @@ describe('useAutoScroll', () => {
     vi.mocked(scroller.scrollTo).mockClear();
 
     act(() => result.current.handleWheel({ deltaX: 0, deltaY: -80 } as React.WheelEvent<HTMLDivElement>));
+    vi.mocked(scroller.scrollTo).mockClear();
     act(() => resizeObserverCallback?.([], {} as ResizeObserver));
     fireScroll(result.current.handleScroll, scroller, 500);
     scroller.scrollHeight = 1100;
@@ -434,6 +437,31 @@ describe('useAutoScroll', () => {
     });
 
     expect(scroller.scrollTo).not.toHaveBeenCalled();
+  });
+
+  it('stops an in-flight native smooth scroll as soon as the user wheels upward', () => {
+    const scroller = createScroller({ scrollTop: 520 });
+    const { result } = renderHook(() => useAutoScroll({ messages: [createLeftMessage('done')], itemCount: 1 }));
+    attachElements(result, scroller, createContent());
+
+    act(() => {
+      result.current.handleWheel({ deltaX: 0, deltaY: -80 } as React.WheelEvent<HTMLDivElement>);
+    });
+
+    expect(scroller.scrollTo).toHaveBeenCalledWith({ top: 520, behavior: 'auto' });
+  });
+
+  it('does not run a queued initial bottom sync after the user starts scrolling', () => {
+    const scroller = createScroller({ scrollTop: 520 });
+    const { result } = renderHook(() => useAutoScroll({ messages: [createLeftMessage('done')], itemCount: 1 }));
+    attachElements(result, scroller, createContent());
+
+    act(() => {
+      result.current.handleWheel({ deltaX: 0, deltaY: -80 } as React.WheelEvent<HTMLDivElement>);
+      vi.runAllTimers();
+    });
+
+    expect(scroller.scrollTo).not.toHaveBeenCalledWith({ top: 600, behavior: 'auto' });
   });
 
   it('scrolls a target element into view for explicit message jumps', () => {

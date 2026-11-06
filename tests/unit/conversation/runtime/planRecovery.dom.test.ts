@@ -9,7 +9,7 @@
  * turn and a turn with many tool calls buries it outside the default page.
  */
 
-import { renderHook, waitFor } from '@testing-library/react';
+import { fireEvent, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TMessage } from '@/common/chat/chatLib';
 
@@ -59,6 +59,30 @@ afterEach(() => {
 });
 
 describe('usePlanRecovery', () => {
+  it('refreshes an existing plan without rolling a newer live update back', async () => {
+    const recovered = {
+      ...PLAN_ROW,
+      content: { entries: [{ content: 'new', status: 'completed' }], updated_at: 20 },
+    } as TMessage;
+    invoke.mockResolvedValueOnce(recovered);
+    renderHook(() => usePlanRecovery('conv-1'));
+    await waitFor(() => expect(updateMessageList).toHaveBeenCalled());
+    const updater = updateMessageList.mock.calls[0][0] as (list: TMessage[]) => TMessage[];
+    expect(updater([PLAN_ROW])[0]).toBe(recovered);
+    const live = [{ ...recovered, content: { ...recovered.content, updated_at: 30 } }] as TMessage[];
+    expect(updater(live)).toBe(live);
+  });
+
+  it('refreshes after focus and reconnection and removes listeners on unmount', async () => {
+    const { unmount } = renderHook(() => usePlanRecovery('conv-1'));
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
+    fireEvent.focus(window);
+    fireEvent.online(window);
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(3));
+    unmount();
+    fireEvent.focus(window);
+    expect(invoke).toHaveBeenCalledTimes(3);
+  });
   it('does not fetch before the runtime view has hydrated', () => {
     // The runtime view resolves isProcessing asynchronously. Firing on the first
     // snapshot reads a false `false` and the bar silently stays empty — exactly

@@ -55,6 +55,7 @@ const MessageAnchorRail: React.FC = () => {
   const flyoutRef = useRef<HTMLDivElement | null>(null);
   const [railHeight, setRailHeight] = useState(0);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [directoryOpen, setDirectoryOpen] = useState(false);
 
   useEffect(() => {
     const host = railNode?.parentElement;
@@ -161,7 +162,10 @@ const MessageAnchorRail: React.FC = () => {
     pointerYRef.current = null;
     setPointerOffset(null);
     setActiveIndex(null);
+    setDirectoryOpen(false);
   }, []);
+
+  const openDirectory = useCallback(() => setDirectoryOpen(true), []);
 
   if (anchors.length === 0) return null;
 
@@ -184,7 +188,7 @@ const MessageAnchorRail: React.FC = () => {
   return (
     <div
       ref={setRailNode}
-      className={classNames(styles.rail, 'absolute start-0 top-0 bottom-0 z-20')}
+      className={classNames(styles.rail, directoryOpen && styles.directoryOpen, 'absolute start-0 top-0 bottom-0 z-20')}
       data-testid='message-anchor-rail'
       aria-label={t('messages.anchorRail.label')}
       role='navigation'
@@ -200,6 +204,7 @@ const MessageAnchorRail: React.FC = () => {
         data-testid='message-anchor-rail-zone'
         data-scrollable={scrollable ? 'true' : undefined}
         onScroll={handleViewportScroll}
+        onPointerEnter={openDirectory}
         onPointerMove={handlePointerMove}
         onClick={() => jumpToAnchor(activeAnchor)}
       >
@@ -224,6 +229,7 @@ const MessageAnchorRail: React.FC = () => {
                 jumpToAnchor(anchor);
               }}
               onFocus={() => {
+                openDirectory();
                 focusAnchor(index);
                 revealIndex(index);
               }}
@@ -245,6 +251,8 @@ const MessageAnchorRail: React.FC = () => {
         className={styles.flyout}
         style={{ top: flyoutTop }}
         role='group'
+        aria-hidden={!directoryOpen}
+        inert={!directoryOpen}
         aria-label={t('messages.anchorRail.label')}
         data-testid='message-anchor-flyout'
         onScroll={(event) => {

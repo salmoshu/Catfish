@@ -536,7 +536,9 @@
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
     "midturnBlockedSendHint": "This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.",
-    "addToQueueBusyHint": "Añadir a la cola para enviar más tarde."
+    "addToQueueBusyHint": "Añadir a la cola para enviar más tarde.",
+    "expand": "Expandir cola de comandos",
+    "collapse": "Contraer cola de comandos"
   },
   "contextUsage": {
     "contextUsed": "contexto usado",
@@ -785,7 +787,8 @@
     "progress": "{{completed}}/{{total}}",
     "empty": "Aún no hay plan",
     "expand": "Expandir plan",
-    "collapse": "Contraer plan"
+    "collapse": "Contraer plan",
+    "priorityHigh": "Prioridad alta"
   },
   "fileTabs": {
     "label": "Archivos de la conversación",

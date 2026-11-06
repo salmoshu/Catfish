@@ -60,6 +60,8 @@
     "label": "Vitesse",
     "fast": "Rapide",
     "standard": "Standard",
-    "switchSuccess": "Mode de vitesse modifié"
+    "switchSuccess": "Mode de vitesse modifié",
+    "costNotice": "Les modes rapides peuvent consommer plus de quota ou coûter plus cher. Les modifications concernent les prochaines requêtes.",
+    "pendingNextTurn": "Le changement de vitesse prendra effet au prochain tour."
   }
 }

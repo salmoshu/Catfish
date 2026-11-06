@@ -535,7 +535,9 @@
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
     "midturnBlockedSendHint": "当前 Agent 正在处理，暂时不能直接发送。可以先存到草稿箱，稍后发送。",
-    "addToQueueBusyHint": "加入待发送队列，稍后发送。"
+    "addToQueueBusyHint": "加入待发送队列，稍后发送。",
+    "expand": "展开命令队列",
+    "collapse": "折叠命令队列"
   },
   "contextUsage": {
     "contextUsed": "上下文已使用",
@@ -784,7 +786,8 @@
     "progress": "{{completed}}/{{total}}",
     "empty": "暂无计划",
     "expand": "展开计划",
-    "collapse": "收起计划"
+    "collapse": "收起计划",
+    "priorityHigh": "高优先级"
   },
   "fileTabs": {
     "label": "会话文件",

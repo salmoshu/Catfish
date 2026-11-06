@@ -15,6 +15,7 @@ type RuntimeSelectorPillProps = Omit<
   testId?: string;
   className: string;
   label?: string;
+  labelDetail?: string;
   leading?: React.ReactNode;
   trailing?: React.ReactNode;
   loading?: boolean;
@@ -42,15 +43,27 @@ export const RuntimeSelectorLoadingIndicator: React.FC = () => (
 
 const RuntimeSelectorPill = React.forwardRef<React.ElementRef<typeof Button>, RuntimeSelectorPillProps>(
   (
-    { testId, className, label, leading, trailing, loading = false, disabled = false, onClick, style, ...buttonProps },
+    {
+      testId,
+      className,
+      label,
+      labelDetail,
+      leading,
+      trailing,
+      loading = false,
+      disabled = false,
+      onClick,
+      style,
+      ...buttonProps
+    },
     ref
   ) => (
     <Button
       {...buttonProps}
       ref={ref}
       data-testid={testId}
-      title={label}
-      aria-label={label}
+      title={labelDetail ? `${label} · ${labelDetail}` : label}
+      aria-label={labelDetail ? `${label} · ${labelDetail}` : label}
       className={className}
       shape='round'
       size='small'
@@ -60,7 +73,12 @@ const RuntimeSelectorPill = React.forwardRef<React.ElementRef<typeof Button>, Ru
     >
       <span className='flex items-center gap-6px min-w-0 leading-[1.4]'>
         {leading}
-        {label && <MarqueePillLabel>{label}</MarqueePillLabel>}
+        {label && (
+          <span className='inline-flex items-center min-w-0'>
+            <MarqueePillLabel>{label}</MarqueePillLabel>
+            {labelDetail && <span className='shrink-0 whitespace-nowrap'>{` · ${labelDetail}`}</span>}
+          </span>
+        )}
         {loading ? <RuntimeSelectorLoadingIndicator /> : trailing}
       </span>
     </Button>

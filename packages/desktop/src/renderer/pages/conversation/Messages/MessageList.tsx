@@ -374,6 +374,8 @@ const MessageList: React.FC<{
   const loadingTargetKeyRef = useRef<string>('');
   const scrollerElementRef = useRef<HTMLDivElement | null>(null);
   const contentElementRef = useRef<HTMLDivElement | null>(null);
+  const previousPageLoadingRef = useRef(false);
+  const autoFilledCursorRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (conversationContext?.conversation_id) {
@@ -594,25 +596,93 @@ const MessageList: React.FC<{
     [handleContentRef]
   );
 
+  const loadPreviousPage = useCallback(() => {
+    const scroller = scrollerElementRef.current;
+    if (
+      !scroller ||
+      !pagination.hasMoreBefore ||
+      !pagination.oldestCursor ||
+      pagination.isLoadingBefore ||
+      pagination.isLoadingAnchor ||
+      previousPageLoadingRef.current ||
+      scroller.scrollTop > 160
+    )
+      return false;
+
+    previousPageLoadingRef.current = true;
+    const previousHeight = contentElementRef.current?.scrollHeight ?? 0;
+    void loadPreviousMessagePage().then((loaded) => {
+      previousPageLoadingRef.current = false;
+      if (!loaded) return;
+      requestAnimationFrame(() => {
+        if (scrollerElementRef.current !== scroller) return;
+        const nextHeight = contentElementRef.current?.scrollHeight ?? previousHeight;
+        scroller.scrollTop += nextHeight - previousHeight;
+      });
+    });
+    return true;
+  }, [
+    loadPreviousMessagePage,
+    pagination.hasMoreBefore,
+    pagination.oldestCursor,
+    pagination.isLoadingBefore,
+    pagination.isLoadingAnchor,
+  ]);
+
   const handleMessageListScroll = useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {
       handleScroll(event);
-      const scroller = event.currentTarget;
-      if (!pagination.hasMoreBefore || pagination.isLoadingBefore || scroller.scrollTop > 160) {
-        return;
-      }
-
-      const previousHeight = contentElementRef.current?.scrollHeight ?? 0;
-      void loadPreviousMessagePage().then((loaded) => {
-        if (!loaded) return;
-        requestAnimationFrame(() => {
-          const nextHeight = contentElementRef.current?.scrollHeight ?? previousHeight;
-          scroller.scrollTop += nextHeight - previousHeight;
-        });
-      });
+      loadPreviousPage();
     },
-    [handleScroll, loadPreviousMessagePage, pagination.hasMoreBefore, pagination.isLoadingBefore]
+    [handleScroll, loadPreviousPage]
   );
+
+  const handleMessageListWheel = useCallback(
+    (event: React.WheelEvent<HTMLDivElement>) => {
+      handleWheel(event);
+      if (event.deltaY < 0) loadPreviousPage();
+    },
+    [handleWheel, loadPreviousPage]
+  );
+
+  useEffect(() => {
+    const scroller = scrollerElementRef.current;
+    const content = contentElementRef.current;
+    if (
+      !scroller ||
+      !content ||
+      isMessageListLoading ||
+      !pagination.hasMoreBefore ||
+      !pagination.oldestCursor ||
+      pagination.isLoadingBefore ||
+      pagination.isLoadingAnchor
+    )
+      return;
+
+    // Completed work can collapse an entire page into one short row. Without
+    // overflow no scroll event can request the older messages, so fill the
+    // viewport page by page until it can scroll or history is exhausted.
+    const cursorKey = `${conversationContext?.conversation_id}:${pagination.oldestCursor}`;
+    const fillViewport = () => {
+      if (scroller.clientHeight <= 0 || scroller.scrollHeight > scroller.clientHeight + 1) return;
+      if (autoFilledCursorRef.current === cursorKey) return;
+      if (loadPreviousPage()) autoFilledCursorRef.current = cursorKey;
+    };
+    const observer = new ResizeObserver(fillViewport);
+    observer.observe(scroller);
+    observer.observe(content);
+    fillViewport();
+    return () => observer.disconnect();
+  }, [
+    conversationContext?.conversation_id,
+    isMessageListLoading,
+    loadPreviousPage,
+    pagination.hasMoreBefore,
+    pagination.isLoadingBefore,
+    pagination.isLoadingAnchor,
+    pagination.oldestCursor,
+    processedList,
+  ]);
 
   useEffect(() => {
     if (!targetMessageId || processedList.length === 0) {
@@ -846,7 +916,7 @@ const MessageList: React.FC<{
             onPointerDown={handlePointerDown}
             onKeyDown={handleKeyDown}
             onScroll={handleMessageListScroll}
-            onWheel={handleWheel}
+            onWheel={handleMessageListWheel}
           >
             <div
               ref={setContentRef}

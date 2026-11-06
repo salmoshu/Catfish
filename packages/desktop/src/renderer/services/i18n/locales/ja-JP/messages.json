@@ -126,7 +126,13 @@
     "errorParentUnbound": "この会話にはまだ分岐できるバックエンドセッションがありません",
     "errorPointUnsupported": "このエージェントは最新メッセージからのみ分岐できます",
     "errorUnsupported": "このエージェントは分岐をサポートしていません",
-    "errorGeneric": "分岐に失敗しました：{{message}}"
+    "errorGeneric": "分岐に失敗しました：{{message}}",
+    "toAnotherAgent": "別のエージェントに Fork",
+    "startContinuation": "新しい会話で続行",
+    "targetAgent": "移行先エージェント",
+    "handoffDescription": "新しい会話に要約を引き継いで作業を続行します。元の会話は実行を継続します。",
+    "errorTargetUnavailable": "移行先エージェントを利用できません。",
+    "errorOperationConflict": "この操作 ID は別の Fork に使用されています。"
   },
   "askSubmit": "送信",
   "askDecline": "回答しない",

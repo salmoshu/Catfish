@@ -126,7 +126,13 @@
     "errorParentUnbound": "این گفتگو هنوز نشست پشتیبانی برای انشعاب ندارد",
     "errorPointUnsupported": "این عامل فقط از آخرین پیام می‌تواند انشعاب بگیرد",
     "errorUnsupported": "این عامل از انشعاب پشتیبانی نمی‌کند",
-    "errorGeneric": "انشعاب ناموفق بود: {{message}}"
+    "errorGeneric": "انشعاب ناموفق بود: {{message}}",
+    "toAnotherAgent": "انشعاب به عامل دیگر",
+    "startContinuation": "ادامه در گفتگوی جدید",
+    "targetAgent": "عامل مقصد",
+    "handoffDescription": "گفتگوی جدید خلاصه‌ای دریافت می‌کند و کار را ادامه می‌دهد. گفتگوی مبدأ فعال می‌ماند.",
+    "errorTargetUnavailable": "عامل مقصد در دسترس نیست.",
+    "errorOperationConflict": "این عملیات قبلاً برای انشعاب دیگری استفاده شده است."
   },
   "askSubmit": "ارسال",
   "askDecline": "پاسخ ندادن",

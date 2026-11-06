@@ -106,6 +106,7 @@
   border: 1px solid var(--color-border-2);
   border-radius: 12px;
   box-shadow: 0 8px 24px var(--color-fill-2);
+  visibility: hidden;
   opacity: 0;
   transform: translateX(-4px);
   pointer-events: none;
@@ -114,7 +115,8 @@
     transform 150ms ease-out;
 }
 
-.rail:is(:hover, :focus-within) .flyout {
+.directoryOpen .flyout {
+  visibility: visible;
   opacity: 1;
   transform: none;
   pointer-events: auto;

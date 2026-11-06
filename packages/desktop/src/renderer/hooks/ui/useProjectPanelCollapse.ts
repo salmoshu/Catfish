@@ -1,108 +1,40 @@
-/**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
- * Layout-level collapse state for the unified project Workbench. The host stays
- * mounted at width 0, preserving tree subscriptions, editors and browser pages
- * across collapse and same-project conversation switches.
- *
- * Seam: reuses the existing `WORKSPACE_TOGGLE_EVENT` bus so every toggle
- * affordance already wired for the legacy workspace panel — the mac Titlebar
- * button, the keyboard shortcut, and any platform button — drives the Workbench
- * too. For a project conversation the legacy ChatLayout handler is inert
- * (`workspaceEnabled === false`, it returns without `preventDefault`), so this
- * host handler is the sole actor; for a non-project conversation `active` is
- * false here and ChatLayout owns the event. No double-handling.
- *
- * Scope: desktop persists the collapse preference per project (switch away and
- * back restores it, consistent with the no-remount principle). Mobile starts
- * collapsed and force-collapses on project change (the overlay must not linger
- * across projects), and does not persist.
- */
-
-import { useEffect, useRef, useState } from 'react';
-
+import { useCallback, useEffect } from 'react';
+import { useCurrentConversation } from '@/renderer/pages/conversation/explorer/currentConversationStore';
+import { useWorkbenchPanelState } from '@/renderer/pages/conversation/Workbench/workbenchPanelState';
 import { WORKSPACE_TOGGLE_EVENT, dispatchWorkspaceStateEvent } from '@/renderer/utils/workspace/workspaceEvents';
 
-const COLLAPSE_KEY_PREFIX = 'project-panel-collapse:';
-
-const collapseKey = (projectId: string): string => `${COLLAPSE_KEY_PREFIX}${projectId}`;
-
-/** Read the persisted desktop preference for a project (default: expanded). */
-const readStoredCollapsed = (projectId: string | null): boolean => {
-  if (!projectId || typeof window === 'undefined') return false;
-  try {
-    return localStorage.getItem(collapseKey(projectId)) === 'collapsed';
-  } catch {
-    return false;
-  }
-};
-
 type UseProjectPanelCollapseParams = {
-  /** Owning project id, or null when no project is bound. */
   projectId: string | null;
-  /** Mobile viewport — starts collapsed, force-collapses on project change, no persist. */
   isMobile: boolean;
-  /** True when a project host is live (project bound). Gates event handling. */
   active: boolean;
 };
 
-type UseProjectPanelCollapseReturn = {
-  collapsed: boolean;
-  setCollapsed: (collapsed: boolean) => void;
-};
+/** Keep the dock occupied while either panel is open and toggle the workspace independently. */
+export function useProjectPanelCollapse({ projectId, isMobile, active }: UseProjectPanelCollapseParams) {
+  const conversationId = useCurrentConversation();
+  const { state, update, toggle } = useWorkbenchPanelState(projectId, conversationId, isMobile);
+  const setCollapsed = useCallback(
+    (collapsed: boolean): void => {
+      update((current) =>
+        collapsed ? { ...current, workspaceOpen: false, planOpen: false } : { ...current, workspaceOpen: true }
+      );
+    },
+    [update]
+  );
 
-export function useProjectPanelCollapse({
-  projectId,
-  isMobile,
-  active,
-}: UseProjectPanelCollapseParams): UseProjectPanelCollapseReturn {
-  const [collapsed, setCollapsed] = useState<boolean>(() => (isMobile ? true : readStoredCollapsed(projectId)));
-
-  // Mirror ref so the event handler reads current state without re-subscribing.
-  const collapsedRef = useRef(collapsed);
   useEffect(() => {
-    collapsedRef.current = collapsed;
-  }, [collapsed]);
-
-  // Re-init when the project or platform changes: desktop restores the per-project
-  // preference; mobile always starts collapsed (overlay hidden) and must not carry
-  // an open overlay across a project switch.
-  useEffect(() => {
-    setCollapsed(isMobile ? true : readStoredCollapsed(projectId));
-  }, [projectId, isMobile]);
-
-  // Single toggle seam: handle WORKSPACE_TOGGLE_EVENT only when a project host is
-  // live. Desktop persists the new state per project.
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
     const handleToggle = (event: Event) => {
-      if (!active || !projectId) return; // non-project conversation → ChatLayout owns it
+      if (!active || !projectId) return;
       event.preventDefault();
-      const next = !collapsedRef.current;
-      setCollapsed(next);
-      if (!isMobile) {
-        try {
-          localStorage.setItem(collapseKey(projectId), next ? 'collapsed' : 'expanded');
-        } catch {
-          // ignore persistence errors
-        }
-      }
+      toggle('workspace');
     };
     window.addEventListener(WORKSPACE_TOGGLE_EVENT, handleToggle);
     return () => window.removeEventListener(WORKSPACE_TOGGLE_EVENT, handleToggle);
-  }, [active, projectId, isMobile]);
+  }, [active, projectId, toggle]);
 
-  // Broadcast collapse state so the mac Titlebar workspace button's icon stays in
-  // sync (it listens for WORKSPACE_STATE_EVENT). Only when this host is live —
-  // otherwise ChatLayout owns the broadcast for the legacy workspace panel.
   useEffect(() => {
-    if (!active) return;
-    dispatchWorkspaceStateEvent(collapsed);
-  }, [collapsed, active]);
+    if (active) dispatchWorkspaceStateEvent(!state.workspaceOpen);
+  }, [active, state.workspaceOpen, conversationId]);
 
-  return { collapsed, setCollapsed };
+  return { collapsed: !state.workspaceOpen && !state.planOpen, setCollapsed };
 }

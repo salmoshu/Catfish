@@ -535,7 +535,9 @@
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
     "midturnBlockedSendHint": "This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.",
-    "addToQueueBusyHint": "به صف ارسال اضافه کنید و بعداً بفرستید."
+    "addToQueueBusyHint": "به صف ارسال اضافه کنید و بعداً بفرستید.",
+    "expand": "باز کردن صف فرمان‌ها",
+    "collapse": "جمع کردن صف فرمان‌ها"
   },
   "contextUsage": {
     "contextUsed": "زمینه استفاده‌شده",
@@ -784,7 +786,8 @@
     "progress": "{{completed}}/{{total}}",
     "empty": "هنوز برنامه‌ای نیست",
     "expand": "گسترش برنامه",
-    "collapse": "جمع کردن برنامه"
+    "collapse": "جمع کردن برنامه",
+    "priorityHigh": "اولویت بالا"
   },
   "fileTabs": {
     "label": "فایل‌های گفتگو",

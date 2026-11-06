@@ -126,7 +126,13 @@
     "errorParentUnbound": "Esta conversa ainda não tem uma sessão de backend para bifurcar",
     "errorPointUnsupported": "Este agente só pode bifurcar a partir da mensagem mais recente",
     "errorUnsupported": "Este agente não oferece suporte a bifurcação",
-    "errorGeneric": "Falha ao bifurcar: {{message}}"
+    "errorGeneric": "Falha ao bifurcar: {{message}}",
+    "toAnotherAgent": "Bifurcar para outro agente",
+    "startContinuation": "Continuar em nova conversa",
+    "targetAgent": "Agente de destino",
+    "handoffDescription": "A nova conversa recebe um resumo e continua o trabalho. A original continua em execução.",
+    "errorTargetUnavailable": "O agente de destino está indisponível.",
+    "errorOperationConflict": "Esta operação já foi usada para outra bifurcação."
   },
   "askSubmit": "Enviar",
   "askDecline": "Não responder",

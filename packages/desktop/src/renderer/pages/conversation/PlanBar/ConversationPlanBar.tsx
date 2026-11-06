@@ -36,36 +36,46 @@ const ConversationPlanBar: React.FC<{
           <span className='text-12px'>{t('conversation.planBar.progress', { completed, total: entries.length })}</span>
         )}
       </div>
-      {entries.length > 0 ? (
-        <div
-          className={`flex flex-col gap-6px pt-6px pl-30px pr-8px overflow-y-auto overscroll-contain ${variant === 'panel' ? 'flex-1 min-h-0' : ''}`}
-          style={variant === 'panel' ? undefined : { maxHeight: 'min(22vh, 180px)' }}
-        >
-          {entries.map((entry, index) => (
-            <div
-              key={`${index}-${entry.content}`}
-              className={styles.step}
-              data-status={entry.status}
-              aria-current={entry.status === 'in_progress' ? 'step' : undefined}
-            >
-              <PlanStepIcon status={entry.status} processing={isProcessing} />
-              <span
-                className={
-                  entry.status === 'completed'
-                    ? styles.stepCompleted
-                    : entry.status === 'in_progress'
-                      ? styles.stepActive
-                      : undefined
-                }
+      <div
+        className={`flex flex-col gap-6px overflow-y-auto overscroll-contain ${variant === 'panel' ? 'flex-1 min-h-0' : ''}`}
+        style={variant === 'panel' ? undefined : { maxHeight: 'min(22vh, 180px)' }}
+      >
+        {plan?.content.explanation && (
+          <p className='px-8px text-13px leading-20px text-t-secondary whitespace-pre-wrap break-words'>
+            {plan.content.explanation}
+          </p>
+        )}
+        {entries.length > 0 ? (
+          <div className='flex flex-col gap-6px pt-6px pl-30px pr-8px'>
+            {entries.map((entry, index) => (
+              <div
+                key={`${index}-${entry.content}`}
+                className={styles.step}
+                data-status={entry.status}
+                aria-current={entry.status === 'in_progress' ? 'step' : undefined}
               >
-                {entry.content}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className={styles.empty}>{t('conversation.planBar.empty')}</div>
-      )}
+                <PlanStepIcon status={entry.status} processing={isProcessing} />
+                {entry.priority === 'high' && (
+                  <span className='text-11px text-t-tertiary shrink-0'>{t('conversation.planBar.priorityHigh')}</span>
+                )}
+                <span
+                  className={
+                    entry.status === 'completed'
+                      ? styles.stepCompleted
+                      : entry.status === 'in_progress'
+                        ? styles.stepActive
+                        : undefined
+                  }
+                >
+                  {entry.content}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : !plan?.content.explanation ? (
+          <div className={styles.empty}>{t('conversation.planBar.empty')}</div>
+        ) : null}
+      </div>
     </div>
   );
 };

@@ -535,7 +535,9 @@
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
     "midturnBlockedSendHint": "This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.",
-    "addToQueueBusyHint": "Queue for later sending."
+    "addToQueueBusyHint": "Queue for later sending.",
+    "expand": "명령 대기열 펼치기",
+    "collapse": "명령 대기열 접기"
   },
   "contextUsage": {
     "contextUsed": "사용된 컨텍스트",
@@ -784,7 +786,8 @@
     "progress": "{{completed}}/{{total}}",
     "empty": "아직 계획이 없습니다",
     "expand": "계획 펼치기",
-    "collapse": "계획 접기"
+    "collapse": "계획 접기",
+    "priorityHigh": "높은 우선순위"
   },
   "fileTabs": {
     "label": "대화 파일",

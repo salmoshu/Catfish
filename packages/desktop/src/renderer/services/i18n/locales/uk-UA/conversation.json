@@ -543,7 +543,9 @@
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
     "midturnBlockedSendHint": "This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.",
-    "addToQueueBusyHint": "Додати до черги й надіслати пізніше."
+    "addToQueueBusyHint": "Додати до черги й надіслати пізніше.",
+    "expand": "Розгорнути чергу команд",
+    "collapse": "Згорнути чергу команд"
   },
   "contextUsage": {
     "contextUsed": "контексту використано",
@@ -800,7 +802,8 @@
     "progress": "{{completed}}/{{total}}",
     "empty": "Плану ще немає",
     "expand": "Розгорнути план",
-    "collapse": "Згорнути план"
+    "collapse": "Згорнути план",
+    "priorityHigh": "Високий пріоритет"
   },
   "fileTabs": {
     "label": "Файли розмови",

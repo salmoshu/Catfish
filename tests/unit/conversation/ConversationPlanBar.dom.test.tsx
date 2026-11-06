@@ -10,7 +10,17 @@
 
 import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { Button } from '@arco-design/web-react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useProjectPanelCollapse } from '@/renderer/hooks/ui/useProjectPanelCollapse';
+import { dispatchWorkspaceToggleEvent } from '@/renderer/utils/workspace/workspaceEvents';
+import { ProjectPanelHost } from '@/renderer/components/layout/ProjectPanelHost';
+import {
+  resetWorkbenchPanelStateForTest,
+  toggleWorkbenchPanel,
+  type WorkbenchPanelState,
+} from '@/renderer/pages/conversation/Workbench/workbenchPanelState';
+import type { WorkbenchSection } from '@/renderer/pages/conversation/Workbench/workbenchActivity';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -31,6 +41,27 @@ vi.mock('@renderer/pages/conversation/runtime/useConversationRuntimeView', () =>
   __esModule: true,
   useConversationRuntimeView: () => runtimeView(),
 }));
+
+const scope = vi.hoisted(() => ({ projectId: 'panel-project', conversationId: 'conv-1' }));
+vi.mock('@/renderer/pages/conversation/explorer/currentConversationStore', () => ({
+  useCurrentConversation: () => scope.conversationId,
+}));
+vi.mock('@/renderer/pages/conversation/explorer/currentProjectStore', () => ({
+  useCurrentProject: () => scope.projectId,
+}));
+
+vi.mock('@/renderer/pages/conversation/explorer/ExplorerContainer', () => ({
+  ExplorerContainer: ({ activeSection }: { activeSection: WorkbenchSection }) => (
+    <div data-testid='workspace-explorer'>{activeSection}</div>
+  ),
+}));
+
+vi.mock('@/renderer/pages/conversation/Preview', () => ({
+  usePreviewContext: () => ({ isOpen: false, activeTab: null }),
+  PreviewPanel: () => null,
+}));
+
+vi.mock('@/renderer/pages/conversation/Messages/acp/MessageAcpTerminalOutput', () => ({ default: () => null }));
 
 import { getChatSurfaceWidthClass } from '@renderer/pages/conversation/utils/chatSurfaceWidth';
 import ConversationPlanBar from '@renderer/pages/conversation/PlanBar/ConversationPlanBar';
@@ -62,12 +93,38 @@ const setup = (opts: { plan?: unknown; isProcessing?: boolean; activeTurnId?: st
   return render(<ConversationPlanBar conversation_id='conv-1' />);
 };
 
+beforeEach(() => {
+  localStorage.clear();
+  resetWorkbenchPanelStateForTest();
+  scope.projectId = 'panel-project';
+  scope.conversationId = 'conv-1';
+});
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
 });
 
 describe('ConversationPlanBar', () => {
+  it('shows proposed plan text without an empty state or a completed progress count', () => {
+    setup({ plan: { ...plan(), content: { entries: [], explanation: 'Inspect then verify' } } });
+    expect(screen.getByText('Inspect then verify')).toBeTruthy();
+    expect(screen.queryByText('conversation.planBar.empty')).toBeNull();
+    expect(screen.queryByText(/conversation.planBar.progress/)).toBeNull();
+  });
+  it('shows the plan explanation and high priority steps', () => {
+    setup({
+      plan: {
+        ...plan(),
+        content: {
+          explanation: 'Verify before release',
+          entries: [{ content: 'run tests', status: 'pending', priority: 'high' }],
+        },
+      },
+    });
+    expect(screen.getByText('Verify before release')).toBeTruthy();
+    expect(screen.getByText('conversation.planBar.priorityHigh')).toBeTruthy();
+  });
   it('renders the plan and its progress', () => {
     setup({ plan: plan('turn-id-1'), isProcessing: true, activeTurnId: 'turn-id-1' });
     expect(screen.getByText('conversation.planBar.title')).toBeTruthy();
@@ -139,67 +196,101 @@ describe('ConversationPlanBar', () => {
   });
 });
 
-describe('ConversationPlanCard', () => {
-  const setupCard = (sidebarOpen: boolean, entriesPlan: unknown = plan('turn-id-1')) => {
-    document.body.innerHTML = `<div data-plan-card-slot="conv-1"></div><div data-project-panel-host data-collapsed="${!sidebarOpen}"><div data-workbench data-active-section="files"></div><div data-plan-panel-slot="conv-1"></div></div>`;
-    const panel = document.querySelector<HTMLElement>('[data-project-panel-host]');
-    if (!panel) throw new Error('Missing test workbench');
-    vi.spyOn(panel, 'getBoundingClientRect').mockReturnValue({ left: 900, width: 320 } as DOMRect);
-    latestPlan.mockReturnValue(entriesPlan);
-    runtimeView.mockReturnValue({ isProcessing: false, activeTurnId: null, hydrated: true });
-    render(<ConversationPlanCard conversation_id='conv-1' />);
-    fireEvent.click(screen.getByRole('button', { name: 'conversation.planBar.title' }));
-    return screen.queryByRole('dialog', { name: 'conversation.planBar.title' });
+describe('independent workspace and plan panels', () => {
+  const Harness = () => {
+    const { collapsed, setCollapsed } = useProjectPanelCollapse({
+      projectId: scope.projectId,
+      isMobile: false,
+      active: true,
+    });
+    return (
+      <>
+        <Button onClick={() => dispatchWorkspaceToggleEvent()}>Toggle workspace</Button>
+        <div data-plan-card-slot={scope.conversationId} />
+        <ProjectPanelHost widthPx={320} collapsed={collapsed} onExpand={() => setCollapsed(false)} />
+        <ConversationPlanCard conversation_id={scope.conversationId} />
+      </>
+    );
+  };
+  const key = () => `workbench-panels:${scope.projectId}:${scope.conversationId}`;
+  const setupPanels = (workspaceOpen: boolean, planOpen: boolean) => {
+    latestPlan.mockReturnValue(plan('turn-1'));
+    runtimeView.mockReturnValue({ isProcessing: false, hydrated: true });
+    localStorage.setItem(key(), JSON.stringify({ workspaceOpen, planOpen, section: 'files' }));
+    return render(<Harness />);
+  };
+  const expectPresentation = (workspace: boolean, plan: boolean) => {
+    expect(document.querySelector('[data-project-panel-host]')).toHaveAttribute(
+      'data-collapsed',
+      String(!workspace && !plan)
+    );
+    expect(document.querySelector('[data-workspace-presentation]')).toHaveAttribute(
+      'data-workspace-presentation',
+      workspace ? (plan ? 'floating' : 'docked') : 'hidden'
+    );
+    expect(screen.getByRole('button', { name: 'conversation.planBar.title' })).toHaveAttribute(
+      'aria-expanded',
+      String(plan)
+    );
+    if (plan) expect(screen.getByText('count the files')).toBeVisible();
+    else expect(screen.queryByTestId('conversation-plan-bar')).not.toBeInTheDocument();
   };
 
-  it('floats over the conversation when the workbench is already open', () => {
-    const dialog = setupCard(true);
-    expect(dialog).toHaveStyle({ position: 'fixed', boxSizing: 'border-box', left: '544px', width: '340px' });
-    expect(screen.getByText('conversation.planBar.progress:1/3')).toBeInTheDocument();
+  it.each([
+    [false, false, 'workspace', true, false],
+    [false, false, 'plan', false, true],
+    [true, false, 'plan', false, true],
+    [true, false, 'workspace', false, false],
+    [false, true, 'workspace', true, true],
+    [false, true, 'plan', false, false],
+    [true, true, 'workspace', false, true],
+    [true, true, 'plan', true, false],
+  ] as const)('A=%s B=%s, toggling %s produces A=%s B=%s', (a, b, action, nextA, nextB) => {
+    const state: WorkbenchPanelState = { workspaceOpen: a, planOpen: b, section: 'files' };
+    expect(toggleWorkbenchPanel(state, action)).toEqual({ ...state, workspaceOpen: nextA, planOpen: nextB });
+    setupPanels(a, b);
+    fireEvent.click(
+      screen.getByRole('button', { name: action === 'workspace' ? 'Toggle workspace' : 'conversation.planBar.title' })
+    );
+    expectPresentation(nextA, nextB);
   });
 
-  it('keeps the plan button and shows an empty state when there is no plan', () => {
-    const dialog = setupCard(true, null);
-    expect(dialog).not.toBeNull();
-    expect(screen.getByText('conversation.planBar.empty')).toBeInTheDocument();
-    expect(screen.queryByText(/conversation\.planBar\.progress/)).toBeNull();
+  it('restores each conversation after switching away, including the floating workspace', () => {
+    const view = setupPanels(true, true);
+    expectPresentation(true, true);
+    scope.conversationId = 'conv-2';
+    localStorage.setItem(key(), JSON.stringify({ workspaceOpen: false, planOpen: true, section: 'changes' }));
+    view.rerender(<Harness />);
+    expectPresentation(false, true);
+    scope.conversationId = 'conv-1';
+    view.rerender(<Harness />);
+    expectPresentation(true, true);
+    expect(document.querySelector('[data-workbench]')).toHaveAttribute('data-active-section', 'files');
   });
 
-  it('opens the collapsed workbench and renders the plan inside it', () => {
-    const dialog = setupCard(false);
-    expect(dialog).toBeNull();
-    const panel = document.querySelector<HTMLElement>('[data-project-panel-host]');
-    const workbench = document.querySelector<HTMLElement>('[data-workbench]');
-    if (!panel || !workbench) throw new Error('Missing test workbench');
-    panel.dataset.collapsed = 'false';
-    workbench.dataset.activeSection = 'plan';
-    fireEvent(window, new CustomEvent('aionui-workbench-section'));
-
-    const embeddedPlan = screen.getByTestId('conversation-plan-bar');
-    expect(embeddedPlan).toHaveAttribute('data-variant', 'panel');
-    expect(embeddedPlan.parentElement).toHaveAttribute('data-plan-panel-slot', 'conv-1');
-    expect(screen.queryByRole('dialog')).toBeNull();
-  });
-
-  it('closes the floating plan when the workbench expands', () => {
-    expect(setupCard(true)).not.toBeNull();
-    fireEvent(window, new CustomEvent('aionui-workspace-state'));
-    expect(screen.queryByRole('dialog')).toBeNull();
-  });
-
-  it('collapses the workbench again when closing a plan opened from the collapsed state', () => {
-    expect(setupCard(false)).toBeNull();
-    const panel = document.querySelector<HTMLElement>('[data-project-panel-host]');
-    const workbench = document.querySelector<HTMLElement>('[data-workbench]');
-    if (!panel || !workbench) throw new Error('Missing test workbench');
-    panel.dataset.collapsed = 'false';
-    workbench.dataset.activeSection = 'plan';
-    fireEvent(window, new CustomEvent('aionui-workbench-section'));
-
-    const toggle = vi.fn((event: Event) => event.preventDefault());
-    window.addEventListener('aionui-workspace-toggle', toggle);
+  it('restores both panels after unmounting and reloading persisted state', () => {
+    const view = setupPanels(false, false);
     fireEvent.click(screen.getByRole('button', { name: 'conversation.planBar.title' }));
-    expect(toggle).toHaveBeenCalledOnce();
-    window.removeEventListener('aionui-workspace-toggle', toggle);
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle workspace' }));
+    expectPresentation(true, true);
+    view.unmount();
+    resetWorkbenchPanelStateForTest();
+    render(<Harness />);
+    expectPresentation(true, true);
+  });
+
+  it('keeps the workspace mounted when moving from floating to docked', () => {
+    setupPanels(true, true);
+    const explorer = screen.getByTestId('workspace-explorer');
+    fireEvent.click(screen.getByRole('button', { name: 'conversation.planBar.title' }));
+    expectPresentation(true, false);
+    expect(screen.getByTestId('workspace-explorer')).toBe(explorer);
+  });
+
+  it('opens an empty plan in the dock when no plan has arrived', () => {
+    setupPanels(false, false);
+    latestPlan.mockReturnValue(undefined);
+    fireEvent.click(screen.getByRole('button', { name: 'conversation.planBar.title' }));
+    expect(screen.getByText('conversation.planBar.empty')).toBeVisible();
   });
 });

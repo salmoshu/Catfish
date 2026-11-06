@@ -786,7 +786,8 @@
     "progress": "{{completed}}/{{total}}",
     "empty": "No plan yet",
     "expand": "Expand plan",
-    "collapse": "Collapse plan"
+    "collapse": "Collapse plan",
+    "priorityHigh": "High priority"
   },
   "fileTabs": {
     "label": "Conversation files",

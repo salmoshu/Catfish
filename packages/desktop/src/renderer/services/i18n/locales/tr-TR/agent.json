@@ -60,6 +60,8 @@
     "label": "Hız",
     "fast": "Hızlı",
     "standard": "Standart",
-    "switchSuccess": "Hız modu değiştirildi"
+    "switchSuccess": "Hız modu değiştirildi",
+    "costNotice": "Daha hızlı modlar daha fazla kota veya ücret gerektirebilir. Değişiklikler sonraki isteklere uygulanır.",
+    "pendingNextTurn": "Hız değişikliği sonraki turda uygulanacak."
   }
 }

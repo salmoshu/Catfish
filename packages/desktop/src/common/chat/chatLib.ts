@@ -422,6 +422,8 @@ export type IMessagePlan = IMessage<
   {
     session_id: string;
     entries: PlanUpdate['update']['entries'];
+    explanation?: string;
+    updated_at?: number;
     /**
      * The turn this snapshot belongs to. Kept for provenance and history: the
      * plan itself persists across turns so an aborted-then-resumed task keeps

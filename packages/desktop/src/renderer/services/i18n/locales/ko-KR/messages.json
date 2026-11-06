@@ -126,7 +126,13 @@
     "errorParentUnbound": "이 대화에는 아직 분기할 백엔드 세션이 없습니다",
     "errorPointUnsupported": "이 에이전트는 최신 메시지에서만 분기할 수 있습니다",
     "errorUnsupported": "이 에이전트는 분기를 지원하지 않습니다",
-    "errorGeneric": "분기 실패: {{message}}"
+    "errorGeneric": "분기 실패: {{message}}",
+    "toAnotherAgent": "다른 에이전트로 Fork",
+    "startContinuation": "새 대화에서 계속",
+    "targetAgent": "대상 에이전트",
+    "handoffDescription": "새 대화가 요약을 전달받아 작업을 계속합니다. 원본 대화는 계속 실행됩니다.",
+    "errorTargetUnavailable": "대상 에이전트를 사용할 수 없습니다.",
+    "errorOperationConflict": "이 작업 ID는 다른 Fork에 이미 사용되었습니다."
   },
   "askSubmit": "제출",
   "askDecline": "답변 안 함",

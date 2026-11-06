@@ -520,7 +520,9 @@
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
     "midturnBlockedSendHint": "This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.",
-    "addToQueueBusyHint": "Kuyruğa ekleyip daha sonra gönder."
+    "addToQueueBusyHint": "Kuyruğa ekleyip daha sonra gönder.",
+    "expand": "Komut kuyruğunu genişlet",
+    "collapse": "Komut kuyruğunu daralt"
   },
   "contextUsage": {
     "contextUsed": "bağlam kullanıldı",
@@ -786,7 +788,8 @@
     "progress": "{{completed}}/{{total}}",
     "empty": "Henüz plan yok",
     "expand": "Planı genişlet",
-    "collapse": "Planı daralt"
+    "collapse": "Planı daralt",
+    "priorityHigh": "Yüksek öncelik"
   },
   "fileTabs": {
     "label": "Sohbet dosyaları",

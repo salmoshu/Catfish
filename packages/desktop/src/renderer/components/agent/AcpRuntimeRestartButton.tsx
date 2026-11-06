@@ -101,7 +101,7 @@ const AcpRuntimeRestartButton: React.FC<{
     <Button
       type='text'
       size='mini'
-      className='h-28px w-28px !text-t-secondary hover:!text-t-primary hover:!bg-fill-2'
+      className='!inline-flex !items-center !justify-center h-28px w-28px !text-t-secondary hover:!text-t-primary hover:!bg-fill-2'
       loading={restarting}
       disabled={effectivelyDisabled || restarting}
       icon={<Refresh theme='outline' size='14' fill='currentColor' />}
@@ -123,7 +123,7 @@ const AcpRuntimeRestartButton: React.FC<{
         void restart().catch((): void => undefined);
       }}
     >
-      <span className='inline-flex'>
+      <span className='inline-flex items-center align-middle leading-none'>
         <Tooltip content={t('agent.runtimeRestart.tooltip')}>{button}</Tooltip>
       </span>
     </Popconfirm>

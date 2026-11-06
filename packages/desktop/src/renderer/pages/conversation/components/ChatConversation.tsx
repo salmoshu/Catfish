@@ -307,12 +307,13 @@ const ChatConversation: React.FC<{
     // into the same catalog the ACP picker reads, so it must not fall through to
     // the disabled selector below.
     if (conversation.type === 'acp' || conversation.type === 'antigravity') {
-      const extra = conversation.extra as { current_model_id?: string };
+      const extra = conversation.extra as { current_model_id?: string; thought_level?: string };
       return (
         <AcpModelSelector
           conversation_id={conversation.id}
           backend={resolvedConversationBackend}
           initialModelId={extra.current_model_id}
+          initialThoughtLevel={extra.thought_level}
           onRuntimeReadyChange={handleRuntimeReadyChange}
           waitForWarmup
         />

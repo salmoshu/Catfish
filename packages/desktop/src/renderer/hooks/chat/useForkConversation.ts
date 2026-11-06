@@ -13,6 +13,8 @@ import { useNavigate } from 'react-router-dom';
 import { emitter } from '@/renderer/utils/emitter';
 import type { TFunction } from 'i18next';
 
+const pendingOperations = new Map<string, string>();
+
 /**
  * Map a fork API failure to a user-facing message. The backend carries stable
  * `FORK_*` reason prefixes (409/422); anything else falls back to the raw
@@ -23,6 +25,8 @@ export function getForkErrorMessage(error: unknown, t: TFunction): string {
   if (raw.includes('FORK_TURN_IN_FLIGHT')) return t('messages.fork.errorTurnInFlight');
   if (raw.includes('FORK_PARENT_UNBOUND')) return t('messages.fork.errorParentUnbound');
   if (raw.includes('FORK_POINT_UNSUPPORTED')) return t('messages.fork.errorPointUnsupported');
+  if (raw.includes('FORK_TARGET_UNAVAILABLE')) return t('messages.fork.errorTargetUnavailable');
+  if (raw.includes('FORK_OPERATION_CONFLICT')) return t('messages.fork.errorOperationConflict');
   if (raw.includes('FORK_UNSUPPORTED')) return t('messages.fork.errorUnsupported');
   return t('messages.fork.errorGeneric', { message: raw });
 }
@@ -38,17 +42,23 @@ export function useForkConversation(conversationId: string | undefined) {
   const forkingRef = useRef(false);
 
   return useCallback(
-    async (messageId: string) => {
+    async (messageId: string, targetAgentId?: string) => {
       if (!conversationId || forkingRef.current) return;
       forkingRef.current = true;
+      const key = `${conversationId}:${messageId}:${targetAgentId ?? ''}`;
+      const operationId = pendingOperations.get(key) ?? crypto.randomUUID();
+      pendingOperations.set(key, operationId);
       try {
         const forked = await ipcBridge.conversation.fork.invoke({
           conversation_id: conversationId,
           message_id: messageId,
+          operation_id: operationId,
+          ...(targetAgentId ? { target_agent_id: targetAgentId, continue_task: true } : {}),
         });
         if (!forked?.id) {
           throw new Error('fork returned no conversation');
         }
+        pendingOperations.delete(key);
         emitter.emit('chat.history.refresh');
         void navigate(`/conversation/${forked.id}`);
         // Lazy fork + eager surfacing: materialize the backend session now so

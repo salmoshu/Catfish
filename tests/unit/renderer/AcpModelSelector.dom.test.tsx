@@ -11,9 +11,10 @@ import AcpModelSelector from '@/renderer/components/agent/AcpModelSelector';
 import type { AcpModelInfo } from '@/common/types/platform/acpTypes';
 import type { AcpConfigSetStatus, AcpDerivedOption } from '@/renderer/hooks/agent/useAcpConfigOptions';
 
-const { messageSuccessMock, messageErrorMock, useAcpModelInfoMock } = vi.hoisted(() => ({
+const { messageSuccessMock, messageErrorMock, messageInfoMock, useAcpModelInfoMock } = vi.hoisted(() => ({
   messageSuccessMock: vi.fn(),
   messageErrorMock: vi.fn(),
+  messageInfoMock: vi.fn(),
   useAcpModelInfoMock: vi.fn(),
 }));
 
@@ -26,6 +27,7 @@ type MockAcpModelInfoResult = {
   selectModel: (modelId: string) => void;
   thoughtLevel: AcpDerivedOption | null;
   speed: AcpDerivedOption | null;
+  pendingValues?: Record<string, string>;
   setStatus: AcpConfigSetStatus;
   setConfigOption: (optionId: string, value: string) => Promise<unknown>;
 };
@@ -174,6 +176,7 @@ vi.mock('@arco-design/web-react', () => {
     Message: {
       success: messageSuccessMock,
       error: messageErrorMock,
+      info: messageInfoMock,
     },
     Tooltip: ({ children, content }: { children?: React.ReactNode; content?: React.ReactNode }) => (
       <span data-tooltip-content={typeof content === 'string' ? content : undefined}>{children}</span>
@@ -191,6 +194,27 @@ describe('AcpModelSelector runtime options', () => {
     render(<AcpModelSelector conversation_id='conversation-1' backend='codex' />);
 
     expect(screen.getByTestId('acp-model-selector')).toHaveTextContent('GPT-5.2 · High');
+  });
+
+  it('shows the saved thought level when the runtime snapshot omits it', () => {
+    useAcpModelInfoMock.mockReturnValue(makeResult({ thoughtLevel: null }));
+    render(<AcpModelSelector conversation_id='conversation-1' backend='codex' initialThoughtLevel='max' />);
+
+    expect(screen.getByTestId('acp-model-selector')).toHaveTextContent('GPT-5.2 · Max');
+    expect(screen.getByTestId('acp-model-selector')).toHaveAttribute('aria-label', 'GPT-5.2 · Max');
+    expect(screen.queryByText('Thinking Level')).not.toBeInTheDocument();
+  });
+
+  it('prefers the live thought level over the saved selection', () => {
+    render(<AcpModelSelector conversation_id='conversation-1' backend='codex' initialThoughtLevel='max' />);
+    expect(screen.getByTestId('acp-model-selector')).toHaveTextContent('GPT-5.2 · High');
+    expect(screen.getByTestId('acp-model-selector')).not.toHaveTextContent('Max');
+  });
+
+  it('keeps the saved thought level visible in a read-only model selector', () => {
+    useAcpModelInfoMock.mockReturnValue(makeResult({ thoughtLevel: null, canSwitch: false }));
+    render(<AcpModelSelector conversation_id='conversation-1' backend='codex' initialThoughtLevel='max' />);
+    expect(screen.getByTestId('acp-model-selector-warmup')).toHaveTextContent('GPT-5.2 · Max');
   });
 
   it('omits the provider Thinking prefix in the header pill', () => {
@@ -415,7 +439,7 @@ describe('AcpModelSelector runtime options', () => {
   });
 
   it('sets fast mode through the existing config option setter', async () => {
-    const setConfigOption = vi.fn().mockResolvedValue(undefined);
+    const setConfigOption = vi.fn().mockResolvedValue([{ id: 'service_tier', current_value: 'priority' }]);
     useAcpModelInfoMock.mockReturnValue(
       makeResult({
         setConfigOption,
@@ -436,6 +460,96 @@ describe('AcpModelSelector runtime options', () => {
 
     await waitFor(() => expect(setConfigOption).toHaveBeenCalledWith('service_tier', 'priority'));
     expect(messageSuccessMock).toHaveBeenCalledWith('agent.speed.switchSuccess');
+  });
+
+  it('keeps speed controls available when the model is read-only', async () => {
+    const setConfigOption = vi.fn().mockResolvedValue([{ id: 'fast_mode', current_value: 'true' }]);
+    useAcpModelInfoMock.mockReturnValue(
+      makeResult({
+        canSwitch: false,
+        model_info: { ...modelInfo, available_models: [] },
+        speed: {
+          id: 'fast_mode',
+          category: 'speed',
+          currentValue: 'false',
+          options: [
+            { value: 'false', label: 'Off' },
+            { value: 'true', label: 'On', description: 'Uses more credits' },
+          ],
+        },
+        setConfigOption,
+      })
+    );
+    render(<AcpModelSelector conversation_id='conversation-1' backend='claude' />);
+    expect(screen.queryByText('Search models')).not.toBeInTheDocument();
+    expect(screen.getByText('agent.speed.costNotice')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('menuitem', { name: /agent.speed.fast/ }));
+    await waitFor(() => expect(messageSuccessMock).toHaveBeenCalled());
+    expect(setConfigOption).toHaveBeenCalledWith('fast_mode', 'true');
+  });
+
+  it('shows active speed alongside the model and thought level and preserves new tier names', () => {
+    useAcpModelInfoMock.mockReturnValue(
+      makeResult({
+        speed: {
+          id: 'service_tier',
+          category: 'speed',
+          currentValue: 'ultrafast',
+          options: [
+            { value: 'default', label: 'Standard' },
+            { value: 'ultrafast', label: 'Ultrafast' },
+          ],
+        },
+      })
+    );
+    render(<AcpModelSelector conversation_id='conversation-1' backend='codex' />);
+    expect(screen.getByTestId('acp-model-selector')).toHaveTextContent('GPT-5.2 · High · Ultrafast');
+    expect(screen.getByRole('menuitem', { name: /Ultrafast/ })).toBeInTheDocument();
+  });
+
+  it('reports a deferred speed honestly and keeps the current tier selected', async () => {
+    const speed: AcpDerivedOption = {
+      id: 'service_tier',
+      category: 'speed',
+      currentValue: 'default',
+      options: [
+        { value: 'default', label: 'Standard' },
+        { value: 'priority', label: 'Fast' },
+      ],
+    };
+    const setConfigOption = vi.fn().mockResolvedValue([{ id: 'service_tier', current_value: 'default' }]);
+    useAcpModelInfoMock.mockReturnValue(makeResult({ speed, setConfigOption }));
+    const { rerender } = render(<AcpModelSelector conversation_id='conversation-1' backend='codex' />);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'agent.speed.fast' }));
+    await waitFor(() => expect(messageInfoMock).toHaveBeenCalledWith('agent.speed.pendingNextTurn'));
+    expect(messageSuccessMock).not.toHaveBeenCalled();
+    useAcpModelInfoMock.mockReturnValue(makeResult({ speed, pendingValues: { service_tier: 'priority' } }));
+    rerender(<AcpModelSelector conversation_id='conversation-1' backend='codex' />);
+    expect(screen.getByRole('status')).toHaveTextContent('agent.speed.pendingNextTurn');
+    expect(screen.getByRole('menuitem', { name: /agent.speed.standard/ })).toHaveClass('bg-2!');
+    expect(screen.getByTestId('acp-model-selector')).not.toHaveTextContent('agent.speed.fast');
+  });
+
+  it('keeps the applied speed when the provider rejects a change', async () => {
+    useAcpModelInfoMock.mockReturnValue(
+      makeResult({
+        speed: {
+          id: 'service_tier',
+          category: 'speed',
+          currentValue: 'default',
+          options: [
+            { value: 'default', label: 'Standard' },
+            { value: 'priority', label: 'Fast' },
+          ],
+        },
+        setConfigOption: vi.fn().mockRejectedValue(new Error('fast mode unavailable')),
+      })
+    );
+    render(<AcpModelSelector conversation_id='conversation-1' backend='codex' />);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'agent.speed.fast' }));
+    await waitFor(() => expect(messageErrorMock).toHaveBeenCalledWith('agent.config.failed'));
+    expect(messageSuccessMock).not.toHaveBeenCalled();
+    expect(screen.getByRole('menuitem', { name: /agent.speed.standard/ })).toHaveClass('bg-2!');
   });
 
   it('keeps the old thought value and shows an error when config update fails', async () => {

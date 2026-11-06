@@ -28,6 +28,14 @@ vi.mock('@arco-design/web-react', () => ({
 }));
 
 describe('RuntimeSelectorPill', () => {
+  it('keeps the detail separate from the model label while announcing both', () => {
+    render(<RuntimeSelectorPill testId='runtime-pill' className='pill' label='GPT-6.1 Sol' labelDetail='Max' />);
+    const pill = screen.getByTestId('runtime-pill');
+    expect(pill).toHaveAttribute('aria-label', 'GPT-6.1 Sol · Max');
+    expect(pill).toHaveAttribute('title', 'GPT-6.1 Sol · Max');
+    expect(screen.getByText('· Max')).toHaveClass('shrink-0');
+  });
+
   it('forwards dropdown trigger props and ref to the button anchor', () => {
     const ref = React.createRef<HTMLButtonElement>();
 

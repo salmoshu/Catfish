@@ -37,6 +37,7 @@ const mockFilePreview = vi.fn(({ path }: { path: string }) => <div data-testid='
 
 const forkMocks = vi.hoisted(() => ({
   fork: vi.fn(),
+  assistants: vi.fn().mockResolvedValue([]),
   ensureRuntime: vi.fn().mockResolvedValue(undefined),
   navigate: vi.fn(),
 }));
@@ -51,6 +52,7 @@ vi.mock('@/common', () => ({
       getContentMetadata: { invoke: vi.fn() },
       readContent: { invoke: vi.fn() },
     },
+    assistants: { list: { invoke: forkMocks.assistants } },
     conversation: {
       fork: { invoke: forkMocks.fork },
       ensureRuntime: { invoke: forkMocks.ensureRuntime },
@@ -164,10 +166,47 @@ vi.mock('@arco-design/web-react', () => ({
     error: vi.fn(),
   },
   Tooltip: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  Modal: ({
+    children,
+    onOk,
+    onCancel,
+    okText,
+    cancelText,
+  }: {
+    children: React.ReactNode;
+    onOk: () => void;
+    onCancel: () => void;
+    okText: string;
+    cancelText: string;
+  }) => (
+    <div role='dialog'>
+      {children}
+      <button onClick={onOk}>{okText}</button>
+      <button onClick={onCancel}>{cancelText}</button>
+    </div>
+  ),
+  Select: ({
+    value,
+    options,
+    onChange,
+  }: {
+    value: string;
+    options: { value: string; label: string }[];
+    onChange: (value: string) => void;
+  }) => (
+    <select aria-label='Target Agent' value={value} onChange={(event) => onChange(event.target.value)}>
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  ),
 }));
 
 vi.mock('@icon-park/react', () => ({
   Copy: () => <span data-testid='copy-icon' />,
+  People: () => <span />,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -803,9 +842,9 @@ describe('MessageText fork entry point', () => {
     forkMocks.navigate.mockReset();
   });
 
-  it('hides the fork button when the agent declares no capability', () => {
+  it('offers summary fork when the agent declares no native capability', () => {
     renderWithCapability(undefined, { isLastMessage: true });
-    expect(screen.queryByTestId('message-fork-button')).toBeNull();
+    expect(screen.getByTestId('message-fork-button')).toBeInTheDocument();
   });
 
   it('shows the fork button on anchored mid-history messages for at_turn backends', () => {
@@ -832,10 +871,55 @@ describe('MessageText fork entry point', () => {
     renderWithCapability({ at_turn: true }, { isLastMessage: false, hasForkAnchor: true });
     fireEvent.click(screen.getByTestId('message-fork-button'));
     await waitFor(() => {
-      expect(forkMocks.fork).toHaveBeenCalledWith({ conversation_id: 'conv-fork', message_id: 'msg-fork-1' });
+      expect(forkMocks.fork).toHaveBeenCalledWith({
+        conversation_id: 'conv-fork',
+        message_id: 'msg-fork-1',
+        operation_id: expect.any(String),
+      });
       expect(forkMocks.navigate).toHaveBeenCalledWith('/conversation/conv-forked');
       expect(forkMocks.ensureRuntime).toHaveBeenCalledWith({ conversation_id: 'conv-forked' });
     });
+  });
+  it('reuses the operation id after a network failure and suppresses double clicks', async () => {
+    forkMocks.fork.mockRejectedValueOnce(new Error('network unavailable')).mockResolvedValue({ id: 'conv-retried' });
+    renderWithCapability({ at_turn: true }, { isLastMessage: true });
+    const button = screen.getByTestId('message-fork-button');
+    fireEvent.click(button);
+    fireEvent.click(button);
+    await waitFor(() => expect(forkMocks.fork).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fireEvent.click(button);
+    await waitFor(() => expect(forkMocks.fork).toHaveBeenCalledTimes(2));
+    expect(forkMocks.fork.mock.calls[0][0].operation_id).toBe(forkMocks.fork.mock.calls[1][0].operation_id);
+    expect(forkMocks.navigate).toHaveBeenCalledWith('/conversation/conv-retried');
+  });
+
+  it('selects another Agent and requests one automatic continuation', async () => {
+    forkMocks.assistants.mockResolvedValue([
+      {
+        id: 'assistant-claude',
+        agent_id: 'agent-claude',
+        name: 'Claude',
+        enabled: true,
+        source: 'generated',
+        agent_status: 'online',
+        agent: { type: 'acp' },
+      },
+    ]);
+    renderWithCapability({ at_turn: true }, { isLastMessage: true });
+    fireEvent.click(screen.getByTestId('message-fork-agent-button'));
+    await screen.findByRole('dialog');
+    expect(screen.getByRole('combobox')).toHaveValue('agent-claude');
+    fireEvent.click(screen.getByRole('button', { name: 'messages.fork.startContinuation' }));
+    await waitFor(() =>
+      expect(forkMocks.fork).toHaveBeenCalledWith({
+        conversation_id: 'conv-fork',
+        message_id: 'msg-fork-1',
+        operation_id: expect.any(String),
+        target_agent_id: 'agent-claude',
+        continue_task: true,
+      })
+    );
   });
 });
 

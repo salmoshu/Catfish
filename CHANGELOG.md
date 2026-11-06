@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.20](https://github.com/salmoshu/Catfish/releases/tag/v0.4.20) (2026-11-06)
+
+### Features
+
+- **workbench:** coordinate workspace and plan panels, float the workspace when both are open, and restore each conversation's panel state
+- **conversation:** fork an active conversation without interrupting its source, use native context where supported, and offer a concise handoff to another Agent with idempotent continuation
+- **plan:** promptly stream and recover Kimi/Codex plan snapshots, preserving explanations, priority and update time
+- **models:** expose confirmed Agent speed settings and preserve the selected reasoning effort in the model selector
+
+### Bug Fixes
+
+- **conversation:** restore scrolling after folded work summaries and open the message directory only from its narrow tick area
+- **conversation:** correct command queue expand/collapse labels and move the control to the left
+- **layout:** vertically center file tab names and the plan/restart toolbar icons
+
+---
+
 ## [0.4.17](https://github.com/salmoshu/Catfish/releases/tag/v0.4.17) (2026-11-05)
 
 ### Desktop

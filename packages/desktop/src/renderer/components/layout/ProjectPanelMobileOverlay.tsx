@@ -8,6 +8,8 @@ import { Button } from '@arco-design/web-react';
 import React, { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WorkbenchPanel } from '@/renderer/pages/conversation/Workbench';
+import { useCurrentConversation } from '@/renderer/pages/conversation/explorer/currentConversationStore';
+import { useWorkbenchPanelState } from '@/renderer/pages/conversation/Workbench/workbenchPanelState';
 
 export type ProjectPanelMobileOverlayProps = {
   projectId: string;
@@ -23,6 +25,9 @@ export const ProjectPanelMobileOverlay: React.FC<ProjectPanelMobileOverlayProps>
   widthPx,
 }) => {
   const { t } = useTranslation();
+  const conversationId = useCurrentConversation();
+  const { state } = useWorkbenchPanelState(projectId, conversationId, true);
+  const floating = state.workspaceOpen && state.planOpen;
   const mountIdRef = useRef<string>('');
   if (mountIdRef.current === '') mountIdRef.current = `pem-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -47,7 +52,20 @@ export const ProjectPanelMobileOverlay: React.FC<ProjectPanelMobileOverlayProps>
           borderLeft: '1px solid var(--bg-3)',
         }}
       >
-        <WorkbenchPanel projectId={projectId} collapsed={collapsed} onCollapse={onCollapse} onExpand={onCollapse} />
+        <div hidden={!state.planOpen || collapsed} className='h-full min-h-0' data-plan-dock>
+          {conversationId && <div data-plan-panel-slot={conversationId} className='h-full min-h-0' />}
+        </div>
+        <div
+          hidden={!state.workspaceOpen || collapsed}
+          data-workspace-presentation={!state.workspaceOpen || collapsed ? 'hidden' : floating ? 'floating' : 'docked'}
+          className={
+            floating
+              ? 'absolute inset-16px z-1 rounded-16px border border-[var(--color-border-2)] bg-[var(--color-bg-popup)] shadow-lg overflow-hidden'
+              : 'h-full overflow-hidden'
+          }
+        >
+          <WorkbenchPanel projectId={projectId} collapsed={collapsed} onCollapse={onCollapse} onExpand={onCollapse} />
+        </div>
       </div>
 
       {!collapsed && (

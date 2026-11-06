@@ -70,6 +70,42 @@ describe('MessageAnchorRail', () => {
     expect(searchMock).toHaveBeenCalledWith({ conversation_id: 'conversation-1' });
   });
 
+  it('opens only after the pointer enters the compact region and closes when it leaves', () => {
+    render(<MessageAnchorRail />);
+    const rail = screen.getByTestId('message-anchor-rail');
+    const zone = screen.getByTestId('message-anchor-rail-zone');
+
+    expect(rail.className).not.toContain('directoryOpen');
+    fireEvent.pointerEnter(zone);
+    expect(rail.className).toContain('directoryOpen');
+    fireEvent.pointerLeave(rail);
+    expect(rail.className).not.toContain('directoryOpen');
+  });
+
+  it('keeps the hidden directory out of pointer and keyboard interactions', () => {
+    render(<MessageAnchorRail />);
+    const flyout = screen.getByTestId('message-anchor-flyout');
+
+    expect(flyout).toHaveAttribute('aria-hidden', 'true');
+    expect(flyout).toHaveAttribute('inert');
+    fireEvent.pointerEnter(flyout);
+    expect(flyout).toHaveAttribute('aria-hidden', 'true');
+
+    fireEvent.pointerEnter(screen.getByTestId('message-anchor-rail-zone'));
+    expect(flyout).toHaveAttribute('aria-hidden', 'false');
+    expect(flyout).not.toHaveAttribute('inert');
+
+    fireEvent.pointerLeave(screen.getByTestId('message-anchor-rail'));
+    expect(flyout).toHaveAttribute('aria-hidden', 'true');
+    expect(flyout).toHaveAttribute('inert');
+  });
+
+  it('opens the directory when a compact tick receives keyboard focus', () => {
+    render(<MessageAnchorRail />);
+    fireEvent.focus(screen.getAllByTestId('message-anchor-tick')[0]);
+    expect(screen.getByTestId('message-anchor-flyout')).toHaveAttribute('aria-hidden', 'false');
+  });
+
   it('hides before the collapsed rail can overlap the centered 720px message column', () => {
     const stylesheet = readFileSync(
       join(

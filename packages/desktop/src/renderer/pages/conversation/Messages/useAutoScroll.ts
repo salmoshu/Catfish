@@ -155,7 +155,8 @@ export function useAutoScroll({ messages, itemCount }: UseAutoScrollOptions): Us
       cancelAnimationFrame(pendingAutoFollowFrameRef.current);
       pendingAutoFollowFrameRef.current = null;
     }
-  }, []);
+    scrollerEl?.scrollTo({ top: scrollerEl.scrollTop, behavior: 'auto' });
+  }, [scrollerEl]);
 
   const handleWheel = useCallback(
     (e: React.WheelEvent<HTMLDivElement>) => {
@@ -202,6 +203,7 @@ export function useAutoScroll({ messages, itemCount }: UseAutoScrollOptions): Us
 
     initialScrollDoneRef.current = true;
     requestAnimationFrame(() => {
+      if (userScrolledRef.current) return;
       scrollToBottom('auto');
       lastScrollTopRef.current = scrollerEl.scrollTop;
     });
@@ -233,7 +235,7 @@ export function useAutoScroll({ messages, itemCount }: UseAutoScrollOptions): Us
     userScrolledRef.current = false;
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        scrollToBottom('auto');
+        if (!userScrolledRef.current) scrollToBottom('auto');
       });
     });
   }, [messages, scheduleAutoFollow, scrollToBottom]);

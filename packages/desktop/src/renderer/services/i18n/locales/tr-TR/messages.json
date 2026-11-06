@@ -126,7 +126,13 @@
     "errorParentUnbound": "Bu konuşmanın henüz çatallanacak bir arka uç oturumu yok",
     "errorPointUnsupported": "Bu ajan yalnızca en son mesajdan çatallayabilir",
     "errorUnsupported": "Bu ajan çatallamayı desteklemiyor",
-    "errorGeneric": "Çatallama başarısız: {{message}}"
+    "errorGeneric": "Çatallama başarısız: {{message}}",
+    "toAnotherAgent": "Başka ajana çatalla",
+    "startContinuation": "Yeni konuşmada devam et",
+    "targetAgent": "Hedef ajan",
+    "handoffDescription": "Yeni konuşma kısa bir özet alır ve çalışmaya devam eder. Kaynak konuşma çalışmayı sürdürür.",
+    "errorTargetUnavailable": "Hedef ajan kullanılamıyor.",
+    "errorOperationConflict": "Bu işlem başka bir çatal için zaten kullanılmış."
   },
   "askSubmit": "Gönder",
   "askDecline": "Yanıtlama",

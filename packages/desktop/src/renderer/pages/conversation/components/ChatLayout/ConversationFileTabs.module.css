@@ -5,9 +5,11 @@
 
 .select:global(.arco-btn) {
   display: flex;
+  align-items: center;
   overflow: hidden;
   flex: 1 1 0;
   min-width: 0;
+  line-height: 20px;
 }
 
 .select :global(.arco-btn-content) {
@@ -25,6 +27,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 20px;
 }
 
 .close:global(.arco-btn) {

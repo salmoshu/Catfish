@@ -535,7 +535,9 @@
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
     "midturnBlockedSendHint": "This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.",
-    "addToQueueBusyHint": "送信待ちに追加し、後で送信します。"
+    "addToQueueBusyHint": "送信待ちに追加し、後で送信します。",
+    "expand": "コマンドキューを展開",
+    "collapse": "コマンドキューを折りたたむ"
   },
   "contextUsage": {
     "contextUsed": "コンテキスト使用量",
@@ -784,7 +786,8 @@
     "progress": "{{completed}}/{{total}}",
     "empty": "プランはまだありません",
     "expand": "プランを展開",
-    "collapse": "プランを折りたたむ"
+    "collapse": "プランを折りたたむ",
+    "priorityHigh": "高優先度"
   },
   "fileTabs": {
     "label": "会話ファイル",

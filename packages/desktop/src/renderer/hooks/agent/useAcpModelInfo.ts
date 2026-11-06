@@ -38,6 +38,7 @@ export type UseAcpModelInfoResult = {
   selectModel: (model_id: string) => void;
   thoughtLevel: AcpDerivedOption | null;
   speed: AcpDerivedOption | null;
+  pendingValues?: Readonly<Record<string, string>>;
   setStatus: AcpConfigSetStatus;
   setConfigOption: (optionId: string, value: string) => Promise<AcpConfigOptionDto[]>;
   isConfigOptionBlocked: (optionId: string) => boolean;
@@ -180,6 +181,7 @@ export const useAcpModelInfo = ({
     selectModel,
     thoughtLevel,
     speed,
+    pendingValues: runtimeConfig.pendingValues,
     setStatus,
     setConfigOption,
     isConfigOptionBlocked,

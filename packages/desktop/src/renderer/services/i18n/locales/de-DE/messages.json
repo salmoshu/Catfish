@@ -126,7 +126,13 @@
     "errorParentUnbound": "Diese Unterhaltung hat noch keine Backend-Sitzung zum Verzweigen",
     "errorPointUnsupported": "Dieser Agent kann nur ab der neuesten Nachricht verzweigen",
     "errorUnsupported": "Dieser Agent unterstützt kein Verzweigen",
-    "errorGeneric": "Verzweigen fehlgeschlagen: {{message}}"
+    "errorGeneric": "Verzweigen fehlgeschlagen: {{message}}",
+    "toAnotherAgent": "An anderen Agent forken",
+    "startContinuation": "In neuem Gespräch fortfahren",
+    "targetAgent": "Ziel-Agent",
+    "handoffDescription": "Das neue Gespräch erhält eine kurze Übergabe und setzt die Arbeit fort. Das Original läuft weiter.",
+    "errorTargetUnavailable": "Der Ziel-Agent ist nicht verfügbar.",
+    "errorOperationConflict": "Diese Operation wurde bereits für einen anderen Fork verwendet."
   },
   "askSubmit": "Absenden",
   "askDecline": "Nicht beantworten",

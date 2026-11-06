@@ -55,6 +55,8 @@ const AcpModelSelector: React.FC<{
   backend?: string;
   /** Pre-selected model ID from Guid page */
   initialModelId?: string;
+  /** Saved selection remains visible while runtime thought-level metadata is unavailable. */
+  initialThoughtLevel?: string;
   prepareRuntime?: () => Promise<void>;
   prepareSetRuntime?: () => Promise<void>;
   configOptionsPort?: AcpConfigOptionsPort;
@@ -74,6 +76,7 @@ const AcpModelSelector: React.FC<{
   conversation_id,
   backend,
   initialModelId,
+  initialThoughtLevel,
   prepareRuntime,
   prepareSetRuntime,
   configOptionsPort,
@@ -92,6 +95,7 @@ const AcpModelSelector: React.FC<{
     selectModel,
     thoughtLevel,
     speed,
+    pendingValues,
     setStatus,
     setConfigOption,
     isConfigOptionBlocked = () => false,
@@ -127,7 +131,13 @@ const AcpModelSelector: React.FC<{
     defaultModelLabel,
     fallbackLabel: t('conversation.welcome.useCliModel'),
   });
-  const combinedLabel = composeRuntimeSelectorLabel({ modelLabel: display_label, thoughtLevel });
+  const thoughtLevelLabel =
+    getCurrentThoughtLevelLabel(thoughtLevel) || formatThoughtLevelLabel(initialThoughtLevel ?? '');
+  const combinedLabel = composeRuntimeSelectorLabel({
+    modelLabel: display_label,
+    thoughtLevel,
+    fallbackThoughtLevel: initialThoughtLevel,
+  });
   const isRuntimeSetting = isConfigSetting(setStatus);
   const handleThoughtLevelSelect = useCallback(
     async (value: string) => {
@@ -151,8 +161,12 @@ const AcpModelSelector: React.FC<{
     async (value: string) => {
       if (!speed || value === speed.currentValue || isRuntimeSetting || isConfigOptionBlocked(speed.id)) return;
       try {
-        await setConfigOption(speed.id, value);
-        Message.success(t('agent.speed.switchSuccess'));
+        const applied = await setConfigOption(speed.id, value);
+        if (applied?.some((option) => option.id === speed.id && option.current_value === value)) {
+          Message.success(t('agent.speed.switchSuccess'));
+        } else {
+          Message.info(t('agent.speed.pendingNextTurn'));
+        }
       } catch (error) {
         Message.error(t(configErrorMessageKey(error)));
       }
@@ -168,7 +182,14 @@ const AcpModelSelector: React.FC<{
     },
     [t]
   );
-  const tooltipContent = combinedLabel;
+  const pendingSpeed = speed ? pendingValues?.[speed.id] : undefined;
+  const currentSpeed = speed?.options.find((item) => item.value === speed.currentValue);
+  const speedLabel =
+    currentSpeed && !['false', 'default', 'standard'].includes(currentSpeed.value.toLowerCase())
+      ? speedOptionLabel(currentSpeed)
+      : '';
+  const labelDetail = [thoughtLevelLabel, speedLabel].filter(Boolean).join(' · ');
+  const tooltipContent = [combinedLabel, speedLabel].filter(Boolean).join(' · ');
 
   const renderLogo = () => <Brain theme='outline' size='14' fill={iconColors.secondary} className='shrink-0' />;
 
@@ -212,6 +233,7 @@ const AcpModelSelector: React.FC<{
           testId='acp-model-selector-warmup'
           className='sendbox-model-btn header-model-btn agent-mode-compact-pill'
           label={label}
+          labelDetail={labelDetail}
           leading={renderLogo()}
           loading={showWarmupSpinner}
           onClick={clickable ? () => void handleWarmupClick() : undefined}
@@ -232,12 +254,12 @@ const AcpModelSelector: React.FC<{
     );
   }
 
-  if (!model_info) {
-    return renderReadonlyPill(t('conversation.welcome.useCliModel'), t('conversation.welcome.modelSwitchNotSupported'));
+  if (!model_info && !speed) {
+    return renderReadonlyPill(display_label, t('conversation.welcome.modelSwitchNotSupported'));
   }
 
-  if (!canSwitch) {
-    return renderReadonlyPill(combinedLabel, tooltipContent);
+  if (!canSwitch && !speed) {
+    return renderReadonlyPill(display_label, tooltipContent);
   }
 
   return (
@@ -250,23 +272,25 @@ const AcpModelSelector: React.FC<{
         <Menu>
           {thoughtLevel || speed ? (
             <>
-              <Menu.SubMenu
-                key='model'
-                triggerProps={RUNTIME_SUBMENU_TRIGGER_PROPS}
-                title={
-                  <RuntimeSelectorSubMenuTitle
-                    label={t('common.model', { defaultValue: 'Model' })}
-                    value={display_label}
+              {canSwitch && model_info && (
+                <Menu.SubMenu
+                  key='model'
+                  triggerProps={RUNTIME_SUBMENU_TRIGGER_PROPS}
+                  title={
+                    <RuntimeSelectorSubMenuTitle
+                      label={t('common.model', { defaultValue: 'Model' })}
+                      value={display_label}
+                    />
+                  }
+                >
+                  <RuntimeSelectorModelList
+                    models={model_info.available_models}
+                    currentModelId={model_info.current_model_id}
+                    disabled={isRuntimeSetting || isConfigOptionBlocked('model')}
+                    onSelect={selectModel}
                   />
-                }
-              >
-                <RuntimeSelectorModelList
-                  models={model_info.available_models}
-                  currentModelId={model_info.current_model_id}
-                  disabled={isRuntimeSetting || isConfigOptionBlocked('model')}
-                  onSelect={selectModel}
-                />
-              </Menu.SubMenu>
+                </Menu.SubMenu>
+              )}
               {thoughtLevel && (
                 <Menu.SubMenu
                   key='thought-level'
@@ -314,13 +338,24 @@ const AcpModelSelector: React.FC<{
                     />
                   }
                 >
+                  <div className='max-w-280px px-12px py-8px text-12px text-t-secondary'>
+                    {t('agent.speed.costNotice')}
+                  </div>
+                  {pendingSpeed && pendingSpeed !== speed.currentValue && (
+                    <div className='px-12px pb-8px text-12px text-t-secondary' role='status'>
+                      {t('agent.speed.pendingNextTurn')}
+                    </div>
+                  )}
                   {speed.options.map((item) => (
                     <Menu.Item
                       key={item.value}
                       className={item.value === speed.currentValue ? 'bg-2!' : ''}
                       onClick={() => void handleSpeedSelect(item.value)}
                     >
-                      <RuntimeSelectorCheckedItem selected={item.value === speed.currentValue}>
+                      <RuntimeSelectorCheckedItem
+                        selected={item.value === speed.currentValue}
+                        description={item.description}
+                      >
                         {speedOptionLabel(item)}
                       </RuntimeSelectorCheckedItem>
                     </Menu.Item>
@@ -330,8 +365,8 @@ const AcpModelSelector: React.FC<{
             </>
           ) : (
             <RuntimeSelectorModelList
-              models={model_info.available_models}
-              currentModelId={model_info.current_model_id}
+              models={model_info?.available_models ?? []}
+              currentModelId={model_info?.current_model_id ?? null}
               disabled={isRuntimeSetting || isConfigOptionBlocked('model')}
               onSelect={selectModel}
             />
@@ -342,7 +377,8 @@ const AcpModelSelector: React.FC<{
       <RuntimeSelectorPill
         testId='acp-model-selector'
         className='sendbox-model-btn header-model-btn agent-mode-compact-pill'
-        label={combinedLabel}
+        label={display_label}
+        labelDetail={labelDetail}
         leading={renderLogo()}
         trailing={<Down theme='outline' size={12} fill={iconColors.secondary} className='shrink-0' />}
         loading={isSetting || isRuntimeSetting}

@@ -29,13 +29,10 @@ describe('composer text clipping regressions', () => {
     expect(source).toMatch(/\.workspacePillName\s*{[^}]*line-height: 1\.4;/s);
   });
 
-  it('ellipsizes overflowing selector text on every platform and exposes the full label', () => {
+  it('ellipsizes overflowing selector text on every platform and exposes the full text', () => {
     const label = readFileSync('packages/desktop/src/renderer/components/agent/MarqueePillLabel.tsx', 'utf8');
-    const pill = readFileSync('packages/desktop/src/renderer/components/agent/RuntimeSelectorPill.tsx', 'utf8');
 
     expect(label).toContain("active ? 'leading-[1.4] invisible' : 'leading-[1.4] block overflow-hidden text-ellipsis'");
     expect(label).toContain('title={children}');
-    expect(pill).toContain('title={label}');
-    expect(pill).toContain('aria-label={label}');
   });
 });

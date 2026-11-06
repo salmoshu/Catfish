@@ -2,7 +2,6 @@ import { Badge, Button } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { NormalizedToolCall, NormalizedToolStatus } from '@/common/chat/normalizeToolCall';
-import { useLatestRef } from '@/renderer/hooks/ui/useLatestRef';
 import { ExplorerContainer } from '@/renderer/pages/conversation/explorer/ExplorerContainer';
 import { useCurrentConversation } from '@/renderer/pages/conversation/explorer/currentConversationStore';
 import MessageAcpTerminalOutput from '@/renderer/pages/conversation/Messages/acp/MessageAcpTerminalOutput';
@@ -14,19 +13,10 @@ import {
   WORKBENCH_OPEN_EVENT,
   type WorkbenchOpenDetail,
 } from './workbenchActivityStore';
+import { useWorkbenchPanelState } from './workbenchPanelState';
 import './workbench.css';
 
 const SECTIONS = new Set<WorkbenchSection>(['files', 'changes', 'preview', 'terminal', 'agents', 'plan']);
-const sectionStorageKey = (projectId: string) => `workbench-section:${projectId}`;
-const readSection = (projectId: string): WorkbenchSection => {
-  try {
-    const stored = localStorage.getItem(sectionStorageKey(projectId));
-    return SECTIONS.has(stored as WorkbenchSection) ? (stored as WorkbenchSection) : 'files';
-  } catch {
-    return 'files';
-  }
-};
-
 const WorkbenchAgentCard: React.FC<{ agent: NormalizedToolCall }> = ({ agent }) => {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
@@ -77,57 +67,45 @@ type WorkbenchPanelProps = {
   onSectionChange?: (section: WorkbenchSection) => void;
 };
 
-export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({
-  projectId,
-  collapsed = false,
-  onExpand,
-  onSectionChange,
-}) => {
+export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSectionChange }) => {
   const { t } = useTranslation();
-  const [activeSection, setActiveSection] = useState<WorkbenchSection>(() => readSection(projectId));
   const conversationId = useCurrentConversation();
+  const { state, update } = useWorkbenchPanelState(projectId, conversationId);
+  const activeSection: WorkbenchSection = state.section;
   const activity = useWorkbenchActivity(conversationId);
   const { isOpen: previewOpen, activeTab, openPreview, openBrowserTab } = usePreviewContext();
-  const collapsedRef = useLatestRef(collapsed);
-  const onExpandRef = useLatestRef(onExpand);
-
-  useEffect(() => {
-    setActiveSection(readSection(projectId));
-  }, [projectId]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(sectionStorageKey(projectId), activeSection);
-    } catch {
-      // Keep the current in-memory selection when storage is unavailable.
-    }
-  }, [activeSection, projectId]);
-
   useEffect(() => {
     onSectionChange?.(activeSection);
     notifyWorkbenchSectionChange(activeSection);
   }, [activeSection, onSectionChange]);
 
   useEffect(() => {
-    if (!previewOpen) {
-      setActiveSection((current) => (current === 'preview' ? 'files' : current));
+    if (!previewOpen && activeSection === 'preview') {
+      update((current) => ({ ...current, section: 'files' }));
     }
-  }, [previewOpen]);
+  }, [previewOpen, activeSection, update]);
 
   useEffect(() => {
     const handleOpen = (event: Event) => {
       const section = (event as CustomEvent<WorkbenchOpenDetail>).detail?.section;
       if (!SECTIONS.has(section)) return;
-      setActiveSection(section);
-      if (collapsedRef.current) onExpandRef.current?.();
+      update((current) =>
+        section === 'plan'
+          ? { ...current, workspaceOpen: false, planOpen: true }
+          : { ...current, section, workspaceOpen: true }
+      );
     };
     window.addEventListener(WORKBENCH_OPEN_EVENT, handleOpen);
     return () => window.removeEventListener(WORKBENCH_OPEN_EVENT, handleOpen);
-  }, [collapsedRef, onExpandRef]);
+  }, [update]);
 
   const selectSection = useCallback(
     (section: WorkbenchSection) => {
-      setActiveSection(section);
+      if (section === 'plan') {
+        update((current) => ({ ...current, workspaceOpen: false, planOpen: true }));
+        return;
+      }
+      update((current) => ({ ...current, section, workspaceOpen: true }));
       notifyWorkbenchSectionChange(section);
       if (section !== 'preview' || previewOpen) return;
       if (activeTab) {
@@ -136,7 +114,7 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({
         openBrowserTab();
       }
     },
-    [activeTab, openBrowserTab, openPreview, previewOpen]
+    [activeTab, openBrowserTab, openPreview, previewOpen, update]
   );
 
   return (
@@ -144,14 +122,14 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({
       <div className='workbench-body'>
         <section
           id='workbench-panel-files'
-          role={activeSection === 'preview' || activeSection === 'plan' ? 'complementary' : 'tabpanel'}
+          role={activeSection === 'preview' ? 'complementary' : 'tabpanel'}
           aria-labelledby='workbench-tab-files'
-          hidden={activeSection === 'preview' || activeSection === 'plan'}
+          hidden={activeSection === 'preview'}
         >
           <ExplorerContainer
             projectId={projectId}
             activeSection={activeSection}
-            contentHidden={activeSection === 'terminal' || activeSection === 'agents' || activeSection === 'plan'}
+            contentHidden={activeSection === 'terminal' || activeSection === 'agents'}
             onSectionChange={selectSection}
           />
         </section>
@@ -176,14 +154,6 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({
               </Button>
             </div>
           )}
-        </section>
-        <section
-          id='workbench-panel-plan'
-          role='tabpanel'
-          aria-label={t('conversation.planBar.title')}
-          hidden={activeSection !== 'plan'}
-        >
-          {conversationId && <div data-plan-panel-slot={conversationId} className='h-full min-h-0 flex-1' />}
         </section>
         <section
           id='workbench-panel-terminal'

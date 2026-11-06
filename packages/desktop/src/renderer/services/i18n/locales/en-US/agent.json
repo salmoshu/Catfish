@@ -60,6 +60,8 @@
     "label": "Speed",
     "fast": "Fast",
     "standard": "Standard",
-    "switchSuccess": "Speed mode switched"
+    "switchSuccess": "Speed mode switched",
+    "costNotice": "Faster tiers may use more credits or cost more. Changes apply to subsequent requests.",
+    "pendingNextTurn": "Speed change will apply from the next turn."
   }
 }

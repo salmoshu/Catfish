@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { ipcBridge } from '@/common';
+import type { Assistant } from '@/common/types/agent/assistantTypes';
+import { selectableAssistants } from '@/renderer/utils/model/assistantSelection';
 import type { IMessageText } from '@/common/chat/chatLib';
 import { parseFileMarker, resolveMessageFilePath } from './fileMarker';
 import SessionMentionAction from './SessionMentionAction';
@@ -12,8 +15,8 @@ import { useConversationContextSafe } from '@/renderer/hooks/context/Conversatio
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { iconColors } from '@/renderer/styles/colors';
-import { Alert, Button, Message, Tooltip } from '@arco-design/web-react';
-import { Copy } from '@icon-park/react';
+import { Alert, Button, Message, Modal, Select, Tooltip } from '@arco-design/web-react';
+import { Copy, People } from '@icon-park/react';
 import styles from './MessageText.module.css';
 import classNames from 'classnames';
 import React, { useMemo, useState } from 'react';
@@ -108,6 +111,27 @@ export const MessageTextActions: React.FC<{
 }) => {
   const { t } = useTranslation();
   const [showCopyAlert, setShowCopyAlert] = useState(false);
+  const [forkTargets, setForkTargets] = useState<Assistant[] | null>(null);
+  const [forkTarget, setForkTarget] = useState<string>();
+  const [forkLoading, setForkLoading] = useState(false);
+  const openForkTargets = async () => {
+    setForkLoading(true);
+    try {
+      const assistants = await ipcBridge.assistants.list.invoke();
+      const targets = selectableAssistants(assistants).filter(
+        (assistant) => assistant.agent_status !== 'missing' && assistant.agent?.type !== 'remote'
+      );
+      const unique = targets.filter(
+        (assistant, index) => targets.findIndex((other) => other.agent_id === assistant.agent_id) === index
+      );
+      setForkTargets(unique);
+      setForkTarget(unique[0]?.agent_id);
+    } catch (error) {
+      Message.error(t('messages.fork.errorGeneric', { message: String(error) }));
+    } finally {
+      setForkLoading(false);
+    }
+  };
   const conversationContext = useConversationContextSafe();
   const forkConversation = useForkConversation(conversationContext?.conversation_id);
   const layout = useLayoutContext();
@@ -164,12 +188,50 @@ export const MessageTextActions: React.FC<{
             />
           </Tooltip>
         )}
+        {showForkButton && (
+          <Tooltip content={t('messages.fork.toAnotherAgent')}>
+            <Button
+              type='text'
+              size='mini'
+              loading={forkLoading}
+              aria-label={t('messages.fork.toAnotherAgent')}
+              data-testid='message-fork-agent-button'
+              className='p-4px rd-4px !text-t-secondary hover:!text-t-primary hover:!bg-fill-2 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
+              onClick={() => void openForkTargets()}
+              icon={<People size={16} />}
+            />
+          </Tooltip>
+        )}
         {message.created_at && (
           <span className='text-12px text-t-secondary opacity-0 group-hover:opacity-100 transition-opacity select-none'>
             {formatMessageTime(message.created_at)}
           </span>
         )}
       </div>
+      {forkTargets !== null && (
+        <Modal
+          visible
+          title={t('messages.fork.toAnotherAgent')}
+          okText={t('messages.fork.startContinuation')}
+          cancelText={t('common.cancel')}
+          okButtonProps={{ disabled: !forkTarget }}
+          onCancel={() => setForkTargets(null)}
+          onOk={() => {
+            if (!forkTarget) return;
+            setForkTargets(null);
+            void forkConversation(message.msg_id ?? message.id, forkTarget);
+          }}
+        >
+          <div className='mb-12px text-t-secondary'>{t('messages.fork.handoffDescription')}</div>
+          <Select
+            value={forkTarget}
+            onChange={setForkTarget}
+            aria-label={t('messages.fork.targetAgent')}
+            placeholder={t('messages.fork.targetAgent')}
+            options={(forkTargets ?? []).map((assistant) => ({ value: assistant.agent_id, label: assistant.name }))}
+          />
+        </Modal>
+      )}
       {showCopyAlert && (
         <Alert
           type='success'

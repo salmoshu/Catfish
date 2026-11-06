@@ -20,12 +20,17 @@ export const selectLatestPlan = (list: TMessage[]): IMessagePlan | undefined => 
   let latestWithEntries: IMessagePlan | undefined;
   for (const message of list) {
     if (message.type !== 'plan') continue;
-    if (!latest || (message.created_at ?? 0) > (latest.created_at ?? 0)) {
+    if (
+      !latest ||
+      (message.content.updated_at ?? message.created_at ?? 0) >= (latest.content.updated_at ?? latest.created_at ?? 0)
+    ) {
       latest = message;
     }
     if (
-      (message.content.entries?.length ?? 0) > 0 &&
-      (!latestWithEntries || (message.created_at ?? 0) > (latestWithEntries.created_at ?? 0))
+      ((message.content.entries?.length ?? 0) > 0 || Boolean(message.content.explanation?.trim())) &&
+      (!latestWithEntries ||
+        (message.content.updated_at ?? message.created_at ?? 0) >=
+          (latestWithEntries.content.updated_at ?? latestWithEntries.created_at ?? 0))
     ) {
       latestWithEntries = message;
     }

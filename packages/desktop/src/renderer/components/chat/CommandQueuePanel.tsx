@@ -15,14 +15,10 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button, Dropdown, Menu, Modal, Tooltip, Typography } from '@arco-design/web-react';
-import { CornerDownRight, Delete, Down, Drag, Edit, MoreOne, SendOne, SortTwo, Up } from '@icon-park/react';
+import { CornerDownRight, Delete, Down, Drag, Edit, MoreOne, Right, SendOne, SortTwo } from '@icon-park/react';
 import React, { useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 const getCommandPreview = (input: string): string => input.replace(/\s+/g, ' ').trim();
-
-const QueueActionIcon: React.FC<{ size?: number; color?: string }> = ({ size = 16, color = 'currentColor' }) => (
-  <SendOne theme='outline' size={size} fill={color} />
-);
 
 const createRestrictToQueueContainerModifier = (
   queueContainerRef: React.RefObject<HTMLDivElement | null>
@@ -471,26 +467,6 @@ const CommandQueuePanel: React.FC<CommandQueuePanelProps> = ({
       >
         <div className='flex items-center justify-between gap-8px px-12px pt-8px pb-4px'>
           <div className='flex items-center gap-6px min-w-0 leading-none'>
-            {isMobile ? (
-              <Tooltip content={title} position='top'>
-                <span className='inline-flex items-center justify-center text-t-tertiary' aria-label={title}>
-                  <QueueActionIcon size={16} />
-                </span>
-              </Tooltip>
-            ) : (
-              <span className='inline-flex items-center gap-5px text-12px font-600 text-t-secondary whitespace-nowrap leading-none'>
-                <QueueActionIcon size={15} />
-                {title}
-              </span>
-            )}
-            <span
-              className='inline-flex items-center justify-center rd-999px px-6px h-16px text-10px leading-none font-600'
-              style={{ background: 'var(--color-fill-3)', color: 'var(--color-text-2)' }}
-            >
-              {items.length}
-            </span>
-          </div>
-          <div className='flex items-center gap-4px shrink-0'>
             <Tooltip content={collapseLabel} position='top'>
               <Button
                 size='mini'
@@ -508,13 +484,24 @@ const CommandQueuePanel: React.FC<CommandQueuePanelProps> = ({
                   style={{ color: 'var(--color-text-3)', fontSize: 0 }}
                 >
                   {isCollapsed ? (
-                    <Down theme='outline' size='15' strokeWidth={2.5} />
+                    <Right theme='outline' size='15' strokeWidth={2.5} />
                   ) : (
-                    <Up theme='outline' size='15' strokeWidth={2.5} />
+                    <Down theme='outline' size='15' strokeWidth={2.5} />
                   )}
                 </span>
               </Button>
             </Tooltip>
+            {!isMobile && (
+              <span className='text-12px font-600 text-t-secondary whitespace-nowrap leading-none'>{title}</span>
+            )}
+            <span
+              className='inline-flex items-center justify-center rd-999px px-6px h-16px text-10px leading-none font-600'
+              style={{ background: 'var(--color-fill-3)', color: 'var(--color-text-2)' }}
+            >
+              {items.length}
+            </span>
+          </div>
+          <div className='flex items-center gap-4px shrink-0'>
             {/* The mode toggle doubles as the help affordance: hovering it shows what
                 Auto vs Manual mean, so no separate "?" button is needed. */}
             <Tooltip content={helpContent} position='top'>

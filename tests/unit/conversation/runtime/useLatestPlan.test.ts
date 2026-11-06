@@ -32,6 +32,20 @@ const text = (createdAt: number): TMessage =>
   }) as TMessage;
 
 describe('selectLatestPlan', () => {
+  it('selects a newer proposed plan without inventing checklist entries', () => {
+    const proposed = {
+      ...plan('proposal', 500),
+      content: { entries: [], explanation: 'Inspect then verify' },
+    } as TMessage;
+    expect(selectLatestPlan([plan('earlier', 100), proposed])).toBe(proposed);
+  });
+  it('uses update time when a plan was created before a newer turn', () => {
+    const updated = {
+      ...plan('turn-a', 100),
+      content: { entries: [{ content: 'revised', status: 'in_progress' }], updated_at: 500 },
+    } as TMessage;
+    expect(selectLatestPlan([updated, plan('turn-b', 300)])?.msg_id).toBe('turn-a');
+  });
   it('returns undefined when the list has no plan', () => {
     expect(selectLatestPlan([text(1), text(2)])).toBeUndefined();
   });
@@ -56,6 +70,23 @@ describe('selectLatestPlan', () => {
 });
 
 describe('plan turn_id passthrough', () => {
+  it('preserves explanation, priority and revision from the live plan', () => {
+    const transformed = transformMessage({
+      type: 'plan',
+      conversation_id: 'conv-1',
+      msg_id: 'turn-a',
+      data: {
+        entries: [{ content: 'test', status: 'in_progress', priority: 'high' }],
+        explanation: 'Tests before release',
+        updated_at: 500,
+      },
+    } as never);
+    expect(transformed?.content).toMatchObject({
+      explanation: 'Tests before release',
+      updated_at: 500,
+      entries: [{ priority: 'high' }],
+    });
+  });
   it('copies turn_id from the WS envelope into the plan content', () => {
     const transformed = transformMessage({
       type: 'plan',

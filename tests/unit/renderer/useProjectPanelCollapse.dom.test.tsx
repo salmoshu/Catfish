@@ -20,7 +20,11 @@ const fireToggle = () => {
   });
 };
 
-beforeEach(() => localStorage.clear());
+import { resetWorkbenchPanelStateForTest } from '@/renderer/pages/conversation/Workbench/workbenchPanelState';
+beforeEach(() => {
+  localStorage.clear();
+  resetWorkbenchPanelStateForTest();
+});
 afterEach(() => vi.restoreAllMocks());
 
 describe('useProjectPanelCollapse (P3 host collapse)', () => {
@@ -29,10 +33,10 @@ describe('useProjectPanelCollapse (P3 host collapse)', () => {
     expect(result.current.collapsed).toBe(false);
     fireToggle();
     expect(result.current.collapsed).toBe(true);
-    expect(localStorage.getItem('project-panel-collapse:p1')).toBe('collapsed');
+    expect(JSON.parse(localStorage.getItem('workbench-panels:p1:') ?? '{}').workspaceOpen).toBe(false);
     fireToggle();
     expect(result.current.collapsed).toBe(false);
-    expect(localStorage.getItem('project-panel-collapse:p1')).toBe('expanded');
+    expect(JSON.parse(localStorage.getItem('workbench-panels:p1:') ?? '{}').workspaceOpen).toBe(true);
   });
 
   it('restores the persisted per-project preference on mount', () => {

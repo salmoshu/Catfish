@@ -112,6 +112,9 @@ describe('CommandQueuePanel collapse control', () => {
 
     const toggle = screen.getByRole('button', { name: 'Collapse queued commands' });
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getAllByRole('button')[0]).toBe(toggle);
+    expect(toggle.querySelector('.i-icon-down')).toBeInTheDocument();
+    expect(toggle.parentElement?.querySelector('.i-icon-send-one')).not.toBeInTheDocument();
     expect(screen.getByText('First queued command')).toBeInTheDocument();
     expect(screen.getByText('Second queued command')).toBeInTheDocument();
   });
@@ -123,6 +126,7 @@ describe('CommandQueuePanel collapse control', () => {
     fireEvent.click(toggle);
 
     expect(screen.getByRole('button', { name: 'Expand queued commands' })).toHaveAttribute('aria-expanded', 'false');
+    expect(toggle.querySelector('.i-icon-right')).toBeInTheDocument();
     expect(screen.getByText('First queued command')).toBeInTheDocument();
     const queueList = screen.getByText('First queued command').closest('[data-command-queue-list]');
     expect(queueList?.parentElement).toHaveAttribute('hidden');
@@ -137,5 +141,10 @@ describe('CommandQueuePanel collapse control', () => {
     render(<CommandQueuePanel {...defaultProps} interactionLocked />);
 
     expect(screen.getByRole('button', { name: 'Collapse queued commands' })).toBeDisabled();
+  });
+
+  it('keeps the collapse control first in mobile layout', () => {
+    render(<CommandQueuePanel {...defaultProps} isMobile />);
+    expect(screen.getAllByRole('button')[0]).toHaveAccessibleName('Collapse queued commands');
   });
 });

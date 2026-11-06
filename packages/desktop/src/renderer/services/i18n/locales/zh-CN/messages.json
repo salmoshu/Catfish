@@ -126,7 +126,13 @@
     "errorParentUnbound": "该会话还没有可分叉的后端会话",
     "errorPointUnsupported": "该智能体仅支持从最新消息分叉",
     "errorUnsupported": "该智能体不支持会话分叉",
-    "errorGeneric": "分叉失败：{{message}}"
+    "errorGeneric": "分叉失败：{{message}}",
+    "toAnotherAgent": "Fork 到其他 Agent",
+    "startContinuation": "开始续作",
+    "targetAgent": "目标 Agent",
+    "handoffDescription": "新会话接收任务摘要并继续下一步，源会话保持运行。",
+    "errorTargetUnavailable": "目标 Agent 当前不可用。",
+    "errorOperationConflict": "此操作编号已用于另一项 Fork。"
   },
   "askSubmit": "提交",
   "askDecline": "不回答",

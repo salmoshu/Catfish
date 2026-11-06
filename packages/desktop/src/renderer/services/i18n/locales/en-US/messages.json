@@ -126,7 +126,13 @@
     "errorParentUnbound": "This conversation has no backend session to fork yet",
     "errorPointUnsupported": "This agent can only fork from the latest message",
     "errorUnsupported": "This agent does not support forking",
-    "errorGeneric": "Fork failed: {{message}}"
+    "errorGeneric": "Fork failed: {{message}}",
+    "toAnotherAgent": "Fork to another agent",
+    "startContinuation": "Continue in new conversation",
+    "targetAgent": "Target Agent",
+    "handoffDescription": "The new conversation receives a concise handoff and starts the next steps. The source keeps running.",
+    "errorTargetUnavailable": "The target Agent is unavailable.",
+    "errorOperationConflict": "This operation was already used for another fork."
   },
   "askSubmit": "Submit",
   "askDecline": "Dismiss",

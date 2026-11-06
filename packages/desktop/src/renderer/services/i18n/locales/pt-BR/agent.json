@@ -60,6 +60,8 @@
     "label": "Velocidade",
     "fast": "Rápido",
     "standard": "Padrão",
-    "switchSuccess": "Modo de velocidade alterado"
+    "switchSuccess": "Modo de velocidade alterado",
+    "costNotice": "Modos mais rápidos podem consumir mais créditos ou custar mais. As alterações valem para as próximas solicitações.",
+    "pendingNextTurn": "A mudança de velocidade será aplicada no próximo turno."
   }
 }
