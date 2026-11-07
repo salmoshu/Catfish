@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.21](https://github.com/salmoshu/Catfish/releases/tag/v0.4.21) (2026-11-07)
+
+### Features
+
+- **sidebar:** add a singleton temporary New Chat side conversation without creating file tabs, and coordinate its placement with project and plan panels
+- **updates:** show native installation progress when restarting into a downloaded Windows update
+- **conversation:** combine same-agent and other-agent forks into one hover menu and surface agent quota explanations in the timeline
+- **models:** hide speed controls when the selected model exposes no fast-mode tiers
+- **conversation:** use layered neutral colors for status and feedback surfaces
+- **codex:** keep sending a continuation after repeated capacity failures until the task completes or another error occurs
+- **remote:** fall back to the compatible Catfish Core release on Linux hosts without the required glibc version
+
+---
+
 ## [0.4.20](https://github.com/salmoshu/Catfish/releases/tag/v0.4.20) (2026-11-06)
 
 ### Features
