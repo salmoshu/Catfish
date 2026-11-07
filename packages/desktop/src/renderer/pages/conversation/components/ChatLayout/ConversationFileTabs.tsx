@@ -16,7 +16,8 @@ const ConversationFileTabs: React.FC<{ agentLabel?: string; agentIcon?: React.Re
   const [pendingClose, setPendingClose] = useState<PreviewTab | null>(null);
   const [saving, setSaving] = useState(false);
 
-  if (tabs.length === 0) return null;
+  const fileTabs = tabs.filter((tab) => !tab.metadata?.sideChat);
+  if (fileTabs.length === 0) return null;
 
   const requestClose = (tab: PreviewTab) => {
     if (tab.isDirty) {
@@ -70,7 +71,7 @@ const ConversationFileTabs: React.FC<{ agentLabel?: string; agentIcon?: React.Re
           {agentIcon}
           <span className='truncate'>{agentLabel || t('conversation.fileTabs.agent')}</span>
         </Button>
-        {tabs.map((tab) => {
+        {fileTabs.map((tab) => {
           const active = isOpen && activeTabId === tab.id;
           return (
             <div

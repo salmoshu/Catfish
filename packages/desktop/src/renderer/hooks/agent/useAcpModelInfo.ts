@@ -148,6 +148,14 @@ export const useAcpModelInfo = ({
   }, [conversation_id, enabled, initialModelId]);
 
   const model_info = configModelInfo ?? legacyModelInfo ?? persistedModelInfo;
+  const switchingModelId =
+    setStatus.state === 'setting' && setStatus.optionId === model?.id ? setStatus.requestedValue : undefined;
+  const selectedModelId =
+    switchingModelId || (model && runtimeConfig.pendingValues?.[model.id]) || model_info?.current_model_id;
+  const selectedModel =
+    cachedModels?.available_models.find((candidate) => candidate.id === selectedModelId) ??
+    legacyModelInfo?.available_models.find((candidate) => candidate.id === selectedModelId);
+  const modelSupportsSpeed = selectedModel?.service_tiers === undefined || selectedModel.service_tiers.length > 0;
 
   const selectModel = useCallback(
     (model_id: string) => {
@@ -180,7 +188,7 @@ export const useAcpModelInfo = ({
     isSetting: setStatus.state === 'setting' && setStatus.optionId === model?.id,
     selectModel,
     thoughtLevel,
-    speed,
+    speed: modelSupportsSpeed ? speed : null,
     pendingValues: runtimeConfig.pendingValues,
     setStatus,
     setConfigOption,

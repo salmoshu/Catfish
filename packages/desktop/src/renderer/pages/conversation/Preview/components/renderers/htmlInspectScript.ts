@@ -58,8 +58,8 @@ export function generateInspectScript(inspectMode: boolean, messages: InspectMes
         .inspect-overlay {
           position: fixed;
           pointer-events: none;
-          background: rgba(59, 130, 246, 0.1);
-          border: 2px solid #3b82f6;
+          background: color-mix(in srgb, var(--text-primary, CanvasText) 10%, transparent);
+          border: 2px solid var(--text-primary, CanvasText);
           z-index: 999999;
           transition: all 0.1s ease;
         }
@@ -83,13 +83,14 @@ export function generateInspectScript(inspectMode: boolean, messages: InspectMes
           position: fixed;
           top: 20px;
           right: 20px;
-          background: #10b981;
-          color: white;
+          background: var(--color-bg-popup, Canvas);
+          color: var(--text-primary, CanvasText);
+          border: 1px solid var(--color-border-2, GrayText);
           padding: 12px 20px;
           border-radius: 6px;
           font-size: 14px;
           z-index: 1000000;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          box-shadow: 0 4px 6px color-mix(in srgb, var(--text-primary, CanvasText) 10%, transparent);
         \`;
         document.body.appendChild(notification);
         setTimeout(() => notification.remove(), 2000);

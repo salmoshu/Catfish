@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import type { IResponseMessage } from '@/common/adapter/ipcBridge';
 import {
   composeMessage,
+  getAgentQuotaNotice,
   normalizeAgentStreamError,
   normalizeTextMessageContent,
   transformMessage,
@@ -19,6 +20,34 @@ import {
 } from '@/common/chat/chatLib';
 
 const CONVERSATION_ID = 'conversation-1';
+
+describe('agent quota notices', () => {
+  const quotaFrame = (type = 'info'): IResponseMessage => ({
+    type,
+    conversation_id: CONVERSATION_ID,
+    msg_id: 'quota-turn',
+    turn_id: 'turn-quota',
+    data: { message: "You've hit your usage limit. Try again at 14:00.", code: 'USAGE_LIMIT_EXCEEDED' },
+  });
+
+  it.each(['info', 'system', 'finish', 'agent_status'])('renders %s quota notifications in the chat', (type) => {
+    const tip = transformMessage(quotaFrame(type)) as IMessageTips;
+    expect(tip.type).toBe('tips');
+    expect(tip.content.content).toBe("You've hit your usage limit. Try again at 14:00.");
+    expect(tip.position).toBe('center');
+  });
+
+  it('does not create warnings from ordinary agent text or routine notifications', () => {
+    expect(getAgentQuotaNotice(quotaFrame('text'))).toBeNull();
+    expect(transformMessage({ ...quotaFrame(), data: { message: 'Connected to the agent' } })).toBeUndefined();
+  });
+
+  it('replaces repeated notifications for one turn while keeping separate turns distinct', () => {
+    const first = transformMessage(quotaFrame());
+    expect(transformMessage(quotaFrame('finish'))?.id).toBe(first?.id);
+    expect(transformMessage({ ...quotaFrame(), turn_id: 'next-turn' })?.id).not.toBe(first?.id);
+  });
+});
 
 function createThinkingMessage(msgId: string, content: string): IMessageThinking {
   return {

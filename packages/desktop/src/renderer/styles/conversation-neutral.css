@@ -1,0 +1,71 @@
+/* Keep chat controls and their portaled feedback on the same neutral palette. */
+[data-chat-surface],
+[data-plan-presentation],
+body:has([data-chat-surface]) :is(.arco-message-wrapper, .arco-notification, .arco-modal, .arco-trigger-popup) {
+  --bg-1: color-mix(in srgb, var(--bg-base) 97%, var(--text-primary));
+  --success-1: var(--gray-1);
+  --success-3: var(--gray-3);
+  --success-6: var(--primary-6);
+  --warning-1: var(--gray-1);
+  --warning-3: var(--gray-4);
+  --warning-6: var(--primary-6);
+  --danger-1: var(--gray-2);
+  --danger-3: var(--gray-5);
+  --danger-5: var(--gray-7);
+  --danger-6: var(--primary-6);
+  --danger-7: var(--primary-7);
+  --color-success-light-1: var(--color-fill-1);
+  --color-success-light-2: var(--color-fill-2);
+  --color-success-light-3: var(--color-border-2);
+  --color-success-light-4: var(--color-fill-4);
+  --color-warning-light-1: var(--color-fill-1);
+  --color-warning-light-2: var(--color-fill-2);
+  --color-warning-light-3: var(--color-border-3);
+  --color-warning-light-4: var(--color-fill-4);
+  --color-danger-light-1: var(--color-fill-2);
+  --color-danger-light-2: var(--color-fill-3);
+  --color-danger-light-3: var(--color-border-3);
+  --color-danger-light-4: var(--color-fill-4);
+  --success: var(--text-secondary);
+  --warning: var(--text-primary);
+  --danger: var(--text-primary);
+}
+
+[data-chat-surface] :is(.arco-tag, .arco-alert),
+body:has([data-chat-surface]) :is(.arco-message, .arco-notification) {
+  color: var(--text-primary);
+  border-color: var(--color-border-2);
+  background: var(--color-bg-2);
+}
+
+[data-chat-surface] :is(.arco-tag, .arco-alert-icon, .arco-badge-status-text),
+body:has([data-chat-surface]) :is(.arco-message-icon, .arco-notification-icon) {
+  color: var(--text-secondary);
+}
+
+[data-chat-surface] .arco-badge-status-dot {
+  background: var(--text-secondary);
+}
+
+[data-chat-surface] .arco-alert-error {
+  border-inline-start: 3px solid var(--text-primary);
+}
+
+[data-chat-surface] .arco-alert-warning {
+  border-inline-start: 3px solid var(--color-border-3);
+}
+
+body:has([data-chat-surface]) .conversation-search-modal {
+  --conversation-search-highlight-fg: var(--text-primary);
+  --conversation-search-panel-bg: var(--color-bg-popup);
+  --conversation-search-panel-inner-bg: var(--color-bg-2);
+  --conversation-search-panel-border: var(--color-border-2);
+  --conversation-search-panel-shadow: var(--shadow-pop);
+  --conversation-search-panel-outline: var(--color-border-3);
+  --conversation-search-surface-bg: var(--color-fill-1);
+  --conversation-search-input-bg: var(--color-bg-2);
+  --conversation-search-input-border: var(--color-border-2);
+  --conversation-search-input-shadow: var(--shadow-xs);
+  --conversation-search-divider: var(--color-border-2);
+  --conversation-search-hover-bg: var(--color-fill-2);
+}

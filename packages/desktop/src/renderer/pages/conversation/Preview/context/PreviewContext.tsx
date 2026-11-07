@@ -5,6 +5,7 @@
  */
 
 import { ipcBridge } from '@/common';
+import { openWorkbenchSection } from '@/renderer/pages/conversation/Workbench/workbenchActivityStore';
 import type { PreviewContentType } from '@/common/types/office/preview';
 import type { ChatFileRef, ContentEncoding } from '@/common/types/chatFile';
 import { chatFileRefKey, isChatFileRef } from '@/common/types/chatFile';
@@ -135,8 +136,11 @@ export interface PreviewContextValue {
    * Open a browser tab; blank page when url is omitted.
    */
   openBrowserTab: (url?: string) => void;
-  /** Open a session-only temporary chat tab; closing it deletes the temporary conversation. */
+  /** One temporary side conversation, rendered in the workspace rather than the file tabs. */
+  sideChat: { workspace?: string; title?: string } | null;
+  /** Focus the existing side conversation, or create one when none is open. */
   openSideChat: (workspace?: string, title?: string) => void;
+  closeSideChat: () => void;
   closePreview: () => void;
   /** 切换最大化 / Toggle maximized. */
   toggleMaximized: () => void;
@@ -539,6 +543,7 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // State starts empty; the active scope's persisted state is loaded on the first
   // `closePreviewIfScopeChanged` (per-project restore, see switchScope below).
   const [isOpen, setIsOpen] = useState(false);
+  const [sideChat, setSideChat] = useState<PreviewContextValue['sideChat']>(null);
   const [isMaximized, setIsMaximized] = useState(false);
   const [tabs, setTabs] = useState<PreviewTab[]>([]);
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
@@ -887,12 +892,11 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
     [openPreview]
   );
 
-  const openSideChat = useCallback(
-    (workspace?: string, title?: string) => {
-      openPreview('', 'markdown', { title, sideChat: true, transient: true, workspace });
-    },
-    [openPreview]
-  );
+  const openSideChat = useCallback((workspace?: string, title?: string) => {
+    setSideChat((current) => current ?? { workspace, title });
+    openWorkbenchSection('side-chat');
+  }, []);
+  const closeSideChat = useCallback(() => setSideChat(null), []);
 
   /**
    * Hide the preview panel, keeping its tabs.
@@ -960,6 +964,7 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // would drop the subscriptions the restore had just created.
       resetPreviewWatch();
       currentScopeRef.current = scopeKey;
+      setSideChat(null);
       const loaded = scopeKey != null ? loadScopeState(scopeKey) : EMPTY_SCOPE_STATE;
       // Subscriptions for these tabs come from the tabs effect, which this setTabs
       // triggers — restored tabs are subscribed exactly like freshly opened ones.
@@ -1382,7 +1387,9 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
       updateContent,
       updateTab,
       openBrowserTab,
+      sideChat,
       openSideChat,
+      closeSideChat,
       browserTabLimitHitAt,
       persistQuotaExceededAt,
       saveContent,
@@ -1414,7 +1421,9 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
     updateContent,
     updateTab,
     openBrowserTab,
+    sideChat,
     openSideChat,
+    closeSideChat,
     browserTabLimitHitAt,
     persistQuotaExceededAt,
     saveContent,

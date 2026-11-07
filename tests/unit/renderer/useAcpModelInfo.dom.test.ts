@@ -128,6 +128,47 @@ describe('useAcpModelInfo', () => {
     });
   });
 
+  it('hides a stale speed option when switching to a model without speed tiers', async () => {
+    const speed: AcpConfigOptionDto = {
+      id: 'service_tier',
+      category: 'speed',
+      type: 'select',
+      current_value: 'fast',
+      options: [
+        { value: 'default', name: 'Standard' },
+        { value: 'fast', name: 'Fast' },
+      ],
+    };
+    catalog.agents = [
+      {
+        id: 'claude',
+        available_models: {
+          available_models: [
+            { id: 'opus-4', label: 'Opus', service_tiers: [{ id: 'fast', name: 'Fast' }] },
+            { id: 'sonnet-4', label: 'Sonnet', service_tiers: [] },
+          ],
+        },
+      },
+    ];
+    ensureRuntimeInvokeMock.mockResolvedValue({
+      recovered: true,
+      config_options: [...buildConfigOptions('opus-4'), speed],
+      runtime: null,
+    });
+    const { result } = renderUseAcpModelInfo({ conversation_id: 'speed-conversation', backend: 'claude' });
+    await waitFor(() => expect(result.current.speed?.id).toBe('service_tier'));
+    act(() =>
+      emitStream({
+        type: 'acp_config_option',
+        conversation_id: 'speed-conversation',
+        msg_id: 'model-switch',
+        data: { config_options: [...buildConfigOptions('sonnet-4'), speed] },
+      })
+    );
+    await waitFor(() => expect(result.current.model_info?.current_model_id).toBe('sonnet-4'));
+    expect(result.current.speed).toBeNull();
+  });
+
   it('derives model info from the model config option and ignores thought_level values', async () => {
     ensureRuntimeInvokeMock.mockResolvedValue({
       recovered: true,

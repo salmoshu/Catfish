@@ -1,4 +1,5 @@
 import { Badge, Button } from '@arco-design/web-react';
+import { ArrowLeft, Close } from '@icon-park/react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { NormalizedToolCall, NormalizedToolStatus } from '@/common/chat/normalizeToolCall';
@@ -6,6 +7,7 @@ import { ExplorerContainer } from '@/renderer/pages/conversation/explorer/Explor
 import { useCurrentConversation } from '@/renderer/pages/conversation/explorer/currentConversationStore';
 import MessageAcpTerminalOutput from '@/renderer/pages/conversation/Messages/acp/MessageAcpTerminalOutput';
 import { PreviewPanel, usePreviewContext } from '@/renderer/pages/conversation/Preview';
+import SideChatPanel from '@/renderer/pages/conversation/Preview/components/PreviewPanel/SideChatPanel';
 import type { WorkbenchSection } from './workbenchActivity';
 import {
   notifyWorkbenchSectionChange,
@@ -16,7 +18,7 @@ import {
 import { useWorkbenchPanelState } from './workbenchPanelState';
 import './workbench.css';
 
-const SECTIONS = new Set<WorkbenchSection>(['files', 'changes', 'preview', 'terminal', 'agents', 'plan']);
+const SECTIONS = new Set<WorkbenchSection>(['files', 'changes', 'preview', 'terminal', 'agents', 'plan', 'side-chat']);
 const WorkbenchAgentCard: React.FC<{ agent: NormalizedToolCall }> = ({ agent }) => {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
@@ -73,17 +75,17 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
   const { state, update } = useWorkbenchPanelState(projectId, conversationId);
   const activeSection: WorkbenchSection = state.section;
   const activity = useWorkbenchActivity(conversationId);
-  const { isOpen: previewOpen, activeTab, openPreview, openBrowserTab } = usePreviewContext();
+  const { isOpen: previewOpen, activeTab, openPreview, openBrowserTab, sideChat, closeSideChat } = usePreviewContext();
   useEffect(() => {
     onSectionChange?.(activeSection);
     notifyWorkbenchSectionChange(activeSection);
   }, [activeSection, onSectionChange]);
 
   useEffect(() => {
-    if (!previewOpen && activeSection === 'preview') {
+    if ((!previewOpen && activeSection === 'preview') || (!sideChat && activeSection === 'side-chat')) {
       update((current) => ({ ...current, section: 'files' }));
     }
-  }, [previewOpen, activeSection, update]);
+  }, [previewOpen, sideChat, activeSection, update]);
 
   useEffect(() => {
     const handleOpen = (event: Event) => {
@@ -122,9 +124,9 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
       <div className='workbench-body'>
         <section
           id='workbench-panel-files'
-          role={activeSection === 'preview' ? 'complementary' : 'tabpanel'}
+          role={activeSection === 'preview' || activeSection === 'side-chat' ? 'complementary' : 'tabpanel'}
           aria-labelledby='workbench-tab-files'
-          hidden={activeSection === 'preview'}
+          hidden={activeSection === 'preview' || activeSection === 'side-chat'}
         >
           <ExplorerContainer
             projectId={projectId}
@@ -132,6 +134,33 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
             contentHidden={activeSection === 'terminal' || activeSection === 'agents'}
             onSectionChange={selectSection}
           />
+        </section>
+        <section
+          data-side-chat-panel
+          aria-label={t('conversation.welcome.newConversation')}
+          hidden={activeSection !== 'side-chat'}
+          className='h-full min-h-0 flex flex-col'
+        >
+          <div className='flex items-center gap-8px shrink-0 px-12px h-44px border-b border-[var(--color-border-2)]'>
+            <Button
+              type='text'
+              size='mini'
+              icon={<ArrowLeft size={16} />}
+              aria-label={t('common.back')}
+              onClick={() => selectSection('files')}
+            />
+            <span className='flex-1 text-13px font-medium text-t-primary'>
+              {sideChat?.title || t('conversation.welcome.newConversation')}
+            </span>
+            <Button
+              type='text'
+              size='mini'
+              icon={<Close size={16} />}
+              aria-label={t('common.close')}
+              onClick={closeSideChat}
+            />
+          </div>
+          {sideChat && <SideChatPanel workspace={sideChat.workspace} />}
         </section>
         <section
           id='workbench-panel-preview'

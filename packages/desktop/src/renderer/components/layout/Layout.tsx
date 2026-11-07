@@ -190,6 +190,7 @@ const Layout: React.FC<{
     projectId: currentProject,
     isMobile,
     active: Boolean(currentProject),
+    siderCollapsed: collapsed,
   });
   const toggleExplorer = useCallback(() => {
     dispatchWorkspaceToggleEvent();
@@ -358,7 +359,10 @@ const Layout: React.FC<{
   return (
     <LayoutContext.Provider value={{ isMobile, siderCollapsed: collapsed, setSiderCollapsed: setCollapsed }}>
       <NavigationHistoryProvider>
-        <div className='app-shell flex flex-col size-full min-h-0'>
+        <div
+          className='app-shell flex flex-col size-full min-h-0'
+          data-chat-surface={workspaceAvailable ? '' : undefined}
+        >
           <Titlebar workspaceAvailable={workspaceAvailable} />
           {/* 移动端左侧边栏蒙板 / Mobile left sider backdrop */}
           {isMobile && !collapsed && (

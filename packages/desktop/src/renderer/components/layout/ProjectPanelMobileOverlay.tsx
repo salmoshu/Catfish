@@ -27,7 +27,6 @@ export const ProjectPanelMobileOverlay: React.FC<ProjectPanelMobileOverlayProps>
   const { t } = useTranslation();
   const conversationId = useCurrentConversation();
   const { state } = useWorkbenchPanelState(projectId, conversationId, true);
-  const floating = state.workspaceOpen && state.planOpen;
   const mountIdRef = useRef<string>('');
   if (mountIdRef.current === '') mountIdRef.current = `pem-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -52,17 +51,13 @@ export const ProjectPanelMobileOverlay: React.FC<ProjectPanelMobileOverlayProps>
           borderLeft: '1px solid var(--bg-3)',
         }}
       >
-        <div hidden={!state.planOpen || collapsed} className='h-full min-h-0' data-plan-dock>
+        <div hidden={!state.planOpen || state.workspaceOpen || collapsed} className='h-full min-h-0' data-plan-dock>
           {conversationId && <div data-plan-panel-slot={conversationId} className='h-full min-h-0' />}
         </div>
         <div
           hidden={!state.workspaceOpen || collapsed}
-          data-workspace-presentation={!state.workspaceOpen || collapsed ? 'hidden' : floating ? 'floating' : 'docked'}
-          className={
-            floating
-              ? 'absolute inset-16px z-1 rounded-16px border border-[var(--color-border-2)] bg-[var(--color-bg-popup)] shadow-lg overflow-hidden'
-              : 'h-full overflow-hidden'
-          }
+          data-workspace-presentation={!state.workspaceOpen || collapsed ? 'hidden' : 'docked'}
+          className='h-full overflow-hidden'
         >
           <WorkbenchPanel projectId={projectId} collapsed={collapsed} onCollapse={onCollapse} onExpand={onCollapse} />
         </div>

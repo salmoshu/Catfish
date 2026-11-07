@@ -104,6 +104,8 @@ const HTMLPreview: React.FC<HTMLPreviewProps> = ({ content, file_path, hideToolb
    */
   const injectInspectorScript = (iframeDoc: Document) => {
     const script = iframeDoc.createElement('script');
+    const inspectorColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim() || 'currentColor';
     script.textContent = `
       (function() {
         let hoveredElement = null;
@@ -113,8 +115,8 @@ const HTMLPreview: React.FC<HTMLPreviewProps> = ({ content, file_path, hideToolb
         function createOverlay() {
           overlay = document.createElement('div');
           overlay.style.position = 'absolute';
-          overlay.style.border = '2px solid #2196F3';
-          overlay.style.backgroundColor = 'rgba(33, 150, 243, 0.1)';
+          overlay.style.border = '2px solid ' + ${JSON.stringify(inspectorColor)};
+          overlay.style.backgroundColor = 'color-mix(in srgb, ' + ${JSON.stringify(inspectorColor)} + ' 10%, transparent)';
           overlay.style.pointerEvents = 'none';
           overlay.style.zIndex = '999999';
           overlay.style.boxSizing = 'border-box';

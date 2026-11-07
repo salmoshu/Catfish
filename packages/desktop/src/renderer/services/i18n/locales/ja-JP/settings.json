@@ -1421,5 +1421,5 @@
   "crossSessionMessageResume": "再度オンにする",
   "crossSessionMessageUpdateFailed": "会話間メッセージ設定の更新に失敗しました",
   "codexAutoContinueOnCapacity": "Codex の容量不足時に自動で継続",
-  "codexAutoContinueOnCapacityDesc": "Selected model is at capacity を検出すると現在の応答を停止し、「続き」を一度送信します。再度失敗した場合は待機キューを一時停止します。"
+  "codexAutoContinueOnCapacityDesc": "Selected model is at capacity を検出すると現在の応答を停止して「続き」を送信し、タスクが完了するか別のエラーが発生するまで継続します。"
 }

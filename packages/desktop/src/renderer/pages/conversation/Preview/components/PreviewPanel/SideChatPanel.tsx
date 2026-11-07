@@ -6,24 +6,33 @@
 
 import { ipcBridge } from '@/common';
 import type { TChatConversation } from '@/common/config/storage';
-import { Spin } from '@arco-design/web-react';
+import { Button, Spin } from '@arco-design/web-react';
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useRef, useState } from 'react';
 import AcpChat from '@/renderer/pages/conversation/platforms/acp/AcpChat';
 import { useGuidAssistantSelection } from '@/renderer/pages/guid/hooks/useGuidAssistantSelection';
 
-/** A real agent chat whose backend conversation is deleted when its preview tab closes. */
+/** A temporary agent conversation retained while hidden and deleted when closed. */
 const SideChatPanel: React.FC<{ workspace?: string }> = ({ workspace }) => {
+  const { t } = useTranslation();
+  const conversationNameRef = useRef(t('conversation.welcome.newConversation'));
   const { selectedAssistant, selectedAssistantId, selectedAssistantBackend } = useGuidAssistantSelection({});
   const [conversation, setConversation] = useState<TChatConversation | null>(null);
   const conversationIdRef = useRef<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!selectedAssistantId) return;
     let cancelled = false;
     setConversation(null);
+    setError(null);
+    const removeConversation = (id: string): void => {
+      void ipcBridge.conversation.remove.invoke({ id }).catch(() => {});
+    };
     void ipcBridge.conversation.create
       .invoke({
-        name: 'Side Chat',
+        name: conversationNameRef.current,
         assistant: { id: selectedAssistantId },
         extra: {
           workspace,
@@ -34,21 +43,37 @@ const SideChatPanel: React.FC<{ workspace?: string }> = ({ workspace }) => {
       })
       .then((created) => {
         if (cancelled) {
-          void ipcBridge.conversation.remove.invoke({ id: created.id });
+          removeConversation(created.id);
           return;
         }
         conversationIdRef.current = created.id;
         setConversation(created);
+      })
+      .catch((reason: unknown) => {
+        if (!cancelled) setError(reason instanceof Error ? reason.message : String(reason));
       });
     return () => {
       cancelled = true;
       if (conversationIdRef.current) {
-        void ipcBridge.conversation.remove.invoke({ id: conversationIdRef.current });
+        removeConversation(conversationIdRef.current);
         conversationIdRef.current = null;
       }
     };
-  }, [selectedAssistantId, workspace]);
+  }, [selectedAssistantId, workspace, attempt]);
 
+  if (error) {
+    return (
+      <div
+        role='alert'
+        className='m-16px p-16px rounded-12px border border-[var(--color-border-2)] bg-fill-1 text-t-primary'
+      >
+        <p className='mb-12px text-13px break-words'>{error}</p>
+        <Button size='small' onClick={() => setAttempt((value) => value + 1)}>
+          {t('common.retry')}
+        </Button>
+      </div>
+    );
+  }
   if (!conversation) return <Spin className='m-24px' />;
   return (
     <AcpChat

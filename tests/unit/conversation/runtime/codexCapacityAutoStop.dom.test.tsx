@@ -9,10 +9,8 @@
  */
 
 /**
- * A Codex capacity stall is the one retry reason Catfish must not wait out:
- * retrying the same saturated model cannot succeed, and Codex's own retry loop
- * keeps the turn "running" while it tries. These tests pin the global backstop
- * that cancels the turn as soon as the retry tip names capacity.
+ * Codex can keep a capacity-stalled turn running while it retries. Catfish
+ * stops that turn and optionally sends a continuation, once per affected turn.
  */
 
 import { act, render, waitFor } from '@testing-library/react';
@@ -41,7 +39,6 @@ vi.mock('@/common', () => ({
         },
       },
       stop: { invoke: (params: unknown) => stopInvoke(params) },
-      turnCompleted: { on: vi.fn(() => () => {}) },
     },
     acpConversation: {
       sendMessage: { invoke: (params: unknown) => sendContinue(params) },
@@ -180,12 +177,43 @@ describe('useCodexCapacityAutoStop', () => {
     expect(pauseQueue).not.toHaveBeenCalled();
   });
 
-  it('pauses instead of looping when the continuation also hits capacity', async () => {
+  it('continues on every capacity failure until the task completes', async () => {
     autoContinue = true;
     await emit(capacityTip());
     await waitFor(() => expect(sendContinue).toHaveBeenCalledTimes(1));
 
     await emit(capacityTip({ turn_id: 'turn-after-continue' }));
+    await waitFor(() => expect(sendContinue).toHaveBeenCalledTimes(2));
+
+    await emit(capacityTip({ turn_id: 'turn-capacity-third' }));
+    await waitFor(() => expect(sendContinue).toHaveBeenCalledTimes(3));
+    expect(pauseQueue).not.toHaveBeenCalled();
+  });
+
+  it('sends only one continuation when the same stalled turn reports several retries', async () => {
+    autoContinue = true;
+    await emit(capacityTip());
+    await emit(capacityTip());
+    await emit(capacityTip());
+    await flushAsyncWork();
+
+    expect(stopInvoke).toHaveBeenCalledTimes(1);
+    expect(sendContinue).toHaveBeenCalledTimes(1);
+  });
+
+  it('pauses without continuing if the stalled turn cannot be stopped', async () => {
+    autoContinue = true;
+    stopInvoke.mockRejectedValueOnce(new Error('stop failed'));
+    await emit(capacityTip());
+
+    await waitFor(() => expect(pauseQueue).toHaveBeenCalledWith('conv-1'));
+    expect(sendContinue).not.toHaveBeenCalled();
+  });
+
+  it('pauses the queue when sending a continuation fails', async () => {
+    autoContinue = true;
+    sendContinue.mockRejectedValueOnce(new Error('send failed'));
+    await emit(capacityTip());
 
     await waitFor(() => expect(pauseQueue).toHaveBeenCalledWith('conv-1'));
     expect(sendContinue).toHaveBeenCalledTimes(1);

@@ -21,10 +21,12 @@ import { iconColors } from '@/renderer/styles/colors';
 // icon — a backend that deliberately downgrades a notice to Info still reached
 // the user as a warning.
 export const icon = {
-  success: <CheckOne theme='filled' size='16' fill={iconColors.success} className='m-t-2px' />,
+  success: <CheckOne theme='filled' size='16' fill={iconColors.secondary} className='m-t-2px' />,
   info: <Info theme='filled' size='16' strokeLinejoin='bevel' className='m-t-2px' fill={iconColors.brand} />,
-  warning: <Attention theme='filled' size='16' strokeLinejoin='bevel' className='m-t-2px' fill={iconColors.warning} />,
-  error: <Attention theme='filled' size='16' strokeLinejoin='bevel' className='m-t-2px' fill={iconColors.danger} />,
+  warning: (
+    <Attention theme='filled' size='16' strokeLinejoin='bevel' className='m-t-2px' fill={iconColors.secondary} />
+  ),
+  error: <Attention theme='filled' size='16' strokeLinejoin='bevel' className='m-t-2px' fill={iconColors.primary} />,
 };
 
 const useFormatContent = (content: string) => {
@@ -42,9 +44,9 @@ const useFormatContent = (content: string) => {
 };
 
 const ownershipColor = {
-  aionui: 'red',
-  user_agent: 'orange',
-  user_llm_provider: 'arcoblue',
+  aionui: 'gray',
+  user_agent: 'gray',
+  user_llm_provider: 'gray',
   unknown_upstream: 'gray',
 };
 
@@ -154,7 +156,7 @@ const MessageTips: React.FC<{ message: IMessageTips }> = ({ message }) => {
                   </Tag>
                 )}
                 {retryHint && (
-                  <Tag size='small' color={structuredError.retryable ? 'green' : 'gray'}>
+                  <Tag size='small' color='gray'>
                     {retryHint}
                   </Tag>
                 )}

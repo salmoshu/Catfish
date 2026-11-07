@@ -42,7 +42,9 @@ vi.mock('@renderer/pages/conversation/runtime/useConversationRuntimeView', () =>
   useConversationRuntimeView: () => runtimeView(),
 }));
 
-const scope = vi.hoisted(() => ({ projectId: 'panel-project', conversationId: 'conv-1' }));
+const scope = vi.hoisted(() => ({ projectId: 'panel-project', conversationId: 'conv-1', siderCollapsed: true }));
+vi.mock('@/renderer/hooks/context/LayoutContext', () => ({ useLayoutContext: () => scope }));
+vi.mock('@/renderer/pages/conversation/Preview/components/PreviewPanel/SideChatPanel', () => ({ default: () => null }));
 vi.mock('@/renderer/pages/conversation/explorer/currentConversationStore', () => ({
   useCurrentConversation: () => scope.conversationId,
 }));
@@ -202,6 +204,7 @@ describe('independent workspace and plan panels', () => {
       projectId: scope.projectId,
       isMobile: false,
       active: true,
+      siderCollapsed: scope.siderCollapsed,
     });
     return (
       <>
@@ -226,7 +229,7 @@ describe('independent workspace and plan panels', () => {
     );
     expect(document.querySelector('[data-workspace-presentation]')).toHaveAttribute(
       'data-workspace-presentation',
-      workspace ? (plan ? 'floating' : 'docked') : 'hidden'
+      workspace ? 'docked' : 'hidden'
     );
     expect(screen.getByRole('button', { name: 'conversation.planBar.title' })).toHaveAttribute(
       'aria-expanded',
@@ -255,7 +258,7 @@ describe('independent workspace and plan panels', () => {
     expectPresentation(nextA, nextB);
   });
 
-  it('restores each conversation after switching away, including the floating workspace', () => {
+  it('restores each conversation after switching away, including the floating plan', () => {
     const view = setupPanels(true, true);
     expectPresentation(true, true);
     scope.conversationId = 'conv-2';
@@ -279,7 +282,7 @@ describe('independent workspace and plan panels', () => {
     expectPresentation(true, true);
   });
 
-  it('keeps the workspace mounted when moving from floating to docked', () => {
+  it('keeps the workspace docked and mounted when closing the floating plan', () => {
     setupPanels(true, true);
     const explorer = screen.getByTestId('workspace-explorer');
     fireEvent.click(screen.getByRole('button', { name: 'conversation.planBar.title' }));
@@ -292,5 +295,17 @@ describe('independent workspace and plan panels', () => {
     latestPlan.mockReturnValue(undefined);
     fireEvent.click(screen.getByRole('button', { name: 'conversation.planBar.title' }));
     expect(screen.getByText('conversation.planBar.empty')).toBeVisible();
+  });
+
+  it('floats the plan and releases its dock when the left sidebar is opened', () => {
+    const view = setupPanels(false, true);
+    expect(document.querySelector('[data-plan-presentation]')).toBeNull();
+    scope.siderCollapsed = false;
+    view.rerender(<Harness />);
+    expect(screen.getByRole('dialog', { name: 'conversation.planBar.title' })).toBeVisible();
+    expect(document.querySelector('[data-project-panel-host]')).toHaveAttribute('data-collapsed', 'true');
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    scope.siderCollapsed = true;
   });
 });

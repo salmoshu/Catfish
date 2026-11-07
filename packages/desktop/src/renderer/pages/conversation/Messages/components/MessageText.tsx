@@ -15,7 +15,7 @@ import { useConversationContextSafe } from '@/renderer/hooks/context/Conversatio
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { iconColors } from '@/renderer/styles/colors';
-import { Alert, Button, Message, Modal, Select, Tooltip } from '@arco-design/web-react';
+import { Alert, Button, Dropdown, Menu, Message, Modal, Select, Tooltip } from '@arco-design/web-react';
 import { Copy, People } from '@icon-park/react';
 import styles from './MessageText.module.css';
 import classNames from 'classnames';
@@ -46,7 +46,6 @@ export const formatMessageTime = (timestamp: number): string => {
 import MessageCronBadge from './MessageCronBadge';
 import { resolveAgentLogo, useAgentLogos } from '@/renderer/utils/model/agentLogo';
 import TeammateMessageAvatar from './TeammateMessageAvatar';
-import { useTeammateColor } from '@/renderer/pages/team/identity/TeamIdentityContext';
 
 const CODE_STYLE = { marginTop: 4, marginBlock: 4 };
 
@@ -176,31 +175,36 @@ export const MessageTextActions: React.FC<{
           />
         </Tooltip>
         {showForkButton && (
-          <Tooltip content={t('messages.fork.action')}>
+          <Dropdown
+            trigger={['hover', 'click']}
+            position='bottom'
+            droplist={
+              <Menu
+                onClickMenuItem={(key) => {
+                  if (key === 'current') void forkConversation(message.msg_id ?? message.id);
+                  if (key === 'agent') void openForkTargets();
+                }}
+              >
+                <Menu.Item key='current'>
+                  <ForkBranchIcon size={14} fill='currentColor' /> {t('messages.fork.action')}
+                </Menu.Item>
+                <Menu.Item key='agent'>
+                  <People size={14} /> {t('messages.fork.toAnotherAgent')}
+                </Menu.Item>
+              </Menu>
+            }
+          >
             <Button
               type='text'
               size='mini'
               aria-label={t('messages.fork.action')}
               className='p-4px rd-4px !text-t-secondary hover:!text-t-primary hover:!bg-fill-2 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
-              onClick={() => void forkConversation(message.msg_id ?? message.id)}
+              loading={forkLoading}
+              aria-haspopup='menu'
               data-testid='message-fork-button'
               icon={<ForkBranchIcon size={16} fill='currentColor' />}
             />
-          </Tooltip>
-        )}
-        {showForkButton && (
-          <Tooltip content={t('messages.fork.toAnotherAgent')}>
-            <Button
-              type='text'
-              size='mini'
-              loading={forkLoading}
-              aria-label={t('messages.fork.toAnotherAgent')}
-              data-testid='message-fork-agent-button'
-              className='p-4px rd-4px !text-t-secondary hover:!text-t-primary hover:!bg-fill-2 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
-              onClick={() => void openForkTargets()}
-              icon={<People size={16} />}
-            />
-          </Tooltip>
+          </Dropdown>
         )}
         {message.created_at && (
           <span className='text-12px text-t-secondary opacity-0 group-hover:opacity-100 transition-opacity select-none'>
@@ -238,7 +242,7 @@ export const MessageTextActions: React.FC<{
           content={t('messages.copySuccess')}
           showIcon
           className='fixed top-20px left-50% transform -translate-x-50% z-9999 w-max max-w-[80%]'
-          style={{ boxShadow: '0px 2px 12px rgba(0,0,0,0.12)' }}
+          style={{ boxShadow: 'var(--shadow-card)' }}
           closable={false}
         />
       )}
@@ -332,8 +336,6 @@ const MessageText: React.FC<{
   const cronMeta = message.content.cronMeta;
   const displaySenderName = senderName === 'team_system' ? t('team.systemNotice.sender') : senderName;
   const fallbackBackendLogo = senderAgentType ? resolveAgentLogo(logos, { backend: senderAgentType }) : null;
-  // 团队 teammate 消息：按发送者会话取身份色，做气泡左色条 + 彩色发送者名；非团队场景为 undefined。
-  const teammateColor = useTeammateColor(isTeammateMessage ? senderConversationId : undefined);
 
   return (
     <>
@@ -346,12 +348,7 @@ const MessageText: React.FC<{
               senderConversationId={senderConversationId}
               backendLogo={fallbackBackendLogo}
             />
-            <span
-              className='text-12px'
-              style={teammateColor ? { color: teammateColor } : { color: 'var(--text-secondary)' }}
-            >
-              {displaySenderName}
-            </span>
+            <span className='text-12px text-t-secondary'>{displaySenderName}</span>
           </div>
         )}
         {deliverySource && (
@@ -414,7 +411,6 @@ const MessageText: React.FC<{
             [styles.teammate]: isTeammateMessage,
             [styles.assistant]: !(isUserMessage || cronMeta || isTeammateMessage),
           })}
-          style={isTeammateMessage && teammateColor ? { borderLeft: `3px solid ${teammateColor}` } : undefined}
         >
           {/* JSON 内容使用折叠组件 Use CollapsibleContent for JSON content */}
           {shouldRenderPlainText ? (

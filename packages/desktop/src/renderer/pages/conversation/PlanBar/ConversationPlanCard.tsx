@@ -1,11 +1,14 @@
 /** @license Copyright 2026 AionUi (aionui.com) SPDX-License-Identifier: Apache-2.0 */
 import { Button } from '@arco-design/web-react';
-import React, { useLayoutEffect, useState } from 'react';
+import { Close } from '@icon-park/react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useCurrentProject } from '@renderer/pages/conversation/explorer/currentProjectStore';
 import { useWorkbenchPanelState } from '@renderer/pages/conversation/Workbench/workbenchPanelState';
 import ConversationPlanBar from './ConversationPlanBar';
+import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
+import styles from './ConversationPlanBar.module.css';
 
 const PlanProgressIcon: React.FC = () => (
   <svg className='block' width='16' height='16' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
@@ -23,6 +26,16 @@ const ConversationPlanCard: React.FC<{ conversation_id: string }> = ({ conversat
   const { t } = useTranslation();
   const projectId = useCurrentProject();
   const { state, toggle } = useWorkbenchPanelState(projectId, conversation_id);
+  const layout = useLayoutContext();
+  const floating = state.workspaceOpen || layout?.siderCollapsed === false || !projectId;
+  useEffect(() => {
+    if (!state.planOpen || !floating) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') toggle('plan');
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [state.planOpen, floating, toggle]);
   const [slots, setSlots] = useState<{ trigger: Element | null; panel: Element | null }>({
     trigger: null,
     panel: null,
@@ -57,17 +70,26 @@ const ConversationPlanCard: React.FC<{ conversation_id: string }> = ({ conversat
           slots.trigger
         )}
       {state.planOpen &&
+        !floating &&
         slots.panel &&
         createPortal(<ConversationPlanBar conversation_id={conversation_id} variant='panel' />, slots.panel)}
       {state.planOpen &&
-        !projectId &&
-        !slots.panel &&
+        floating &&
         createPortal(
           <div
             role='dialog'
             aria-label={t('conversation.planBar.title')}
-            className='fixed top-72px right-16px w-340px max-w-[calc(100vw-32px)] max-h-[80vh] overflow-y-auto z-70 rounded-16px border border-[var(--color-border-2)] bg-[var(--color-bg-popup)] shadow-lg'
+            data-plan-presentation='floating'
+            className={styles.floatingPlan}
           >
+            <Button
+              type='text'
+              size='mini'
+              className={styles.closeFloating}
+              aria-label={t('common.close')}
+              icon={<Close size={14} />}
+              onClick={() => toggle('plan')}
+            />
             <ConversationPlanBar conversation_id={conversation_id} variant='panel' />
           </div>,
           document.body

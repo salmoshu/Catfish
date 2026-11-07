@@ -142,26 +142,9 @@ vi.mock('@/renderer/utils/ui/clipboard', () => ({
   copyText: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@arco-design/web-react', () => ({
+vi.mock('@arco-design/web-react', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@arco-design/web-react')>()),
   Alert: () => null,
-  Button: ({
-    children,
-    icon,
-    onClick,
-    'aria-label': ariaLabel,
-    'data-testid': dataTestId,
-  }: {
-    children?: React.ReactNode;
-    icon?: React.ReactNode;
-    onClick?: () => void;
-    'aria-label'?: string;
-    'data-testid'?: string;
-  }) => (
-    <button type='button' onClick={onClick} aria-label={ariaLabel} data-testid={dataTestId}>
-      {icon}
-      {children}
-    </button>
-  ),
   Message: {
     error: vi.fn(),
   },
@@ -870,6 +853,7 @@ describe('MessageText fork entry point', () => {
   it('clicking fork calls the API, refreshes, navigates, and pre-warms the runtime', async () => {
     renderWithCapability({ at_turn: true }, { isLastMessage: false, hasForkAnchor: true });
     fireEvent.click(screen.getByTestId('message-fork-button'));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'messages.fork.action' }));
     await waitFor(() => {
       expect(forkMocks.fork).toHaveBeenCalledWith({
         conversation_id: 'conv-fork',
@@ -885,10 +869,13 @@ describe('MessageText fork entry point', () => {
     renderWithCapability({ at_turn: true }, { isLastMessage: true });
     const button = screen.getByTestId('message-fork-button');
     fireEvent.click(button);
-    fireEvent.click(button);
+    const action = await screen.findByRole('menuitem', { name: 'messages.fork.action' });
+    fireEvent.click(action);
+    fireEvent.click(action);
     await waitFor(() => expect(forkMocks.fork).toHaveBeenCalledTimes(1));
     await new Promise((resolve) => setTimeout(resolve, 0));
     fireEvent.click(button);
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'messages.fork.action' }));
     await waitFor(() => expect(forkMocks.fork).toHaveBeenCalledTimes(2));
     expect(forkMocks.fork.mock.calls[0][0].operation_id).toBe(forkMocks.fork.mock.calls[1][0].operation_id);
     expect(forkMocks.navigate).toHaveBeenCalledWith('/conversation/conv-retried');
@@ -907,7 +894,9 @@ describe('MessageText fork entry point', () => {
       },
     ]);
     renderWithCapability({ at_turn: true }, { isLastMessage: true });
-    fireEvent.click(screen.getByTestId('message-fork-agent-button'));
+    expect(screen.queryByTestId('message-fork-agent-button')).not.toBeInTheDocument();
+    fireEvent.mouseEnter(screen.getByTestId('message-fork-button'));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'messages.fork.toAnotherAgent' }));
     await screen.findByRole('dialog');
     expect(screen.getByRole('combobox')).toHaveValue('agent-claude');
     fireEvent.click(screen.getByRole('button', { name: 'messages.fork.startContinuation' }));

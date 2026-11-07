@@ -136,4 +136,9 @@ describe('ACP config option derivation', () => {
     expect(isMissingCodexRolloutError(error)).toBe(true);
     expect(isMissingCodexRolloutError(new Error('network failed'))).toBe(false);
   });
+
+  it('hides speed controls when the runtime advertises only its standard tier', () => {
+    expect(deriveSpeedOption([{ id: 'service_tier', type: 'select', options: [{ value: 'default' }] }])).toBeNull();
+    expect(deriveSpeedOption([{ id: 'service_tier', type: 'select', options: [] }])).toBeNull();
+  });
 });

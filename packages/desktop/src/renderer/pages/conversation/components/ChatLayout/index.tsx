@@ -21,7 +21,14 @@ import {
   WORKSPACE_HEADER_HEIGHT,
   calcLayoutMetrics,
 } from '@/renderer/pages/conversation/utils/layoutCalc';
-import { Layout as ArcoLayout } from '@arco-design/web-react';
+import { Button, Layout as ArcoLayout } from '@arco-design/web-react';
+import { Close } from '@icon-park/react';
+import { useTranslation } from 'react-i18next';
+import SideChatPanel from '@/renderer/pages/conversation/Preview/components/PreviewPanel/SideChatPanel';
+import {
+  WORKBENCH_OPEN_EVENT,
+  type WorkbenchOpenDetail,
+} from '@/renderer/pages/conversation/Workbench/workbenchActivityStore';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './chat-layout.css';
@@ -68,11 +75,12 @@ const ChatLayout: React.FC<{
   const { conversation_id, workspacePath, isTemporaryWorkspace } = props;
   const { backend, presetAssistant, agent_name, workspaceEnabled = true, workspacePreferenceKey } = props;
   const layout = useLayoutContext();
+  const { t } = useTranslation();
   const isDesktop = !layout?.isMobile;
   const isMobile = Boolean(layout?.isMobile);
 
   // Preview panel state
-  const { isOpen: isPreviewOpenRaw } = usePreviewContext();
+  const { isOpen: isPreviewOpenRaw, sideChat, closeSideChat } = usePreviewContext();
   // Only hoist to the Layout host on desktop. On mobile (narrow width < 768) the
   // host is not rendered (`previewRegionActive` in Layout.tsx is gated on
   // `!isMobile`), so hoisting there would leave the preview with no renderer at
@@ -93,6 +101,41 @@ const ChatLayout: React.FC<{
     preferenceKey: workspacePreferenceKey ?? conversation_id,
     isTemporaryWorkspace,
   });
+  useEffect(() => {
+    if (previewHosted) return;
+    const openSidePanel = (event: Event) => {
+      if ((event as CustomEvent<WorkbenchOpenDetail>).detail?.section === 'side-chat') setRightSiderCollapsed(false);
+    };
+    window.addEventListener(WORKBENCH_OPEN_EVENT, openSidePanel);
+    return () => window.removeEventListener(WORKBENCH_OPEN_EVENT, openSidePanel);
+  }, [previewHosted, setRightSiderCollapsed]);
+  const localSideChat = !previewHosted && sideChat;
+  const localSiderTitle = localSideChat ? (
+    <div className='flex items-center gap-8px min-w-0 flex-1'>
+      <span className='truncate flex-1'>{localSideChat.title || t('conversation.welcome.newConversation')}</span>
+      <Button
+        type='text'
+        size='mini'
+        icon={<Close size={14} />}
+        aria-label={t('common.close')}
+        onClick={closeSideChat}
+      />
+    </div>
+  ) : (
+    props.siderTitle
+  );
+  const localSider = (
+    <>
+      <div hidden={Boolean(localSideChat)} className='h-full'>
+        {props.sider}
+      </div>
+      {localSideChat && (
+        <div className='h-full flex flex-col min-h-0'>
+          <SideChatPanel workspace={localSideChat.workspace} />
+        </div>
+      )}
+    </>
+  );
 
   // --- Hook B: container width ---
   const { containerRef, containerWidth } = useContainerWidth();
@@ -323,10 +366,10 @@ const ChatLayout: React.FC<{
               workspacePath={workspacePath}
               isTemporaryWorkspace={isTemporaryWorkspace}
             >
-              {props.siderTitle}
+              {localSiderTitle}
             </WorkspacePanelHeader>
             <ArcoLayout.Content style={{ height: `calc(100% - ${WORKSPACE_HEADER_HEIGHT}px)` }}>
-              {props.sider}
+              {localSider}
             </ArcoLayout.Content>
           </div>
         )}
@@ -338,8 +381,8 @@ const ChatLayout: React.FC<{
             setRightSiderCollapsed={setRightSiderCollapsed}
             workspaceWidthPx={workspaceWidthPx}
             mobileWorkspaceHandleRight={mobileWorkspaceHandleRight}
-            siderTitle={props.siderTitle}
-            sider={props.sider}
+            siderTitle={localSiderTitle}
+            sider={localSider}
             workspacePath={workspacePath}
             isTemporaryWorkspace={isTemporaryWorkspace}
           />

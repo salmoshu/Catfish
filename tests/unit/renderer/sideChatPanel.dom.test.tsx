@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SideChatPanel from '@/renderer/pages/conversation/Preview/components/PreviewPanel/SideChatPanel';
 
@@ -44,5 +44,14 @@ describe('SideChatPanel', () => {
 
     unmount();
     await waitFor(() => expect(mocks.remove).toHaveBeenCalledWith({ id: 'temporary-chat' }));
+  });
+
+  it('shows a creation failure and allows retrying in the same panel', async () => {
+    mocks.create.mockRejectedValueOnce(new Error('Agent unavailable'));
+    render(<SideChatPanel workspace='/repo' />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Agent unavailable');
+    fireEvent.click(screen.getByRole('button', { name: 'common.retry' }));
+    expect(await screen.findByTestId('side-chat-conversation')).toHaveTextContent('temporary-chat');
+    expect(mocks.create).toHaveBeenCalledTimes(2);
   });
 });

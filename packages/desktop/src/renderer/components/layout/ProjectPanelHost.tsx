@@ -11,6 +11,7 @@ import { useWorkbenchPanelState } from '@/renderer/pages/conversation/Workbench/
 import { WorkbenchPanel } from '@/renderer/pages/conversation/Workbench';
 import { usePreviewContext } from '@/renderer/pages/conversation/Preview';
 import type { WorkbenchSection } from '@/renderer/pages/conversation/Workbench/workbenchActivity';
+import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 
 export type ProjectPanelHostProps = {
   widthPx: number;
@@ -34,7 +35,9 @@ export const ProjectPanelHost: React.FC<ProjectPanelHostProps> = ({
   const projectId = useCurrentProject();
   const conversationId = useCurrentConversation();
   const { state } = useWorkbenchPanelState(projectId, conversationId);
-  const floating = state.workspaceOpen && state.planOpen;
+  const layout = useLayoutContext();
+  const planDocked = state.planOpen && !state.workspaceOpen && (layout?.siderCollapsed ?? true);
+  const hostCollapsed = collapsed || (!state.workspaceOpen && !planDocked);
   const { isOpen: previewOpen } = usePreviewContext();
   const mountIdRef = useRef<string>('');
   if (mountIdRef.current === '') mountIdRef.current = `pec-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -47,34 +50,25 @@ export const ProjectPanelHost: React.FC<ProjectPanelHostProps> = ({
       data-explorer-column
       data-project-preview-region={previewOpen ? '' : undefined}
       data-mount-id={mountIdRef.current}
-      data-collapsed={collapsed ? 'true' : 'false'}
+      data-collapsed={hostCollapsed ? 'true' : 'false'}
       className='!bg-1 h-full relative'
       style={{
-        width: collapsed ? '0px' : maximized ? '100%' : `${widthPx}px`,
-        flexGrow: maximized && !collapsed ? 1 : 0,
-        flexShrink: maximized && !collapsed ? 1 : 0,
-        flexBasis: maximized && !collapsed ? 0 : 'auto',
-        borderLeft: collapsed ? 'none' : '1px solid var(--bg-3)',
-        overflow: floating ? 'visible' : 'hidden',
+        width: hostCollapsed ? '0px' : maximized ? '100%' : `${widthPx}px`,
+        flexGrow: maximized && !hostCollapsed ? 1 : 0,
+        flexShrink: maximized && !hostCollapsed ? 1 : 0,
+        flexBasis: maximized && !hostCollapsed ? 0 : 'auto',
+        borderLeft: hostCollapsed ? 'none' : '1px solid var(--bg-3)',
+        overflow: 'hidden',
       }}
     >
-      {!collapsed && !maximized && dragHandle}
-      <div hidden={!state.planOpen || collapsed} className='h-full min-h-0 flex-1' data-plan-dock>
+      {!hostCollapsed && !maximized && dragHandle}
+      <div hidden={!planDocked || hostCollapsed} className='h-full min-h-0 flex-1' data-plan-dock>
         {conversationId && <div data-plan-panel-slot={conversationId} className='h-full min-h-0' />}
       </div>
       <div
-        data-workspace-presentation={!state.workspaceOpen || collapsed ? 'hidden' : floating ? 'floating' : 'docked'}
-        hidden={!state.workspaceOpen || collapsed}
-        className={
-          floating
-            ? 'absolute top-16px bottom-16px z-70 rounded-16px border border-[var(--color-border-2)] bg-[var(--color-bg-popup)] shadow-lg overflow-hidden'
-            : 'h-full overflow-hidden'
-        }
-        style={
-          floating
-            ? { right: 'calc(100% + 16px)', width: `min(${widthPx}px, calc(100vw - ${widthPx + 32}px))` }
-            : undefined
-        }
+        data-workspace-presentation={!state.workspaceOpen || hostCollapsed ? 'hidden' : 'docked'}
+        hidden={!state.workspaceOpen || hostCollapsed}
+        className='h-full overflow-hidden'
       >
         <WorkbenchPanel
           projectId={projectId}

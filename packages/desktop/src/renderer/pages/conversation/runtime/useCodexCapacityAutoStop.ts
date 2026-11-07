@@ -19,10 +19,10 @@ import { pauseConversationCommandQueue } from '@/renderer/pages/conversation/pla
 import { useEffect, useRef } from 'react';
 
 /**
- * Codex retries a capacity error on its own, but retrying the same saturated
- * model cannot succeed. Stop that turn, then optionally send one normal
- * continuation. A second capacity failure in the same chain pauses the queue
- * instead of creating an unbounded stop/continue loop.
+ * Stop a capacity-stalled turn and, when enabled, send a normal continuation.
+ * Repeated capacity failures keep continuing until the task completes or a
+ * different failure pauses the queue. A turn id is still deduplicated so several
+ * retry tips from the same Codex turn cannot send duplicate continuations.
  */
 const resolveTurnId = async (message: IResponseMessage): Promise<string | null> => {
   if (message.turn_id) return message.turn_id;
@@ -40,7 +40,6 @@ const resolveTurnId = async (message: IResponseMessage): Promise<string | null> 
 
 export function useCodexCapacityAutoStop(): void {
   const stoppedTurnsRef = useRef<Set<string>>(new Set());
-  const continuedConversationsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const continueAfterStop = async (conversation_id: string): Promise<void> => {
@@ -79,29 +78,15 @@ export function useCodexCapacityAutoStop(): void {
         return;
       }
 
-      if (continueTurn) {
-        continuedConversationsRef.current.add(message.conversation_id);
-        await continueAfterStop(message.conversation_id);
-      }
+      if (continueTurn) await continueAfterStop(message.conversation_id);
     };
 
-    const offResponse = ipcBridge.conversation.responseStream.on((message) => {
+    return ipcBridge.conversation.responseStream.on((message) => {
       if (!isCodexCapacityRetryTip(message)) return;
 
-      const autoContinue = configService.get('codex.autoContinueOnCapacity') ?? true;
-      const continueTurn = autoContinue && !continuedConversationsRef.current.has(message.conversation_id);
+      const continueTurn = configService.get('codex.autoContinueOnCapacity') ?? true;
       if (!continueTurn) pauseConversationCommandQueue(message.conversation_id);
       void stopTurnOnce(message, continueTurn);
     });
-    const offCompleted = ipcBridge.conversation.turnCompleted.on((event) => {
-      if (event.state === 'ai_waiting_input') {
-        continuedConversationsRef.current.delete(event.session_id);
-      }
-    });
-
-    return () => {
-      offResponse();
-      offCompleted();
-    };
   }, []);
 }

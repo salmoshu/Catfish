@@ -7,10 +7,16 @@ type UseProjectPanelCollapseParams = {
   projectId: string | null;
   isMobile: boolean;
   active: boolean;
+  siderCollapsed?: boolean;
 };
 
 /** Keep the dock occupied while either panel is open and toggle the workspace independently. */
-export function useProjectPanelCollapse({ projectId, isMobile, active }: UseProjectPanelCollapseParams) {
+export function useProjectPanelCollapse({
+  projectId,
+  isMobile,
+  active,
+  siderCollapsed = true,
+}: UseProjectPanelCollapseParams) {
   const conversationId = useCurrentConversation();
   const { state, update, toggle } = useWorkbenchPanelState(projectId, conversationId, isMobile);
   const setCollapsed = useCallback(
@@ -36,5 +42,5 @@ export function useProjectPanelCollapse({ projectId, isMobile, active }: UseProj
     if (active) dispatchWorkspaceStateEvent(!state.workspaceOpen);
   }, [active, state.workspaceOpen, conversationId]);
 
-  return { collapsed: !state.workspaceOpen && !state.planOpen, setCollapsed };
+  return { collapsed: !state.workspaceOpen && (!state.planOpen || !siderCollapsed), setCollapsed };
 }

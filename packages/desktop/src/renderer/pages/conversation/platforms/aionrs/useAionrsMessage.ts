@@ -266,6 +266,8 @@ export const useAionrsMessage = (
           break;
         case 'finish':
           {
+            const quotaNotice = transformMessage(message);
+            if (quotaNotice) mergeLiveMessage(quotaNotice);
             logStreamTerminalObserved(conversation_id, message.turn_id, 'aionrs', message.type);
             // aionrs stream_end carries usage in data field
             const usageData = message.data as TokenUsage | undefined;
@@ -354,6 +356,11 @@ export const useAionrsMessage = (
           break;
         case 'config_changed':
           onConfigChangedRef.current?.(message.data as Record<string, unknown>);
+          break;
+        case 'info':
+        case 'system':
+        case 'tips':
+          mergeLiveMessage(transformMessage(message));
           break;
         default: {
           if (message.type === 'error') {

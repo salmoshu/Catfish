@@ -84,6 +84,32 @@ describe('useAcpMessage', () => {
     responseStreamHandlerRef.current = undefined;
   });
 
+  it('renders a quota explanation carried by the terminal frame and stops processing', async () => {
+    vi.mocked(getConversationOrNull).mockResolvedValue(null);
+    const { result } = renderHook(() => useAcpMessage('quota-conversation'));
+    act(() => {
+      responseStreamHandlerRef.current?.({
+        type: 'start',
+        conversation_id: 'quota-conversation',
+        msg_id: 'quota-turn',
+        data: {},
+      });
+      responseStreamHandlerRef.current?.({
+        type: 'finish',
+        conversation_id: 'quota-conversation',
+        msg_id: 'quota-turn',
+        data: { message: "You've hit your usage limit. Try again tomorrow." },
+      });
+    });
+    expect(addOrUpdateMessageMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'tips',
+        content: expect.objectContaining({ content: "You've hit your usage limit. Try again tomorrow." }),
+      })
+    );
+    expect(result.current.running).toBe(false);
+  });
+
   it('completes hydration when the conversation lookup fails', async () => {
     vi.mocked(getConversationOrNull).mockRejectedValue(new TypeError('Failed to fetch'));
 

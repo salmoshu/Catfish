@@ -70,6 +70,28 @@ describe('PreviewContext', () => {
     expect(result.current.tabs[0].content_type).toBe('markdown');
   });
 
+  it('keeps one side conversation and leaves file tabs and their selection intact', () => {
+    const { result } = renderHook(() => usePreviewContext(), { wrapper });
+    act(() => result.current.openPreview('document', 'code', { title: 'notes.ts' }));
+    const selectedTab = result.current.activeTabId;
+    act(() => result.current.openSideChat('/repo', 'New Chat'));
+    const first = result.current.sideChat;
+    act(() => result.current.openSideChat('/different', 'New Chat'));
+    expect(result.current.sideChat).toBe(first);
+    expect(result.current.tabs).toHaveLength(1);
+    expect(result.current.activeTabId).toBe(selectedTab);
+  });
+
+  it('closes the side conversation and discards it on a project switch', () => {
+    const { result } = renderHook(() => usePreviewContext(), { wrapper });
+    act(() => result.current.openSideChat('/repo'));
+    act(() => result.current.closeSideChat());
+    expect(result.current.sideChat).toBeNull();
+    act(() => result.current.openSideChat('/repo'));
+    act(() => result.current.closePreviewIfScopeChanged('project:another'));
+    expect(result.current.sideChat).toBeNull();
+  });
+
   // `closePreview` hides the panel and KEEPS the tabs. It used to also empty them,
   // which propagated to storage and wiped the whole project's remembered tab list —
   // see clearPreviewForScope for the discarding variant.

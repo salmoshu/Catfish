@@ -357,6 +357,7 @@ export const useAcpMessage = (
           break;
         case 'finish':
           {
+            if (transformedMessage) mergeLiveMessage(transformedMessage);
             logStreamTerminalObserved(conversation_id, message.turn_id, 'acp', message.type);
             // Mark turn as finished to prevent auto-recover from late messages
             turnFinishedRef.current = true;
@@ -506,6 +507,8 @@ export const useAcpMessage = (
           }
           break;
         }
+        case 'info':
+        case 'system':
         case 'tips':
           // Advisory tips (backend `Notice`: a rejected mode/model/effort switch, or a
           // codex out-of-turn warning/deprecation). Render the advisory but do NOT touch

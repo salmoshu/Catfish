@@ -263,7 +263,12 @@ export interface AcpModelInfo {
   /** Display label for the current model */
   current_model_label: string | null;
   /** Available models for switching */
-  available_models: Array<{ id: string; label: string; description?: string }>;
+  available_models: Array<{
+    id: string;
+    label: string;
+    description?: string;
+    service_tiers?: Array<{ id: string; name?: string; description?: string }>;
+  }>;
 }
 
 // ===== Permission request (session/request_permission) =====

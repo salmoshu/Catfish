@@ -12,10 +12,47 @@ Var /GLOBAL AionUiActiveMarkerResult
 
 !macro AIONUI_BRING_UPDATED_INSTALLER_TO_FRONT
   ${If} ${isUpdated}
+    ; Older app versions launch updates with /S. Override it in the new installer
+    ; so the first upgrade to this version also displays the native progress page.
+    SetSilent normal
     BringToFront
     !insertmacro AIONUI_SLOG "event=updated-installer-foreground action=bring-to-front"
   ${EndIf}
 !macroend
+
+!macro customInstallMode
+  ${If} ${isUpdated}
+    ${If} $hasPerMachineInstallation == "1"
+    ${AndIf} $hasPerUserInstallation == "0"
+      StrCpy $isForceMachineInstall "1"
+    ${ElseIf} $hasPerUserInstallation == "1"
+    ${AndIf} $hasPerMachineInstallation == "0"
+      StrCpy $isForceCurrentInstall "1"
+    ${EndIf}
+  ${EndIf}
+!macroend
+
+!ifndef BUILD_UNINSTALLER
+  !macro customFinishPage
+    Function AionUiStartAppAfterInstall
+      ${StdUtils.ExecShellAsUser} $0 "$launchLink" "open" ""
+    FunctionEnd
+
+    Function AionUiUpdatedFinishPre
+      ${If} ${isUpdated}
+        ${StdUtils.ExecShellAsUser} $0 "$launchLink" "open" "--updated"
+        Quit
+      ${EndIf}
+    FunctionEnd
+
+    !ifndef HIDE_RUN_AFTER_FINISH
+      !define MUI_FINISHPAGE_RUN
+      !define MUI_FINISHPAGE_RUN_FUNCTION "AionUiStartAppAfterInstall"
+    !endif
+    !define MUI_PAGE_CUSTOMFUNCTION_PRE AionUiUpdatedFinishPre
+    !insertmacro MUI_PAGE_FINISH
+  !macroend
+!endif
 
 !macro AIONUI_WAIT_FOR_UPDATED_APP_EXIT
   ${If} ${isUpdated}

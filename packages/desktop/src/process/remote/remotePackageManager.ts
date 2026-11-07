@@ -15,7 +15,7 @@ import { Readable } from 'node:stream';
 import { createWriteStream } from 'node:fs';
 import { promisify } from 'node:util';
 import type { RemoteExecutor } from './remoteExecutor';
-import { assertRemoteCommand, throwIfRemoteAborted } from './remoteExecutor';
+import { assertRemoteCommand, RemoteCommandError, throwIfRemoteAborted } from './remoteExecutor';
 import { REMOTE_TUNNEL_SOURCE } from './remoteTunnel';
 
 const execFileAsync = promisify(execFile);
@@ -42,6 +42,28 @@ type ManagedResourcesManifest = {
   node?: { root?: unknown; executable?: unknown };
 };
 
+type GlibcVersion = {
+  major: number;
+  minor: number;
+};
+
+type RemoteRuntimeCompatibility = {
+  minimumGlibc: GlibcVersion;
+  fallbackVersions: string[];
+};
+
+/**
+ * The v0.2.4 Linux x64 release requires glibc 2.34; v0.2.3 requires 2.30.
+ * Keep the fallback specific to that artifact so ARM64 and macOS retain the
+ * requested release.
+ */
+const REMOTE_RUNTIME_COMPATIBILITY: Record<string, RemoteRuntimeCompatibility> = {
+  'v0.2.4': {
+    minimumGlibc: { major: 2, minor: 34 },
+    fallbackVersions: ['v0.2.3'],
+  },
+};
+
 function normalizeTarget(uname: string, machine: string, home: string): RemoteTargetInfo {
   const platform = uname === 'Linux' ? 'linux' : uname === 'Darwin' ? 'darwin' : null;
   const arch =
@@ -50,6 +72,61 @@ function normalizeTarget(uname: string, machine: string, home: string): RemoteTa
     throw new Error(`Unsupported remote target: ${uname} ${machine}`);
   }
   return { platform, arch, home };
+}
+
+function normalizeVersion(version: string): string {
+  return version.startsWith('v') ? version : `v${version}`;
+}
+
+/** Read the glibc version reported by the remote system's getconf utility. */
+export function parseGlibcVersion(output: string): GlibcVersion | null {
+  const match = output.match(/glibc[\s_-]*(\d+)\.(\d+)/i);
+  if (!match) return null;
+  return { major: Number(match[1]), minor: Number(match[2]) };
+}
+
+function compareGlibcVersions(left: GlibcVersion, right: GlibcVersion): number {
+  if (left.major !== right.major) return left.major - right.major;
+  return left.minor - right.minor;
+}
+
+/** Order known Linux x64 releases by compatibility with the remote glibc. */
+export function getRemoteVersionCandidates(version: string, glibcVersion?: GlibcVersion | null): string[] {
+  const normalized = normalizeVersion(version);
+  const compatibility = REMOTE_RUNTIME_COMPATIBILITY[normalized];
+  if (!compatibility) return [normalized];
+
+  const candidates = [normalized, ...compatibility.fallbackVersions].filter(
+    (candidate, index, versions) => versions.indexOf(candidate) === index
+  );
+  if (glibcVersion && compareGlibcVersions(glibcVersion, compatibility.minimumGlibc) < 0) {
+    return candidates.slice(1);
+  }
+  return candidates;
+}
+
+/** Identify loader failures that justify retrying a known compatible release. */
+export function isGlibcCompatibilityError(error: unknown): boolean {
+  const text =
+    error instanceof RemoteCommandError
+      ? `${error.message}\n${error.result.stdout}\n${error.result.stderr}`
+      : error instanceof Error
+        ? error.message
+        : String(error);
+  return /GLIBC_\d+\.\d+.*not found/i.test(text);
+}
+
+async function detectRemoteGlibc(executor: RemoteExecutor, signal?: AbortSignal): Promise<GlibcVersion | null> {
+  try {
+    const result = await executor.run('sh', ['-c', 'getconf GNU_LIBC_VERSION 2>/dev/null || true'], {
+      timeoutMs: 5_000,
+      signal,
+    });
+    return parseGlibcVersion(result.stdout);
+  } catch {
+    throwIfRemoteAborted(signal);
+    return null;
+  }
 }
 
 export async function detectRemoteTarget(executor: RemoteExecutor, signal?: AbortSignal): Promise<RemoteTargetInfo> {
@@ -118,10 +195,19 @@ export class RemotePackageManager {
     }
   ) {}
 
-  private async downloadBinary(target: RemoteTargetInfo, signal?: AbortSignal): Promise<string> {
-    const version = this.options.version.startsWith('v') ? this.options.version : `v${this.options.version}`;
+  private async downloadBinary(
+    target: RemoteTargetInfo,
+    signal?: AbortSignal,
+    requestedVersion = this.options.version
+  ): Promise<string> {
+    const version = normalizeVersion(requestedVersion);
     const runtimeKey = `${target.platform}-${target.arch}`;
-    if (process.platform === target.platform && process.arch === target.arch && this.options.resolveLocalBinary) {
+    if (
+      version === normalizeVersion(this.options.version) &&
+      process.platform === target.platform &&
+      process.arch === target.arch &&
+      this.options.resolveLocalBinary
+    ) {
       try {
         return this.options.resolveLocalBinary();
       } catch {}
@@ -187,14 +273,13 @@ export class RemotePackageManager {
     }
   }
 
-  async ensureInstalled(
+  private async ensureVersionInstalled(
     executor: RemoteExecutor,
-    signal?: AbortSignal,
-    onStage?: (stage: 'detecting' | 'installing') => void
+    target: RemoteTargetInfo,
+    version: string,
+    signal?: AbortSignal
   ): Promise<RemoteInstallation> {
-    const target = await detectRemoteTarget(executor, signal);
-    onStage?.('installing');
-    const paths = installationPaths(target, this.options.version);
+    const paths = installationPaths(target, version);
     const existingNode = await this.readNodePath(executor, paths.rootDir);
     if (existingNode) {
       const check = await executor.run('sh', [
@@ -205,11 +290,17 @@ export class RemotePackageManager {
         existingNode,
         paths.helperPath,
       ]);
-      if (check.exitCode === 0) return { ...paths, nodePath: existingNode };
+      if (check.exitCode === 0) {
+        assertRemoteCommand(
+          await executor.run(paths.binaryPath, ['--version'], { timeoutMs: 15_000, signal }),
+          'check remote runtime'
+        );
+        return { ...paths, nodePath: existingNode };
+      }
     }
 
     throwIfRemoteAborted(signal);
-    const localBinary = await this.downloadBinary(target, signal);
+    const localBinary = await this.downloadBinary(target, signal, version);
     const binary = await readFile(localBinary);
     throwIfRemoteAborted(signal);
     assertRemoteCommand(
@@ -259,5 +350,42 @@ export class RemotePackageManager {
     const nodePath = await this.readNodePath(executor, paths.rootDir);
     if (!nodePath) throw new Error('Remote managed Node runtime is missing');
     return { ...paths, nodePath };
+  }
+
+  async ensureInstalled(
+    executor: RemoteExecutor,
+    signal?: AbortSignal,
+    onStage?: (stage: 'detecting' | 'installing') => void
+  ): Promise<RemoteInstallation> {
+    const target = await detectRemoteTarget(executor, signal);
+    onStage?.('installing');
+    const glibcVersion = target.platform === 'linux' ? await detectRemoteGlibc(executor, signal) : null;
+    const requestedVersion = normalizeVersion(this.options.version);
+    const candidates =
+      target.platform === 'linux' && target.arch === 'x64'
+        ? getRemoteVersionCandidates(requestedVersion, glibcVersion)
+        : [requestedVersion];
+    if (candidates[0] !== requestedVersion) {
+      console.info(
+        `[remote] ${requestedVersion} requires a newer glibc than ${glibcVersion ? `${glibcVersion.major}.${glibcVersion.minor}` : 'the remote target'}; using ${candidates[0]}`
+      );
+    }
+    let lastError: unknown;
+
+    for (const [index, version] of candidates.entries()) {
+      try {
+        // A fallback must wait for the previous binary's compatibility failure.
+        // eslint-disable-next-line no-await-in-loop
+        return await this.ensureVersionInstalled(executor, target, version, signal);
+      } catch (error) {
+        throwIfRemoteAborted(signal);
+        lastError = error;
+        const hasFallback = index < candidates.length - 1;
+        if (!hasFallback || !isGlibcCompatibilityError(error)) throw error;
+        console.warn(`[remote] ${version} failed the remote glibc check; retrying with ${candidates[index + 1]}`);
+      }
+    }
+
+    throw lastError instanceof Error ? lastError : new Error(String(lastError));
   }
 }

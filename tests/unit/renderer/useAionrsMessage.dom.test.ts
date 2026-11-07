@@ -54,6 +54,33 @@ describe('useAionrsMessage turn clock', () => {
     responseStreamHandlerRef.current = undefined;
   });
 
+  it('shows quota diagnostics on finish without restarting an idle turn for later notifications', async () => {
+    vi.mocked(getConversationOrNull).mockResolvedValue(null);
+    const { result } = renderHook(() => useAionrsMessage('quota-conversation'));
+    await waitFor(() => expect(result.current.hasHydratedRunningState).toBe(true));
+    act(() => {
+      responseStreamHandlerRef.current?.({
+        type: 'finish',
+        conversation_id: 'quota-conversation',
+        msg_id: 'quota-turn',
+        data: { message: 'Insufficient quota. Add credits to continue.' },
+      });
+      responseStreamHandlerRef.current?.({
+        type: 'info',
+        conversation_id: 'quota-conversation',
+        msg_id: 'quota-turn',
+        data: { message: 'Insufficient quota. Add credits to continue.' },
+      });
+    });
+    expect(addOrUpdateMessageMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'tips',
+        content: expect.objectContaining({ content: 'Insufficient quota. Add credits to continue.' }),
+      })
+    );
+    expect(result.current.running).toBe(false);
+  });
+
   it('preserves the turn start timestamp when switching away and back to a running conversation', async () => {
     vi.mocked(getConversationOrNull).mockResolvedValue(null);
 

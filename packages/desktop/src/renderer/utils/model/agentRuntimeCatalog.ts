@@ -59,7 +59,7 @@ function normalizeConfigOptions(value: unknown): AcpSessionConfigOption[] {
   return payload.config_options as AcpSessionConfigOption[];
 }
 
-function normalizeModelOption(value: unknown): { id: string; label: string; description?: string } | null {
+function normalizeModelOption(value: unknown): AcpModelInfo['available_models'][number] | null {
   if (typeof value === 'string' && value.trim()) {
     return { id: value, label: value };
   }
@@ -69,7 +69,14 @@ function normalizeModelOption(value: unknown): { id: string; label: string; desc
   if (!id) return null;
   const label = typeof value.label === 'string' ? value.label : typeof value.name === 'string' ? value.name : id;
   const description = typeof value.description === 'string' ? value.description : undefined;
-  return { id, label, description };
+  const rawTiers = value.service_tiers ?? value.serviceTiers;
+  const serviceTiers = Array.isArray(rawTiers)
+    ? rawTiers.flatMap((tier) => {
+        if (!isRecord(tier) || typeof tier.id !== 'string') return [];
+        return [{ id: tier.id, ...(typeof tier.name === 'string' ? { name: tier.name } : {}) }];
+      })
+    : undefined;
+  return { id, label, description, ...(serviceTiers ? { service_tiers: serviceTiers } : {}) };
 }
 
 function buildModelInfoFromPayload(value: unknown): AcpModelInfo | null {

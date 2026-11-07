@@ -718,12 +718,12 @@ describe('AutoUpdaterService', () => {
     await vi.advanceTimersByTimeAsync(1000);
 
     expect(cleanup).toHaveBeenCalledTimes(1);
-    expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(true, true);
+    expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(false, true);
     expect(nativeAutoUpdaterMock.on).not.toHaveBeenCalled();
     expect(appMock.exit).not.toHaveBeenCalled();
   });
 
-  it('uses a silent Windows handoff that reuses the existing installation choices', async () => {
+  it('uses a visible Windows handoff while keeping automatic installation on quit disabled', async () => {
     setPlatform('win32');
     const cleanup = vi.fn();
     const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');
@@ -736,7 +736,7 @@ describe('AutoUpdaterService', () => {
 
     expect(cleanup).toHaveBeenCalledTimes(1);
     expect(autoUpdaterMock.autoInstallOnAppQuit).toBe(false);
-    expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(true, true);
+    expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(false, true);
   });
 
   it('moves the process cwd to temp before the Windows updater handoff', async () => {
@@ -754,7 +754,7 @@ describe('AutoUpdaterService', () => {
       await autoUpdaterService.quitAndInstall();
 
       expect(chdir).toHaveBeenCalledWith(expectedCwd);
-      expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(true, true);
+      expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(false, true);
     } finally {
       chdir.mockRestore();
       rmSync(tempRoot, { recursive: true, force: true });

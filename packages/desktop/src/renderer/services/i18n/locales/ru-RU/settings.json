@@ -1433,5 +1433,5 @@
   "crossSessionMessageResume": "Включить снова",
   "crossSessionMessageUpdateFailed": "Не удалось обновить настройку сообщений между беседами",
   "codexAutoContinueOnCapacity": "Автоматически продолжать при переполнении Codex",
-  "codexAutoContinueOnCapacityDesc": "При ошибке Selected model is at capacity текущий ответ останавливается и один раз отправляется команда «Продолжить». При повторной ошибке очередь приостанавливается."
+  "codexAutoContinueOnCapacityDesc": "При ошибке Selected model is at capacity текущий ответ останавливается и отправляется команда «Продолжить», пока задача не завершится или не возникнет другая ошибка."
 }

@@ -723,8 +723,51 @@ const isChatMessagePosition = (value: unknown): value is NonNullable<TMessage['p
 const isChatMessageStatus = (value: unknown): value is NonNullable<TMessage['status']> =>
   value === 'finish' || value === 'pending' || value === 'error' || value === 'work';
 
+/** Preserve quota diagnostics carried by agent notifications and terminal frames. */
+export function getAgentQuotaNotice(message: IResponseMessage): string | null {
+  if (!['info', 'system', 'finish', 'agent_status'].includes(message.type)) return null;
+  const collectText = (value: unknown, depth = 0): string[] => {
+    if (typeof value === 'string') return value.trim() ? [value.trim()] : [];
+    if (!value || typeof value !== 'object' || depth > 3) return [];
+    if (Array.isArray(value)) return value.flatMap((entry) => collectText(entry, depth + 1));
+    const record = value as Record<string, unknown>;
+    return [
+      'message',
+      'content',
+      'detail',
+      'reason',
+      'error',
+      'errors',
+      'description',
+      'result',
+      'code',
+      'stop_reason',
+    ].flatMap((key) => collectText(record[key], depth + 1));
+  };
+  const parts = [...new Set(collectText(message.data))];
+  const text = parts.join('\n');
+  const exhausted =
+    /(?:usage|quota|rate|spend|budget)[\s_-]*limit(?:[\s_-]*(?:exceeded|reached))?|insufficient[\s_-]*(?:quota|credits?|balance)|(?:quota|credits?|balance).{0,32}(?:exhausted|exceeded|depleted|used up)|(?:hit|reached|exceeded).{0,24}(?:usage|quota|rate|spend|credit).{0,12}limit|额度.{0,8}(?:用完|用尽|耗尽|不足)|余额不足/i;
+  if (!exhausted.test(text)) return null;
+  const prose = parts.filter((part) => !/^[A-Z_]+$/i.test(part));
+  return (prose.length ? prose : parts).join('\n');
+}
+
 const transformMessageInner = (message: IResponseMessage): TMessage | undefined => {
   const created_at = message.created_at ?? Date.now();
+  const quotaNotice = getAgentQuotaNotice(message);
+  if (quotaNotice && ['info', 'system', 'finish', 'agent_status'].includes(message.type)) {
+    const noticeKey = `quota:${message.conversation_id}:${message.turn_id || message.msg_id}`;
+    return {
+      id: `tip:${noticeKey}`,
+      type: 'tips',
+      msg_id: message.msg_id,
+      position: 'center',
+      conversation_id: message.conversation_id,
+      created_at,
+      content: { content: quotaNotice, type: 'warning', supersedes_key: noticeKey },
+    };
+  }
   switch (message.type) {
     case 'error': {
       const errorData = message.data;

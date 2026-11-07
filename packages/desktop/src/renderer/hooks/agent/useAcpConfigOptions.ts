@@ -95,7 +95,8 @@ export function deriveSpeedOption(options: AcpConfigOptionDto[] | null | undefin
       ],
     };
   }
-  return deriveSelectOption(options, 'speed', ['service_tier', 'fast_mode', 'fast']);
+  const derived = deriveSelectOption(options, 'speed', ['service_tier', 'fast_mode', 'fast']);
+  return derived && new Set(derived.options.map((choice) => choice.value)).size > 1 ? derived : null;
 }
 
 export function hasObservedValue(
