@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.22](https://github.com/salmoshu/Catfish/releases/tag/v0.4.22) (2026-11-07)
+
+### Features
+
+- **file tabs:** remove hover highlighting and add Copy path to the tab context menu
+- **command queue:** use a more compact single-layer panel and reveal desktop row actions on hover or focus
+- **terminal:** use icon-only Terminal and Stop controls, with a red Stop square and Terminal at the far right
+- **codex:** show retry progress and automatic continuation results in the conversation timeline
+
+### Bug Fixes
+
+- **conversation:** return to the conversation whenever its route id changes, even when a file preview is open
+- **sidebar:** restore the blue completion indicator
+- **codex:** preserve in-turn retries, wait for terminal turn release before continuing, and keep queued commands intact
+
+---
+
 ## [0.4.21](https://github.com/salmoshu/Catfish/releases/tag/v0.4.21) (2026-11-07)
 
 ### Features
