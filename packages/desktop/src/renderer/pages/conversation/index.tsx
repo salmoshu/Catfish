@@ -30,11 +30,9 @@ const ChatConversationIndex: React.FC = () => {
     return getConversationOrNull(id!, environment);
   });
 
-  // Close preview only when the isolation scope changes, not on every
-  // conversation switch. Same-scope conversations keep the preview open. The
-  // scope is `previewScopeKey` = project (falling back to workspace until the
-  // backend populates project_id). The ref lives in PreviewContext (app-root
-  // level) so it survives remounts.
+  // Restore the persisted preview scope after conversation data resolves. The
+  // Layout route effect closes the visible preview when the conversation id
+  // changes; this hook only switches the stored project/workspace scope.
   useEffect(() => {
     if (!data) return;
     const workspace = (data.extra as { workspace?: string } | undefined)?.workspace ?? null;

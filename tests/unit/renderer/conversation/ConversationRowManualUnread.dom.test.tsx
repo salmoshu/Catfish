@@ -75,6 +75,14 @@ const makeProps = (overrides: Partial<ConversationRowProps> = {}): ConversationR
 });
 
 describe('conversation mark-as-unread menu item', () => {
+  it('restores the blue completion indicator for an unread finished conversation', () => {
+    const { container } = render(<ConversationRow {...makeProps({ hasUnread: true, menuVisible: false })} />);
+
+    const indicator = container.querySelector('span.h-8px.w-8px.rounded-full');
+    expect(indicator).toHaveClass('bg-#2C7FFF');
+    expect(indicator).not.toHaveClass('bg-t-primary');
+  });
+
   it('offers "Mark as unread" when the conversation is not manually unread', async () => {
     render(<ConversationRow {...makeProps({ isManualUnread: false })} />);
 

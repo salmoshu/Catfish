@@ -635,7 +635,13 @@
         "body": "O {{cli}} instalado é posterior à versão verificada pelo Catfish. Deve continuar funcionando; relate qualquer comportamento estranho. (instalado: {{reported}} / verificado pelo Catfish: {{verified}})"
       },
       "CODEX_RETRYING": {
-        "body": "{{detail}} (tentativa {{attempts}}, {{elapsed}} decorridos — o provedor do agente derruba a conexão repetidamente; o Catfish está aguardando.)"
+        "body": "{{detail}} (tentativa {{attempts}}, {{elapsed}} decorridos — o Codex está tentando novamente; o Catfish não interromperá este turno.)"
+      },
+      "CODEX_CAPACITY_CONTINUED": {
+        "body": "O turno anterior terminou porque o modelo selecionado está sem capacidade. O Catfish enviou Continuar automaticamente e o Codex aceitou a continuação."
+      },
+      "CODEX_CAPACITY_CONTINUE_FAILED": {
+        "body": "O Catfish não conseguiu enviar Continuar automaticamente após o erro de capacidade. Os comandos na fila continuam pausados; continue manualmente quando estiver pronto."
       }
     }
   },

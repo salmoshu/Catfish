@@ -33,6 +33,7 @@ interface EventTypes {
   'codex.selected.file.append': [Array<string | FileOrFolderItem>, string | undefined];
   'codex.selected.file.clear': void;
   'codex.workspace.refresh': void;
+  'codex.capacity.recovery': [import('@/common/adapter/ipcBridge').IResponseMessage];
   'chat.history.refresh': void;
   // 会话删除事件 / Conversation deletion event
   'conversation.deleted': [string]; // conversation_id

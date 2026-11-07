@@ -48,6 +48,27 @@ describe('MessageAcpTerminalOutput', () => {
     expect(screen.queryByTestId('terminal-card-output')).toBeNull();
   });
 
+  it('uses icon-only actions and keeps the terminal action at the far right', () => {
+    render(<MessageAcpTerminalOutput message={message('running', true)} />);
+
+    const stop = screen.getByTestId('terminal-card-stop');
+    const open = screen.getByTestId('terminal-open-workbench');
+    expect(stop).toHaveAttribute('aria-label', 'Stop');
+    expect(stop).not.toHaveTextContent('Stop');
+    expect(stop.querySelector('svg')).not.toBeNull();
+    expect(open).toHaveAttribute('aria-label', 'Terminal');
+    expect(open).not.toHaveTextContent('Terminal');
+    expect(open.querySelector('svg')).not.toBeNull();
+
+    const actions = open.parentElement?.querySelectorAll(
+      '[data-testid="terminal-card-stop"], [data-testid="terminal-open-workbench"]'
+    );
+    expect(Array.from(actions ?? []).map((element) => element.getAttribute('data-testid'))).toEqual([
+      'terminal-card-stop',
+      'terminal-open-workbench',
+    ]);
+  });
+
   it('shows only the last three output lines while running', () => {
     render(<MessageAcpTerminalOutput message={message('first\nsecond\nthird\nfourth\n', true)} />);
 

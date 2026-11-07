@@ -1421,5 +1421,5 @@
   "crossSessionMessageResume": "重新開啟",
   "crossSessionMessageUpdateFailed": "跨對話訊息設定更新失敗",
   "codexAutoContinueOnCapacity": "Codex 容量不足時自動繼續",
-  "codexAutoContinueOnCapacityDesc": "偵測到 Selected model is at capacity 時停止目前回應並自動傳送「繼續」，直到任務完成或出現其他錯誤。"
+  "codexAutoContinueOnCapacityDesc": "Codex 重試期間不中斷目前回應；若容量不足最終導致目前回應結束，則在結束後自動傳送「繼續」，直到任務完成或出現其他錯誤。"
 }

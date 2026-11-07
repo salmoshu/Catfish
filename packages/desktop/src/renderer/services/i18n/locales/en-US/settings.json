@@ -1419,5 +1419,5 @@
   "crossSessionMessageResume": "Turn back on",
   "crossSessionMessageUpdateFailed": "Failed to update the cross-conversation message setting",
   "codexAutoContinueOnCapacity": "Continue automatically when Codex is at capacity",
-  "codexAutoContinueOnCapacityDesc": "When Codex reports Selected model is at capacity, stop the current turn and send Continue. Keep continuing until the task completes or a different error occurs."
+  "codexAutoContinueOnCapacityDesc": "Codex retries without interrupting the current response. If a capacity error ends the turn, automatically send Continue once it has ended. Repeat until the task completes or a different error occurs."
 }

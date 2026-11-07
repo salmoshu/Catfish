@@ -1419,5 +1419,5 @@
   "crossSessionMessageResume": "روشن کردن دوباره",
   "crossSessionMessageUpdateFailed": "به‌روزرسانی تنظیم پیام‌های بین گفتگوها ناموفق بود",
   "codexAutoContinueOnCapacity": "ادامه خودکار هنگام پر بودن ظرفیت Codex",
-  "codexAutoContinueOnCapacityDesc": "هنگام گزارش Selected model is at capacity پاسخ فعلی متوقف می‌شود و دستور «ادامه» ارسال می‌شود، تا زمانی که کار تکمیل شود یا خطای دیگری رخ دهد."
+  "codexAutoContinueOnCapacityDesc": "Codex بدون قطع پاسخ فعلی دوباره تلاش می‌کند. اگر خطای ظرفیت نوبت را پایان دهد، پس از پایان آن دستور «ادامه» به‌صورت خودکار ارسال می‌شود تا کار تکمیل شود یا خطای دیگری رخ دهد."
 }

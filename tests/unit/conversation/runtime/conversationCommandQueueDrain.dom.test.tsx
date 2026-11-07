@@ -14,6 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   type ConversationCommandQueueRuntimeGate,
   pauseConversationCommandQueue,
+  resumeConversationCommandQueue,
   resetConversationCommandQueueBackgroundRunnerForTest,
   useConversationCommandQueue,
 } from '@/renderer/pages/conversation/platforms/useConversationCommandQueue';
@@ -584,5 +585,10 @@ describe('useConversationCommandQueue drain', () => {
 
     expect(onExecute).not.toHaveBeenCalled();
     expect(result.current.items.map((item) => item.input)).toEqual(['first', 'second', 'third']);
+
+    act(() => resumeConversationCommandQueue('conv-capacity-pending'));
+    await waitFor(() => expect(onExecute).toHaveBeenCalledTimes(3));
+    expect(onExecute.mock.calls.map(([item]) => item.input)).toEqual(['first', 'second', 'third']);
+    await waitFor(() => expect(result.current.items).toHaveLength(0));
   });
 });

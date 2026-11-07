@@ -1421,5 +1421,5 @@
   "crossSessionMessageResume": "다시 켜기",
   "crossSessionMessageUpdateFailed": "대화 간 메시지 설정 업데이트에 실패했습니다",
   "codexAutoContinueOnCapacity": "Codex 용량 부족 시 자동으로 계속",
-  "codexAutoContinueOnCapacityDesc": "Selected model is at capacity가 감지되면 현재 응답을 중지하고 계속 명령을 본낸 후 작업이 완료되거나 다른 오류가 발생할 때까지 계속 진행합니다."
+  "codexAutoContinueOnCapacityDesc": "Codex가 재시도하는 동안 현재 응답을 중단하지 않습니다. 용량 부족으로 턴이 종료되면 종료 후 자동으로 계속 명령을 내며, 작업이 완료되거나 다른 오류가 발생할 때까지 반복합니다."
 }

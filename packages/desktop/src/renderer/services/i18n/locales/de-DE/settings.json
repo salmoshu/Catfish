@@ -1419,5 +1419,5 @@
   "crossSessionMessageResume": "Wieder einschalten",
   "crossSessionMessageUpdateFailed": "Einstellung konnte nicht aktualisiert werden",
   "codexAutoContinueOnCapacity": "Bei ausgelastetem Codex automatisch fortsetzen",
-  "codexAutoContinueOnCapacityDesc": "Bei Selected model is at capacity wird die aktuelle Antwort gestoppt und Fortsetzen gesendet, bis die Aufgabe abgeschlossen ist oder ein anderer Fehler auftritt."
+  "codexAutoContinueOnCapacityDesc": "Codex wiederholt Anfragen, ohne die aktuelle Antwort zu unterbrechen. Endet sie wegen ausgelasteter Modellkapazität, wird anschließend automatisch Fortsetzen gesendet, bis die Aufgabe abgeschlossen ist oder ein anderer Fehler auftritt."
 }

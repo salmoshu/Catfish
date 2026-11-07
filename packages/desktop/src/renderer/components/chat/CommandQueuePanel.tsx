@@ -162,15 +162,13 @@ const QueueItemCard: React.FC<QueueItemCardProps> = ({
     <div
       {...(dragViaCard ? cardDragListeners : {})}
       ref={dragViaCard ? cardDragRef : undefined}
-      className='group flex items-center justify-between gap-6px rd-12px px-10px py-8px transition-[background-color,opacity] duration-180 ease-out'
+      className='group flex items-center justify-between gap-6px rd-8px px-8px py-6px transition-[background-color,opacity] duration-180 ease-out hover:bg-fill-1'
       data-command-id={item.id}
       data-sortable={dragDisabled ? 'disabled' : 'enabled'}
       aria-grabbed={isDragging}
       aria-label={preview}
       style={{
-        background: isDragging
-          ? 'color-mix(in srgb, var(--color-fill-2) 88%, var(--color-bg-1))'
-          : 'color-mix(in srgb, var(--color-fill-1) 76%, transparent)',
+        background: isDragging ? 'color-mix(in srgb, var(--color-fill-2) 88%, var(--color-bg-1))' : undefined,
         touchAction: dragViaCard && !dragDisabled ? 'none' : undefined,
       }}
     >
@@ -233,7 +231,11 @@ const QueueItemCard: React.FC<QueueItemCardProps> = ({
           ) : null}
         </div>
       </div>
-      <div className='flex items-center gap-0.5 shrink-0 h-24px overflow-hidden'>
+      <div
+        className={`flex items-center gap-0.5 shrink-0 h-24px overflow-hidden transition-opacity ${
+          dragViaCard ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+        }`}
+      >
         {renderQueueActionIconButton({
           ariaLabel: t('conversation.commandQueue.sendNow', { defaultValue: 'Send now' }),
           onClick: () => onSendNow(item),
@@ -456,16 +458,16 @@ const CommandQueuePanel: React.FC<CommandQueuePanelProps> = ({
   );
 
   return (
-    <div className='relative z-1 mt-16px px-8px pb-4px'>
+    <div className='relative z-1 mt-8px'>
       <div
         aria-label={title}
-        className='overflow-hidden rd-16px border b-solid'
+        className='overflow-hidden rd-12px border b-solid'
         style={{
           borderColor: 'color-mix(in srgb, var(--color-border-2) 56%, transparent)',
-          background: 'color-mix(in srgb, var(--color-fill-1) 84%, var(--color-bg-1))',
+          background: 'var(--color-bg-1)',
         }}
       >
-        <div className='flex items-center justify-between gap-8px px-12px pt-8px pb-4px'>
+        <div className='flex items-center justify-between gap-8px px-10px py-6px'>
           <div className='flex items-center gap-6px min-w-0 leading-none'>
             <Tooltip content={collapseLabel} position='top'>
               <Button

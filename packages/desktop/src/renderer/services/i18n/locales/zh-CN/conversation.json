@@ -629,7 +629,13 @@
         "body": "已安装的 {{cli}} 高于 Catfish 验证过的版本。通常仍可正常使用；如遇异常行为请反馈。 （本地 {{reported}} / Catfish 验证过 {{verified}}）"
       },
       "CODEX_RETRYING": {
-        "body": "{{detail}}（累计第 {{attempts}} 次重试，已等待 {{elapsed}}——Agent 的服务方反复中断连接，Catfish 正在等待重连。）"
+        "body": "{{detail}}（累计第 {{attempts}} 次重试，已等待 {{elapsed}}——Codex 正在重试，Catfish 不会中断当前轮次。）"
+      },
+      "CODEX_CAPACITY_CONTINUED": {
+        "body": "上一轮因所选模型容量不足而结束。Catfish 已自动发送“继续”，Codex 已接受续跑请求。"
+      },
+      "CODEX_CAPACITY_CONTINUE_FAILED": {
+        "body": "容量不足导致上一轮结束后，Catfish 自动发送“继续”失败。排队命令仍保持暂停，请稍后手动继续。"
       }
     }
   },

@@ -7,7 +7,7 @@
 import { ipcBridge } from '@/common';
 import type { IMessageAcpTerminalOutput } from '@/common/chat/chatLib';
 import { Button, Card, Tag } from '@arco-design/web-react';
-import { Down, Right, Terminal } from '@icon-park/react';
+import { Down, Right, Square, Terminal } from '@icon-park/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { openWorkbenchSection } from '../../Workbench/workbenchActivityStore';
@@ -81,7 +81,6 @@ const MessageAcpTerminalOutput: React.FC<{ message: IMessageAcpTerminalOutput }>
           onClick={() => setExpanded((value) => !value)}
         >
           {expanded ? <Down size='14' className='shrink-0' /> : <Right size='14' className='shrink-0' />}
-          <Terminal size='16' className='shrink-0 text-t-secondary' />
           <code
             dir='ltr'
             className='min-w-0 truncate font-mono text-13px text-t-primary'
@@ -90,20 +89,30 @@ const MessageAcpTerminalOutput: React.FC<{ message: IMessageAcpTerminalOutput }>
             $ {content.command}
           </code>
         </Button>
+        {statusTag}
+        {running && (
+          <Button
+            type='text'
+            size='mini'
+            className='shrink-0 text-[var(--color-danger-6)]'
+            aria-label={t('conversation.terminal.stop', { defaultValue: 'Stop' })}
+            title={t('conversation.terminal.stop', { defaultValue: 'Stop' })}
+            loading={killing}
+            onClick={handleStop}
+            data-testid='terminal-card-stop'
+            icon={<Square theme='filled' size='12' fill='currentColor' />}
+          />
+        )}
         <Button
           type='text'
           size='mini'
+          className='shrink-0 text-t-secondary'
+          aria-label={t('messages.workbench.terminal', { defaultValue: 'Terminal' })}
+          title={t('messages.workbench.terminal', { defaultValue: 'Terminal' })}
           data-testid='terminal-open-workbench'
           onClick={() => openWorkbenchSection('terminal')}
-        >
-          {t('messages.workbench.terminal', { defaultValue: 'Terminal' })}
-        </Button>
-        {statusTag}
-        {running && (
-          <Button size='mini' status='danger' loading={killing} onClick={handleStop} data-testid='terminal-card-stop'>
-            {t('conversation.terminal.stop', { defaultValue: 'Stop' })}
-          </Button>
-        )}
+          icon={<Terminal size='16' />}
+        />
       </div>
       {preview && !expanded && (
         <pre

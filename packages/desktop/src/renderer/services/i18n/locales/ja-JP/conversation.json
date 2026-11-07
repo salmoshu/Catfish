@@ -629,7 +629,13 @@
         "body": "インストール済みの {{cli}} は、Catfish が検証したバージョンより新しいです。通常は動作しますが、不審な挙動があればご報告ください。 （インストール済み {{reported}} / Catfish 検証済み {{verified}}）"
       },
       "CODEX_RETRYING": {
-        "body": "{{detail}}（累計 {{attempts}} 回目の再試行、経過 {{elapsed}} — エージェントの提供元が接続を切断し続けており、Catfish は再接続を待っています。）"
+        "body": "{{detail}}（累計 {{attempts}} 回目の再試行、経過 {{elapsed}} — Codex が再試行中です。Catfish はこのターンを中断しません。）"
+      },
+      "CODEX_CAPACITY_CONTINUED": {
+        "body": "選択したモデルの容量不足で前のターンが終了しました。Catfish が自動で「続き」を送信し、Codex が続行リクエストを受け付けました。"
+      },
+      "CODEX_CAPACITY_CONTINUE_FAILED": {
+        "body": "容量エラーの後、Catfish が自動で「続き」を送信できませんでした。キュー内のコマンドは一時停止したままです。準備ができたら手動で続行してください。"
       }
     }
   },

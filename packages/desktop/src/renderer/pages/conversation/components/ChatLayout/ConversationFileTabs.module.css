@@ -33,3 +33,7 @@
 .close:global(.arco-btn) {
   flex: 0 0 18px;
 }
+
+.fileTab :global(.arco-btn):hover {
+  background: transparent;
+}

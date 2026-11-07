@@ -630,7 +630,13 @@
         "body": "Das installierte {{cli}} ist neuer als die von Catfish verifizierte Version. Es sollte weiterhin funktionieren; melden Sie ungewöhnliches Verhalten. (installiert: {{reported}} / von Catfish verifiziert: {{verified}})"
       },
       "CODEX_RETRYING": {
-        "body": "{{detail}} (Versuch {{attempts}}, bisher {{elapsed}} – der Anbieter des Agents bricht die Verbindung wiederholt ab; Catfish wartet ab.)"
+        "body": "{{detail}} (Versuch {{attempts}}, bisher {{elapsed}} – Codex versucht es erneut; Catfish unterbricht diese Runde nicht.)"
+      },
+      "CODEX_CAPACITY_CONTINUED": {
+        "body": "Die vorherige Runde endete wegen ausgelasteter Modellkapazität. Catfish hat automatisch Fortsetzen gesendet; Codex hat die Fortsetzung angenommen."
+      },
+      "CODEX_CAPACITY_CONTINUE_FAILED": {
+        "body": "Catfish konnte nach dem Kapazitätsfehler nicht automatisch Fortsetzen senden. Wartende Befehle bleiben pausiert; fahre bei Bedarf manuell fort."
       }
     }
   },

@@ -16,7 +16,13 @@
 
 import { describe, expect, it } from 'vitest';
 import type { IResponseMessage } from '@/common/adapter/ipcBridge';
-import { transformMessage, isCodexCapacityRetryTip, type IMessageTips, type TMessage } from '@/common/chat/chatLib';
+import {
+  transformMessage,
+  isCodexCapacityRetryTip,
+  isCodexCapacityTerminalError,
+  type IMessageTips,
+  type TMessage,
+} from '@/common/chat/chatLib';
 import {
   buildMessageIndex,
   composeMessageWithIndex,
@@ -221,5 +227,25 @@ describe('codex capacity retry detection', () => {
       isCodexCapacityRetryTip(tipFrame({ type: 'warning', code: 'CLI_VERSION_NEWER', content: 'at capacity' }))
     ).toBe(false);
     expect(isCodexCapacityRetryTip({ ...tipFrame({}), type: 'text' } as unknown as IResponseMessage)).toBe(false);
+  });
+
+  it('recognizes a terminal capacity error from its preserved detail', () => {
+    expect(
+      isCodexCapacityTerminalError(
+        tipFrame(
+          { message: 'Reconnecting... 5/5', detail: 'Selected model is at capacity. Please try a different model.' },
+          { type: 'error' }
+        )
+      )
+    ).toBe(true);
+  });
+
+  it('does not treat retry progress or another terminal failure as a terminal capacity error', () => {
+    expect(
+      isCodexCapacityTerminalError(
+        tipFrame({ type: 'warning', content: 'Reconnecting... 1/5 — Selected model is at capacity' })
+      )
+    ).toBe(false);
+    expect(isCodexCapacityTerminalError(tipFrame({ message: 'Connection timed out' }, { type: 'error' }))).toBe(false);
   });
 });

@@ -219,20 +219,11 @@ export const isErrorTipMessage = (message: IResponseMessage): boolean => {
  */
 const CODEX_CAPACITY_MARKERS = ['at capacity', 'model_capacity_exhausted', 'no capacity available'];
 
-/**
- * True for a Codex retry-progress tip whose upstream reason is the selected
- * model being at capacity. Terminal error tips are excluded: that turn is
- * already ending, so there is nothing left to cancel.
- */
-export const isCodexCapacityRetryTip = (message: IResponseMessage): boolean => {
-  if (message.type !== 'tips' || !message.data || typeof message.data !== 'object') {
-    return false;
-  }
+const getCodexRetryTipDetail = (message: IResponseMessage): string | null => {
+  if (message.type !== 'tips' || !message.data || typeof message.data !== 'object') return null;
 
   const tipData = message.data as { type?: unknown; code?: unknown; content?: unknown; params?: unknown };
-  if (tipData.type === 'error') {
-    return false;
-  }
+  if (tipData.type === 'error') return null;
 
   const params =
     tipData.params && typeof tipData.params === 'object' ? (tipData.params as { detail?: unknown }) : undefined;
@@ -242,9 +233,49 @@ export const isCodexCapacityRetryTip = (message: IResponseMessage): boolean => {
   ]
     .join(' ')
     .toLowerCase();
+  return tipData.code === 'CODEX_RETRYING' || detail.includes('reconnecting...') ? detail : null;
+};
 
-  const isRetryProgress = tipData.code === 'CODEX_RETRYING' || detail.includes('reconnecting...');
-  return isRetryProgress && CODEX_CAPACITY_MARKERS.some((marker) => detail.includes(marker));
+export const isCodexRetryTip = (message: IResponseMessage): boolean => getCodexRetryTipDetail(message) !== null;
+
+/**
+ * True for a Codex retry-progress tip whose upstream reason is the selected
+ * model being at capacity. Retry progress is non-terminal: Codex still owns the
+ * turn, so it must not trigger a continuation or cancellation.
+ */
+export const isCodexCapacityRetryTip = (message: IResponseMessage): boolean => {
+  const detail = getCodexRetryTipDetail(message);
+  return detail !== null && CODEX_CAPACITY_MARKERS.some((marker) => detail.includes(marker));
+};
+
+/** Older Core builds omit additionalDetails from the terminal retry error. */
+export const isCodexRetryExhaustionError = (message: IResponseMessage): boolean => {
+  if (message.type !== 'error') return false;
+  const normalized = normalizeAgentStreamError(message.data);
+  const rawData = isObject(message.data) ? message.data : undefined;
+  const rawMessage = typeof rawData?.message === 'string' ? rawData.message : '';
+  const text = (normalized?.message ?? rawMessage).trim().toLowerCase();
+  return /^reconnecting\.\.\.\s*\d+\/\d+/.test(text) || text === 'codex reported a fatal error';
+};
+
+/** A terminal capacity failure is actionable only after Codex ends the turn. */
+export const isCodexCapacityTerminalError = (message: IResponseMessage): boolean => {
+  if (message.type !== 'error') return false;
+
+  const normalized = normalizeAgentStreamError(message.data);
+  const rawData = isObject(message.data) ? message.data : undefined;
+  const rawMessage = typeof rawData?.message === 'string' ? rawData.message : '';
+  const detail = [
+    typeof message.data === 'string' ? message.data : '',
+    normalized?.message ?? rawMessage,
+    normalized?.detail ?? '',
+    normalized?.code ?? '',
+    normalized?.rawError?.message ?? '',
+  ]
+    .join(' ')
+    .toLowerCase();
+
+  return CODEX_CAPACITY_MARKERS.some((marker) => detail.includes(marker));
 };
 
 export type IMessageToolCall = IMessage<

@@ -631,7 +631,13 @@
         "body": "Kurulu {{cli}} sürümü Catfish tarafından doğrulanan sürümden yeni. Genelde çalışır; tuhaf bir davranış görürseniz bildirin. (kurulu: {{reported}} / Catfish tarafından doğrulanan: {{verified}})"
       },
       "CODEX_RETRYING": {
-        "body": "{{detail}} ({{attempts}}. deneme, {{elapsed}} geçti — aracının sağlayıcısı bağlantıyı sürekli kesiyor; Catfish bekliyor.)"
+        "body": "{{detail}} ({{attempts}}. deneme, {{elapsed}} geçti — Codex yeniden deniyor; Catfish bu turu kesintiye uğratmıyor.)"
+      },
+      "CODEX_CAPACITY_CONTINUED": {
+        "body": "Önceki tur, seçilen modelin kapasitesi dolduğu için sona erdi. Catfish otomatik olarak Devam komutunu gönderdi ve Codex devam isteğini kabul etti."
+      },
+      "CODEX_CAPACITY_CONTINUE_FAILED": {
+        "body": "Catfish, kapasite hatasının ardından otomatik olarak Devam komutunu gönderemedi. Sıradaki komutlar duraklatılmış kalır; hazır olduğunuzda el ile devam edin."
       }
     }
   },

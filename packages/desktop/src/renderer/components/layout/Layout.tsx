@@ -200,10 +200,18 @@ const Layout: React.FC<{
   // keeps the same explorer width and the chat never gets hidden by a preview.
   const workbenchWidthPx = explorerWidthPx;
   const routeLayoutMountedRef = useRef(false);
+  const previousConversationRouteRef = useRef<string | null>(null);
   useEffect(() => {
+    const conversationRouteId = /^\/conversation\/([^/]+)/.exec(location.pathname)?.[1] ?? null;
+    const conversationChanged = previousConversationRouteRef.current !== conversationRouteId;
+    previousConversationRouteRef.current = conversationRouteId;
+
     if (!routeLayoutMountedRef.current) {
       routeLayoutMountedRef.current = true;
       return; // skip initial mount — preview starts closed, don't wipe persisted tabs
+    }
+    if (conversationChanged && conversationRouteId) {
+      closePreviewOnRouteChange();
     }
     if (!workspaceAvailable) {
       closePreviewOnRouteChange();
@@ -211,11 +219,6 @@ const Layout: React.FC<{
       // project → hide the Explorer host. Within /conversation/* and /team/* the
       // route itself publishes project_id, so we only clear when leaving both.
       setCurrentProject(null);
-    }
-    // The active-conversation target is published by the conversation route
-    // (mounted conversation) and the team route (active member column). Clear it
-    // only when leaving both, so a stale target can't leak to a non-chat route.
-    if (!workspaceAvailable) {
       setCurrentConversation(null);
     }
   }, [location.pathname, workspaceAvailable, closePreviewOnRouteChange]);

@@ -1419,5 +1419,5 @@
   "crossSessionMessageResume": "Volver a activar",
   "crossSessionMessageUpdateFailed": "No se pudo actualizar el ajuste de mensajes entre conversaciones",
   "codexAutoContinueOnCapacity": "Continuar automáticamente cuando Codex esté al límite",
-  "codexAutoContinueOnCapacityDesc": "Cuando Codex indique Selected model is at capacity, detén la respuesta actual y envía Continuar hasta que la tarea termine o se produzca otro error."
+  "codexAutoContinueOnCapacityDesc": "Codex reintenta sin interrumpir la respuesta actual. Si un error de capacidad termina el turno, envía Continuar automáticamente después de que finalice, hasta completar la tarea o que ocurra otro error."
 }

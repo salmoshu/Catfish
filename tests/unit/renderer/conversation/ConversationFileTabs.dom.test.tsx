@@ -11,8 +11,19 @@ const preview = vi.hoisted(() => ({
   closePreview: vi.fn(),
   closeTab: vi.fn(),
   saveContent: vi.fn(),
+  copyText: vi.fn(),
+  copyAbsolutePath: vi.fn(),
 }));
 
+vi.mock('@/common', () => ({
+  ipcBridge: { fs: { copyAbsolutePath: { invoke: preview.copyAbsolutePath } } },
+}));
+vi.mock('@/renderer/utils/ui/clipboard', () => ({ copyText: preview.copyText }));
+vi.mock('@/renderer/utils/platform', () => ({ isElectronDesktop: () => true }));
+vi.mock('@arco-design/web-react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@arco-design/web-react')>();
+  return { ...actual, Message: { success: vi.fn(), error: vi.fn() } };
+});
 vi.mock('@/renderer/pages/conversation/Preview', () => ({
   usePreviewContext: () => preview,
 }));
@@ -64,6 +75,22 @@ describe('ConversationFileTabs', () => {
     expect(preview.openPreview).toHaveBeenCalledWith('alpha.ts content', 'code', { file_name: 'alpha.ts' });
     fireEvent.click(tabs[0]);
     expect(preview.closePreview).toHaveBeenCalledOnce();
+  });
+
+  it('copies a file path from the tab context menu', async () => {
+    preview.tabs = [
+      {
+        ...file('file-1', 'alpha.ts'),
+        metadata: { file_name: 'alpha.ts', file_path: 'E:\\workspace\\alpha.ts' },
+      },
+    ];
+    preview.copyText.mockResolvedValue(undefined);
+    render(<ConversationFileTabs agentLabel='Kimi' />);
+
+    fireEvent.contextMenu(screen.getByRole('tab', { name: 'alpha.ts' }));
+    fireEvent.click(await screen.findByText('preview.copyPath'));
+
+    await vi.waitFor(() => expect(preview.copyText).toHaveBeenCalledWith('E:\\workspace\\alpha.ts'));
   });
 
   it('closes clean files directly and keeps the row for remaining files', () => {

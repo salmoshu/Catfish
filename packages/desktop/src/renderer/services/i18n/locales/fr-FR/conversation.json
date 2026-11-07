@@ -629,7 +629,13 @@
         "body": "Le {{cli}} installé est postérieur à la version validée par Catfish. Cela devrait fonctionner ; signalez tout comportement anormal. (installé : {{reported}} / vérifié par Catfish : {{verified}})"
       },
       "CODEX_RETRYING": {
-        "body": "{{detail}} (tentative {{attempts}}, {{elapsed}} écoulées — le fournisseur de l'agent coupe la connexion à répétition ; Catfish patiente.)"
+        "body": "{{detail}} (tentative {{attempts}}, {{elapsed}} écoulées — Codex réessaie ; Catfish n'interrompt pas ce tour.)"
+      },
+      "CODEX_CAPACITY_CONTINUED": {
+        "body": "Le tour précédent s'est terminé car le modèle sélectionné est saturé. Catfish a envoyé Continuer automatiquement et Codex a accepté la poursuite."
+      },
+      "CODEX_CAPACITY_CONTINUE_FAILED": {
+        "body": "Catfish n'a pas pu envoyer Continuer automatiquement après l'erreur de capacité. Les commandes en file restent en pause ; poursuivez manuellement lorsque vous êtes prêt."
       }
     }
   },

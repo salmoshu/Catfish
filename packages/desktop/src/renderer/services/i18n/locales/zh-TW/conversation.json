@@ -629,7 +629,13 @@
         "body": "已安裝的 {{cli}} 高於 Catfish 驗證過的版本。通常仍可正常使用；如遇異常行為請回報。 （本機 {{reported}} / Catfish 驗證過 {{verified}}）"
       },
       "CODEX_RETRYING": {
-        "body": "{{detail}}（累計第 {{attempts}} 次重試，已等待 {{elapsed}}——Agent 的服務方反覆中斷連線，Catfish 正在等待重連。）"
+        "body": "{{detail}}（累計第 {{attempts}} 次重試，已等待 {{elapsed}}——Codex 正在重試，Catfish 不會中斷目前輪次。）"
+      },
+      "CODEX_CAPACITY_CONTINUED": {
+        "body": "上一輪因所選模型容量不足而結束。Catfish 已自動傳送「繼續」，Codex 已接受續跑請求。"
+      },
+      "CODEX_CAPACITY_CONTINUE_FAILED": {
+        "body": "容量不足導致上一輪結束後，Catfish 自動傳送「繼續」失敗。排隊命令仍保持暫停，請稍後手動繼續。"
       }
     }
   },

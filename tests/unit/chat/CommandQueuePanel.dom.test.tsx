@@ -118,6 +118,15 @@ describe('CommandQueuePanel', () => {
     expect(onRemove).toHaveBeenCalledExactlyOnceWith('queued-1');
   });
 
+  it('reveals desktop row actions on hover or keyboard focus', () => {
+    renderPanel();
+
+    const actions = screen.getByRole('button', { name: 'Send now' }).parentElement;
+    expect(actions).toHaveClass('opacity-0');
+    expect(actions).toHaveClass('group-hover:opacity-100');
+    expect(actions).toHaveClass('group-focus-within:opacity-100');
+  });
+
   it('shows the current mode and toggles it', () => {
     const onToggleMode = vi.fn();
     renderPanel({ mode: 'auto', onToggleMode });

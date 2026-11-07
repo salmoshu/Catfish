@@ -566,7 +566,7 @@ export const resetConversationCommandQueueBackgroundRunnerForTest = (): void => 
   backgroundTurnCompletedUnsubscribe = null;
 };
 
-/** Preserve pending commands when an accepted Codex turn stops for model capacity. */
+/** Preserve pending commands while a terminal Codex capacity failure is recovered. */
 export const pauseConversationCommandQueue = (conversation_id: string): void => {
   const state = readPersistedQueueState(conversation_id);
   if (state.items.length === 0) return;
@@ -577,6 +577,21 @@ export const pauseConversationCommandQueue = (conversation_id: string): void => 
   void mutateQueueCache([`/conversation-command-queue/${conversation_id}`, conversation_id, true], nextState, {
     revalidate: false,
   });
+};
+
+export const resumeConversationCommandQueue = (conversation_id: string): void => {
+  const state = readPersistedQueueState(conversation_id);
+  if (state.items.length === 0 || !state.isPaused) return;
+
+  const nextState = { ...state, isPaused: false };
+  persistQueueState(conversation_id, nextState);
+  logCommandQueue(conversation_id, 'capacity-resumed', { itemCount: state.items.length });
+  void mutateQueueCache([`/conversation-command-queue/${conversation_id}`, conversation_id, true], nextState, {
+    revalidate: false,
+  });
+
+  const runner = backgroundRunners.get(conversation_id);
+  if (runner && !runner.active) void drainBackgroundCommandQueue(runner);
 };
 
 const getQueueValidationMessage = (

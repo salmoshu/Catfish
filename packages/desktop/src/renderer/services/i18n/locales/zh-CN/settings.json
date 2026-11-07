@@ -1420,5 +1420,5 @@
   "crossSessionMessageResume": "重新开启",
   "crossSessionMessageUpdateFailed": "跨会话消息设置更新失败",
   "codexAutoContinueOnCapacity": "Codex 容量不足时自动继续",
-  "codexAutoContinueOnCapacityDesc": "检测到 Selected model is at capacity 时停止当前响应并自动发送“继续”，直到任务完成或出现其他错误。"
+  "codexAutoContinueOnCapacityDesc": "Codex 重试期间不中断当前响应；若容量不足最终导致当前响应结束，则在结束后自动发送“继续”，直到任务完成或出现其他错误。"
 }

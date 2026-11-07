@@ -17,6 +17,7 @@ import { getConversationOrNull } from '@/renderer/pages/conversation/utils/conve
 import { isConversationProcessing } from '@/renderer/pages/conversation/utils/conversationRuntime';
 import { beginConversationTurn, endConversationTurn } from '@/renderer/pages/conversation/utils/conversationTurnClock';
 import { ensureConversationRuntime } from '@/renderer/pages/conversation/utils/ensureConversationRuntime';
+import { useAddEventListener } from '@/renderer/utils/emitter';
 import type { ThoughtData } from '@/renderer/components/chat/ThoughtDisplay';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -586,6 +587,8 @@ export const useAcpMessage = (
   useEffect(() => {
     return ipcBridge.acpConversation.responseStream.on(handleResponseMessage);
   }, [handleResponseMessage]);
+
+  useAddEventListener('codex.capacity.recovery', handleResponseMessage, [handleResponseMessage]);
 
   // Reset state when conversation changes and restore actual running status
   useEffect(() => {

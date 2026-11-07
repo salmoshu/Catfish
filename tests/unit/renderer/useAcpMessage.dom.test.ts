@@ -11,6 +11,7 @@ import { getConversationOrNull } from '@/renderer/pages/conversation/utils/conve
 import { resetConversationTurnClockForTests } from '@/renderer/pages/conversation/utils/conversationTurnClock';
 import { resetEnsureConversationRuntimeStateForTests } from '@/renderer/pages/conversation/utils/ensureConversationRuntime';
 import type { IResponseMessage } from '@/common/adapter/ipcBridge';
+import { emitter } from '@/renderer/utils/emitter';
 
 const {
   addOrUpdateMessageMock,
@@ -469,6 +470,39 @@ describe('useAcpMessage', () => {
         },
       })
     );
+  });
+
+  it('renders a local Codex capacity recovery status only in its own conversation', async () => {
+    vi.mocked(getConversationOrNull).mockResolvedValue(null);
+    const { result } = renderHook(() => useAcpMessage('conv-1'));
+    await waitFor(() => expect(result.current.hasHydratedRunningState).toBe(true));
+    addOrUpdateMessageMock.mockClear();
+
+    const status: IResponseMessage = {
+      type: 'tips',
+      conversation_id: 'conv-1',
+      msg_id: 'codex-capacity-recovery:turn-1',
+      turn_id: 'turn-1',
+      data: {
+        type: 'success',
+        code: 'CODEX_CAPACITY_CONTINUED',
+        content: 'Catfish sent Continue automatically.',
+      },
+    };
+    act(() => {
+      emitter.emit('codex.capacity.recovery', { ...status, conversation_id: 'another-conversation' });
+      emitter.emit('codex.capacity.recovery', status);
+    });
+
+    expect(addOrUpdateMessageMock).toHaveBeenCalledTimes(1);
+    expect(addOrUpdateMessageMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'tips',
+        conversation_id: 'conv-1',
+        content: expect.objectContaining({ code: 'CODEX_CAPACITY_CONTINUED', type: 'success' }),
+      })
+    );
+    expect(result.current.running).toBe(false);
   });
 
   it('renders an advisory tips notice without lighting the running timer', async () => {

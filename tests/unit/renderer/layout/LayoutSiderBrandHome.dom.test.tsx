@@ -30,6 +30,7 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => navigate,
   useLocation: () => ({ pathname: currentPathname, search: '', hash: '' }),
   useNavigationType: () => 'POP',
+  NavigationType: { Push: 'PUSH', Replace: 'REPLACE', Pop: 'POP' },
   Outlet: () => null,
 }));
 
@@ -67,8 +68,9 @@ vi.mock('@renderer/hooks/ui/useConversationShortcuts', () => ({
   },
 }));
 vi.mock('@renderer/utils/platform', () => ({ isElectronDesktop: platformMocks.isElectronDesktopMock }));
+const closePreviewMock = vi.fn();
 vi.mock('@renderer/pages/conversation/Preview/context/PreviewContext', () => ({
-  usePreviewContext: () => ({ closePreview: () => {} }),
+  usePreviewContext: () => ({ closePreview: closePreviewMock }),
 }));
 
 import Layout from '@renderer/components/layout/Layout';
@@ -181,6 +183,19 @@ describe('Layout sider brand Home button', () => {
 
     fireEvent.click(screen.getByText('Catfish'));
     expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('closes the file preview only when the conversation route id changes', () => {
+    currentPathname = '/conversation/first';
+    const view = renderLayout();
+    expect(closePreviewMock).not.toHaveBeenCalled();
+
+    currentPathname = '/conversation/second';
+    view.rerender(<Layout sider={<div>sider</div>} />);
+    expect(closePreviewMock).toHaveBeenCalledTimes(1);
+
+    view.rerender(<Layout sider={<div>sider</div>} />);
+    expect(closePreviewMock).toHaveBeenCalledTimes(1);
   });
 
   it('provides common shortcuts with a functional sider toggle', () => {

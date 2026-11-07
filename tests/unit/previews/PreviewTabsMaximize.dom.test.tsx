@@ -28,6 +28,15 @@ const baseProps = () => ({
 describe('PreviewTabs maximize button', () => {
   afterEach(() => cleanup());
 
+  it('does not apply a hover background to an inactive file tab', () => {
+    const props = { ...baseProps(), activeTabId: 'another-tab' };
+    render(<PreviewTabs {...props} />);
+
+    const tab = screen.getByText('file.md').closest('.cursor-pointer');
+    expect(tab).not.toBeNull();
+    expect(tab).not.toHaveClass('hover:bg-bg-3');
+  });
+
   it('hides the maximize button when no toggle handler is provided (mobile)', () => {
     render(<PreviewTabs {...baseProps()} />);
     expect(screen.queryByTitle('preview.maximizePanel')).toBeNull();

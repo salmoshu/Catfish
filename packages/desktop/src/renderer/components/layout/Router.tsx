@@ -3,7 +3,7 @@ import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-d
 import AppLoader from '@renderer/components/layout/AppLoader';
 import DocumentTitle from '@renderer/components/layout/DocumentTitle';
 import { useCrossSessionRateLimitNotice } from '@/renderer/hooks/system/useCrossSessionRateLimitNotice';
-import { useCodexCapacityAutoStop } from '@/renderer/pages/conversation/runtime/useCodexCapacityAutoStop';
+import { useCodexCapacityAutoContinue } from '@/renderer/pages/conversation/runtime/useCodexCapacityAutoContinue';
 import { useAuth } from '@renderer/hooks/context/AuthContext';
 import { TEAM_MODE_ENABLED } from '@/common/config/constants';
 const Conversation = React.lazy(() => import('@renderer/pages/conversation'));
@@ -49,7 +49,7 @@ const ProtectedLayout: React.FC<{ layout: React.ReactElement }> = ({ layout }) =
   // the user even when they are looking at a THIRD conversation, which is the
   // whole reason it is a broadcast rather than an in-conversation banner.
   useCrossSessionRateLimitNotice(user?.id);
-  useCodexCapacityAutoStop();
+  useCodexCapacityAutoContinue();
 
   if (status === 'checking') {
     return <AppLoader />;

@@ -1419,5 +1419,5 @@
   "crossSessionMessageResume": "Yeniden aç",
   "crossSessionMessageUpdateFailed": "Sohbetler arası mesaj ayarı güncellenemedi",
   "codexAutoContinueOnCapacity": "Codex kapasitesi dolduğunda otomatik devam et",
-  "codexAutoContinueOnCapacityDesc": "Selected model is at capacity algılandığında mevcut yanıtı durdurur ve Devam komutunu gönderir; görev tamamlanana veya farklı bir hata oluşana kadar devam eder."
+  "codexAutoContinueOnCapacityDesc": "Codex, mevcut yanıtı kesintiye uğratmadan yeniden dener. Bir kapasite hatası turu sonlandırırsa, tur sona erdikten sonra otomatik olarak Devam komutu gönderir; görev tamamlanana veya farklı bir hata oluşana kadar tekrarlar."
 }
