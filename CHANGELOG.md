@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.4.24](https://github.com/salmoshu/Catfish/releases/tag/v0.4.24) (2026-11-09)
+
+### Features
+
+- **file changes:** show edited paths and per-file additions/deletions during each operation, then display a completed-turn summary with totals, file/diff previews, and three initially visible files
+
+### Bug Fixes
+
+- **sidebar:** restore neutral text colors in the workspace plus menu and terminal controls
+- **terminal:** restore the sidebar Terminal tab to agent command activity, open interactive shells from the plus menu, and match Nav-Tools' split icons
+- **desktop pet:** keep the pet and hit region at their configured sizes throughout dragging, avoiding cumulative Windows DPI rounding
+- **plan:** keep the workspace open when showing floating plan steps, and dock the plan in the right sidebar space when the workspace is closed regardless of the left sidebar
+- **conversation:** use the OpenAI logo in Codex conversation headers even when assistant metadata contains an older icon
+- **settings:** remove the GitHub icon beside the version number
+- **diffs:** preserve Codex unified patches, calculate reliable change counts, and keep failed or truncated edits out of completed-turn totals
+
+---
+
 ## [0.4.23](https://github.com/salmoshu/Catfish/releases/tag/v0.4.23) (2026-11-08)
 
 ### Features
