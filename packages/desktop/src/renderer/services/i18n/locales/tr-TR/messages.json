@@ -1,8 +1,8 @@
 {
   "fileChanges": "Dosya Değişiklikleri",
-  "fileChangesCount": "{{count}} Dosya Değişikliği",
-  "fileChangesCount_one": "{{count}} Dosya Değişikliği",
-  "fileChangesCount_other": "{{count}} Dosya Değişikliği",
+  "fileChangesCount": "{{count}} dosya değiştirildi",
+  "fileChangesCount_one": "{{count}} dosya değiştirildi",
+  "fileChangesCount_other": "{{count}} dosya değiştirildi",
   "conversationInProgress": "Bir görüşme şu anda devam ediyor...",
   "confirm": "Onayla",
   "canceledExecution": "Yürütme iptal edildi",
@@ -143,5 +143,11 @@
   "requestDetails": "İstek ayrıntıları:",
   "delivery": {
     "pending": "Okunmadı"
-  }
+  },
+  "editedFilesCount": "{{count}} dosya düzenlendi",
+  "moreFiles": "{{count}} dosya daha",
+  "editedFilesCount_one": "{{count}} dosya düzenlendi",
+  "moreFiles_one": "{{count}} dosya daha",
+  "editedFilesCount_other": "{{count}} dosya düzenlendi",
+  "moreFiles_other": "{{count}} dosya daha"
 }

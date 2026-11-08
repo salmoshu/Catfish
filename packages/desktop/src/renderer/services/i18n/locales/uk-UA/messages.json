@@ -1,8 +1,8 @@
 {
   "fileChanges": "Зміни у файлах",
-  "fileChangesCount": "Зміни у файлах: {{count}}",
-  "fileChangesCount_one": "Зміни у файлах: {{count}}",
-  "fileChangesCount_other": "Зміни у файлах: {{count}}",
+  "fileChangesCount": "Змінено файлів: {{count}}",
+  "fileChangesCount_one": "Змінено файлів: {{count}}",
+  "fileChangesCount_other": "Змінено файлів: {{count}}",
   "fileChangesCount_few": "Зміни у файлах: {{count}}",
   "fileChangesCount_many": "Зміни у файлах: {{count}}",
   "conversationInProgress": "Наразі триває діалог...",
@@ -151,5 +151,11 @@
   "requestDetails": "Деталі запиту:",
   "delivery": {
     "pending": "Непрочитано"
-  }
+  },
+  "editedFilesCount": "Відредаговано файлів: {{count}}",
+  "moreFiles": "Ще файлів: {{count}}",
+  "editedFilesCount_one": "Відредаговано файлів: {{count}}",
+  "moreFiles_one": "Ще файлів: {{count}}",
+  "editedFilesCount_other": "Відредаговано файлів: {{count}}",
+  "moreFiles_other": "Ще файлів: {{count}}"
 }

@@ -1,4 +1,6 @@
+import fs from 'fs';
 import os from 'os';
+import path from 'path';
 import type { Page } from '@playwright/test';
 import { expect, test } from '../../../fixtures';
 import { findAssistantIdForBackend, goToGuid } from '../../../helpers';
@@ -22,12 +24,13 @@ async function ensureRendererReady(page: Page): Promise<void> {
   await page.waitForFunction(
     () =>
       window.location.href !== 'about:blank' &&
-      typeof (window as unknown as { __backendPort?: number }).__backendPort === 'number',
+      ((window as unknown as { __backendPort?: number }).__backendPort ?? 0) > 0,
+    undefined,
     { timeout: 30_000 }
   );
 }
 
-async function createAcpConversation(page: Page): Promise<string> {
+async function createAcpConversation(page: Page, workspace: string): Promise<string> {
   await goToGuid(page);
   await ensureRendererReady(page);
   const assistantId = await findAssistantIdForBackend(page, 'codex');
@@ -40,7 +43,7 @@ async function createAcpConversation(page: Page): Promise<string> {
     name: `E2E ACP file change ${Date.now()}`,
     assistant: { id: assistantId },
     extra: {
-      workspace: os.tmpdir(),
+      workspace,
       custom_workspace: true,
       session_mode: 'full-access',
     },
@@ -64,14 +67,21 @@ async function openConversationPage(page: Page, conversationId: string): Promise
 
   const baseUrl = page.url().split('#')[0];
   await page.goto(`${baseUrl}#/conversation/${conversationId}`);
-  await page.waitForSelector('[data-testid="message-list-scroller"]', { timeout: 30_000 });
+  await page.waitForSelector('[data-testid="sendbox-input"]', { timeout: 30_000 });
 }
 
-test('shows one compact row for an ACP file change', async ({ page }) => {
+test('shows edit paths and completed-turn totals with file and diff previews', async ({
+  page,
+  electronApp,
+}, testInfo) => {
+  test.setTimeout(90_000);
   let conversationId: string | null = null;
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'catfish-file-change-'));
+  const filePath = path.join(workspace, 'research-summary.md');
 
   try {
-    conversationId = await createAcpConversation(page);
+    fs.writeFileSync(filePath, 'after\nsecond line');
+    conversationId = await createAcpConversation(page, workspace);
     await openConversationPage(page, conversationId);
 
     await page.waitForFunction(
@@ -84,13 +94,16 @@ test('shows one compact row for an ACP file change', async ({ page }) => {
       { timeout: 15_000 }
     );
 
-    await page.evaluate(async (id) => {
-      const registry = (window as typeof window & { __AIONUI_E2E_MESSAGE_STREAM__?: StreamRegistry })
-        .__AIONUI_E2E_MESSAGE_STREAM__;
-      const controller = registry?.controllers[id];
-      if (!controller) throw new Error(`No E2E stream controller registered for conversation ${id}`);
-      await controller.emitFileChange('/workspace/research-summary.md', 'before', 'after\nsecond line');
-    }, conversationId);
+    await page.evaluate(
+      async ({ id, filePath: changedPath }) => {
+        const registry = (window as typeof window & { __AIONUI_E2E_MESSAGE_STREAM__?: StreamRegistry })
+          .__AIONUI_E2E_MESSAGE_STREAM__;
+        const controller = registry?.controllers[id];
+        if (!controller) throw new Error(`No E2E stream controller registered for conversation ${id}`);
+        await controller.emitFileChange(changedPath, 'before', 'after\nsecond line');
+      },
+      { id: conversationId, filePath }
+    );
 
     const fileChange = page.locator('[data-testid="message-acp_tool_call-left"]').last();
     await expect(fileChange).toBeVisible();
@@ -98,17 +111,26 @@ test('shows one compact row for an ACP file change', async ({ page }) => {
     await expect(fileChange).toContainText('+2');
     await expect(fileChange.getByText('research-summary.md', { exact: true })).toHaveCount(1);
     await expect(fileChange).not.toContainText('Tool Call ID');
+    const summary = page.locator('[data-testid="turn-file-summary"] [data-file-changes="summary"]');
+    await expect(summary).toBeVisible();
+    await expect(summary).toContainText('research-summary.md');
+    await testInfo.attach('file-change-cards', { body: await page.screenshot(), contentType: 'image/png' });
 
     await fileChange.getByText('+2', { exact: true }).click();
-    const previewPanel = page.locator('.preview-panel');
+    const previewPanel = page.locator('.preview-panel:visible');
     await expect(previewPanel).toBeVisible({ timeout: 10_000 });
     await expect(previewPanel).toContainText('research-summary.md', { timeout: 10_000 });
 
-    await fileChange.getByText(/^Preview$|^预览$/).click();
-    await expect(previewPanel).toContainText('research-summary.md', { timeout: 10_000 });
+    await page.getByTestId('conversation-agent-tab').click();
+    await fileChange.getByRole('button', { name: filePath, exact: true }).click();
+    await expect(previewPanel).toContainText('after', { timeout: 10_000 });
+    await expect(previewPanel).toContainText('second line');
+    await page.getByTestId('conversation-agent-tab').click();
   } finally {
     if (conversationId) {
       await httpDelete(page, `/api/conversations/${encodeURIComponent(conversationId)}`).catch(() => {});
     }
+    await electronApp.close();
+    fs.rmSync(workspace, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });

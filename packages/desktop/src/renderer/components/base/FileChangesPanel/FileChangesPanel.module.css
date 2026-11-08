@@ -1,0 +1,147 @@
+.panel {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.summary {
+  overflow: hidden;
+  border: 1px solid var(--color-border-2);
+  border-radius: 10px;
+  background: var(--color-fill-1);
+}
+
+.header,
+.title,
+.totals,
+.counts,
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header {
+  min-height: 32px;
+  justify-content: space-between;
+}
+
+.summary .header {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--color-border-2);
+}
+
+.title {
+  min-width: 0;
+}
+
+.title > :first-child {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+}
+
+.files {
+  min-width: 0;
+  padding: 2px 0;
+}
+
+.summary .files {
+  padding: 6px 14px;
+}
+
+.row {
+  min-width: 0;
+  min-height: 30px;
+}
+
+.fileName:global(.arco-btn),
+.toggle:global(.arco-btn),
+.more:global(.arco-btn),
+.diffButton:global(.arco-btn) {
+  display: inline-flex;
+  height: auto;
+  min-height: 28px;
+  padding: 2px 0;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent !important;
+  color: var(--text-secondary) !important;
+  font-size: inherit;
+  line-height: 22px;
+  text-align: start;
+}
+
+.fileName:global(.arco-btn) {
+  min-width: 0;
+  flex: 1;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+.path {
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.directory {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-tertiary);
+}
+
+.basename {
+  max-width: 100%;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.editLabel,
+.diffButton:global(.arco-btn),
+.totals,
+.counts {
+  flex-shrink: 0;
+}
+
+.counts {
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.additions {
+  color: rgb(var(--green-6));
+}
+
+.deletions {
+  color: rgb(var(--red-6));
+}
+
+.changeBar {
+  display: flex;
+  width: 42px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+}
+
+.additionBar {
+  background: rgb(var(--green-6));
+}
+
+.deletionBar {
+  background: rgb(var(--red-6));
+}
+
+.more:global(.arco-btn) {
+  width: 100%;
+  padding: 6px 14px;
+  border-top: 1px solid var(--color-border-2);
+}

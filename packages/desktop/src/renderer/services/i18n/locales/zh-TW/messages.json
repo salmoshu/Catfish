@@ -1,8 +1,8 @@
 {
   "fileChanges": "檔案變更",
-  "fileChangesCount": "{{count}} 個檔案變更",
-  "fileChangesCount_one": "{{count}} 個檔案變更",
-  "fileChangesCount_other": "{{count}} 個檔案變更",
+  "fileChangesCount": "{{count}} 個檔案已修改",
+  "fileChangesCount_one": "{{count}} 個檔案已修改",
+  "fileChangesCount_other": "{{count}} 個檔案已修改",
   "conversationInProgress": "目前正在進行對話...",
   "confirm": "確認",
   "canceledExecution": "已取消執行",
@@ -143,5 +143,11 @@
   "requestDetails": "請求內容：",
   "delivery": {
     "pending": "未讀"
-  }
+  },
+  "editedFilesCount": "編輯了 {{count}} 處",
+  "moreFiles": "還有 {{count}} 個檔案",
+  "editedFilesCount_one": "編輯了 {{count}} 處",
+  "moreFiles_one": "還有 {{count}} 個檔案",
+  "editedFilesCount_other": "編輯了 {{count}} 處",
+  "moreFiles_other": "還有 {{count}} 個檔案"
 }

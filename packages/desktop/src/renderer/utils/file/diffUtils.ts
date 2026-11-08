@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { TMessage } from '@/common/chat/chatLib';
+import { createTwoFilesPatch } from 'diff';
+
 /**
  * 从 diff 内容中解析文件路径
  * Parse file path from diff content
@@ -91,7 +94,7 @@ export function extractContentFromDiff(diffContent: string): string {
 /**
  * File change info including diff content
  */
-export interface FileChangeInfo {
+export type FileChangeInfo = {
   /** File name */
   file_name: string;
   /** Full path */
@@ -102,7 +105,9 @@ export interface FileChangeInfo {
   deletions: number;
   /** Raw diff content */
   diff: string;
-}
+  beforeText?: string;
+  afterText?: string;
+};
 
 /**
  * Parse unified diff format, extract file info and change statistics
@@ -122,7 +127,7 @@ export const parseDiff = (diff: string, file_nameHint?: string): FileChangeInfo 
   if (gitLine) {
     const match = gitLine.match(/diff --git a\/(.+) b\/(.+)/);
     if (match) {
-      fullPath = match[1];
+      fullPath = match[2];
       file_name = fullPath.split('/').pop() || fullPath;
     }
   } else {
@@ -139,15 +144,21 @@ export const parseDiff = (diff: string, file_nameHint?: string): FileChangeInfo 
   // Calculate insertions and deletions
   let insertions = 0;
   let deletions = 0;
+  let inHunk = false;
 
   for (const line of lines) {
+    if (line.startsWith('diff --git') || line.startsWith('Index:')) {
+      inHunk = false;
+      continue;
+    }
+    if (line.startsWith('@@')) {
+      inHunk = true;
+      continue;
+    }
     // Skip diff header lines
     if (
-      line.startsWith('diff --git') ||
       line.startsWith('index ') ||
-      line.startsWith('---') ||
-      line.startsWith('+++') ||
-      line.startsWith('@@') ||
+      (!inHunk && (/^---(?:\s|$)/.test(line) || /^\+\+\+(?:\s|$)/.test(line))) ||
       line.startsWith('\\')
     ) {
       continue;
@@ -168,3 +179,142 @@ export const parseDiff = (diff: string, file_nameHint?: string): FileChangeInfo 
     diff,
   };
 };
+
+/** Preserve an agent's unified diff, or compare its before/after snapshots. */
+export function parseFileChange(path: string, oldText: string | null | undefined, newText: string): FileChangeInfo {
+  const unified = oldText == null && /^(?:diff --git |Index: |@@ |--- .+\r?\n\+\+\+ )/m.test(newText);
+  const diff = unified ? newText : createTwoFilesPatch(path, path, oldText ?? '', newText, '', '', { context: 3 });
+  return {
+    ...parseDiff(diff, path),
+    fullPath: path,
+    file_name: path.split(/[\\/]/).pop() || path,
+    ...(!unified ? { beforeText: oldText ?? '', afterText: newText } : {}),
+  };
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** Split a multi-file unified diff without combining unrelated file statistics. */
+export function parseFileDiffs(diff: string, path: string): FileChangeInfo[] {
+  const parts = diff
+    .split(/(?=^diff --git )/m)
+    .filter((part) => part.trim() && (!diff.includes('diff --git ') || part.startsWith('diff --git ')));
+  return parts.map((part) => {
+    const file = parseDiff(part, path);
+    return parts.length === 1 && /[\\/]/.test(path)
+      ? { ...file, fullPath: path, file_name: path.split(/[\\/]/).pop() || path }
+      : file;
+  });
+}
+
+/** Extract successful edits from all supported message transports. */
+export function collectMessageFileChanges(message: TMessage, completedOnly = false): FileChangeInfo[] {
+  if (message.hidden) return [];
+  if (message.type === 'acp_tool_call') {
+    const content = message.content as typeof message.content & { _compact?: { truncated?: boolean } };
+    const update = content?.update;
+    if (!update || content._compact?.truncated || update.status === 'failed') return [];
+    if (completedOnly && update.status !== 'completed') return [];
+    if (!Array.isArray(update.content) || !update.content.every(isRecord)) return [];
+    const diffs = update.content.filter((item) => item.type === 'diff');
+    if (
+      diffs.some(
+        (item) =>
+          typeof item.path !== 'string' ||
+          !item.path.trim() ||
+          (typeof item.old_text !== 'string' && typeof item.new_text !== 'string')
+      )
+    )
+      return [];
+    return diffs.flatMap((item) =>
+      item.type === 'diff' && item.path && (typeof item.old_text === 'string' || typeof item.new_text === 'string')
+        ? [parseFileChange(item.path, item.old_text, item.new_text ?? '')]
+        : []
+    );
+  }
+  if (message.type === 'tool_group') {
+    if (!Array.isArray(message.content)) return [];
+    return message.content.flatMap((item) => {
+      if (item.status === 'Error' || item.status === 'Canceled' || (completedOnly && item.status !== 'Success'))
+        return [];
+      const result: unknown = item.result_display;
+      if (isRecord(result) && typeof result.file_diff === 'string' && typeof result.file_name === 'string') {
+        return parseFileDiffs(result.file_diff, result.file_name);
+      }
+      if (!completedOnly && item.confirmationDetails?.type === 'edit') {
+        return parseFileDiffs(item.confirmationDetails.file_diff, item.confirmationDetails.file_name);
+      }
+      return [];
+    });
+  }
+  if (message.type === 'tool_call') {
+    const tool = message.content;
+    if (tool.error || tool.status === 'error' || (completedOnly && tool.status === 'running')) return [];
+    if (!/^(?:replace|edit|write|write_file|writefile)$/i.test(tool.name)) return [];
+    const input: Record<string, unknown> = { ...tool.input, ...tool.args };
+    const path = input.file_path ?? input.path ?? input.file_name;
+    if (typeof path !== 'string' || !path.trim()) return [];
+    const before = input.old_string ?? input.old_text;
+    const after = input.new_string ?? input.new_text ?? input.content;
+    if (typeof after !== 'string') return [];
+    return [parseFileChange(path, typeof before === 'string' ? before : undefined, after)];
+  }
+  return [];
+}
+
+/** Combine repeated edits to each path, retaining a usable diff for preview. */
+export function mergeFileChanges(changes: FileChangeInfo[]): FileChangeInfo[] {
+  const files = new Map<string, FileChangeInfo>();
+  for (const change of changes) {
+    let key = change.fullPath.replace(/\\/g, '/');
+    if (/^[a-z]:\//i.test(key)) key = key.toLowerCase();
+    const previous = files.get(key);
+    if (!previous) {
+      files.set(key, { ...change });
+    } else if (
+      previous.beforeText !== undefined &&
+      previous.afterText === change.beforeText &&
+      change.afterText !== undefined
+    ) {
+      files.set(key, parseFileChange(previous.fullPath, previous.beforeText, change.afterText));
+    } else {
+      files.set(key, {
+        ...change,
+        insertions: previous.insertions + change.insertions,
+        deletions: previous.deletions + change.deletions,
+        diff: `${previous.diff}\n${change.diff}`,
+        beforeText: undefined,
+        afterText: undefined,
+      });
+    }
+  }
+  return [...files.values()].filter((file) => file.beforeText === undefined || file.beforeText !== file.afterText);
+}
+
+/** Summarize completed user turns while leaving the currently running turn alone. */
+export function collectCompletedTurnFileChanges(
+  messages: TMessage[],
+  isProcessing: boolean
+): Array<{
+  sourceMessageIds: string[];
+  files: FileChangeInfo[];
+}> {
+  const summaries: Array<{ sourceMessageIds: string[]; files: FileChangeInfo[] }> = [];
+  let turn: TMessage[] = [];
+  const flush = (active: boolean): void => {
+    if (!active) {
+      const uniqueMessages = [...new Map(turn.map((message) => [message.id, message])).values()];
+      const files = mergeFileChanges(uniqueMessages.flatMap((message) => collectMessageFileChanges(message, true)));
+      if (files.length > 0) summaries.push({ sourceMessageIds: turn.map((message) => message.id), files });
+    }
+    turn = [];
+  };
+  for (const message of messages) {
+    if (message.hidden) continue;
+    if (message.position === 'right') flush(false);
+    else turn.push(message);
+  }
+  flush(isProcessing);
+  return summaries;
+}

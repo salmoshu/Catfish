@@ -1,8 +1,8 @@
 {
   "fileChanges": "File Changes",
-  "fileChangesCount": "{{count}} File Changes",
-  "fileChangesCount_one": "{{count}} File Change",
-  "fileChangesCount_other": "{{count}} File Changes",
+  "fileChangesCount": "{{count}} files modified",
+  "fileChangesCount_one": "{{count}} file modified",
+  "fileChangesCount_other": "{{count}} files modified",
   "conversationInProgress": "A conversation is currently in progress...",
   "confirm": "Confirm",
   "canceledExecution": "Execution canceled",
@@ -143,5 +143,11 @@
   "requestDetails": "Request details:",
   "delivery": {
     "pending": "Unread"
-  }
+  },
+  "editedFilesCount": "Edited {{count}} files",
+  "moreFiles": "{{count}} more files",
+  "editedFilesCount_one": "Edited {{count}} file",
+  "moreFiles_one": "{{count}} more file",
+  "editedFilesCount_other": "Edited {{count}} files",
+  "moreFiles_other": "{{count}} more files"
 }

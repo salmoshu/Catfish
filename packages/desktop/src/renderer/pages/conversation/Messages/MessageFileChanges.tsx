@@ -6,7 +6,12 @@
 
 import FileChangesPanel, { type FileChangeItem } from '@/renderer/components/base/FileChangesPanel';
 import { usePreviewLauncher } from '@/renderer/hooks/file/usePreviewLauncher';
-import { extractContentFromDiff, parseDiff, type FileChangeInfo } from '@/renderer/utils/file/diffUtils';
+import {
+  extractContentFromDiff,
+  mergeFileChanges,
+  parseFileDiffs,
+  type FileChangeInfo,
+} from '@/renderer/utils/file/diffUtils';
 import { getFileTypeInfo } from '@/renderer/utils/file/fileType';
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,28 +19,32 @@ import type { WriteFileResult } from './types';
 
 export { parseDiff, type FileChangeInfo } from '@/renderer/utils/file/diffUtils';
 
-export interface MessageFileChangesProps {
+export type MessageFileChangesProps = {
   writeFileChanges?: WriteFileResult[];
   className?: string;
   diffsChanges?: FileChangeInfo[];
-}
+  variant?: 'operation' | 'summary';
+};
 
 const MessageFileChanges: React.FC<MessageFileChangesProps> = ({
   writeFileChanges = [],
   diffsChanges = [],
   className,
+  variant = 'operation',
 }) => {
   const { t } = useTranslation();
   const { launchPreview } = usePreviewLauncher();
 
   const fileChanges = useMemo(() => {
-    return Array.from(new Map(diffsChanges.map((fileInfo) => [fileInfo.fullPath, fileInfo])).values()).concat(
-      writeFileChanges.flatMap((change) => {
-        if (!change.file_diff) {
-          return [];
-        }
-        return [parseDiff(change.file_diff, change.file_name)];
-      })
+    return mergeFileChanges(
+      diffsChanges.concat(
+        writeFileChanges.flatMap((change) => {
+          if (!change.file_diff) {
+            return [];
+          }
+          return parseFileDiffs(change.file_diff, change.file_name);
+        })
+      )
     );
   }, [diffsChanges, writeFileChanges]);
 
@@ -86,7 +95,7 @@ const MessageFileChanges: React.FC<MessageFileChangesProps> = ({
       onFileClick={handleFileClick}
       onDiffClick={handleDiffClick}
       className={className}
-      defaultExpanded={false}
+      variant={variant}
     />
   );
 };

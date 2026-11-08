@@ -32,7 +32,12 @@ import { uuid } from '@renderer/utils/common';
 import './messages.css';
 import HOC from '@renderer/utils/ui/HOC';
 import type { FileChangeInfo } from './MessageFileChanges';
-import MessageFileChanges, { parseDiff } from './MessageFileChanges';
+import MessageFileChanges from './MessageFileChanges';
+import {
+  collectCompletedTurnFileChanges,
+  collectMessageFileChanges,
+  parseFileDiffs,
+} from '@/renderer/utils/file/diffUtils';
 import { useConversationArtifacts } from './artifacts';
 import { MessageAnchorRail } from './anchorRail';
 import {
@@ -301,8 +306,14 @@ const MessageItem: React.FC<{
           );
         case 'tips':
           return <MessageTips message={message}></MessageTips>;
-        case 'tool_call':
-          return <MessageToolCall message={message}></MessageToolCall>;
+        case 'tool_call': {
+          const changes = collectMessageFileChanges(message);
+          return changes.length > 0 ? (
+            <MessageFileChanges diffsChanges={changes} />
+          ) : (
+            <MessageToolCall message={message} />
+          );
+        }
         case 'tool_group':
           return <MessageToolGroup message={message} isProcessing={isProcessing}></MessageToolGroup>;
         case 'agent_status':
@@ -441,15 +452,15 @@ const MessageList: React.FC<{
       if (message.type === 'plan') continue;
       if (message.type === 'tool_group') {
         const writeFileResults = message.content.flatMap((item) =>
-          item.name === 'WriteFile' && isWriteFileResult(item.result_display) ? [item.result_display] : []
+          item.name === 'WriteFile' && item.status === 'Success' && isWriteFileResult(item.result_display)
+            ? [item.result_display]
+            : []
         );
         if (writeFileResults.length > 0 && writeFileResults.length === message.content.length) {
           writeFileResults.forEach((writeFileResult) => {
-            pushFileDiffChanges(
-              parseDiff(writeFileResult.file_diff, writeFileResult.file_name),
-              message.id,
-              message.created_at ?? 0
-            );
+            for (const change of parseFileDiffs(writeFileResult.file_diff, writeFileResult.file_name)) {
+              pushFileDiffChanges(change, message.id, message.created_at ?? 0);
+            }
           });
           continue;
         }
@@ -465,7 +476,8 @@ const MessageList: React.FC<{
         continue;
       }
       if (message.type === 'tool_call') {
-        pushToolList(message);
+        if (collectMessageFileChanges(message).length > 0) pushStandaloneMessage(message);
+        else pushToolList(message);
         continue;
       }
       pushStandaloneMessage(message);
@@ -495,6 +507,18 @@ const MessageList: React.FC<{
     () => collapseCompletedTurnWork(groupedList, isProcessing),
     [groupedList, isProcessing]
   );
+
+  const turnFileSummaries = useMemo(() => {
+    const summaries = new Map<string, FileChangeInfo[]>();
+    for (const turn of collectCompletedTurnFileChanges(list, isProcessing)) {
+      const sourceIds = new Set(turn.sourceMessageIds);
+      const anchor = processedList.findLast((item) =>
+        getProcessedItemSourceMessageIds(item).some((id) => sourceIds.has(id))
+      );
+      if (anchor) summaries.set(anchor.id, turn.files);
+    }
+    return summaries;
+  }, [list, isProcessing, processedList]);
 
   // The hover copy + timestamp row appears once per completed turn, after the
   // final AI text, and copies that summary rather than intermediate progress.
@@ -861,7 +885,14 @@ const MessageList: React.FC<{
           >
             {item.type === 'file_summary' && <MessageFileChanges diffsChanges={item.diffs} />}
             {item.type === 'tool_summary' && (
-              <MessageToolGroupSummary messages={item.messages} isProcessing={isProcessing} />
+              <>
+                <MessageToolGroupSummary messages={item.messages} isProcessing={isProcessing} />
+                {item.messages.some((message) => collectMessageFileChanges(message, true).length > 0) && (
+                  <MessageFileChanges
+                    diffsChanges={item.messages.flatMap((message) => collectMessageFileChanges(message, true))}
+                  />
+                )}
+              </>
             )}
           </div>
           {renderStandaloneTurnActions(item.id)}
@@ -929,7 +960,14 @@ const MessageList: React.FC<{
             >
               <div className='h-10px' />
               {processedList.map((item, index) => (
-                <React.Fragment key={getProcessedItemAnchorId(item) || index}>{renderItem(index, item)}</React.Fragment>
+                <React.Fragment key={getProcessedItemAnchorId(item) || index}>
+                  {renderItem(index, item)}
+                  {turnFileSummaries.has(item.id) && (
+                    <div className={`${rowWidthClass} min-w-0 px-8px mt-12px`} data-testid='turn-file-summary'>
+                      <MessageFileChanges diffsChanges={turnFileSummaries.get(item.id)} variant='summary' />
+                    </div>
+                  )}
+                </React.Fragment>
               ))}
               <div className='h-20px' />
             </div>

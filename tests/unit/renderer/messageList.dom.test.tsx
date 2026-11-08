@@ -8,7 +8,13 @@ import React, { type PropsWithChildren } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MessageCursorPage } from '@/common/adapter/ipcBridge';
-import type { IMessageAcpToolCall, IMessageText, IMessageToolGroup, TMessage } from '@/common/chat/chatLib';
+import type {
+  IMessageAcpToolCall,
+  IMessageText,
+  IMessageToolCall,
+  IMessageToolGroup,
+  TMessage,
+} from '@/common/chat/chatLib';
 import type { MessageFileChangesProps } from '@/renderer/pages/conversation/Messages/MessageFileChanges';
 import {
   MessageListLoadingProvider,
@@ -19,8 +25,7 @@ import {
 } from '@/renderer/pages/conversation/Messages/hooks';
 import MessageList from '@/renderer/pages/conversation/Messages/MessageList';
 
-const { parseDiffMock, useTeamPermissionMock, loadHistoryMock } = vi.hoisted(() => ({
-  parseDiffMock: vi.fn(),
+const { useTeamPermissionMock, loadHistoryMock } = vi.hoisted(() => ({
   useTeamPermissionMock: vi.fn(),
   loadHistoryMock: vi.fn(),
 }));
@@ -165,12 +170,18 @@ vi.mock('@/renderer/pages/conversation/Messages/components/MessageToolGroupSumma
 
 vi.mock('@/renderer/pages/conversation/Messages/MessageFileChanges', () => ({
   __esModule: true,
-  default: ({ diffsChanges }: MessageFileChangesProps) => (
-    <div data-testid='file-changes' data-file-count={diffsChanges?.length ?? 0}>
+  default: ({ diffsChanges, variant }: MessageFileChangesProps) => (
+    <div
+      data-testid={variant === 'summary' ? 'file-changes-summary' : 'file-changes'}
+      data-file-count={diffsChanges?.length ?? 0}
+      data-insertions={diffsChanges?.reduce((total, file) => total + file.insertions, 0) ?? 0}
+    >
       file_changes
+      {diffsChanges?.map((file) => (
+        <span key={file.fullPath}>{file.fullPath}</span>
+      ))}
     </div>
   ),
-  parseDiff: parseDiffMock,
 }));
 
 vi.mock('@/renderer/pages/conversation/Messages/components/SelectionReplyButton', () => ({
@@ -288,20 +299,44 @@ function ReplaceMessagesButton({ messages }: { messages: TMessage[] }): JSX.Elem
 describe('MessageList', () => {
   beforeEach(() => {
     mockIsProcessing = false;
-    parseDiffMock.mockReset();
-    parseDiffMock.mockReturnValue({
-      file_name: 'file.ts',
-      fullPath: '/workspace/file.ts',
-      insertions: 1,
-      deletions: 1,
-      diff: 'diff',
-    });
     useTeamPermissionMock.mockReturnValue(null);
     loadHistoryMock.mockReset();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it('adds a file summary after the final reply and keeps it outside the folded work', () => {
+    const message = createAcpToolCall({
+      content: [{ type: 'diff', path: '/repo/file.ts', old_text: 'old', new_text: 'new' }],
+    });
+    render(<MessageList />, {
+      wrapper: ({ children }) => (
+        <Wrapper messages={[message, { ...createTextMessage(), created_at: 3 }]}>{children}</Wrapper>
+      ),
+    });
+    const summary = screen.getByTestId('turn-file-summary');
+    expect(screen.getByTestId('file-changes-summary')).toHaveAttribute('data-file-count', '1');
+    expect(summary.closest('[data-testid="turn-work-summary"]')).toBeNull();
+    expect(
+      screen.getByTestId('msgtext-message-1').compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
+  it('waits until the active task ends before showing its file summary', () => {
+    mockIsProcessing = true;
+    const message = createAcpToolCall({
+      content: [{ type: 'diff', path: '/repo/file.ts', old_text: 'old', new_text: 'new' }],
+    });
+    const view = render(<MessageList />, {
+      wrapper: ({ children }) => <Wrapper messages={[message]}>{children}</Wrapper>,
+    });
+    expect(screen.getByTestId('acp-tool-call')).toBeVisible();
+    expect(screen.queryByTestId('turn-file-summary')).not.toBeInTheDocument();
+    mockIsProcessing = false;
+    view.rerender(<MessageList />);
+    expect(screen.getByTestId('turn-file-summary')).toBeVisible();
   });
 
   it('loads through collapsed history pages until the conversation can scroll', async () => {
@@ -791,7 +826,8 @@ describe('MessageList', () => {
     });
 
     expect(screen.getByTestId('file-changes')).toHaveAttribute('data-file-count', '1');
-    expect(parseDiffMock).toHaveBeenCalledWith('diff --git a/file.ts b/file.ts\n-old\n+new', '/workspace/file.ts');
+    expect(screen.getByTestId('file-changes')).toHaveTextContent('/workspace/file.ts');
+    expect(screen.getByTestId('file-changes')).toHaveAttribute('data-insertions', '1');
     expect(screen.queryByTestId('tool-summary')).not.toBeInTheDocument();
   });
 
@@ -826,8 +862,75 @@ describe('MessageList', () => {
     });
 
     expect(screen.getByTestId('file-changes')).toHaveAttribute('data-file-count', '2');
-    expect(parseDiffMock).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId('file-changes')).toHaveTextContent('/workspace/file.ts');
+    expect(screen.getByTestId('file-changes')).toHaveTextContent('/workspace/second.ts');
     expect(screen.queryByTestId('tool-summary')).not.toBeInTheDocument();
+  });
+
+  it('shows each file in a multi-file WriteFile patch', () => {
+    const message = createToolGroup([
+      {
+        call_id: 'write-multiple',
+        description: 'Write files',
+        name: 'WriteFile',
+        render_output_as_markdown: false,
+        result_display: {
+          file_diff: 'diff --git a/a.ts b/a.ts\n+one\ndiff --git a/b.ts b/b.ts\n+two\n+three\n',
+          file_name: 'a.ts',
+        },
+        status: 'Success',
+      },
+    ]);
+    render(<MessageList />, {
+      wrapper: ({ children }) => <Wrapper messages={[message]}>{children}</Wrapper>,
+    });
+    expect(screen.getByTestId('file-changes')).toHaveAttribute('data-file-count', '2');
+    expect(screen.getByTestId('file-changes')).toHaveAttribute('data-insertions', '3');
+    expect(screen.getByTestId('file-changes')).toHaveTextContent('b.ts');
+  });
+
+  it.each(['Error', 'Canceled', 'Executing', 'Pending', 'Confirming'] as const)(
+    'retains the tool state instead of displaying %s writes as successful edits',
+    (status) => {
+      const message = createToolGroup([
+        {
+          call_id: 'write-unfinished',
+          description: 'Write file',
+          name: 'WriteFile',
+          render_output_as_markdown: false,
+          result_display: { file_diff: 'diff --git a/a.ts b/a.ts\n+one\n', file_name: 'a.ts' },
+          status,
+        },
+      ]);
+      render(<MessageList />, {
+        wrapper: ({ children }) => <Wrapper messages={[message]}>{children}</Wrapper>,
+      });
+      expect(screen.getByTestId('tool-summary')).toHaveTextContent(message.id);
+      expect(screen.queryByTestId('file-changes')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('turn-file-summary')).not.toBeInTheDocument();
+    }
+  );
+
+  it('shows paths and line counts for legacy write_file operations as well as the final summary', () => {
+    const message: IMessageToolCall = {
+      id: 'write-file',
+      msg_id: 'write-file',
+      conversation_id: 'conversation-1',
+      type: 'tool_call',
+      position: 'left',
+      content: {
+        call_id: 'write-file',
+        name: 'write_file',
+        args: { path: '/workspace/new.ts', content: 'one\ntwo\n' },
+        status: 'completed',
+      },
+    };
+    render(<MessageList />, {
+      wrapper: ({ children }) => <Wrapper messages={[message]}>{children}</Wrapper>,
+    });
+    expect(screen.getByTestId('file-changes')).toHaveTextContent('/workspace/new.ts');
+    expect(screen.getByTestId('file-changes')).toHaveAttribute('data-insertions', '2');
+    expect(screen.getByTestId('file-changes-summary')).toHaveAttribute('data-insertions', '2');
   });
 
   it('keeps mixed legacy tool groups in View Steps without dropping non-file tools', () => {
@@ -858,7 +961,7 @@ describe('MessageList', () => {
     });
 
     expect(screen.getByTestId('tool-summary')).toHaveTextContent(message.id);
-    expect(screen.queryByTestId('file-changes')).not.toBeInTheDocument();
+    expect(screen.getByTestId('file-changes')).toHaveAttribute('data-file-count', '1');
     expect(screen.queryByTestId('tool-group')).not.toBeInTheDocument();
   });
 });

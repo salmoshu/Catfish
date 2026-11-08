@@ -1,8 +1,8 @@
 {
   "fileChanges": "Cambios en archivos",
-  "fileChangesCount": "{{count}} cambios en archivos",
-  "fileChangesCount_one": "{{count}} cambio en archivos",
-  "fileChangesCount_other": "{{count}} cambios en archivos",
+  "fileChangesCount": "{{count}} archivos modificados",
+  "fileChangesCount_one": "{{count}} archivos modificados",
+  "fileChangesCount_other": "{{count}} archivos modificados",
   "conversationInProgress": "Hay una conversación en progreso...",
   "confirm": "Confirmar",
   "canceledExecution": "Ejecución cancelada",
@@ -143,5 +143,11 @@
   "requestDetails": "Detalles de la solicitud:",
   "delivery": {
     "pending": "No leído"
-  }
+  },
+  "editedFilesCount": "{{count}} archivos editados",
+  "moreFiles": "{{count}} archivos más",
+  "editedFilesCount_one": "{{count}} archivos editados",
+  "moreFiles_one": "{{count}} archivos más",
+  "editedFilesCount_other": "{{count}} archivos editados",
+  "moreFiles_other": "{{count}} archivos más"
 }

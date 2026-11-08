@@ -9,11 +9,11 @@ import { getAcpImageFileName, getAcpImagePath } from '@/common/chat/acpToolCallO
 import FileChangesPanel from '@/renderer/components/base/FileChangesPanel';
 import LocalImageView from '@/renderer/components/media/LocalImageView';
 import { useDiffPreviewHandlers } from '@/renderer/hooks/file/useDiffPreviewHandlers';
-import { parseDiff } from '@/renderer/utils/file/diffUtils';
+import { collectMessageFileChanges, parseFileChange } from '@/renderer/utils/file/diffUtils';
+import MessageFileChanges from '../MessageFileChanges';
 import { downloadFileFromPath } from '@/renderer/utils/file/download';
 import { Button, Card, Message, Tag, Tooltip } from '@arco-design/web-react';
 import { Download } from '@icon-park/react';
-import { createTwoFilesPatch } from 'diff';
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import MarkdownView from '@renderer/components/Markdown';
@@ -35,17 +35,14 @@ const StatusTag: React.FC<{ status: string }> = ({ status }) => {
 };
 
 // Diff content display as a separate component to ensure hooks are called unconditionally
-const DiffContentView: React.FC<{ old_text: string; new_text: string; path: string }> = ({
+const DiffContentView: React.FC<{ old_text?: string | null; new_text: string; path: string }> = ({
   old_text,
   new_text,
   path,
 }) => {
   const display_name = path.split(/[/\\]/).pop() || path || 'Unknown file';
-  const formattedDiff = useMemo(
-    () => createTwoFilesPatch(display_name, display_name, old_text, new_text, '', '', { context: 3 }),
-    [display_name, old_text, new_text]
-  );
-  const fileInfo = useMemo(() => parseDiff(formattedDiff, display_name), [formattedDiff, display_name]);
+  const fileInfo = useMemo(() => parseFileChange(path, old_text, new_text), [path, old_text, new_text]);
+  const formattedDiff = fileInfo.diff;
   const { handleFileClick, handleDiffClick } = useDiffPreviewHandlers({
     diffText: formattedDiff,
     display_name,
@@ -65,9 +62,7 @@ const DiffContentView: React.FC<{ old_text: string; new_text: string; path: stri
 
 const ContentView: React.FC<{ content: IMessageAcpToolCall['content']['update']['content'][0] }> = ({ content }) => {
   if (content.type === 'diff') {
-    return (
-      <DiffContentView old_text={content.old_text || ''} new_text={content.new_text || ''} path={content.path || ''} />
-    );
+    return <DiffContentView old_text={content.old_text} new_text={content.new_text || ''} path={content.path || ''} />;
   }
 
   // 处理 content 类型，包含 text 内容
@@ -127,12 +122,10 @@ const MessageAcpToolCall: React.FC<{ message: IMessageAcpToolCall }> = ({ messag
     [messageApi, t]
   );
 
-  if (hasOnlyDiffs) {
+  if (hasOnlyDiffs && status !== 'failed') {
     return (
       <div className='w-full mb-2 flex flex-col gap-8px'>
-        {diffContent.map((contentItem, index) => (
-          <ContentView key={`${contentItem.path || 'diff'}-${index}`} content={contentItem} />
-        ))}
+        <MessageFileChanges diffsChanges={collectMessageFileChanges(message)} />
       </div>
     );
   }

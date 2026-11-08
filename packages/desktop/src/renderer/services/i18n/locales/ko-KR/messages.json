@@ -1,8 +1,8 @@
 {
   "fileChanges": "파일 변경 사항",
-  "fileChangesCount": "{{count}}개 파일 변경 사항",
-  "fileChangesCount_one": "{{count}}개 파일 변경 사항",
-  "fileChangesCount_other": "{{count}}개 파일 변경 사항",
+  "fileChangesCount": "{{count}}개 파일 변경됨",
+  "fileChangesCount_one": "{{count}}개 파일 변경됨",
+  "fileChangesCount_other": "{{count}}개 파일 변경됨",
   "conversationInProgress": "현재 대화가 진행 중입니다...",
   "confirm": "확인",
   "canceledExecution": "실행 취소됨",
@@ -143,5 +143,11 @@
   "requestDetails": "요청 내용:",
   "delivery": {
     "pending": "읽지 않음"
-  }
+  },
+  "editedFilesCount": "{{count}}개 파일 편집",
+  "moreFiles": "파일 {{count}}개 더 보기",
+  "editedFilesCount_one": "{{count}}개 파일 편집",
+  "moreFiles_one": "파일 {{count}}개 더 보기",
+  "editedFilesCount_other": "{{count}}개 파일 편집",
+  "moreFiles_other": "파일 {{count}}개 더 보기"
 }

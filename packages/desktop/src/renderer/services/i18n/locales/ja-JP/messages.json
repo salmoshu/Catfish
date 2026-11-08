@@ -1,8 +1,8 @@
 {
   "fileChanges": "ファイル変更",
-  "fileChangesCount": "{{count}} 件のファイル変更",
-  "fileChangesCount_one": "{{count}} 件のファイル変更",
-  "fileChangesCount_other": "{{count}} 件のファイル変更",
+  "fileChangesCount": "{{count}} ファイルを変更",
+  "fileChangesCount_one": "{{count}} ファイルを変更",
+  "fileChangesCount_other": "{{count}} ファイルを変更",
   "conversationInProgress": "現在、会話中です...",
   "confirm": "確認",
   "canceledExecution": "実行がキャンセルされました",
@@ -143,5 +143,11 @@
   "requestDetails": "リクエスト内容:",
   "delivery": {
     "pending": "未読"
-  }
+  },
+  "editedFilesCount": "{{count}} 件を編集",
+  "moreFiles": "ほか {{count}} ファイル",
+  "editedFilesCount_one": "{{count}} 件を編集",
+  "moreFiles_one": "ほか {{count}} ファイル",
+  "editedFilesCount_other": "{{count}} 件を編集",
+  "moreFiles_other": "ほか {{count}} ファイル"
 }

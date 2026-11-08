@@ -1,8 +1,8 @@
 {
   "fileChanges": "Изменения файлов",
-  "fileChangesCount": "{{count}} изменений файлов",
-  "fileChangesCount_one": "{{count}} изменение файлов",
-  "fileChangesCount_other": "{{count}} изменений файлов",
+  "fileChangesCount": "Изменено файлов: {{count}}",
+  "fileChangesCount_one": "Изменено файлов: {{count}}",
+  "fileChangesCount_other": "Изменено файлов: {{count}}",
   "fileChangesCount_few": "{{count}} изменения файлов",
   "fileChangesCount_many": "{{count}} изменений файлов",
   "conversationInProgress": "Диалог в процессе...",
@@ -149,5 +149,11 @@
   "requestDetails": "Детали запроса:",
   "delivery": {
     "pending": "Непрочитано"
-  }
+  },
+  "editedFilesCount": "Изменено файлов: {{count}}",
+  "moreFiles": "Ещё файлов: {{count}}",
+  "editedFilesCount_one": "Изменено файлов: {{count}}",
+  "moreFiles_one": "Ещё файлов: {{count}}",
+  "editedFilesCount_other": "Изменено файлов: {{count}}",
+  "moreFiles_other": "Ещё файлов: {{count}}"
 }

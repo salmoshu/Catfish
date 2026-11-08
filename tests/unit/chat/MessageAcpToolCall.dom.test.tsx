@@ -70,6 +70,10 @@ vi.mock('@/renderer/hooks/file/useDiffPreviewHandlers', () => ({
   }),
 }));
 
+vi.mock('@/renderer/hooks/file/usePreviewLauncher', () => ({
+  usePreviewLauncher: () => ({ launchPreview: vi.fn() }),
+}));
+
 const createMessage = (update: IMessageAcpToolCall['content']['update']): IMessageAcpToolCall => ({
   id: 'msg-1',
   msg_id: 'msg-1',
@@ -321,6 +325,19 @@ describe('MessageAcpToolCall image output', () => {
     expect(screen.getAllByTestId('file-changes-panel')).toHaveLength(2);
   });
 
+  it('keeps the failure status visible when a file edit fails', () => {
+    render(
+      <MessageAcpToolCall
+        message={createMessage({
+          ...baseUpdate,
+          status: 'failed',
+          content: [{ type: 'diff', path: '/workspace/file.ts', old_text: 'old', new_text: 'new' }],
+        })}
+      />
+    );
+    expect(screen.getByText('failed')).toBeVisible();
+  });
+
   it('calculates insertion and deletion totals from complete ACP diff content', () => {
     render(
       <MessageAcpToolCall
@@ -339,7 +356,7 @@ describe('MessageAcpToolCall image output', () => {
     );
 
     const panel = screen.getByTestId('file-changes-panel');
-    expect(panel).toHaveAttribute('data-title', 'file.ts');
+    expect(panel).toHaveAttribute('data-title', 'messages.fileChangesCount');
     expect(panel).toHaveAttribute('data-insertions', '2');
     expect(panel).toHaveAttribute('data-deletions', '1');
   });
@@ -380,7 +397,7 @@ describe('MessageAcpToolCall image output', () => {
     expect(screen.getByText(/echo hello/)).toBeInTheDocument();
   });
 
-  it('renders an empty diff content with fallback file metadata', () => {
+  it('does not claim that a file changed when its diff metadata is missing', () => {
     render(
       <MessageAcpToolCall
         message={createMessage({
@@ -394,6 +411,6 @@ describe('MessageAcpToolCall image output', () => {
       />
     );
 
-    expect(screen.getByTestId('file-changes-panel')).toBeInTheDocument();
+    expect(screen.queryByTestId('file-changes-panel')).not.toBeInTheDocument();
   });
 });
