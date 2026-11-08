@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import type { NormalizedToolCall, NormalizedToolStatus } from '@/common/chat/normalizeToolCall';
 import { ExplorerContainer } from '@/renderer/pages/conversation/explorer/ExplorerContainer';
 import { useCurrentConversation } from '@/renderer/pages/conversation/explorer/currentConversationStore';
-import MessageAcpTerminalOutput from '@/renderer/pages/conversation/Messages/acp/MessageAcpTerminalOutput';
 import { PreviewPanel, usePreviewContext } from '@/renderer/pages/conversation/Preview';
 import SideChatPanel from '@/renderer/pages/conversation/Preview/components/PreviewPanel/SideChatPanel';
 import type { WorkbenchSection } from './workbenchActivity';
@@ -123,15 +122,16 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
     <div className='workbench' data-workbench data-active-section={activeSection}>
       <div className='workbench-body'>
         <section
-          id='workbench-panel-files'
+          id={`workbench-panel-${activeSection === 'terminal' || activeSection === 'changes' ? activeSection : 'files'}`}
           role={activeSection === 'preview' || activeSection === 'side-chat' ? 'complementary' : 'tabpanel'}
-          aria-labelledby='workbench-tab-files'
+          aria-labelledby={`workbench-tab-${activeSection === 'terminal' || activeSection === 'changes' ? activeSection : 'files'}`}
           hidden={activeSection === 'preview' || activeSection === 'side-chat'}
         >
           <ExplorerContainer
             projectId={projectId}
             activeSection={activeSection}
-            contentHidden={activeSection === 'terminal' || activeSection === 'agents'}
+            contentHidden={activeSection === 'agents'}
+            terminalActivity={activity.terminals}
             onSectionChange={selectSection}
           />
         </section>
@@ -160,7 +160,9 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
               onClick={closeSideChat}
             />
           </div>
-          {sideChat && <SideChatPanel workspace={sideChat.workspace} />}
+          {sideChat && (
+            <SideChatPanel workspace={sideChat.workspace} sourceConversationId={conversationId ?? undefined} />
+          )}
         </section>
         <section
           id='workbench-panel-preview'
@@ -181,26 +183,6 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
               <Button type='primary' size='small' onClick={() => openBrowserTab()}>
                 {t('messages.workbench.openBrowser', { defaultValue: 'New browser tab' })}
               </Button>
-            </div>
-          )}
-        </section>
-        <section
-          id='workbench-panel-terminal'
-          role='tabpanel'
-          aria-labelledby='workbench-tab-terminal'
-          hidden={activeSection !== 'terminal'}
-        >
-          {activity.terminals.length > 0 ? (
-            <div className='workbench-activity-list'>
-              {activity.terminals.map((message) => (
-                <MessageAcpTerminalOutput key={message.id} message={message} />
-              ))}
-            </div>
-          ) : (
-            <div className='workbench-empty'>
-              {t('messages.workbench.terminalEmpty', {
-                defaultValue: 'Terminal output from agent commands will appear here.',
-              })}
             </div>
           )}
         </section>

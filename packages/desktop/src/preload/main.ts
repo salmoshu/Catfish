@@ -11,11 +11,26 @@
 import '@sentry/electron/preload';
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import { ADAPTER_BRIDGE_EVENT_KEY } from '../common/adapter/constant';
+import { EMBEDDED_TERMINAL_CHANNELS } from '../common/adapter/constant';
+import type { EmbeddedTerminalAPI, EmbeddedTerminalOutput } from '../common/types/platform/electron';
+
+const embeddedTerminal: EmbeddedTerminalAPI = {
+  start: (params) => ipcRenderer.invoke(EMBEDDED_TERMINAL_CHANNELS.start, params),
+  write: (params) => ipcRenderer.invoke(EMBEDDED_TERMINAL_CHANNELS.write, params),
+  resize: (params) => ipcRenderer.invoke(EMBEDDED_TERMINAL_CHANNELS.resize, params),
+  kill: (params) => ipcRenderer.invoke(EMBEDDED_TERMINAL_CHANNELS.kill, params),
+  onOutput: (callback) => {
+    const handler = (_event: unknown, output: EmbeddedTerminalOutput): void => callback(output);
+    ipcRenderer.on(EMBEDDED_TERMINAL_CHANNELS.output, handler);
+    return () => ipcRenderer.off(EMBEDDED_TERMINAL_CHANNELS.output, handler);
+  },
+};
 
 /**
  * @description 注入到renderer进程中, 用于与main进程通信
  * */
 contextBridge.exposeInMainWorld('electronAPI', {
+  embeddedTerminal,
   emit: (name: string, data: unknown) => {
     return ipcRenderer
       .invoke(

@@ -131,7 +131,7 @@ const ChatLayout: React.FC<{
       </div>
       {localSideChat && (
         <div className='h-full flex flex-col min-h-0'>
-          <SideChatPanel workspace={localSideChat.workspace} />
+          <SideChatPanel workspace={localSideChat.workspace} sourceConversationId={conversation_id} />
         </div>
       )}
     </>

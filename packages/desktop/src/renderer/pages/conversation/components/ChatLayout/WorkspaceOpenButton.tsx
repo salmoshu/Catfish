@@ -1,31 +1,26 @@
 import { ipcBridge } from '@/common';
 import { isElectronDesktop } from '@/renderer/utils/platform';
 import { useOptionalPreviewContext } from '@/renderer/pages/conversation/Preview/context/PreviewContext';
+import { openWorkbenchSection } from '@/renderer/pages/conversation/Workbench/workbenchActivityStore';
 import { Browser, Command, FolderOpen, MessageOne, Plus, Terminal } from '@icon-park/react';
 import { Button, Dropdown, Tooltip } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-/**
- * `browser` 打开的是应用内浏览器（预览面板里的 tab），其余三个是拉起外部程序。
- * 两类行为不同，下拉里用分隔线区分。
- *
- * `browser` opens the in-app browser (a tab in the preview panel); the other three
- * launch external programs. The dropdown separates the two groups with a divider.
- */
+/** Workspace actions include external editors and explorers, plus built-in panels. */
 type ToolType = 'vscode' | 'terminal' | 'explorer' | 'browser' | 'side-chat';
 
-/** 拉起外部程序的工具，需要走 shell IPC / Tools that launch external programs via shell IPC */
-type ExternalToolType = Exclude<ToolType, 'browser' | 'side-chat'>;
+/** External tools launch through the shell bridge. */
+type ExternalToolType = Exclude<ToolType, 'browser' | 'side-chat' | 'terminal'>;
 
-interface ToolOption {
+type ToolOption = {
   key: ToolType;
   label: string;
   icon: React.ReactNode;
   available: boolean;
-}
+};
 
-interface WorkspaceOpenButtonProps {
+type WorkspaceOpenButtonProps = {
   workspacePath: string;
   /**
    * Authoritative flag from `conversation.extra.is_temporary_workspace`.
@@ -34,11 +29,11 @@ interface WorkspaceOpenButtonProps {
    * itself stays, showing only Browser.
    */
   isTemporary: boolean;
-}
+};
 
 const STORAGE_KEY = 'workspace-open-preference';
 
-const isExternalTool = (tool: ToolType): tool is ExternalToolType => tool !== 'browser' && tool !== 'side-chat';
+const isExternalTool = (tool: ToolType): tool is ExternalToolType => tool === 'vscode' || tool === 'explorer';
 
 /**
  * Workspace Open Button — opens the workspace with various tools.
@@ -92,7 +87,9 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
   const handleOpenWith = useCallback(
     async (tool: ToolType) => {
       try {
-        if (isExternalTool(tool)) {
+        if (tool === 'terminal') {
+          openWorkbenchSection('terminal');
+        } else if (isExternalTool(tool)) {
           await ipcBridge.shell.openFolderWith.invoke({ folder_path: workspacePath, tool });
         } else if (tool === 'browser') {
           openBrowserTab?.();
@@ -177,7 +174,8 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
           {/* 分隔线：应用内浏览器与"拉起外部程序"是两类行为
               Divider: the in-app browser behaves differently from launching external programs */}
           {option.key === 'browser' && index > 0 && <div className='my-4px mx-8px h-1px bg-[var(--color-border-2)]' />}
-          <div
+          <Button
+            type='text'
             className={`workspace-open-dropdown-item flex items-center gap-8px px-12px py-8px cursor-pointer hover:bg-[var(--color-fill-2)] rounded-4px transition-colors ${
               currentTool === option.key ? 'bg-[var(--color-fill-2)]' : ''
             }`}
@@ -186,7 +184,7 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
             <span className='flex items-center justify-center w-20px h-20px'>{option.icon}</span>
             <span className='text-14px'>{option.label}</span>
             {currentTool === option.key && <span className='ms-auto text-12px text-[var(--color-text-3)]'>✓</span>}
-          </div>
+          </Button>
         </React.Fragment>
       ))}
     </div>

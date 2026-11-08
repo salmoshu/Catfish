@@ -12,6 +12,7 @@ import { initNotificationBridge } from './notificationBridge';
 import { initWebuiBridge } from './webuiBridge';
 import { initThemeBridge } from './themeBridge';
 import { initRemoteEnvironmentBridge } from '@process/remote/remoteEnvironmentRuntime';
+import { initTerminalBridge } from '@process/services/terminal';
 
 export type BridgeDependencies = Record<string, never>;
 
@@ -24,6 +25,7 @@ export function initAllBridges(_deps: BridgeDependencies = {}): void {
   initWebuiBridge();
   initThemeBridge();
   initRemoteEnvironmentBridge();
+  initTerminalBridge();
 }
 
 export {
@@ -34,6 +36,7 @@ export {
   initThemeBridge,
   initWindowControlsBridge,
   initWebuiBridge,
+  initTerminalBridge,
 };
 export { registerWindowMaximizeListeners } from './windowControlsBridge';
 export const disposeAllTeamSessions = (): Promise<void> => Promise.resolve();

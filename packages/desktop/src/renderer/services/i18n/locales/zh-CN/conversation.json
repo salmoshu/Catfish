@@ -631,6 +631,9 @@
       "CODEX_RETRYING": {
         "body": "{{detail}}（累计第 {{attempts}} 次重试，已等待 {{elapsed}}——Codex 正在重试，Catfish 不会中断当前轮次。）"
       },
+      "CODEX_QUOTA_EXHAUSTED": {
+        "body": "所选模型额度已用尽或当前容量不足。请切换模型或稍后重试。详情：{{detail}}"
+      },
       "CODEX_CAPACITY_CONTINUED": {
         "body": "上一轮因所选模型容量不足而结束。Catfish 已自动发送“继续”，Codex 已接受续跑请求。"
       },
@@ -666,6 +669,14 @@
     "tabs": {
       "files": "文件",
       "changes": "变更"
+    },
+    "terminal": {
+      "exited": "终端已退出",
+      "startFailed": "无法启动终端",
+      "splitHorizontal": "左右分屏",
+      "splitVertical": "上下分屏",
+      "unavailable": "交互式终端仅适用于桌面应用中的本地项目。",
+      "selectWorkspace": "请先打开项目文件夹，再使用终端。"
     },
     "addedToChat": "已将 {{name}} 添加到聊天",
     "imported": "已导入 {{count}} 个文件",

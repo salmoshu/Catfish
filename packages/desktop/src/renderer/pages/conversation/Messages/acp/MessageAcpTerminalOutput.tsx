@@ -74,13 +74,17 @@ const MessageAcpTerminalOutput: React.FC<{ message: IMessageAcpTerminalOutput }>
         <Button
           type='text'
           size='mini'
-          className='!flex flex-1 min-w-0 items-center justify-start gap-6px !px-0 !text-start'
+          className='!inline-flex flex-1 min-w-0 !items-center justify-start gap-6px !px-0 !text-start'
           aria-expanded={expanded}
           aria-label={content.command}
           data-testid='terminal-card-toggle'
           onClick={() => setExpanded((value) => !value)}
         >
-          {expanded ? <Down size='14' className='shrink-0' /> : <Right size='14' className='shrink-0' />}
+          {expanded ? (
+            <Down size='14' className='shrink-0 inline-flex items-center justify-center' />
+          ) : (
+            <Right size='14' className='shrink-0 inline-flex items-center justify-center' />
+          )}
           <code
             dir='ltr'
             className='min-w-0 truncate font-mono text-13px text-t-primary'
@@ -94,7 +98,7 @@ const MessageAcpTerminalOutput: React.FC<{ message: IMessageAcpTerminalOutput }>
           <Button
             type='text'
             size='mini'
-            className='shrink-0 text-[var(--color-danger-6)]'
+            className='shrink-0 !inline-flex !items-center !justify-center !text-[rgb(var(--danger-6))] hover:!text-[rgb(var(--danger-7))]'
             aria-label={t('conversation.terminal.stop', { defaultValue: 'Stop' })}
             title={t('conversation.terminal.stop', { defaultValue: 'Stop' })}
             loading={killing}
@@ -106,7 +110,7 @@ const MessageAcpTerminalOutput: React.FC<{ message: IMessageAcpTerminalOutput }>
         <Button
           type='text'
           size='mini'
-          className='shrink-0 text-t-secondary'
+          className='shrink-0 !inline-flex !items-center !justify-center !text-t-secondary'
           aria-label={t('messages.workbench.terminal', { defaultValue: 'Terminal' })}
           title={t('messages.workbench.terminal', { defaultValue: 'Terminal' })}
           data-testid='terminal-open-workbench'

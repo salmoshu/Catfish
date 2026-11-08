@@ -633,6 +633,9 @@
       "CODEX_RETRYING": {
         "body": "{{detail}} ({{attempts}}. deneme, {{elapsed}} geçti — Codex yeniden deniyor; Catfish bu turu kesintiye uğratmıyor.)"
       },
+      "CODEX_QUOTA_EXHAUSTED": {
+        "body": "Seçilen modelin kotası veya kapasitesi tükendi. Modeli değiştirin veya daha sonra tekrar deneyin. Ayrıntılar: {{detail}}"
+      },
       "CODEX_CAPACITY_CONTINUED": {
         "body": "Önceki tur, seçilen modelin kapasitesi dolduğu için sona erdi. Catfish otomatik olarak Devam komutunu gönderdi ve Codex devam isteğini kabul etti."
       },
@@ -668,6 +671,14 @@
     "tabs": {
       "files": "Dosyalar",
       "changes": "Değişiklikler"
+    },
+    "terminal": {
+      "exited": "Terminal kapandı",
+      "startFailed": "Terminal başlatılamadı",
+      "splitHorizontal": "Yatay böl",
+      "splitVertical": "Dikey böl",
+      "unavailable": "Etkileşimli terminaller, masaüstü uygulamasında yerel projeler için kullanılabilir.",
+      "selectWorkspace": "Terminali kullanmak için bir proje klasörü açın."
     },
     "addedToChat": "{{name}} sohbete eklendi",
     "imported": "{{count}} dosya içe aktarıldı",

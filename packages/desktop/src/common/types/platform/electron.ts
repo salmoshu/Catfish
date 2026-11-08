@@ -10,6 +10,31 @@ export interface WebUIStatus {
   initialPassword?: string;
 }
 
+export type EmbeddedTerminalStartParams = {
+  terminal_id: string;
+  cwd: string;
+  cols?: number;
+  rows?: number;
+};
+
+export type EmbeddedTerminalStartResult = { terminal_id: string; error?: string };
+
+export type EmbeddedTerminalOutput = {
+  terminal_id: string;
+  type: 'data' | 'exit';
+  data?: string;
+  exit_code?: number;
+  signal?: number;
+};
+
+export type EmbeddedTerminalAPI = {
+  start: (params: EmbeddedTerminalStartParams) => Promise<EmbeddedTerminalStartResult>;
+  write: (params: { terminal_id: string; data: string }) => Promise<void>;
+  resize: (params: { terminal_id: string; cols: number; rows: number }) => Promise<void>;
+  kill: (params: { terminal_id: string }) => Promise<void>;
+  onOutput: (callback: (output: EmbeddedTerminalOutput) => void) => () => void;
+};
+
 export interface ElectronBridgeAPI {
   emit: (name: string, data: unknown) => Promise<unknown> | void;
   on: (callback: (event: { value: string }) => void) => void;
@@ -22,6 +47,7 @@ export interface ElectronBridgeAPI {
   // Forward feedback diagnostics logs to the main process console / 转发反馈诊断日志到主进程控制台
   logFeedbackEvent?: (payload: { details?: unknown; level: 'info' | 'warn' | 'error'; message: string }) => void;
   recoverCorruptedDatabase?: () => Promise<void>;
+  embeddedTerminal?: EmbeddedTerminalAPI;
 }
 
 export type BackendStartupFailureReason =

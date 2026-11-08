@@ -25,6 +25,7 @@ import useSWR from 'swr';
 import { dispatchWorkspaceHasFilesEvent } from '@/renderer/utils/workspace/workspaceEvents';
 
 import { ipcBridge } from '@/common';
+import type { IMessageAcpTerminalOutput } from '@/common/chat/chatLib';
 import { getBackendEnvironment } from '@/common/adapter/httpBridge';
 import { backendCacheKey, getActiveBackendEnvironment } from '@/renderer/utils/workspace/backendCache';
 import { usePreviewContext } from '@/renderer/pages/conversation/Preview';
@@ -62,6 +63,9 @@ import type { SearchHit } from './search/searchModel';
 import { ScmPanel } from '../SourceControl/ScmPanel';
 import { rediscoverRepos, refreshAllRepos } from '../SourceControl/scmStore';
 import type { WorkbenchSection } from '../Workbench/workbenchActivity';
+import MessageAcpTerminalOutput from '../Messages/acp/MessageAcpTerminalOutput';
+
+const EmbeddedTerminalPanel = React.lazy(() => import('../Workbench/Terminal'));
 
 export type ExplorerContainerProps = {
   /** Owning project id — scopes the store's fact cache + localStorage UI state. */
@@ -69,6 +73,7 @@ export type ExplorerContainerProps = {
   activeSection?: WorkbenchSection;
   contentHidden?: boolean;
   onSectionChange?: (section: WorkbenchSection) => void;
+  terminalActivity?: IMessageAcpTerminalOutput[];
 };
 
 /** The name-entry dialog collects a single file or folder name. */
@@ -156,6 +161,7 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({
   activeSection,
   contentHidden = false,
   onSectionChange,
+  terminalActivity = [],
 }) => {
   const { t } = useTranslation();
   const { openPreview } = usePreviewContext();
@@ -216,6 +222,10 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({
   // (see ScmPanel's lifecycle note) — a tab switch never drops the backend watch.
   const [internalActiveTab, setInternalActiveTab] = useState<'files' | 'changes'>('files');
   const activeTab = activeSection ?? internalActiveTab;
+  const [terminalOpened, setTerminalOpened] = useState(activeTab === 'terminal');
+  useEffect(() => {
+    if (activeTab === 'terminal') setTerminalOpened(true);
+  }, [activeTab]);
   // Busy flag for the top-bar refresh: spins the icon and disables re-click while a
   // refresh is in flight (so rapid clicks don't fan out redundant backend round-trips).
   const [refreshing, setRefreshing] = useState(false);
@@ -580,6 +590,25 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({
         {activeTab === 'changes' && (
           <div className='flex-1 min-h-0'>
             <ScmPanel projectId={projectId} />
+          </div>
+        )}
+        {(terminalOpened || activeTab === 'terminal') && (
+          <div
+            className='flex-1 min-h-0 flex flex-col'
+            style={activeTab === 'terminal' ? undefined : { display: 'none' }}
+          >
+            <div className='min-h-0 flex-1'>
+              <React.Suspense fallback={null}>
+                <EmbeddedTerminalPanel workspacePath={workspacePath} />
+              </React.Suspense>
+            </div>
+            {terminalActivity.length > 0 && (
+              <div className='max-h-40% overflow-y-auto border-t border-[var(--color-border-2)] p-8px'>
+                {terminalActivity.map((message) => (
+                  <MessageAcpTerminalOutput key={message.id} message={message} />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

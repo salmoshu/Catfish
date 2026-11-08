@@ -21,6 +21,7 @@ import fixPath from 'fix-path';
 import * as fs from 'fs';
 import * as path from 'path';
 import { initMainAdapterWithWindow } from './common/adapter/main';
+import { registerTerminalWindow } from './process/services/terminal';
 import { ipcBridge } from './common';
 import { initializeProcess } from './process';
 import { startBackendOrExit } from './process/startup/backendStartup';
@@ -551,6 +552,7 @@ const createWindow = ({ showOnReady = true }: { showOnReady?: boolean } = {}): v
   }
 
   initMainAdapterWithWindow(mainWindow);
+  registerTerminalWindow(mainWindow.webContents);
   bindMainWindowReferences(mainWindow);
 
   setupApplicationMenu();

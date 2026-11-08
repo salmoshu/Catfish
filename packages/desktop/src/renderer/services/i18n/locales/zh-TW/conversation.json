@@ -631,6 +631,9 @@
       "CODEX_RETRYING": {
         "body": "{{detail}}（累計第 {{attempts}} 次重試，已等待 {{elapsed}}——Codex 正在重試，Catfish 不會中斷目前輪次。）"
       },
+      "CODEX_QUOTA_EXHAUSTED": {
+        "body": "所選模型額度已用盡或目前容量不足。請切換模型或稍後重試。詳情：{{detail}}"
+      },
       "CODEX_CAPACITY_CONTINUED": {
         "body": "上一輪因所選模型容量不足而結束。Catfish 已自動傳送「繼續」，Codex 已接受續跑請求。"
       },
@@ -666,6 +669,14 @@
     "tabs": {
       "files": "檔案",
       "changes": "變更"
+    },
+    "terminal": {
+      "exited": "終端機已結束",
+      "startFailed": "無法啟動終端機",
+      "splitHorizontal": "左右分割",
+      "splitVertical": "上下分割",
+      "unavailable": "互動式終端機僅適用於桌面應用程式中的本機專案。",
+      "selectWorkspace": "請先開啟專案資料夾，再使用終端機。"
     },
     "addedToChat": "已將 {{name}} 加入對話",
     "imported": "已匯入 {{count}} 個檔案",

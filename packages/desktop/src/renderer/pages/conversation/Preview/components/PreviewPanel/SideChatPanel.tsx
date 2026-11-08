@@ -11,19 +11,63 @@ import { useTranslation } from 'react-i18next';
 import React, { useEffect, useRef, useState } from 'react';
 import AcpChat from '@/renderer/pages/conversation/platforms/acp/AcpChat';
 import { useGuidAssistantSelection } from '@/renderer/pages/guid/hooks/useGuidAssistantSelection';
+import AcpModelSelector from '@/renderer/components/agent/AcpModelSelector';
+import { getConversationOrNull } from '@/renderer/pages/conversation/utils/conversationCache';
 
 /** A temporary agent conversation retained while hidden and deleted when closed. */
-const SideChatPanel: React.FC<{ workspace?: string }> = ({ workspace }) => {
+const SideChatPanel: React.FC<{ workspace?: string; sourceConversationId?: string }> = ({
+  workspace,
+  sourceConversationId,
+}) => {
   const { t } = useTranslation();
   const conversationNameRef = useRef(t('conversation.welcome.newConversation'));
-  const { selectedAssistant, selectedAssistantId, selectedAssistantBackend } = useGuidAssistantSelection({});
+  // The side chat keeps its original settings when the main conversation changes.
+  const [initialSourceId] = useState(sourceConversationId);
+  const [sourceConversation, setSourceConversation] = useState<TChatConversation | null>(null);
+  const [sourceLoading, setSourceLoading] = useState(Boolean(initialSourceId));
+  const sourceExtra = sourceConversation?.extra as
+    | { current_model_id?: string; thought_level?: string; preset_assistant_id?: string }
+    | undefined;
+  const sourceAssistantId = sourceConversation?.assistant?.id ?? sourceExtra?.preset_assistant_id;
+  const { selectedAssistant, selectedAssistantId, selectedAssistantBackend, assistants } = useGuidAssistantSelection({
+    preselectAssistantId: sourceAssistantId,
+    locationKey: initialSourceId,
+  });
+  const waitingForSourceAssistant = Boolean(
+    sourceAssistantId &&
+    assistants.some((assistant) => assistant.id === sourceAssistantId) &&
+    selectedAssistantId !== sourceAssistantId
+  );
   const [conversation, setConversation] = useState<TChatConversation | null>(null);
   const conversationIdRef = useRef<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (!selectedAssistantId) return;
+    let cancelled = false;
+    if (!initialSourceId) {
+      setSourceConversation(null);
+      setSourceLoading(false);
+      return;
+    }
+    setSourceLoading(true);
+    void getConversationOrNull(initialSourceId)
+      .then((source) => {
+        if (!cancelled) setSourceConversation(source);
+      })
+      .catch(() => {
+        if (!cancelled) setSourceConversation(null);
+      })
+      .finally(() => {
+        if (!cancelled) setSourceLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [initialSourceId]);
+
+  useEffect(() => {
+    if (!selectedAssistantId || sourceLoading || waitingForSourceAssistant) return;
     let cancelled = false;
     setConversation(null);
     setError(null);
@@ -39,6 +83,8 @@ const SideChatPanel: React.FC<{ workspace?: string }> = ({ workspace }) => {
           custom_workspace: Boolean(workspace),
           is_temporary_workspace: true,
           side_chat: true,
+          ...(sourceExtra?.current_model_id ? { current_model_id: sourceExtra.current_model_id } : {}),
+          ...(sourceExtra?.thought_level ? { thought_level: sourceExtra.thought_level } : {}),
         },
       })
       .then((created) => {
@@ -59,7 +105,15 @@ const SideChatPanel: React.FC<{ workspace?: string }> = ({ workspace }) => {
         conversationIdRef.current = null;
       }
     };
-  }, [selectedAssistantId, workspace, attempt]);
+  }, [
+    selectedAssistantId,
+    waitingForSourceAssistant,
+    sourceExtra?.current_model_id,
+    sourceExtra?.thought_level,
+    sourceLoading,
+    workspace,
+    attempt,
+  ]);
 
   if (error) {
     return (
@@ -75,6 +129,15 @@ const SideChatPanel: React.FC<{ workspace?: string }> = ({ workspace }) => {
     );
   }
   if (!conversation) return <Spin className='m-24px' />;
+  const createdExtra = conversation.extra as { current_model_id?: string; thought_level?: string } | undefined;
+  const modelSelector = (
+    <AcpModelSelector
+      conversation_id={conversation.id}
+      backend={selectedAssistantBackend}
+      initialModelId={createdExtra?.current_model_id}
+      initialThoughtLevel={createdExtra?.thought_level}
+    />
+  );
   return (
     <AcpChat
       conversation_id={conversation.id}
@@ -82,6 +145,7 @@ const SideChatPanel: React.FC<{ workspace?: string }> = ({ workspace }) => {
       backend={selectedAssistantBackend || 'kimi'}
       agent_name={selectedAssistant?.name}
       assistantId={selectedAssistantId ?? undefined}
+      composerTools={modelSelector}
     />
   );
 };

@@ -47,6 +47,35 @@ describe('agent quota notices', () => {
     expect(transformMessage(quotaFrame('finish'))?.id).toBe(first?.id);
     expect(transformMessage({ ...quotaFrame(), turn_id: 'next-turn' })?.id).not.toBe(first?.id);
   });
+
+  it('keeps a terminal quota error visible at the end of the turn', () => {
+    const tip = transformMessage({
+      ...quotaFrame('error'),
+      data: {
+        message: 'Selected model is at capacity',
+        code: 'MODEL_CAPACITY_EXHAUSTED',
+      },
+    }) as IMessageTips;
+
+    expect(tip.type).toBe('tips');
+    expect(tip.content.type).toBe('warning');
+    expect(tip.content.code).toBe('CODEX_QUOTA_EXHAUSTED');
+    expect(tip.content.content).toContain('Selected model is at capacity');
+  });
+
+  it('retains the provider quota explanation nested inside a raw error', () => {
+    const notice = getAgentQuotaNotice({
+      ...quotaFrame('error'),
+      data: { rawError: { error: { message: 'No capacity available for this model.' } } },
+    });
+    expect(notice).toBe('No capacity available for this model.');
+  });
+
+  it('does not label ordinary connection errors as exhausted model capacity', () => {
+    const tip = transformMessage({ ...quotaFrame('error'), data: { message: 'Connection timed out' } }) as IMessageTips;
+    expect(tip.content.code).not.toBe('CODEX_QUOTA_EXHAUSTED');
+    expect(tip.content.type).toBe('error');
+  });
 });
 
 function createThinkingMessage(msgId: string, content: string): IMessageThinking {

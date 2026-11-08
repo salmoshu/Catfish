@@ -631,6 +631,9 @@
       "CODEX_RETRYING": {
         "body": "{{detail}}（累計 {{attempts}} 回目の再試行、経過 {{elapsed}} — Codex が再試行中です。Catfish はこのターンを中断しません。）"
       },
+      "CODEX_QUOTA_EXHAUSTED": {
+        "body": "選択したモデルの利用枠または処理容量が不足しています。モデルを切り替えるか、しばらくしてから再試行してください。詳細：{{detail}}"
+      },
       "CODEX_CAPACITY_CONTINUED": {
         "body": "選択したモデルの容量不足で前のターンが終了しました。Catfish が自動で「続き」を送信し、Codex が続行リクエストを受け付けました。"
       },
@@ -666,6 +669,14 @@
     "tabs": {
       "files": "ファイル",
       "changes": "変更"
+    },
+    "terminal": {
+      "exited": "ターミナルが終了しました",
+      "startFailed": "ターミナルを起動できません",
+      "splitHorizontal": "左右に分割",
+      "splitVertical": "上下に分割",
+      "unavailable": "対話型ターミナルは、デスクトップアプリのローカルプロジェクトで利用できます。",
+      "selectWorkspace": "ターミナルを使うには、プロジェクトフォルダーを開いてください。"
     },
     "addedToChat": "{{name}} をチャットに追加しました",
     "imported": "{{count}} 件のファイルをインポートしました",

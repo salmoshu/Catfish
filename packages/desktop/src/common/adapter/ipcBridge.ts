@@ -96,6 +96,7 @@ import type {
 } from '../update/updateTypes';
 import type { AgentMetadata } from '@/renderer/utils/model/agentTypes';
 import type { Theme } from '@/common/theme/types';
+import type { EmbeddedTerminalAPI } from '@/common/types/platform/electron';
 import type { AttachFolderRequest, ProjectDetailDto, ProjectEntryDto } from '@/common/types/project';
 import type { ChatFileRef, ContentEncoding } from '@/common/types/chatFile';
 import type { ProtocolDetectionRequest, ProtocolDetectionResponse } from '../utils/protocolDetector';
@@ -161,6 +162,35 @@ export const shell = {
   openFolderWith: httpPost<void, { folder_path: string; tool: 'vscode' | 'terminal' | 'explorer' }>(
     '/api/shell/open-folder-with'
   ),
+};
+
+// ---------------------------------------------------------------------------
+// Embedded terminal (Electron main process PTY)
+// ---------------------------------------------------------------------------
+
+const getEmbeddedTerminal = (): EmbeddedTerminalAPI => {
+  const api = typeof window !== 'undefined' ? window.electronAPI?.embeddedTerminal : undefined;
+  if (!api) throw new Error('Embedded terminals require the desktop app');
+  return api;
+};
+
+const invokeTerminal = <Result>(invoke: (api: EmbeddedTerminalAPI) => Promise<Result>): Promise<Result> =>
+  Promise.resolve().then(() => invoke(getEmbeddedTerminal()));
+
+export const embeddedTerminal = {
+  start: {
+    invoke: (params: Parameters<EmbeddedTerminalAPI['start']>[0]) => invokeTerminal((api) => api.start(params)),
+  },
+  write: {
+    invoke: (params: Parameters<EmbeddedTerminalAPI['write']>[0]) => invokeTerminal((api) => api.write(params)),
+  },
+  resize: {
+    invoke: (params: Parameters<EmbeddedTerminalAPI['resize']>[0]) => invokeTerminal((api) => api.resize(params)),
+  },
+  kill: { invoke: (params: Parameters<EmbeddedTerminalAPI['kill']>[0]) => invokeTerminal((api) => api.kill(params)) },
+  output: {
+    on: (callback: Parameters<EmbeddedTerminalAPI['onOutput']>[0]) => getEmbeddedTerminal().onOutput(callback),
+  },
 };
 
 // ---------------------------------------------------------------------------

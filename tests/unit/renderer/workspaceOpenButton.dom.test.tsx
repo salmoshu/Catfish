@@ -9,7 +9,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import WorkspaceOpenButton from '@/renderer/pages/conversation/components/ChatLayout/WorkspaceOpenButton';
 
-const mocks = vi.hoisted(() => ({ openFolderWith: vi.fn(), checkToolInstalled: vi.fn() }));
+const mocks = vi.hoisted(() => ({ openFolderWith: vi.fn(), checkToolInstalled: vi.fn(), openSection: vi.fn() }));
 vi.mock('@/common', () => ({
   ipcBridge: {
     shell: {
@@ -19,6 +19,9 @@ vi.mock('@/common', () => ({
   },
 }));
 vi.mock('@/renderer/utils/platform', () => ({ isElectronDesktop: () => true }));
+vi.mock('@/renderer/pages/conversation/Workbench/workbenchActivityStore', () => ({
+  openWorkbenchSection: mocks.openSection,
+}));
 vi.mock('@/renderer/pages/conversation/Preview/context/PreviewContext', () => ({
   useOptionalPreviewContext: () => ({ openBrowserTab: vi.fn() }),
 }));
@@ -43,5 +46,13 @@ describe('WorkspaceOpenButton', () => {
     expect(mocks.openFolderWith).not.toHaveBeenCalled();
     fireEvent.click(await screen.findByText('File Explorer'));
     expect(mocks.openFolderWith).toHaveBeenCalledWith({ folder_path: '/repo', tool: 'explorer' });
+  });
+
+  it('opens the built-in terminal panel without launching an external program', async () => {
+    render(<WorkspaceOpenButton workspacePath='/repo' isTemporary={false} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Open workspace folder' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Terminal' }));
+    expect(mocks.openSection).toHaveBeenCalledWith('terminal');
+    expect(mocks.openFolderWith).not.toHaveBeenCalled();
   });
 });

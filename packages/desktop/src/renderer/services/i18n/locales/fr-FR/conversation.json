@@ -631,6 +631,9 @@
       "CODEX_RETRYING": {
         "body": "{{detail}} (tentative {{attempts}}, {{elapsed}} écoulées — Codex réessaie ; Catfish n'interrompt pas ce tour.)"
       },
+      "CODEX_QUOTA_EXHAUSTED": {
+        "body": "Le quota ou la capacité du modèle sélectionné est épuisé. Changez de modèle ou réessayez plus tard. Détails : {{detail}}"
+      },
       "CODEX_CAPACITY_CONTINUED": {
         "body": "Le tour précédent s'est terminé car le modèle sélectionné est saturé. Catfish a envoyé Continuer automatiquement et Codex a accepté la poursuite."
       },
@@ -666,6 +669,14 @@
     "tabs": {
       "files": "Fichiers",
       "changes": "Modifications"
+    },
+    "terminal": {
+      "exited": "Le terminal est fermé",
+      "startFailed": "Impossible de démarrer le terminal",
+      "splitHorizontal": "Diviser horizontalement",
+      "splitVertical": "Diviser verticalement",
+      "unavailable": "Les terminaux interactifs sont disponibles dans l’application de bureau pour les projets locaux.",
+      "selectWorkspace": "Ouvrez un dossier de projet pour utiliser le terminal."
     },
     "addedToChat": "{{name}} ajouté au chat",
     "imported": "{{count}} fichier(s) importé(s)",
