@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { relative, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { tmpdir } from 'node:os';
 
 const projectRoot = resolve(__dirname, '../..');
 const itWithBash = spawnSync('bash', ['--version'], { encoding: 'utf8' }).status === 0 ? it : it.skip;
@@ -127,13 +126,16 @@ describe('release packaging configuration', () => {
   itWithBash(
     'fails release asset preparation when a mac zip is missing',
     () => {
-      const tempDir = mkdtempSync(resolve(tmpdir(), 'aionui-release-assets-'));
+      const tempDir = mkdtempSync(resolve(projectRoot, '.tmp_release-assets-'));
       const artifactsDir = resolve(tempDir, 'build-artifacts');
       const outputDir = resolve(tempDir, 'release-assets');
+      // Relative paths work in both WSL and Git Bash without Windows drive conversion.
+      const shellArtifactsDir = relative(projectRoot, artifactsDir).replace(/\\/g, '/');
+      const shellOutputDir = relative(projectRoot, outputDir).replace(/\\/g, '/');
 
       try {
         const env = { ...process.env, MOCK_VERSION: '1.0.0' };
-        const createResult = spawnSync('bash', ['scripts/create-mock-release-artifacts.sh', artifactsDir], {
+        const createResult = spawnSync('bash', ['scripts/create-mock-release-artifacts.sh', shellArtifactsDir], {
           cwd: projectRoot,
           env,
           encoding: 'utf8',
@@ -142,11 +144,15 @@ describe('release packaging configuration', () => {
 
         rmSync(resolve(artifactsDir, 'macos-build-arm64', 'Catfish-1.0.0-mac-arm64.zip'), { force: true });
 
-        const prepareResult = spawnSync('bash', ['scripts/prepare-release-assets.sh', artifactsDir, outputDir], {
-          cwd: projectRoot,
-          env,
-          encoding: 'utf8',
-        });
+        const prepareResult = spawnSync(
+          'bash',
+          ['scripts/prepare-release-assets.sh', shellArtifactsDir, shellOutputDir],
+          {
+            cwd: projectRoot,
+            env,
+            encoding: 'utf8',
+          }
+        );
 
         expect(prepareResult.status).not.toBe(0);
         expect(`${prepareResult.stdout}\n${prepareResult.stderr}`).toContain('Missing macOS zip artifact');
