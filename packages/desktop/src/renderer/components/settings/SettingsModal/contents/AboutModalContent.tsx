@@ -5,7 +5,7 @@
  */
 
 import { Button, Divider, Message, Typography } from '@arco-design/web-react';
-import { Github, Right } from '@icon-park/react';
+import { Right } from '@icon-park/react';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
@@ -98,16 +98,6 @@ const AboutModalContent: React.FC = () => {
               <span className='px-10px py-4px rd-6px text-13px bg-fill-2 text-t-primary font-500'>
                 v{__APP_VERSION__}
               </span>
-              <div
-                className='text-t-primary cursor-pointer hover:text-t-secondary transition-colors p-4px'
-                onClick={() =>
-                  openLink('https://github.com/salmoshu/Catfish').catch((error) =>
-                    console.error('Failed to open link:', error)
-                  )
-                }
-              >
-                <Github theme='outline' size='20' />
-              </div>
             </div>
             {isElectron && (
               <Button type='primary' loading={checking} onClick={() => void checkUpdate()}>
