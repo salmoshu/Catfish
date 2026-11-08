@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.23](https://github.com/salmoshu/Catfish/releases/tag/v0.4.23) (2026-11-08)
+
+### Features
+
+- **terminal:** add an interactive terminal for desktop local projects with horizontal and vertical splits, drag resizing, and keyboard controls
+- **side chats:** inherit the source conversation's assistant, selected model, and reasoning effort, with an inline model selector
+
+### Bug Fixes
+
+- **terminal:** preserve running shells and output across tab switches and pane splits, retain the initial shell prompt, and clean up processes when their window closes or reloads
+- **terminal controls:** align command-card action icons and use the correct red color token for Stop
+- **side chats:** keep the temporary conversation when switching main conversations and wait for source settings before creating it
+- **agent errors:** retain quota and capacity exhaustion explanations at the end of a turn, including nested provider errors, with translations in all 13 supported languages
+
+---
+
 ## [0.4.22](https://github.com/salmoshu/Catfish/releases/tag/v0.4.22) (2026-11-07)
 
 ### Features
