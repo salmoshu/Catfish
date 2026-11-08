@@ -222,9 +222,9 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({
   // (see ScmPanel's lifecycle note) — a tab switch never drops the backend watch.
   const [internalActiveTab, setInternalActiveTab] = useState<'files' | 'changes'>('files');
   const activeTab = activeSection ?? internalActiveTab;
-  const [terminalOpened, setTerminalOpened] = useState(activeTab === 'terminal');
+  const [terminalOpened, setTerminalOpened] = useState(activeTab === 'shell');
   useEffect(() => {
-    if (activeTab === 'terminal') setTerminalOpened(true);
+    if (activeTab === 'shell') setTerminalOpened(true);
   }, [activeTab]);
   // Busy flag for the top-bar refresh: spins the icon and disables re-click while a
   // refresh is in flight (so rapid clicks don't fan out redundant backend round-trips).
@@ -592,23 +592,22 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({
             <ScmPanel projectId={projectId} />
           </div>
         )}
-        {(terminalOpened || activeTab === 'terminal') && (
-          <div
-            className='flex-1 min-h-0 flex flex-col'
-            style={activeTab === 'terminal' ? undefined : { display: 'none' }}
-          >
+        {activeTab === 'terminal' && (
+          <div className='workbench-activity-list'>
+            {terminalActivity.length > 0 ? (
+              terminalActivity.map((message) => <MessageAcpTerminalOutput key={message.id} message={message} />)
+            ) : (
+              <div className='workbench-empty'>{t('messages.workbench.terminalEmpty')}</div>
+            )}
+          </div>
+        )}
+        {(terminalOpened || activeTab === 'shell') && (
+          <div className='flex-1 min-h-0 flex flex-col' style={activeTab === 'shell' ? undefined : { display: 'none' }}>
             <div className='min-h-0 flex-1'>
               <React.Suspense fallback={null}>
                 <EmbeddedTerminalPanel workspacePath={workspacePath} />
               </React.Suspense>
             </div>
-            {terminalActivity.length > 0 && (
-              <div className='max-h-40% overflow-y-auto border-t border-[var(--color-border-2)] p-8px'>
-                {terminalActivity.map((message) => (
-                  <MessageAcpTerminalOutput key={message.id} message={message} />
-                ))}
-              </div>
-            )}
           </div>
         )}
       </div>

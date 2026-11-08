@@ -48,11 +48,11 @@ describe('WorkspaceOpenButton', () => {
     expect(mocks.openFolderWith).toHaveBeenCalledWith({ folder_path: '/repo', tool: 'explorer' });
   });
 
-  it('opens the built-in terminal panel without launching an external program', async () => {
+  it('opens an interactive shell without replacing the agent terminal activity tab', async () => {
     render(<WorkspaceOpenButton workspacePath='/repo' isTemporary={false} />);
     fireEvent.click(screen.getByRole('button', { name: 'Open workspace folder' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Terminal' }));
-    expect(mocks.openSection).toHaveBeenCalledWith('terminal');
+    expect(mocks.openSection).toHaveBeenCalledWith('shell');
     expect(mocks.openFolderWith).not.toHaveBeenCalled();
   });
 });

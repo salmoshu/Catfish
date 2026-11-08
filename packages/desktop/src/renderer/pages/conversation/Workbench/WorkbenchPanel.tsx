@@ -17,7 +17,16 @@ import {
 import { useWorkbenchPanelState } from './workbenchPanelState';
 import './workbench.css';
 
-const SECTIONS = new Set<WorkbenchSection>(['files', 'changes', 'preview', 'terminal', 'agents', 'plan', 'side-chat']);
+const SECTIONS = new Set<WorkbenchSection>([
+  'files',
+  'changes',
+  'preview',
+  'terminal',
+  'shell',
+  'agents',
+  'plan',
+  'side-chat',
+]);
 const WorkbenchAgentCard: React.FC<{ agent: NormalizedToolCall }> = ({ agent }) => {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
@@ -91,9 +100,7 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
       const section = (event as CustomEvent<WorkbenchOpenDetail>).detail?.section;
       if (!SECTIONS.has(section)) return;
       update((current) =>
-        section === 'plan'
-          ? { ...current, workspaceOpen: false, planOpen: true }
-          : { ...current, section, workspaceOpen: true }
+        section === 'plan' ? { ...current, planOpen: true } : { ...current, section, workspaceOpen: true }
       );
     };
     window.addEventListener(WORKBENCH_OPEN_EVENT, handleOpen);
@@ -103,7 +110,7 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
   const selectSection = useCallback(
     (section: WorkbenchSection) => {
       if (section === 'plan') {
-        update((current) => ({ ...current, workspaceOpen: false, planOpen: true }));
+        update((current) => ({ ...current, planOpen: true }));
         return;
       }
       update((current) => ({ ...current, section, workspaceOpen: true }));

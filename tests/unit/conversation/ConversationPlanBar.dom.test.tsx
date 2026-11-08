@@ -242,7 +242,7 @@ describe('independent workspace and plan panels', () => {
   it.each([
     [false, false, 'workspace', true, false],
     [false, false, 'plan', false, true],
-    [true, false, 'plan', false, true],
+    [true, false, 'plan', true, true],
     [true, false, 'workspace', false, false],
     [false, true, 'workspace', true, true],
     [false, true, 'plan', false, false],
@@ -297,15 +297,27 @@ describe('independent workspace and plan panels', () => {
     expect(screen.getByText('conversation.planBar.empty')).toBeVisible();
   });
 
-  it('floats the plan and releases its dock when the left sidebar is opened', () => {
+  it('keeps the plan in the right dock when the left sidebar is opened', () => {
     const view = setupPanels(false, true);
     expect(document.querySelector('[data-plan-presentation]')).toBeNull();
     scope.siderCollapsed = false;
     view.rerender(<Harness />);
-    expect(screen.getByRole('dialog', { name: 'conversation.planBar.title' })).toBeVisible();
-    expect(document.querySelector('[data-project-panel-host]')).toHaveAttribute('data-collapsed', 'true');
-    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByTestId('conversation-plan-bar')).toBeVisible();
+    expect(document.querySelector('[data-project-panel-host]')).toHaveAttribute('data-collapsed', 'false');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    scope.siderCollapsed = true;
+  });
+
+  it('keeps the workspace mounted when opening a floating plan, including an open left sidebar', () => {
+    scope.siderCollapsed = false;
+    setupPanels(true, false);
+    const explorer = screen.getByTestId('workspace-explorer');
+    fireEvent.click(screen.getByRole('button', { name: 'conversation.planBar.title' }));
+    expect(screen.getByRole('dialog', { name: 'conversation.planBar.title' })).toBeVisible();
+    expect(screen.getByTestId('workspace-explorer')).toBe(explorer);
+    expectPresentation(true, true);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expectPresentation(true, false);
     scope.siderCollapsed = true;
   });
 });

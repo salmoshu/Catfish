@@ -11,7 +11,6 @@ import { useWorkbenchPanelState } from '@/renderer/pages/conversation/Workbench/
 import { WorkbenchPanel } from '@/renderer/pages/conversation/Workbench';
 import { usePreviewContext } from '@/renderer/pages/conversation/Preview';
 import type { WorkbenchSection } from '@/renderer/pages/conversation/Workbench/workbenchActivity';
-import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 
 export type ProjectPanelHostProps = {
   widthPx: number;
@@ -35,8 +34,7 @@ export const ProjectPanelHost: React.FC<ProjectPanelHostProps> = ({
   const projectId = useCurrentProject();
   const conversationId = useCurrentConversation();
   const { state } = useWorkbenchPanelState(projectId, conversationId);
-  const layout = useLayoutContext();
-  const planDocked = state.planOpen && !state.workspaceOpen && (layout?.siderCollapsed ?? true);
+  const planDocked = state.planOpen && !state.workspaceOpen;
   const hostCollapsed = collapsed || (!state.workspaceOpen && !planDocked);
   const { isOpen: previewOpen } = usePreviewContext();
   const mountIdRef = useRef<string>('');

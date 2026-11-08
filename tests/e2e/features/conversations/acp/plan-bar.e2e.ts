@@ -1,4 +1,6 @@
+import fs from 'fs';
 import os from 'os';
+import path from 'path';
 import type { Page } from '@playwright/test';
 import { test, expect } from '../../../fixtures';
 import { findAssistantIdForBackend, goToGuid } from '../../../helpers';
@@ -27,12 +29,13 @@ async function ensureRendererReady(page: Page): Promise<void> {
   await page.waitForFunction(
     () =>
       window.location.href !== 'about:blank' &&
-      typeof (window as unknown as { __backendPort?: number }).__backendPort === 'number',
+      ((window as unknown as { __backendPort?: number }).__backendPort ?? 0) > 0,
+    undefined,
     { timeout: 30_000 }
   );
 }
 
-async function createAcpConversation(page: Page): Promise<string> {
+async function createAcpConversation(page: Page, workspace: string): Promise<string> {
   await goToGuid(page);
   await ensureRendererReady(page);
   // No `requireAvailable`: this test never talks to the agent — it drives the UI
@@ -45,7 +48,7 @@ async function createAcpConversation(page: Page): Promise<string> {
   const conversation = await httpPost<{ id: string }>(page, '/api/conversations', {
     name: `E2E plan bar ${Date.now()}`,
     assistant: { id: assistantId },
-    extra: { workspace: os.tmpdir(), custom_workspace: true, session_mode: 'full-access' },
+    extra: { workspace, custom_workspace: true, session_mode: 'full-access' },
   });
   if (!conversation?.id) {
     throw new Error('POST /api/conversations succeeded but did not return a conversation id');
@@ -108,16 +111,30 @@ async function endPlanTurn(page: Page, conversationId: string): Promise<void> {
 }
 
 test.describe('conversation plan bar', () => {
-  test('shows live plan progress and keeps the completed plan visible', async ({ page }) => {
+  test('shows live plan progress and keeps the completed plan visible', async ({ page, electronApp }, testInfo) => {
     let conversationId: string | null = null;
+    const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'catfish-plan-'));
 
     try {
-      conversationId = await createAcpConversation(page);
+      conversationId = await createAcpConversation(page, workspace);
       await openConversationPage(page, conversationId);
       await waitForController(page, conversationId);
 
       const bar = page.locator('[data-testid="conversation-plan-bar"]');
       await expect(bar).toHaveCount(0);
+      await page.evaluate(() => {
+        const workspace =
+          document.querySelector('[data-project-panel-host]') ?? document.querySelector('.chat-layout-right-sider');
+        if (workspace && workspace.getBoundingClientRect().width > 0) {
+          window.dispatchEvent(new CustomEvent('aionui-workspace-toggle', { cancelable: true }));
+        }
+      });
+      const planTrigger = page.locator(`[data-plan-card-slot="${conversationId}"] button`);
+      await planTrigger.click();
+      const dockedPlan = page.locator(
+        `[data-plan-panel-slot="${conversationId}"] [data-testid="conversation-plan-bar"]`
+      );
+      await expect(dockedPlan).toBeVisible();
 
       // 1. The plan appears, expanded, with every entry and a 0/3 progress label.
       await emitPlan(page, conversationId, ENTRIES);
@@ -146,12 +163,34 @@ test.describe('conversation plan bar', () => {
       await endPlanTurn(page, conversationId);
       await expect(bar).toBeVisible({ timeout: 15_000 });
       await expect(bar).toContainText('1/3');
-      await expect(bar.locator('[data-status="in_progress"]')).toHaveCount(1);
+      await expect(bar.locator('[data-status="in_progress"][aria-current="step"]')).toHaveCount(1);
       await expect(bar.getByRole('button')).toHaveCount(0);
+
+      // Opening the workspace moves the plan into a floating card without
+      // collapsing the workspace. Closing the workspace docks the same plan.
+      await page.evaluate(() => window.dispatchEvent(new CustomEvent('aionui-workspace-toggle', { cancelable: true })));
+      await expect(page.locator('[data-plan-presentation="floating"]')).toBeVisible();
+      await expect(dockedPlan).toHaveCount(0);
+      await testInfo.attach('floating-plan', { body: await page.screenshot(), contentType: 'image/png' });
+      const inputWidth = await page
+        .getByTestId('sendbox-input')
+        .evaluate((element) => element.getBoundingClientRect().width);
+      await planTrigger.click();
+      await expect(page.locator('[data-plan-presentation="floating"]')).toHaveCount(0);
+      await expect
+        .poll(() => page.getByTestId('sendbox-input').evaluate((element) => element.getBoundingClientRect().width))
+        .toBe(inputWidth);
+      await page.evaluate(() => window.dispatchEvent(new CustomEvent('aionui-workspace-toggle', { cancelable: true })));
+      await planTrigger.click();
+      await expect(dockedPlan).toBeVisible();
+      await expect(page.locator('[data-plan-presentation="floating"]')).toHaveCount(0);
+      await testInfo.attach('docked-plan', { body: await page.screenshot(), contentType: 'image/png' });
     } finally {
       if (conversationId) {
         await httpDelete(page, `/api/conversations/${encodeURIComponent(conversationId)}`).catch(() => {});
       }
+      await electronApp.close();
+      fs.rmSync(workspace, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
     }
   });
 });

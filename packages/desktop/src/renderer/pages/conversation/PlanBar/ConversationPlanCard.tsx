@@ -7,7 +7,6 @@ import { useTranslation } from 'react-i18next';
 import { useCurrentProject } from '@renderer/pages/conversation/explorer/currentProjectStore';
 import { useWorkbenchPanelState } from '@renderer/pages/conversation/Workbench/workbenchPanelState';
 import ConversationPlanBar from './ConversationPlanBar';
-import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import styles from './ConversationPlanBar.module.css';
 
 const PlanProgressIcon: React.FC = () => (
@@ -26,20 +25,19 @@ const ConversationPlanCard: React.FC<{ conversation_id: string }> = ({ conversat
   const { t } = useTranslation();
   const projectId = useCurrentProject();
   const { state, toggle } = useWorkbenchPanelState(projectId, conversation_id);
-  const layout = useLayoutContext();
-  const floating = state.workspaceOpen || layout?.siderCollapsed === false || !projectId;
   useEffect(() => {
-    if (!state.planOpen || !floating) return;
+    if (!state.planOpen || !state.workspaceOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') toggle('plan');
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [state.planOpen, floating, toggle]);
+  }, [state.planOpen, state.workspaceOpen, toggle]);
   const [slots, setSlots] = useState<{ trigger: Element | null; panel: Element | null }>({
     trigger: null,
     panel: null,
   });
+  const floating = state.workspaceOpen || (!projectId && !slots.panel);
   useLayoutEffect(() => {
     const findSlots = () => {
       const trigger = document.querySelector(`[data-plan-card-slot="${conversation_id}"]`);

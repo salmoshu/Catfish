@@ -1,3 +1,7 @@
+.toolbar :global(.arco-btn) {
+  color: var(--text-secondary) !important;
+}
+
 .pane {
   position: absolute;
   min-width: 0;
@@ -30,7 +34,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-text-2);
+  color: var(--color-text-2) !important;
 }
 
 .divider:global(.arco-btn) {

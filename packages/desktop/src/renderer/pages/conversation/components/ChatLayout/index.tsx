@@ -25,6 +25,8 @@ import { Button, Layout as ArcoLayout } from '@arco-design/web-react';
 import { Close } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import SideChatPanel from '@/renderer/pages/conversation/Preview/components/PreviewPanel/SideChatPanel';
+import { useCurrentProject } from '@/renderer/pages/conversation/explorer/currentProjectStore';
+import { useWorkbenchPanelState } from '@/renderer/pages/conversation/Workbench/workbenchPanelState';
 import {
   WORKBENCH_OPEN_EVENT,
   type WorkbenchOpenDetail,
@@ -32,6 +34,8 @@ import {
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './chat-layout.css';
+
+const EmbeddedTerminalPanel = React.lazy(() => import('../../Workbench/Terminal'));
 
 // headerExtra allows injecting custom actions (e.g., model picker) into the header's right area
 const ChatLayout: React.FC<{
@@ -94,23 +98,56 @@ const ChatLayout: React.FC<{
   const isPreviewOpen = isPreviewOpenRaw && !previewHosted;
 
   // --- Hook A: workspace collapse ---
-  const { rightSiderCollapsed, setRightSiderCollapsed } = useWorkspaceCollapse({
+  const { rightSiderCollapsed: workspaceCollapsed, setRightSiderCollapsed } = useWorkspaceCollapse({
     workspaceEnabled,
     isMobile,
     conversation_id,
     preferenceKey: workspacePreferenceKey ?? conversation_id,
     isTemporaryWorkspace,
   });
+  const projectId = useCurrentProject();
+  const {
+    state: panels,
+    update: updatePanels,
+    toggle: togglePanel,
+  } = useWorkbenchPanelState(projectId, conversation_id ?? null);
+  const localPlanDocked = workspaceEnabled && !projectId && panels.planOpen && workspaceCollapsed;
+  const rightSiderCollapsed = workspaceCollapsed && !localPlanDocked;
+  const [shellOpened, setShellOpened] = useState(false);
   useEffect(() => {
-    if (previewHosted) return;
+    if (!workspaceEnabled || projectId) return;
+    updatePanels((current) => ({ ...current, workspaceOpen: !workspaceCollapsed }));
+  }, [workspaceEnabled, projectId, workspaceCollapsed, updatePanels]);
+  useEffect(() => {
+    if (previewHosted || projectId || !workspaceEnabled) return;
     const openSidePanel = (event: Event) => {
-      if ((event as CustomEvent<WorkbenchOpenDetail>).detail?.section === 'side-chat') setRightSiderCollapsed(false);
+      const section = (event as CustomEvent<WorkbenchOpenDetail>).detail?.section;
+      if (section === 'side-chat' || section === 'shell') {
+        if (section === 'shell') setShellOpened(true);
+        updatePanels((current) => ({ ...current, section }));
+        setRightSiderCollapsed(false);
+      }
     };
     window.addEventListener(WORKBENCH_OPEN_EVENT, openSidePanel);
     return () => window.removeEventListener(WORKBENCH_OPEN_EVENT, openSidePanel);
-  }, [previewHosted, setRightSiderCollapsed]);
-  const localSideChat = !previewHosted && sideChat;
-  const localSiderTitle = localSideChat ? (
+  }, [previewHosted, projectId, workspaceEnabled, updatePanels, setRightSiderCollapsed]);
+  const localShell = !projectId && panels.section === 'shell' && shellOpened;
+  const localSideChat = !previewHosted && !localShell && sideChat;
+  const localSiderTitle = localPlanDocked ? (
+    <div className='flex items-center gap-8px min-w-0 flex-1 text-t-primary'>
+      <span className='truncate flex-1'>{t('conversation.planBar.title')}</span>
+      <Button
+        type='text'
+        size='mini'
+        className='!text-t-secondary'
+        icon={<Close size={14} />}
+        aria-label={t('common.close')}
+        onClick={() => togglePanel('plan')}
+      />
+    </div>
+  ) : localShell ? (
+    t('messages.workbench.terminal')
+  ) : localSideChat ? (
     <div className='flex items-center gap-8px min-w-0 flex-1'>
       <span className='truncate flex-1'>{localSideChat.title || t('conversation.welcome.newConversation')}</span>
       <Button
@@ -126,11 +163,21 @@ const ChatLayout: React.FC<{
   );
   const localSider = (
     <>
-      <div hidden={Boolean(localSideChat)} className='h-full'>
+      {workspaceEnabled && !projectId && conversation_id && (
+        <div hidden={!localPlanDocked} className='h-full min-h-0' data-plan-panel-slot={conversation_id} />
+      )}
+      <div hidden={Boolean(localSideChat) || localShell || localPlanDocked} className='h-full'>
         {props.sider}
       </div>
+      {shellOpened && (
+        <div hidden={!localShell || localPlanDocked} className='h-full min-h-0'>
+          <React.Suspense fallback={null}>
+            <EmbeddedTerminalPanel workspacePath={workspacePath} />
+          </React.Suspense>
+        </div>
+      )}
       {localSideChat && (
-        <div className='h-full flex flex-col min-h-0'>
+        <div hidden={localPlanDocked} className='h-full flex flex-col min-h-0'>
           <SideChatPanel workspace={localSideChat.workspace} sourceConversationId={conversation_id} />
         </div>
       )}
@@ -250,7 +297,7 @@ const ChatLayout: React.FC<{
             props.headerLeading ??
             ((backend || presetAssistant) && (
               <AgentLogoIcon
-                backend={backend}
+                backend={presetAssistant?.backend || backend}
                 agent_name={display_name}
                 agentLogo={presetAssistant?.logo}
                 agentLogoIsEmoji={presetAssistant?.isEmoji}

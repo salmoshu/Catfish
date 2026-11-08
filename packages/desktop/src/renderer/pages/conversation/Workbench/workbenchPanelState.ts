@@ -10,15 +10,13 @@ export type WorkbenchPanelState = {
 type PanelAction = 'workspace' | 'plan';
 const states = new Map<string, WorkbenchPanelState>();
 const listeners = new Set<() => void>();
-const sections = new Set(['files', 'changes', 'preview', 'terminal', 'agents']);
+const sections = new Set(['files', 'changes', 'preview', 'terminal', 'shell', 'agents']);
 
 /** Apply the workspace/plan interaction rules without changing either panel's content. */
 export function toggleWorkbenchPanel(state: WorkbenchPanelState, action: PanelAction): WorkbenchPanelState {
   return action === 'workspace'
     ? { ...state, workspaceOpen: !state.workspaceOpen }
-    : state.planOpen
-      ? { ...state, planOpen: false }
-      : { ...state, workspaceOpen: false, planOpen: true };
+    : { ...state, planOpen: !state.planOpen };
 }
 
 const stateKey = (projectId: string | null, conversationId: string | null): string =>

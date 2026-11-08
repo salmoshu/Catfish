@@ -5,7 +5,6 @@
  */
 
 import { Button } from '@arco-design/web-react';
-import { Split } from '@icon-park/react';
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isElectronDesktop } from '@/renderer/utils/platform';
@@ -22,6 +21,25 @@ import {
   type TerminalSplitDirection,
 } from './terminalLayout';
 import styles from './Terminal.module.css';
+
+// Match Nav-Tools' SquareSplitVertical glyph and its split-right rotation.
+const TerminalSplitIcon: React.FC<{ horizontal?: boolean }> = ({ horizontal }) => (
+  <svg
+    width='14'
+    height='14'
+    viewBox='0 0 24 24'
+    fill='none'
+    stroke='currentColor'
+    strokeWidth='2'
+    strokeLinecap='round'
+    strokeLinejoin='round'
+    className={horizontal ? 'rotate-90' : undefined}
+    aria-hidden='true'
+  >
+    <rect x='3' y='3' width='18' height='18' rx='2' />
+    <path d='M3 12h18' />
+  </svg>
+);
 
 const EmbeddedTerminalPanel: React.FC<{ workspacePath?: string }> = ({ workspacePath }) => {
   const { t } = useTranslation();
@@ -69,14 +87,16 @@ const EmbeddedTerminalPanel: React.FC<{ workspacePath?: string }> = ({ workspace
   }
   return (
     <div className='h-full min-h-0 flex flex-col' data-testid='embedded-terminal-panel'>
-      <div className='shrink-0 flex items-center gap-4px px-8px py-4px border-b border-[var(--color-border-2)]'>
+      <div
+        className={`${styles.toolbar} shrink-0 flex items-center gap-4px px-8px py-4px border-b border-[var(--color-border-2)]`}
+      >
         <span className='min-w-0 flex-1 truncate text-12px text-t-secondary' title={workspacePath}>
           {workspacePath}
         </span>
         <Button
           type='text'
           size='mini'
-          icon={<Split size={14} />}
+          icon={<TerminalSplitIcon horizontal />}
           aria-label={t('conversation.explorer.terminal.splitHorizontal')}
           title={t('conversation.explorer.terminal.splitHorizontal')}
           onClick={() => split('horizontal')}
@@ -84,7 +104,7 @@ const EmbeddedTerminalPanel: React.FC<{ workspacePath?: string }> = ({ workspace
         <Button
           type='text'
           size='mini'
-          icon={<Split size={14} className='rotate-90' />}
+          icon={<TerminalSplitIcon />}
           aria-label={t('conversation.explorer.terminal.splitVertical')}
           title={t('conversation.explorer.terminal.splitVertical')}
           onClick={() => split('vertical')}

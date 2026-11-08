@@ -88,7 +88,7 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
     async (tool: ToolType) => {
       try {
         if (tool === 'terminal') {
-          openWorkbenchSection('terminal');
+          openWorkbenchSection('shell');
         } else if (isExternalTool(tool)) {
           await ipcBridge.shell.openFolderWith.invoke({ folder_path: workspacePath, tool });
         } else if (tool === 'browser') {
@@ -176,7 +176,7 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
           {option.key === 'browser' && index > 0 && <div className='my-4px mx-8px h-1px bg-[var(--color-border-2)]' />}
           <Button
             type='text'
-            className={`workspace-open-dropdown-item flex items-center gap-8px px-12px py-8px cursor-pointer hover:bg-[var(--color-fill-2)] rounded-4px transition-colors ${
+            className={`workspace-open-dropdown-item !text-t-primary flex items-center gap-8px px-12px py-8px cursor-pointer hover:bg-[var(--color-fill-2)] rounded-4px transition-colors ${
               currentTool === option.key ? 'bg-[var(--color-fill-2)]' : ''
             }`}
             onClick={() => handleOpenWith(option.key)}
