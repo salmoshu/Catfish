@@ -395,10 +395,13 @@ function registerIpcHandlers(): void {
       const newX = cursor.x - dragOffsetX;
       const newY = cursor.y - dragOffsetY;
 
-      petWindow.setPosition(newX, newY, false);
+      // Reuse the configured size instead of feeding rounded native bounds back
+      // into each move, which can accumulate DPI rounding on Windows.
+      petWindow.setBounds({ x: newX, y: newY, width: currentSize, height: currentSize }, false);
 
       const hitOffset = Math.round(currentSize * 0.2);
-      petHitWindow.setPosition(newX + hitOffset, newY + hitOffset, false);
+      const hitSize = Math.round(currentSize * 0.6);
+      petHitWindow.setBounds({ x: newX + hitOffset, y: newY + hitOffset, width: hitSize, height: hitSize }, false);
 
       idleTicker?.setPetBounds(newX, newY, currentSize, currentSize);
     }, DRAG_TICK_MS);
