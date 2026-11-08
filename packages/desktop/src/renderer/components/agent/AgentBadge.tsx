@@ -32,6 +32,10 @@ export const AgentLogoIcon: React.FC<
 > = ({ backend, agentLogo, agentLogoIsEmoji, agentLogoIsFallback, agent_name }) => {
   const logos = useAgentLogos();
   const logoContent = (() => {
+    if (backend?.toLowerCase() === 'codex') {
+      const logo = resolveAgentLogo(logos, { backend });
+      if (logo) return <ThemedLogo src={logo} alt={`${backend} logo`} className='block w-16px h-16px object-contain' />;
+    }
     if (agentLogoIsFallback) {
       return <Robot theme='outline' size={16} fill={iconColors.primary} />;
     }
