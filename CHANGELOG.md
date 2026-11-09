@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.25](https://github.com/salmoshu/Catfish/releases/tag/v0.4.25) (2026-11-09)
+
+### Features
+
+- **composer:** show uploaded images as short links with image preview and a copy-path context menu, preserving original paths when messages are sent
+
+### Bug Fixes
+
+- **composer:** restore undo and redo for typing and programmatic insertions, including Chinese input composition and image references
+- **image drafts:** preserve image links across conversation switches, failed sends and attachments with duplicate filenames
+- **side chats:** keep composer controls on one line in narrow panels and shorten model labels while retaining their full accessible names
+
+---
+
 ## [0.4.24](https://github.com/salmoshu/Catfish/releases/tag/v0.4.24) (2026-11-09)
 
 ### Features
