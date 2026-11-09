@@ -71,6 +71,7 @@ import { createChainedDispatch, useLiveTranscriptInsertion } from '@/renderer/ho
 import { getConversationInputHistory, isCaretOnFirstLine } from '@/renderer/utils/chat/messageHistory';
 import './sendbox.css';
 import styles from './SendBox.module.css';
+import { useInputUndo } from './useInputUndo';
 import KimiIcon from '@renderer/components/base/KimiIcon';
 
 const constVoid = (): void => undefined;
@@ -706,6 +707,15 @@ const SendBox: React.FC<{
     return textarea instanceof HTMLTextAreaElement ? textarea : null;
   }, []);
 
+  const { compositionHandlers, isComposingState, createKeyDownHandler } = useCompositionInput();
+  const { handleUndoKeyDown, rememberSelection } = useInputUndo(
+    input,
+    setInput,
+    getTextareaElement,
+    conversationContext?.conversation_id,
+    isComposingState
+  );
+
   useAddEventListener(
     'sendbox.image-paths',
     (paths, targetConversationId) => {
@@ -1308,9 +1318,6 @@ const SendBox: React.FC<{
     },
     [conversationContext?.conversation_id, mentionSessionFromMessage]
   );
-
-  // 使用共享的输入法合成处理
-  const { compositionHandlers, isComposingState, createKeyDownHandler } = useCompositionInput();
 
   // 使用共享的PasteService集成
   const { onPaste, onFocus: handlePasteFocus } = usePasteService({
@@ -2174,6 +2181,7 @@ const SendBox: React.FC<{
                 overflowWrap: 'break-word',
               }}
               onChange={handleTextAreaChange}
+              onBeforeInput={rememberSelection}
               onPaste={onPaste}
               onTouchStart={markMobileFocusIntent}
               onMouseDown={markMobileFocusIntent}
@@ -2184,6 +2192,7 @@ const SendBox: React.FC<{
               onBlur={handleInputBlur}
               onKeyUp={handleTextAreaKeyUp}
               onSelect={(event) => {
+                rememberSelection();
                 syncCaretPosition(event.currentTarget);
               }}
               onScroll={(event) => {
@@ -2193,6 +2202,7 @@ const SendBox: React.FC<{
               autoSize={isSingleLine ? false : { minRows: 1, maxRows: 10 }}
               onKeyDown={createKeyDownHandler(handlePrimaryAction, (event) => {
                 return (
+                  handleUndoKeyDown(event) ||
                   handleAddToDraftShortcut(event) ||
                   handleAtSessionMenuKeyDown(event) ||
                   handleAtFileMenuKeyDown(event) ||

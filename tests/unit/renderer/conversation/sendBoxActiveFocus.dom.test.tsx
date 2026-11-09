@@ -317,3 +317,51 @@ describe('SendBox image paths', () => {
     expect(textarea.selectionStart).toBe(textarea.value.indexOf('CD'));
   });
 });
+
+describe('SendBox undo and redo', () => {
+  it('undoes and redoes controlled typing with Ctrl-Z and Ctrl-Y', () => {
+    render(<SendBoxHarness />);
+    const input = screen.getByTestId('sendbox-input');
+    fireEvent.change(input, { target: { value: 'hello' } });
+    fireEvent.change(input, { target: { value: 'hello world' } });
+    fireEvent.keyDown(input, { key: 'z', ctrlKey: true });
+    expect(input).toHaveValue('hello');
+    fireEvent.keyDown(input, { key: 'y', ctrlKey: true });
+    expect(input).toHaveValue('hello world');
+  });
+
+  it('discards the redo branch when new text is entered after undo', () => {
+    render(<SendBoxHarness />);
+    const input = screen.getByTestId('sendbox-input');
+    fireEvent.change(input, { target: { value: 'old' } });
+    fireEvent.keyDown(input, { key: 'z', ctrlKey: true });
+    fireEvent.change(input, { target: { value: 'new' } });
+    fireEvent.keyDown(input, { key: 'y', ctrlKey: true });
+    expect(input).toHaveValue('new');
+  });
+
+  it('undoes image insertion and restores its preview link with redo', async () => {
+    const { emitter } = await import('@/renderer/utils/emitter');
+    render(<SendBoxHarness initialValue='draft ' />);
+    const input = screen.getByTestId('sendbox-input');
+    act(() => emitter.emit('sendbox.image-paths', ['/tmp/image-1.png'], 'sendbox-active-focus-conversation'));
+    fireEvent.keyDown(input, { key: 'z', ctrlKey: true });
+    expect(input).toHaveValue('draft ');
+    fireEvent.keyDown(input, { key: 'Z', ctrlKey: true, shiftKey: true });
+    expect(screen.getByRole('link', { name: '[image-1]' })).toBeInTheDocument();
+  });
+
+  it('undoes an IME composition as a whole without restoring unfinished phonetic input', () => {
+    render(<SendBoxHarness initialValue='draft ' />);
+    const input = screen.getByTestId('sendbox-input');
+    fireEvent.compositionStart(input);
+    fireEvent.change(input, { target: { value: 'draft n' } });
+    fireEvent.change(input, { target: { value: 'draft ni' } });
+    fireEvent.change(input, { target: { value: 'draft 你' } });
+    fireEvent.compositionEnd(input, { data: '你' });
+    fireEvent.keyDown(input, { key: 'z', ctrlKey: true });
+    expect(input).toHaveValue('draft ');
+    fireEvent.keyDown(input, { key: 'y', ctrlKey: true });
+    expect(input).toHaveValue('draft 你');
+  });
+});
