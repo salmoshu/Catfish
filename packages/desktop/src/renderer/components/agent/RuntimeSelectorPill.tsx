@@ -74,12 +74,19 @@ const RuntimeSelectorPill = React.forwardRef<React.ElementRef<typeof Button>, Ru
       <span className='flex items-center gap-6px min-w-0 leading-[1.4]'>
         {leading}
         {label && (
-          <span className='inline-flex items-center min-w-0'>
-            <MarqueePillLabel>{label}</MarqueePillLabel>
-            {labelDetail && <span className='shrink-0 whitespace-nowrap'>{` · ${labelDetail}`}</span>}
+          <span className='runtime-selector-label inline-flex items-center min-w-0'>
+            <span className='runtime-selector-short-label hidden truncate'>{label.trim().split(/\s+/)[0]}</span>
+            <span className='runtime-selector-full-label inline-flex min-w-0'>
+              <MarqueePillLabel>{label}</MarqueePillLabel>
+              {labelDetail && <span className='shrink-0 whitespace-nowrap'>{` · ${labelDetail}`}</span>}
+            </span>
           </span>
         )}
-        {loading ? <RuntimeSelectorLoadingIndicator /> : trailing}
+        {loading ? (
+          <RuntimeSelectorLoadingIndicator />
+        ) : (
+          trailing && <span className='runtime-selector-trailing shrink-0 inline-flex'>{trailing}</span>
+        )}
       </span>
     </Button>
   )

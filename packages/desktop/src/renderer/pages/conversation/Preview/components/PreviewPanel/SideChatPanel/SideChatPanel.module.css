@@ -1,0 +1,86 @@
+.panel {
+  container: side-chat / inline-size;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.panel :global(.chat-surface-container) {
+  padding-inline: 8px;
+}
+
+.panel :global([data-sendbox-toolbar]),
+.panel :global([data-sendbox-tool-group]),
+.panel :global([data-sendbox-tool-group] > div) {
+  flex-wrap: nowrap;
+  gap: 2px;
+  min-width: 0;
+}
+
+.panel :global(.sendbox-panel) {
+  padding-inline: 8px;
+}
+
+.panel :global(.sendbox-tools),
+.panel :global(.sendbox-actions),
+.panel :global(.sendbox-actions > div) {
+  min-width: 0;
+  gap: 2px;
+}
+
+.panel :global(.sendbox-actions) {
+  flex-shrink: 0;
+}
+
+.panel :global(.sendbox-tools) {
+  flex-shrink: 1;
+}
+
+.panel :global([data-testid='mode-selector']) {
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.panel :global(.sendbox-model-btn) {
+  min-width: 28px !important;
+  max-width: 100%;
+  padding-inline: 4px !important;
+  overflow: hidden;
+}
+
+.panel :global(.sendbox-model-btn .arco-btn-content),
+.panel :global(.sendbox-model-btn .arco-btn-content > span) {
+  min-width: 0;
+  gap: 4px;
+}
+
+@container side-chat (max-width: 520px) {
+  .panel :global(.runtime-selector-full-label) {
+    display: none;
+  }
+
+  .panel :global(.runtime-selector-short-label) {
+    display: block;
+    max-width: 64px;
+  }
+
+  .panel :global(.runtime-selector-trailing) {
+    display: none;
+  }
+}
+
+@container side-chat (max-width: 300px) {
+  .panel :global(.runtime-selector-label) {
+    display: none;
+  }
+
+  .panel :global(.sendbox-model-btn .arco-btn-content > span) {
+    gap: 0;
+  }
+
+  .panel :global([data-testid='goal-toggle']) {
+    display: none;
+  }
+}

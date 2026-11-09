@@ -13,6 +13,7 @@ import AcpChat from '@/renderer/pages/conversation/platforms/acp/AcpChat';
 import { useGuidAssistantSelection } from '@/renderer/pages/guid/hooks/useGuidAssistantSelection';
 import AcpModelSelector from '@/renderer/components/agent/AcpModelSelector';
 import { getConversationOrNull } from '@/renderer/pages/conversation/utils/conversationCache';
+import styles from './SideChatPanel.module.css';
 
 /** A temporary agent conversation retained while hidden and deleted when closed. */
 const SideChatPanel: React.FC<{ workspace?: string; sourceConversationId?: string }> = ({
@@ -139,14 +140,16 @@ const SideChatPanel: React.FC<{ workspace?: string; sourceConversationId?: strin
     />
   );
   return (
-    <AcpChat
-      conversation_id={conversation.id}
-      workspace={workspace}
-      backend={selectedAssistantBackend || 'kimi'}
-      agent_name={selectedAssistant?.name}
-      assistantId={selectedAssistantId ?? undefined}
-      composerTools={modelSelector}
-    />
+    <div className={styles.panel} data-side-chat-composer>
+      <AcpChat
+        conversation_id={conversation.id}
+        workspace={workspace}
+        backend={selectedAssistantBackend || 'kimi'}
+        agent_name={selectedAssistant?.name}
+        assistantId={selectedAssistantId ?? undefined}
+        composerTools={modelSelector}
+      />
+    </div>
   );
 };
 

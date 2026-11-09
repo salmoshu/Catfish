@@ -2269,7 +2269,7 @@ const SendBox: React.FC<{
           )}
         </div>
         {!isSingleLine && (
-          <div className={styles.toolbar}>
+          <div className={styles.toolbar} data-sendbox-toolbar>
             <div
               className={
                 isMobileCompact
@@ -2279,7 +2279,7 @@ const SendBox: React.FC<{
                     : 'sendbox-tools'
               }
             >
-              <span className={styles.toolGroup}>
+              <span className={styles.toolGroup} data-sendbox-tool-group>
                 {renderedTools}
                 {draftActionButton}
               </span>
