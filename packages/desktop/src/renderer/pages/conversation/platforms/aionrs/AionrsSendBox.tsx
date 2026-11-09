@@ -23,7 +23,11 @@ import { classifyConfigSetError, useAcpConfigOptions } from '@/renderer/hooks/ag
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useAutoTitle } from '@/renderer/hooks/chat/useAutoTitle';
-import { getSendBoxDraftHook, type FileOrFolderItem } from '@/renderer/hooks/chat/useSendBoxDraft';
+import {
+  getSendBoxDraftHook,
+  type DraftImageReference,
+  type FileOrFolderItem,
+} from '@/renderer/hooks/chat/useSendBoxDraft';
 import { createSetUploadFile, useSendBoxFiles } from '@/renderer/hooks/chat/useSendBoxFiles';
 import { useSlashCommands } from '@/renderer/hooks/chat/useSlashCommands';
 import { useOpenFileSelector } from '@/renderer/hooks/file/useOpenFileSelector';
@@ -100,6 +104,13 @@ const useSendBoxDraft = (conversation_id: string) => {
 
   const setUploadFile = createSetUploadFile(mutate, data);
 
+  const setImageReferences = useCallback(
+    (references: DraftImageReference[]) => {
+      mutate((prev) => ({ ...prev, imageReferences: references }));
+    },
+    [mutate]
+  );
+
   const setContent = useCallback(
     (nextContent: string) => {
       mutate((prev) => ({ ...prev, content: nextContent }));
@@ -114,6 +125,8 @@ const useSendBoxDraft = (conversation_id: string) => {
     setUploadFile,
     content,
     setContent,
+    imageReferences: data?.imageReferences,
+    setImageReferences,
   };
 };
 
@@ -159,7 +172,8 @@ const AionrsSendBox: React.FC<{
   const runtimeView = useConversationRuntimeView(conversation_id);
   const { markSendStarted, markSendAccepted, markSendFailed } = runtimeView;
 
-  const { atPath, uploadFile, setAtPath, setUploadFile, content, setContent } = useSendBoxDraft(conversation_id);
+  const { atPath, uploadFile, setAtPath, setUploadFile, content, setContent, imageReferences, setImageReferences } =
+    useSendBoxDraft(conversation_id);
 
   const handleContentChange = useCallback(
     (val: string) => {
@@ -763,6 +777,9 @@ const AionrsSendBox: React.FC<{
         onStop={effectiveHandleStop}
         className='z-10'
         onFilesAdded={handleFilesAdded}
+        imagePaths={uploadFile}
+        imageReferences={imageReferences}
+        onImageReferencesChange={setImageReferences}
         hasPendingAttachments={uploadFile.length > 0 || atPath.length > 0}
         supportedExts={allSupportedExts}
         defaultMultiLine={!isMobile}

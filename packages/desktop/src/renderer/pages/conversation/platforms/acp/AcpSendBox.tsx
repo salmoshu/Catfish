@@ -22,7 +22,11 @@ import HorizontalFileList from '@/renderer/components/media/HorizontalFileList';
 import { classifyConfigSetError, useAcpConfigOptions } from '@/renderer/hooks/agent/useAcpConfigOptions';
 import { useAcpModelInfo } from '@/renderer/hooks/agent/useAcpModelInfo';
 import { useAutoTitle } from '@/renderer/hooks/chat/useAutoTitle';
-import { getSendBoxDraftHook, type FileOrFolderItem } from '@/renderer/hooks/chat/useSendBoxDraft';
+import {
+  getSendBoxDraftHook,
+  type DraftImageReference,
+  type FileOrFolderItem,
+} from '@/renderer/hooks/chat/useSendBoxDraft';
 import { createSetUploadFile, useSendBoxFiles } from '@/renderer/hooks/chat/useSendBoxFiles';
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
@@ -90,6 +94,13 @@ const useSendBoxDraft = (conversation_id: string) => {
 
   const setUploadFile = createSetUploadFile(mutate, data);
 
+  const setImageReferences = useCallback(
+    (references: DraftImageReference[]) => {
+      mutate((prev) => ({ ...prev, imageReferences: references }));
+    },
+    [mutate]
+  );
+
   const setContent = useCallback(
     (nextContent: string) => {
       mutate((prev) => ({ ...prev, content: nextContent }));
@@ -104,6 +115,8 @@ const useSendBoxDraft = (conversation_id: string) => {
     setUploadFile,
     content,
     setContent,
+    imageReferences: data?.imageReferences,
+    setImageReferences,
   };
 };
 
@@ -142,7 +155,8 @@ const AcpSendBox: React.FC<{
   const showModeSelector = true;
   const isLeaderInTeam = teamPermission && conversation_id === teamPermission.leaderConversationId;
   const { checkAndUpdateTitle } = useAutoTitle();
-  const { atPath, uploadFile, setAtPath, setUploadFile, content, setContent } = useSendBoxDraft(conversation_id);
+  const { atPath, uploadFile, setAtPath, setUploadFile, content, setContent, imageReferences, setImageReferences } =
+    useSendBoxDraft(conversation_id);
   const layout = useLayoutContext();
   const isMobile = Boolean(layout?.isMobile);
   const conversationContext = useConversationContextSafe();
@@ -845,6 +859,9 @@ Please check your local CLI tool authentication status`,
         onStop={effectiveHandleStop}
         className='z-10'
         onFilesAdded={handleFilesAdded}
+        imagePaths={uploadFile}
+        imageReferences={imageReferences}
+        onImageReferencesChange={setImageReferences}
         hasPendingAttachments={uploadFile.length > 0 || atPath.length > 0}
         enableBtw={isSideQuestionSupported({ type: 'acp', backend })}
         supportedExts={allSupportedExts}

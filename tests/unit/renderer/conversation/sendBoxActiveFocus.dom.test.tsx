@@ -5,8 +5,10 @@
  */
 
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { Message } from '@arco-design/web-react';
 import React, { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import type { DraftImageReference } from '@/renderer/hooks/chat/useSendBoxDraft';
 
 const { layoutState } = vi.hoisted(() => ({
   layoutState: { isMobile: false },
@@ -21,6 +23,7 @@ vi.mock('react-i18next', () => ({
 vi.mock('@/common', () => ({
   ipcBridge: {
     fs: {
+      getImageBase64: { invoke: vi.fn().mockResolvedValue('data:image/png;base64,aW1hZ2U=') },
       listAvailableSkills: { invoke: vi.fn().mockResolvedValue([]) },
       listWorkspaceFiles: { invoke: vi.fn().mockResolvedValue([]) },
     },
@@ -128,6 +131,9 @@ const SendBoxHarness = ({
   onSend = vi.fn().mockResolvedValue(undefined),
   onAddToDraft,
   onValueChange,
+  imagePaths,
+  imageReferences,
+  onImageReferencesChange,
 }: {
   active?: boolean;
   onFocused?: () => void;
@@ -136,6 +142,9 @@ const SendBoxHarness = ({
   onSend?: (message: string) => Promise<void | false>;
   onAddToDraft?: () => void;
   onValueChange?: (value: string) => void;
+  imagePaths?: string[];
+  imageReferences?: DraftImageReference[];
+  onImageReferencesChange?: (references: DraftImageReference[]) => void;
 }) => {
   const [value, setValue] = useState(initialValue);
   return (
@@ -150,6 +159,9 @@ const SendBoxHarness = ({
       onFocused={onFocused}
       disabled={disabled}
       onAddToDraft={onAddToDraft}
+      imagePaths={imagePaths}
+      imageReferences={imageReferences}
+      onImageReferencesChange={onImageReferencesChange}
     />
   );
 };
@@ -297,7 +309,7 @@ describe('SendBox selection→focus downward effect', () => {
 });
 
 describe('SendBox image paths', () => {
-  it('inserts uploaded image paths at the current caret', async () => {
+  it('inserts short image links at the current caret', async () => {
     const { emitter } = await import('@/renderer/utils/emitter');
     const onValueChange = vi.fn();
     await act(async () => {
@@ -311,10 +323,124 @@ describe('SendBox image paths', () => {
       emitter.emit('sendbox.image-paths', ['D:\\images\\A Image.png'], 'sendbox-active-focus-conversation');
     });
 
-    await waitFor(() => expect(onValueChange).toHaveBeenCalledWith('AB [D:\\images\\A Image.png] CD'));
-    await waitFor(() => expect(textarea.value).toBe('AB [D:\\images\\A Image.png] CD'));
+    await waitFor(() => expect(onValueChange).toHaveBeenCalledWith('AB [A Image] CD'));
+    await waitFor(() => expect(textarea.value).toBe('AB [A Image] CD'));
     expect(textarea).toHaveFocus();
     expect(textarea.selectionStart).toBe(textarea.value.indexOf('CD'));
+  });
+
+  it('opens the original image from its short link and sends the full path', async () => {
+    const { emitter } = await import('@/renderer/utils/emitter');
+    const { ipcBridge } = await import('@/common');
+    const onSend = vi.fn().mockResolvedValue(undefined);
+    render(<SendBoxHarness onSend={onSend} />);
+    act(() => emitter.emit('sendbox.image-paths', ['C:\\images\\image-1.png'], 'sendbox-active-focus-conversation'));
+    fireEvent.click(screen.getByRole('link', { name: '[image-1]' }));
+    await waitFor(() =>
+      expect(ipcBridge.fs.getImageBase64.invoke).toHaveBeenCalledWith({ path: 'C:\\images\\image-1.png' })
+    );
+    fireEvent.click(screen.getByTestId('sendbox-send-btn'));
+    await waitFor(() => expect(onSend.mock.calls[0]?.[0].trim()).toBe('[C:\\images\\image-1.png]'));
+  });
+
+  it('does not insert an image intended for a different conversation', async () => {
+    const { emitter } = await import('@/renderer/utils/emitter');
+    render(<SendBoxHarness initialValue='draft' />);
+    act(() => emitter.emit('sendbox.image-paths', ['/tmp/image.png'], 'different-conversation'));
+    expect(screen.getByTestId('sendbox-input')).toHaveValue('draft');
+  });
+
+  it('keeps images with the same filename linked to their original paths', async () => {
+    const { emitter } = await import('@/renderer/utils/emitter');
+    const onSend = vi.fn().mockResolvedValue(undefined);
+    render(<SendBoxHarness onSend={onSend} />);
+    act(() =>
+      emitter.emit(
+        'sendbox.image-paths',
+        ['/first/image.png', '/second/image.png'],
+        'sendbox-active-focus-conversation'
+      )
+    );
+    expect(screen.getByRole('link', { name: '[image]' })).toHaveAttribute('title', '/first/image.png');
+    expect(screen.getByRole('link', { name: '[image-2]' })).toHaveAttribute('title', '/second/image.png');
+    fireEvent.click(screen.getByTestId('sendbox-send-btn'));
+    await waitFor(() => expect(onSend.mock.calls[0]?.[0].trim()).toBe('[/first/image.png] [/second/image.png]'));
+  });
+
+  it('rehydrates image links from a saved conversation draft', async () => {
+    const onSend = vi.fn().mockResolvedValue(undefined);
+    render(<SendBoxHarness initialValue='see [image]' imagePaths={['/tmp/image.png']} onSend={onSend} />);
+    expect(screen.getByRole('link', { name: '[image]' })).toHaveAttribute('title', '/tmp/image.png');
+    fireEvent.click(screen.getByTestId('sendbox-send-btn'));
+    await waitFor(() => expect(onSend).toHaveBeenCalledWith('see [/tmp/image.png]'));
+  });
+
+  it('preserves short image links when the parent rejects sending', async () => {
+    const onSend = vi.fn().mockResolvedValue(false);
+    render(<SendBoxHarness initialValue='see [image]' imagePaths={['/tmp/image.png']} onSend={onSend} />);
+    fireEvent.click(screen.getByTestId('sendbox-send-btn'));
+    await waitFor(() => expect(screen.getByTestId('sendbox-input')).toHaveValue('see [image]'));
+    expect(screen.getByRole('link', { name: '[image]' })).toBeInTheDocument();
+    expect(onSend).toHaveBeenCalledWith('see [/tmp/image.png]');
+  });
+
+  it('retains saved image labels when an earlier same-named attachment is removed', async () => {
+    const onSend = vi.fn().mockResolvedValue(undefined);
+    render(
+      <SendBoxHarness
+        initialValue='see [image-2]'
+        imagePaths={['/second/image.png']}
+        imageReferences={[
+          { token: '[image]', path: '/first/image.png' },
+          { token: '[image-2]', path: '/second/image.png' },
+        ]}
+        onSend={onSend}
+      />
+    );
+    expect(screen.getByRole('link', { name: '[image-2]' })).toHaveAttribute('title', '/second/image.png');
+    fireEvent.click(screen.getByTestId('sendbox-send-btn'));
+    await waitFor(() => expect(onSend).toHaveBeenCalledWith('see [/second/image.png]'));
+  });
+
+  it('saves the image label mapping with the conversation draft', async () => {
+    const { emitter } = await import('@/renderer/utils/emitter');
+    const onImageReferencesChange = vi.fn();
+    render(<SendBoxHarness onImageReferencesChange={onImageReferencesChange} />);
+    act(() =>
+      emitter.emit(
+        'sendbox.image-paths',
+        ['/first/image.png', '/second/image.png'],
+        'sendbox-active-focus-conversation'
+      )
+    );
+    expect(onImageReferencesChange).toHaveBeenCalledWith([
+      { token: '[image]', path: '/first/image.png' },
+      { token: '[image-2]', path: '/second/image.png' },
+    ]);
+  });
+
+  it('preserves reply content with short image links when sending is rejected', async () => {
+    const { emitter } = await import('@/renderer/utils/emitter');
+    const onSend = vi.fn().mockResolvedValue(false);
+    render(<SendBoxHarness initialValue='see [image]' imagePaths={['/tmp/image.png']} onSend={onSend} />);
+    act(() => emitter.emit('sendbox.reply', { messageId: 'quoted-message', content: 'quoted text', position: 'left' }));
+    fireEvent.click(screen.getByTestId('sendbox-send-btn'));
+    await waitFor(() => expect(screen.getByTestId('sendbox-input')).toHaveValue('> quoted text\n\nsee [image]'));
+    expect(onSend).toHaveBeenCalledWith('> quoted text\n\nsee [/tmp/image.png]');
+  });
+
+  it('reports an unavailable image without discarding the draft', async () => {
+    const { ipcBridge } = await import('@/common');
+    vi.mocked(ipcBridge.fs.getImageBase64.invoke).mockResolvedValueOnce(null);
+    const error = vi.spyOn(Message, 'error').mockReturnValue(() => {});
+    try {
+      render(<SendBoxHarness initialValue='see [image]' imagePaths={['/tmp/image.png']} />);
+      fireEvent.click(screen.getByRole('link', { name: '[image]' }));
+      await waitFor(() => expect(error).toHaveBeenCalledWith('preview.missingFile.title'));
+      expect(screen.getByTestId('sendbox-input')).toHaveValue('see [image]');
+    } finally {
+      error.mockRestore();
+    }
   });
 });
 

@@ -41,3 +41,18 @@
   gap: 4px;
   margin-inline-start: auto;
 }
+
+.imageReferenceLayer {
+  z-index: 2;
+}
+
+.imageReference:global(.arco-link) {
+  display: inline;
+  padding: 0;
+  border-radius: 0;
+  font: inherit;
+  line-height: inherit;
+  pointer-events: auto;
+  color: var(--primary);
+  text-decoration: underline;
+}

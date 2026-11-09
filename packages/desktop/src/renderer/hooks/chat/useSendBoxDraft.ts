@@ -3,24 +3,29 @@ import useSWR from 'swr';
 import type { FileOrFolderItem } from '@/renderer/utils/file/fileTypes';
 export type { FileOrFolderItem } from '@/renderer/utils/file/fileTypes';
 
+export type DraftImageReference = { token: string; path: string };
+
 type Draft =
   | {
       _type: 'acp';
       content: string;
       atPath: Array<string | FileOrFolderItem>;
       uploadFile: string[];
+      imageReferences?: DraftImageReference[];
     }
   | {
       _type: 'codex';
       content: string;
       atPath: Array<string | FileOrFolderItem>;
       uploadFile: string[];
+      imageReferences?: DraftImageReference[];
     }
   | {
       _type: 'aionrs';
       content: string;
       atPath: Array<string | FileOrFolderItem>;
       uploadFile: string[];
+      imageReferences?: DraftImageReference[];
     };
 
 /**

@@ -72,6 +72,13 @@ import { getConversationInputHistory, isCaretOnFirstLine } from '@/renderer/util
 import './sendbox.css';
 import styles from './SendBox.module.css';
 import { useInputUndo } from './useInputUndo';
+import ImageReferenceLink from './ImageReferenceLink';
+import {
+  addImageReference,
+  expandImageReferences,
+  getImageReferenceRanges,
+  type ImageReference,
+} from './imageReferences';
 import KimiIcon from '@renderer/components/base/KimiIcon';
 
 const constVoid = (): void => undefined;
@@ -226,6 +233,9 @@ const SendBox: React.FC<{
   prefix?: React.ReactNode;
   placeholder?: string;
   onFilesAdded?: (files: FileMetadata[]) => void;
+  imagePaths?: string[];
+  imageReferences?: ImageReference[];
+  onImageReferencesChange?: (references: ImageReference[]) => void;
   supportedExts?: string[];
   defaultMultiLine?: boolean;
   lockMultiLine?: boolean;
@@ -286,6 +296,9 @@ const SendBox: React.FC<{
   value: input = '',
   onChange: setInput = constVoid,
   onFilesAdded,
+  imagePaths,
+  imageReferences,
+  onImageReferencesChange,
   supportedExts = allSupportedExts,
   defaultMultiLine = false,
   lockMultiLine = false,
@@ -363,6 +376,25 @@ const SendBox: React.FC<{
   const suppressedExternalAppendPathsRef = useRef<Set<string>>(new Set());
   const fetchedAtFileSessionKeyRef = useRef<string | null>(null);
   const highlightScrollRef = useRef<HTMLDivElement>(null);
+  const imageReferencesRef = useRef<{
+    scope?: string;
+    saved?: ImageReference[];
+    references: ImageReference[];
+  }>({ references: [] });
+  if (
+    imageReferencesRef.current.scope !== conversationContext?.conversation_id ||
+    imageReferencesRef.current.saved !== imageReferences
+  ) {
+    imageReferencesRef.current = {
+      scope: conversationContext?.conversation_id,
+      saved: imageReferences,
+      references: [...(imageReferences ?? [])],
+    };
+  }
+  for (const path of imagePaths ?? []) {
+    if (/\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i.test(path))
+      addImageReference(imageReferencesRef.current.references, path);
+  }
 
   // Listen for reply events from message actions
   useAddEventListener('sendbox.reply', (quote) => setReplyQuote(quote), []);
@@ -725,10 +757,11 @@ const SendBox: React.FC<{
       const textarea = getTextareaElement();
       const start = textarea?.selectionStart ?? caretPosition;
       const end = textarea?.selectionEnd ?? start;
-      const prefix = start > 0 && !/\s/.test(input[start - 1]) ? ' ' : '';
+      const insertionPrefix = start > 0 && !/\s/.test(input[start - 1]) ? ' ' : '';
       const suffix = end < input.length && !/\s/.test(input[end]) ? ' ' : '';
-      const insertion = `${prefix}${paths.map((path) => `[${path}]`).join(' ')}${suffix}`;
+      const insertion = `${insertionPrefix}${paths.map((path) => addImageReference(imageReferencesRef.current.references, path).token).join(' ')}${suffix}`;
       const next = applyMentionInsertion(input, start, end, insertion);
+      onImageReferencesChange?.([...imageReferencesRef.current.references]);
       setInput(next.value);
       requestAnimationFrame(() => {
         const currentTextarea = getTextareaElement();
@@ -738,7 +771,7 @@ const SendBox: React.FC<{
         setCaretPosition(next.caret);
       });
     },
-    [caretPosition, conversationContext?.conversation_id, getTextareaElement, input, setInput]
+    [caretPosition, conversationContext?.conversation_id, getTextareaElement, input, onImageReferencesChange, setInput]
   );
 
   const handleConversationPrefill = useCallback(
@@ -1600,7 +1633,8 @@ const SendBox: React.FC<{
     setHistoryNavigationIndex(null);
 
     // 构建消息内容 / Build message content
-    let finalMessage = input;
+    let finalMessage = expandImageReferences(input, imageReferencesRef.current.references);
+    let draftMessage = input;
 
     // Prepend reply quote as blockquote
     if (replyQuote) {
@@ -1609,6 +1643,7 @@ const SendBox: React.FC<{
         .map((line) => `> ${line}`)
         .join('\n');
       finalMessage = `${quotedLines}\n\n${finalMessage}`;
+      draftMessage = `${quotedLines}\n\n${draftMessage}`;
     }
 
     // 如果有 DOM 片段，附加完整 HTML / If has DOM snippets, append full HTML
@@ -1616,7 +1651,8 @@ const SendBox: React.FC<{
       const snippetsHtml = domSnippets
         .map((s) => `\n\n---\nDOM Snippet (${s.tag}):\n\`\`\`html\n${s.html}\n\`\`\``)
         .join('');
-      finalMessage = input + snippetsHtml;
+      finalMessage += snippetsHtml;
+      draftMessage += snippetsHtml;
     }
 
     // 立即清空输入框，避免异步 onSend 完成后覆盖用户新输入
@@ -1628,7 +1664,7 @@ const SendBox: React.FC<{
     onSend(finalMessage)
       .then((result) => {
         if (result === false) {
-          setInput(finalMessage);
+          setInput(draftMessage);
         }
       })
       .catch(() => {})
@@ -1836,7 +1872,9 @@ const SendBox: React.FC<{
     [allAtFileQueries, allAtSessionQueries, attachedFileKeys, attachedSessionNames]
   );
 
-  const shouldUseHighlightOverlay = !isComposingState && highlightRanges.length > 0;
+  const imageReferenceRanges = getImageReferenceRanges(input, imageReferencesRef.current.references);
+  const shouldUseHighlightOverlay =
+    !isComposingState && (highlightRanges.length > 0 || imageReferenceRanges.length > 0);
 
   /**
    * The placeholder advertises `@@` only where it works.
@@ -1888,7 +1926,13 @@ const SendBox: React.FC<{
 
     // Ranges arrive sorted by `start` and never overlap, so slicing between them
     // reproduces the input exactly.
-    highlightRanges.forEach((match, index) => {
+    const ranges: Array<{ start: number; end: number; reference?: ImageReference }> = [
+      ...highlightRanges.filter(
+        (range) => !imageReferenceRanges.some((image) => range.start < image.end && range.end > image.start)
+      ),
+      ...imageReferenceRanges,
+    ].toSorted((left, right) => left.start - right.start);
+    ranges.forEach((match, index) => {
       if (cursor < match.start) {
         segments.push(
           <span className='sendbox-highlight-text' key={`text-${cursor}`}>
@@ -1898,13 +1942,17 @@ const SendBox: React.FC<{
       }
 
       segments.push(
-        <span
-          className='sendbox-highlight-mention'
-          key={`mention-${match.start}-${index}`}
-          style={{ color: MENTION_HIGHLIGHT_COLOR }}
-        >
-          {input.slice(match.start, match.end)}
-        </span>
+        match.reference ? (
+          <ImageReferenceLink key={`image-${match.start}`} reference={match.reference} />
+        ) : (
+          <span
+            className='sendbox-highlight-mention'
+            key={`mention-${match.start}-${index}`}
+            style={{ color: MENTION_HIGHLIGHT_COLOR }}
+          >
+            {input.slice(match.start, match.end)}
+          </span>
+        )
       );
       cursor = match.end;
     });
@@ -1918,7 +1966,7 @@ const SendBox: React.FC<{
     }
 
     return segments;
-  }, [highlightRanges, input]);
+  }, [highlightRanges, imageReferenceRanges, input]);
 
   return (
     <div className={`relative ${className ?? ''}`.trim()}>
@@ -2148,8 +2196,8 @@ const SendBox: React.FC<{
           >
             <div
               ref={highlightScrollRef}
-              aria-hidden='true'
-              className={`sendbox-highlight-layer text-14px ${isMobile ? 'sendbox-input--mobile' : ''} ${isSingleLine ? 'sendbox-highlight-layer--single' : ''}`}
+              aria-hidden={imageReferenceRanges.length === 0 ? true : undefined}
+              className={`sendbox-highlight-layer ${imageReferenceRanges.length ? styles.imageReferenceLayer : ''} text-14px ${isMobile ? 'sendbox-input--mobile' : ''} ${isSingleLine ? 'sendbox-highlight-layer--single' : ''}`}
               data-testid='sendbox-highlight-layer'
               style={!shouldUseHighlightOverlay ? { visibility: 'hidden' } : undefined}
             >
