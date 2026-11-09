@@ -13,7 +13,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('electron', () => ({
-  app: { isPackaged: true },
+  app: {
+    isPackaged: true,
+    commandLine: { getSwitchValue: vi.fn(() => '') },
+  },
   BrowserWindow: class {
     static getAllWindows = () => [];
     bounds: Bounds;
