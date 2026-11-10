@@ -3,21 +3,50 @@
  * Copyright 2025 AionUi (aionui.com)
  * SPDX-License-Identifier: Apache-2.0
  *
- * N4c V8: OfficeWatchViewer export-shape smoke test.
- *
- * Design note:
- * OfficeWatchViewer mounts long-lived watch polling via useEffect. Rendering it
- * under jsdom (even with fully stubbed ipcBridge / Arco / WebviewHost) spins
- * setInterval/setTimeout cycles that don't settle inside worker-fork timeouts
- * and cause the vitest pool to hang (see plan §2.4 WS reconnect hazard).
- *
- * We therefore validate only the static module surface: exports, component
- * type, displayName-ish identity. Runtime render coverage for this file is
- * deferred to e2e (where the real watch backend is online) — this trade-off
- * is recorded in N4c-final.md Deviations.
+ * Office watch URL/action tests and the Word conversion fallback.
  */
 
-import { afterEach, beforeEach, describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+
+const officeMocks = vi.hoisted(() => ({
+  start: vi.fn(),
+  stop: vi.fn(),
+  readContent: vi.fn(),
+  wordToMarkdown: vi.fn(),
+}));
+
+vi.mock('@/common', () => ({
+  ipcBridge: {
+    wordPreview: {
+      start: { invoke: officeMocks.start },
+      stop: { invoke: officeMocks.stop },
+      status: { on: () => () => {} },
+    },
+    pptPreview: {
+      start: { invoke: officeMocks.start },
+      stop: { invoke: officeMocks.stop },
+      status: { on: () => () => {} },
+    },
+    excelPreview: {
+      start: { invoke: officeMocks.start },
+      stop: { invoke: officeMocks.stop },
+      status: { on: () => () => {} },
+    },
+    fs: { readContent: { invoke: officeMocks.readContent } },
+  },
+}));
+vi.mock('@/common/chat/document/DocumentConverter', () => ({
+  documentConverter: { wordToMarkdown: officeMocks.wordToMarkdown },
+}));
+vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+vi.mock('@/renderer/components/media/WebviewHost', () => ({ default: () => null }));
+vi.mock('@/renderer/pages/conversation/Preview/components/viewers/MarkdownViewer', () => ({
+  default: ({ content }: { content: string }) => <div data-testid='word-fallback-preview'>{content}</div>,
+}));
+
+import OfficeWatchViewer from '@/renderer/pages/conversation/Preview/components/viewers/OfficeWatchViewer';
 
 const IMPORT_TIMEOUT_MS = 90000;
 
@@ -159,5 +188,29 @@ describe('resolveOfficeErrorActions', () => {
       showInstallLink: false,
       showRetry: false,
     });
+  });
+});
+
+describe('OfficeWatchViewer Word fallback', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    officeMocks.stop.mockResolvedValue(undefined);
+    officeMocks.start.mockResolvedValue({ url: '', error: 'OFFICECLI_INSTALL_FAILED' });
+    officeMocks.readContent.mockResolvedValue('AAAA');
+    officeMocks.wordToMarkdown.mockResolvedValue('# Recovered Word document');
+  });
+
+  it('renders DOCX content when automatic officecli installation fails', async () => {
+    render(
+      <OfficeWatchViewer docType='word' fileRef={{ kind: 'project', pe_id: 'pe-1', relative_path: 'docs/a.docx' }} />
+    );
+
+    expect(await screen.findByTestId('word-fallback-preview')).toHaveTextContent('# Recovered Word document');
+    expect(officeMocks.readContent).toHaveBeenCalledWith({
+      file: { kind: 'project', pe_id: 'pe-1', relative_path: 'docs/a.docx' },
+      encoding: 'base64',
+    });
+    expect(officeMocks.wordToMarkdown).toHaveBeenCalledWith(expect.any(ArrayBuffer));
+    expect(screen.queryByText('preview.office.errors.installFailed')).not.toBeInTheDocument();
   });
 });

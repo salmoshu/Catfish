@@ -5,10 +5,13 @@
  */
 
 import { ipcBridge } from '@/common';
-import type { ChatFileRef } from '@/common/types/chatFile';
+import { documentConverter } from '@/common/chat/document/DocumentConverter';
+import { localFileRef, type ChatFileRef } from '@/common/types/chatFile';
 import { getBaseUrl, isBackendHttpError } from '@/common/adapter/httpBridge';
 import WebviewHost from '@/renderer/components/media/WebviewHost';
+import { base64ToArrayBuffer } from '@/renderer/utils/file/base64';
 import { openExternalUrl } from '@/renderer/utils/platform';
+import MarkdownPreview from './MarkdownViewer';
 import { isElectronDesktop } from '@/renderer/utils/platform';
 import { Button, Spin } from '@arco-design/web-react';
 import React, { useEffect, useRef, useState } from 'react';
@@ -153,7 +156,8 @@ export function resolveOfficeErrorActions(
  *
  * Launches an `officecli watch` child process via IPC, waits for the local
  * HTTP server to be ready, then renders it in a webview (Electron) or iframe
- * (web server mode). Cleans up the process on unmount.
+ * (web server mode). Word files also have a DOCX-to-Markdown fallback when
+ * officecli is unavailable. Cleans up the process on unmount.
  *
  * Used by PptViewer, OfficeDocViewer, and ExcelViewer — each passes its
  * docType to select the correct IPC bridge, proxy path, and i18n keys.
@@ -163,6 +167,7 @@ const OfficeWatchViewer: React.FC<OfficeWatchViewerProps> = ({ docType, fileRef,
   const keys = I18N_KEYS[docType];
 
   const [watchUrl, setWatchUrl] = useState<string | null>(null);
+  const [fallbackContent, setFallbackContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<'starting' | 'installing'>('starting');
   const [error, setError] = useState<OfficeWatchErrorState | null>(null);
@@ -191,14 +196,34 @@ const OfficeWatchViewer: React.FC<OfficeWatchViewerProps> = ({ docType, fileRef,
       else if (evt.state === 'starting') setStatus('starting');
     });
 
+    const startWordFallback = async (code: OfficeWatchErrorCode): Promise<boolean> => {
+      if (docType !== 'word' || code === 'PATH_OUTSIDE_SANDBOX') return false;
+      const sourceRef = fileRef ?? (file_path ? localFileRef(file_path) : undefined);
+      if (!sourceRef) return false;
+      try {
+        const base64 = await ipcBridge.fs.readContent.invoke({ file: sourceRef, encoding: 'base64' });
+        const markdown = await documentConverter.wordToMarkdown(base64ToArrayBuffer(base64));
+        if (cancelled) return true;
+        setFallbackContent(markdown);
+        setError(null);
+        setLoading(false);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
     const start = async () => {
       setLoading(true);
       setStatus('starting');
       setError(null);
+      setFallbackContent(null);
+      setWatchUrl(null);
       try {
         const result = await bridge.start.invoke({ file_path, workspace, file: fileRef });
         const errorCode = normalizeOfficeWatchErrorCode(result.error);
         if (errorCode) {
+          if (await startWordFallback(errorCode)) return;
           setError({
             code: errorCode,
             message: t(OFFICE_ERROR_I18N_KEYS[errorCode]),
@@ -222,6 +247,7 @@ const OfficeWatchViewer: React.FC<OfficeWatchViewerProps> = ({ docType, fileRef,
         if (!cancelled) {
           const backendCode = isBackendHttpError(err) ? normalizeOfficeWatchErrorCode(err.code) : undefined;
           if (backendCode) {
+            if (await startWordFallback(backendCode)) return;
             setError({
               code: backendCode,
               message: t(OFFICE_ERROR_I18N_KEYS[backendCode]),
@@ -258,6 +284,14 @@ const OfficeWatchViewer: React.FC<OfficeWatchViewerProps> = ({ docType, fileRef,
             {status === 'installing' ? t(keys.installing) : t(keys.loading)}
           </span>
         </div>
+      </div>
+    );
+  }
+
+  if (fallbackContent !== null) {
+    return (
+      <div className='h-full w-full overflow-hidden bg-bg-1'>
+        <MarkdownPreview content={fallbackContent} fileRef={fileRef} file_path={file_path} workspace={workspace} />
       </div>
     );
   }

@@ -25,6 +25,16 @@ export const BINARY_MIME_MAP: Record<string, string> = {
   rar: 'application/vnd.rar',
 };
 
+/** Decode raw base64 or a base64 data URL without using fetch(). */
+export function base64ToArrayBuffer(value: string): ArrayBuffer {
+  const separator = value.indexOf(',');
+  const base64 = separator >= 0 ? value.slice(separator + 1) : value;
+  const binaryStr = atob(base64);
+  const bytes = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+  return bytes.buffer;
+}
+
 /**
  * Decode a base64 data URL into a Blob.
  *
@@ -32,9 +42,5 @@ export const BINARY_MIME_MAP: Record<string, string> = {
  * restrictions that block `fetch('data:...')` in WebUI mode.
  */
 export function base64ToBlob(dataUrl: string, mimeType: string): Blob {
-  const base64 = dataUrl.split(',')[1] ?? '';
-  const binaryStr = atob(base64);
-  const bytes = new Uint8Array(binaryStr.length);
-  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
-  return new Blob([bytes], { type: mimeType });
+  return new Blob([base64ToArrayBuffer(dataUrl)], { type: mimeType });
 }

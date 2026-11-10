@@ -14,7 +14,7 @@ import {
   WORKBENCH_OPEN_EVENT,
   type WorkbenchOpenDetail,
 } from './workbenchActivityStore';
-import { useWorkbenchPanelState } from './workbenchPanelState';
+import { openWorkbenchWorkspace, useWorkbenchPanelState } from './workbenchPanelState';
 import './workbench.css';
 
 const SECTIONS = new Set<WorkbenchSection>([
@@ -100,7 +100,7 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
       const section = (event as CustomEvent<WorkbenchOpenDetail>).detail?.section;
       if (!SECTIONS.has(section)) return;
       update((current) =>
-        section === 'plan' ? { ...current, planOpen: true } : { ...current, section, workspaceOpen: true }
+        section === 'plan' ? { ...current, planOpen: true } : openWorkbenchWorkspace(current, section)
       );
     };
     window.addEventListener(WORKBENCH_OPEN_EVENT, handleOpen);
@@ -113,7 +113,7 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
         update((current) => ({ ...current, planOpen: true }));
         return;
       }
-      update((current) => ({ ...current, section, workspaceOpen: true }));
+      update((current) => openWorkbenchWorkspace(current, section));
       notifyWorkbenchSectionChange(section);
       if (section !== 'preview' || previewOpen) return;
       if (activeTab) {

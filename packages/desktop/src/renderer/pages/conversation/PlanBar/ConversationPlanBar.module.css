@@ -57,6 +57,11 @@
   box-shadow: var(--shadow-pop);
 }
 
+.floatingPlanLeft {
+  inset-inline-start: 16px;
+  inset-inline-end: auto;
+}
+
 .closeFloating:global(.arco-btn) {
   position: absolute;
   inset-block-start: 12px;

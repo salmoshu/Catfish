@@ -78,7 +78,7 @@ const ConversationPlanCard: React.FC<{ conversation_id: string }> = ({ conversat
             role='dialog'
             aria-label={t('conversation.planBar.title')}
             data-plan-presentation='floating'
-            className={styles.floatingPlan}
+            className={`${styles.floatingPlan} ${state.workspaceOpen ? styles.floatingPlanLeft : ''}`}
           >
             <Button
               type='text'

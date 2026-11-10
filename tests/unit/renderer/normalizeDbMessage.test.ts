@@ -143,6 +143,59 @@ describe('normalizeDbMessage', () => {
     });
   });
 
+  it('keeps an in-progress capacity retry distinct from a terminal quota error', () => {
+    const normalized = normalizeDbMessage({
+      id: 'tip-capacity-retry',
+      type: 'tips',
+      conversation_id: 'conversation-1',
+      position: 'center',
+      status: 'work',
+      content: JSON.stringify({
+        content: 'Reconnecting... 1/5 — Selected model is at capacity',
+        type: 'warning',
+        code: 'CODEX_RETRYING',
+        supersedes_key: 'codex-retry:turn-1',
+      }),
+    } as unknown as IMessageTips) as IMessageTips;
+
+    expect(normalized.content).toEqual({
+      content: 'Reconnecting... 1/5 — Selected model is at capacity',
+      type: 'warning',
+      code: 'CODEX_RETRYING',
+      supersedes_key: 'codex-retry:turn-1',
+    });
+  });
+
+  it('restores the provider quota explanation from a persisted terminal error', () => {
+    const detail =
+      '429 You have reached your monthly usage limit for this billing cycle. Your quota will reset in the next cycle.';
+    const normalized = normalizeDbMessage({
+      id: 'tip-monthly-quota',
+      type: 'tips',
+      conversation_id: 'conversation-1',
+      position: 'center',
+      status: 'error',
+      content: JSON.stringify({
+        content: 'The model provider rate limited the request',
+        type: 'error',
+        error: {
+          message: 'The model provider rate limited the request',
+          code: 'USER_LLM_PROVIDER_RATE_LIMITED',
+          detail,
+          retryable: true,
+        },
+      }),
+    } as unknown as IMessageTips) as IMessageTips;
+
+    const expectedNotice = `The model provider rate limited the request\n${detail}`;
+    expect(normalized.content).toEqual({
+      content: expectedNotice,
+      type: 'warning',
+      code: 'CODEX_QUOTA_EXHAUSTED',
+      params: { detail: expectedNotice },
+    });
+  });
+
   it('normalizes team metadata when persisted text content is already an object', () => {
     const normalized = normalizeDbMessage({
       id: 'team-message-object',

@@ -293,6 +293,8 @@ export type TreeNode = {
   role?: RootRole;
   /** Root-only: folder availability, for greying-out unreachable roots. */
   runtimeStatus?: RootRuntimeStatus;
+  /** Temporary inline naming row, never emitted by the backend tree projection. */
+  creation?: 'newFile' | 'newDir';
 };
 
 /** A project's pe root as fed to the projection (title = display name). */
@@ -414,7 +416,7 @@ export function buildRemoveRequest(peId: string, relativePath: string, recursive
  * Build the WS `fs/mkdir` request to create a directory named `rawName` inside
  * `parentDir` (pe-relative; `''` = the pe root). Returns `null` for an
  * empty/whitespace name so the caller skips the round-trip and just closes the
- * dialog, mirroring `buildRenameRequest`'s no-op handling. `name` is a single
+ * inline editor, mirroring `buildRenameRequest`'s no-op handling. `name` is a single
  * segment joined under `parentDir`; the backend's lexical + realpath containment
  * guard rejects any escape, and the parent dir's subscription delivers the
  * `added` delta that materializes the new node.

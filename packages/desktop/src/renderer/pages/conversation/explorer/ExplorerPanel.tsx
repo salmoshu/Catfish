@@ -16,7 +16,7 @@ import { Button, Dropdown, Input, Menu, Message, Tree } from '@arco-design/web-r
 import { isElectronDesktop } from '@/renderer/utils/platform';
 import type { TreeProps } from '@arco-design/web-react';
 import { Caution, MoreOne } from '@icon-park/react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 // File-tree icons (catppuccin file-icon theme), now owned by the explorer.
@@ -35,18 +35,22 @@ import type {
 } from './explorerModel';
 import {
   PE_REF_DRAG_MIME,
+  buildCreateFileRequest,
+  buildMkdirRequest,
   buildRenameRequest,
   canRemoveRoot,
   explorerContextMenuSections,
   isCopyModifierPressed,
   isTransferAllowed,
+  joinRel,
   keyToRef,
   parentRel,
   parsePeRef,
+  peKey,
   resolveTransferOp,
   serializePeRef,
 } from './explorerModel';
-import { openProject, select, setExpandedKeys } from './explorerStore';
+import { openProject, reveal, select, setExpandedKeys } from './explorerStore';
 import { initExplorerRuntime } from './monitorTransport';
 import { useExplorerView } from './useExplorerView';
 
@@ -61,13 +65,6 @@ export type ExplorerPanelProps = {
   onOpenFile?: (peId: string, relativePath: string) => void;
   /** Delete an entry. Omit to hide the corresponding context-menu item. */
   onDelete?: (peId: string, relativePath: string, name: string, isDirectory: boolean) => void;
-  /** Create a new empty file inside the directory `dirRelativePath` (a pe root
-   * uses `''`). The name is collected in a dialog by the handler. Only offered on
-   * directory / root nodes. Omit to hide the item. */
-  onNewFile?: (peId: string, dirRelativePath: string) => void;
-  /** Create a new sub-directory inside `dirRelativePath`. Same gating and dialog
-   * flow as `onNewFile`. Omit to hide the item. */
-  onNewDir?: (peId: string, dirRelativePath: string) => void;
   /** Add a file/folder node to the active conversation's send box. Omit to hide
    * the item (e.g. no single active conversation, as on the team route). */
   onAddToChat?: (peId: string, relativePath: string, name: string, isFile: boolean) => void;
@@ -102,8 +99,6 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
   onRemoveRoot,
   onOpenFile,
   onDelete,
-  onNewFile,
-  onNewDir,
   onAddToChat,
   onRevealInFolder,
   onCopyRelativePath,
@@ -192,8 +187,82 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
     }
   }, [renameTarget, renameValue, t]);
 
+  const [creationTarget, setCreationTarget] = useState<{
+    key: string;
+    peId: string;
+    targetDir: string;
+    mode: 'newFile' | 'newDir';
+  } | null>(null);
+  const [creationValue, setCreationValue] = useState('');
+  const [creationSubmitting, setCreationSubmitting] = useState(false);
+  const creationSubmittingRef = useRef(false);
+
+  const startCreate = useCallback(
+    (key: string, peId: string, targetDir: string, mode: 'newFile' | 'newDir') => {
+      setRenameTarget(null);
+      setCreationTarget({ key, peId, targetDir, mode });
+      setCreationValue('');
+      if (!view.expanded.includes(key)) setExpandedKeys([...view.expanded, key]);
+    },
+    [view.expanded]
+  );
+
+  const cancelCreate = useCallback(() => {
+    if (!creationSubmittingRef.current) setCreationTarget(null);
+  }, []);
+
+  const submitCreate = useCallback(async () => {
+    if (!creationTarget || creationSubmittingRef.current) return;
+    const request =
+      creationTarget.mode === 'newFile'
+        ? buildCreateFileRequest(creationTarget.peId, creationTarget.targetDir, creationValue)
+        : buildMkdirRequest(creationTarget.peId, creationTarget.targetDir, creationValue);
+    if (!request) {
+      setCreationTarget(null);
+      return;
+    }
+
+    creationSubmittingRef.current = true;
+    setCreationSubmitting(true);
+    try {
+      await initExplorerRuntime().request(request.method, request.params);
+      reveal({ pe_id: creationTarget.peId, relative_path: creationTarget.targetDir });
+      select(peKey(creationTarget.peId, joinRel(creationTarget.targetDir, creationValue.trim())));
+      setCreationTarget(null);
+    } catch {
+      Message.error(
+        t(
+          creationTarget.mode === 'newFile'
+            ? 'conversation.explorer.newFileFailed'
+            : 'conversation.explorer.newDirFailed'
+        )
+      );
+    } finally {
+      creationSubmittingRef.current = false;
+      setCreationSubmitting(false);
+    }
+  }, [creationTarget, creationValue, t]);
+
+  const treeDataWithCreation = useMemo(() => {
+    const treeData = view.treeData as unknown as TreeNode[];
+    if (!creationTarget) return treeData;
+    const insertCreationRow = (nodes: TreeNode[]): TreeNode[] =>
+      nodes.map((node) => {
+        const children = node.children ? insertCreationRow(node.children) : undefined;
+        if (node.key !== creationTarget.key) return { ...node, children };
+        const creationRow: TreeNode = {
+          key: `${creationTarget.key}::creating`,
+          title: '',
+          isLeaf: true,
+          creation: creationTarget.mode,
+        };
+        return { ...node, children: [creationRow, ...(children ?? [])] };
+      });
+    return insertCreationRow(treeData);
+  }, [creationTarget, view.treeData]);
+
   const handleExpand: TreeProps['onExpand'] = (expandedKeys) => {
-    if (renameTarget) return;
+    if (renameTarget || creationTarget) return;
     setExpandedKeys(expandedKeys.map(String));
   };
 
@@ -222,13 +291,13 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
   };
 
   const handleSelect: TreeProps['onSelect'] = (selectedKeys, extra) => {
-    if (renameTarget) return;
+    const data = extra?.node?.props?.dataRef as TreeNode | undefined;
+    if (renameTarget || data?.creation) return;
     const key = selectedKeys.length > 0 ? String(selectedKeys[0]) : null;
     select(key);
     // Selecting a file (leaf) opens it in the preview panel. Folders are expanded
     // by arco itself via `actionOnClick` on the <Tree> below — not here, so a row
     // click is never toggled twice.
-    const data = extra?.node?.props?.dataRef as TreeNode | undefined;
     if (key && data?.isLeaf && onOpenFile) {
       const ref = keyToRef(key);
       onOpenFile(ref.pe_id, ref.relative_path);
@@ -245,6 +314,51 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
       const isFile = Boolean(data?.isLeaf);
       const isExpanded = view.expanded.includes(key);
       const isRenaming = renameTarget?.key === key;
+
+      if (data?.creation) {
+        const mode = data.creation;
+        return (
+          <span className='flex items-center gap-4px min-w-0 w-full'>
+            <FileTypeIcon
+              node={{
+                name: 'untitled',
+                relativePath: mode === 'newFile' ? 'untitled.txt' : 'untitled',
+                isFile: mode === 'newFile',
+              }}
+              expanded={false}
+            />
+            <Input
+              autoFocus
+              spellCheck={false}
+              autoCorrect='off'
+              autoCapitalize='off'
+              dir='ltr'
+              value={creationValue}
+              disabled={creationSubmitting}
+              aria-label={t(`conversation.explorer.contextMenu.${mode}`)}
+              className='inline-rename-input min-w-0 flex-1'
+              size='mini'
+              onChange={setCreationValue}
+              onFocus={(event) => event.target.select()}
+              onBlur={cancelCreate}
+              onClick={(event) => event.stopPropagation()}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onContextMenu={(event) => event.stopPropagation()}
+              onKeyDown={(event) => {
+                event.stopPropagation();
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  void submitCreate();
+                } else if (event.key === 'Escape') {
+                  event.preventDefault();
+                  cancelCreate();
+                }
+              }}
+              placeholder={t('conversation.explorer.namePlaceholder')}
+            />
+          </span>
+        );
+      }
 
       // Right-click file operations: non-root nodes get rename + delete; pe roots
       // (role set) get "remove from project" (they are pe bindings, not
@@ -401,8 +515,8 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
         revealInFolder: canReveal,
         copyRelativePath: Boolean(onCopyRelativePath),
         copyAbsolutePath: canCopyAbsolutePath,
-        newFile: !isFile && Boolean(onNewFile),
-        newDir: !isFile && Boolean(onNewDir),
+        newFile: !isFile,
+        newDir: !isFile,
         rename: !isRoot,
         delete: !isRoot && Boolean(onDelete),
         remove: isRoot && Boolean(onRemoveRoot),
@@ -424,8 +538,8 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
       const onClickMenuItem = (menuKey: string, event: { stopPropagation?: () => void }) => {
         event?.stopPropagation?.();
         if (menuKey === 'addToChat') onAddToChat?.(peId, rel, name, isFile);
-        else if (menuKey === 'newFile') onNewFile?.(peId, rel);
-        else if (menuKey === 'newDir') onNewDir?.(peId, rel);
+        else if (menuKey === 'newFile') startCreate(key, peId, rel, 'newFile');
+        else if (menuKey === 'newDir') startCreate(key, peId, rel, 'newDir');
         else if (menuKey === 'rename') startRename(key, peId, rel, name);
         else if (menuKey === 'delete') onDelete?.(peId, rel, name, !isFile);
         else if (menuKey === 'remove' && removable) onRemoveRoot?.(peId);
@@ -516,8 +630,6 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
     [
       onRemoveRoot,
       onDelete,
-      onNewFile,
-      onNewDir,
       onAddToChat,
       onImportFiles,
       onTransfer,
@@ -531,6 +643,12 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
       startRename,
       cancelRename,
       submitRename,
+      creationTarget,
+      creationValue,
+      creationSubmitting,
+      startCreate,
+      cancelCreate,
+      submitCreate,
     ]
   );
 
@@ -601,7 +719,7 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
           revealed/selected node has a clearly visible highlight. */}
       <Tree
         className='workspace-tree'
-        treeData={view.treeData as TreeProps['treeData']}
+        treeData={treeDataWithCreation as TreeProps['treeData']}
         expandedKeys={view.expanded}
         selectedKeys={view.selected ? [view.selected] : []}
         /* 让节点标题块（arco 的点击目标 .arco-tree-node-title）铺满整行剩余宽度：

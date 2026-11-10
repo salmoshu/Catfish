@@ -244,7 +244,7 @@ describe('independent workspace and plan panels', () => {
     [false, false, 'plan', false, true],
     [true, false, 'plan', true, true],
     [true, false, 'workspace', false, false],
-    [false, true, 'workspace', true, true],
+    [false, true, 'workspace', true, false],
     [false, true, 'plan', false, false],
     [true, true, 'workspace', false, true],
     [true, true, 'plan', true, false],
@@ -271,15 +271,15 @@ describe('independent workspace and plan panels', () => {
     expect(document.querySelector('[data-workbench]')).toHaveAttribute('data-active-section', 'files');
   });
 
-  it('restores both panels after unmounting and reloading persisted state', () => {
+  it('persists the workspace after opening it closes the docked plan', () => {
     const view = setupPanels(false, false);
     fireEvent.click(screen.getByRole('button', { name: 'conversation.planBar.title' }));
     fireEvent.click(screen.getByRole('button', { name: 'Toggle workspace' }));
-    expectPresentation(true, true);
+    expectPresentation(true, false);
     view.unmount();
     resetWorkbenchPanelStateForTest();
     render(<Harness />);
-    expectPresentation(true, true);
+    expectPresentation(true, false);
   });
 
   it('keeps the workspace docked and mounted when closing the floating plan', () => {
@@ -314,6 +314,7 @@ describe('independent workspace and plan panels', () => {
     const explorer = screen.getByTestId('workspace-explorer');
     fireEvent.click(screen.getByRole('button', { name: 'conversation.planBar.title' }));
     expect(screen.getByRole('dialog', { name: 'conversation.planBar.title' })).toBeVisible();
+    expect(screen.getByRole('dialog', { name: 'conversation.planBar.title' }).className).toContain('floatingPlanLeft');
     expect(screen.getByTestId('workspace-explorer')).toBe(explorer);
     expectPresentation(true, true);
     fireEvent.keyDown(window, { key: 'Escape' });

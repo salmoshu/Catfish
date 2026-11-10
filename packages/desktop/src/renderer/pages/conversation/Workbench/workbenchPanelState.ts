@@ -12,11 +12,23 @@ const states = new Map<string, WorkbenchPanelState>();
 const listeners = new Set<() => void>();
 const sections = new Set(['files', 'changes', 'preview', 'terminal', 'shell', 'agents']);
 
+/** Open a workspace section, closing a docked plan only when the workspace was closed. */
+export function openWorkbenchWorkspace(
+  state: WorkbenchPanelState,
+  section: WorkbenchPanelState['section']
+): WorkbenchPanelState {
+  return {
+    ...state,
+    section,
+    workspaceOpen: true,
+    planOpen: state.workspaceOpen ? state.planOpen : false,
+  };
+}
+
 /** Apply the workspace/plan interaction rules without changing either panel's content. */
 export function toggleWorkbenchPanel(state: WorkbenchPanelState, action: PanelAction): WorkbenchPanelState {
-  return action === 'workspace'
-    ? { ...state, workspaceOpen: !state.workspaceOpen }
-    : { ...state, planOpen: !state.planOpen };
+  if (action === 'plan') return { ...state, planOpen: !state.planOpen };
+  return state.workspaceOpen ? { ...state, workspaceOpen: false } : openWorkbenchWorkspace(state, state.section);
 }
 
 const stateKey = (projectId: string | null, conversationId: string | null): string =>

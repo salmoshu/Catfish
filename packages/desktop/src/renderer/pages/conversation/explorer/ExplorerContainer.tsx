@@ -16,7 +16,7 @@
  * reveal / explicit add-to-chat; see {@link SearchPanel}).
  */
 
-import { Button, Input, Message, Modal, Spin, Tooltip } from '@arco-design/web-react';
+import { Button, Message, Modal, Spin, Tooltip } from '@arco-design/web-react';
 import { Refresh } from '@icon-park/react';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -44,11 +44,8 @@ import { resolvePreviewPayload } from '@/renderer/utils/file/previewPayload';
 
 import { ExplorerPanel } from './ExplorerPanel';
 import {
-  buildCreateFileRequest,
-  buildMkdirRequest,
   buildRemoveRequest,
   buildTransferRequest,
-  joinRel,
   parentRel,
   peKey,
   type DragPeRef,
@@ -75,17 +72,6 @@ export type ExplorerContainerProps = {
   onSectionChange?: (section: WorkbenchSection) => void;
   terminalActivity?: IMessageAcpTerminalOutput[];
 };
-
-/** The name-entry dialog collects a single file or folder name. */
-type NameDialogState = { mode: 'newFile' | 'newDir'; peId: string; targetDir: string };
-
-/** i18n key for a name-dialog operation's title (reuses the context-menu labels). */
-const nameDialogTitleKey = (mode: NameDialogState['mode']): string =>
-  mode === 'newFile' ? 'conversation.explorer.contextMenu.newFile' : 'conversation.explorer.contextMenu.newDir';
-
-/** i18n key for the failure toast when a name-dialog operation's WS request fails. */
-const nameDialogErrorKey = (mode: NameDialogState['mode']): string =>
-  mode === 'newFile' ? 'conversation.explorer.newFileFailed' : 'conversation.explorer.newDirFailed';
 
 /** Args passed to `openPreview` for an Explorer-opened file. */
 export type ExplorerPreviewPayload = {
@@ -229,46 +215,6 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({
   // Busy flag for the top-bar refresh: spins the icon and disables re-click while a
   // refresh is in flight (so rapid clicks don't fan out redundant backend round-trips).
   const [refreshing, setRefreshing] = useState(false);
-  const [nameDialog, setNameDialog] = useState<NameDialogState | null>(null);
-  const [nameValue, setNameValue] = useState('');
-  const [nameSubmitting, setNameSubmitting] = useState(false);
-
-  // New-file / new-folder open the shared dialog with an empty name; `dirRel` is
-  // the directory to create inside (the right-clicked dir/root's own rel).
-  const handleNewFile = (peId: string, dirRel: string): void => {
-    setNameDialog({ mode: 'newFile', peId, targetDir: dirRel });
-    setNameValue('');
-  };
-
-  const handleNewDir = (peId: string, dirRel: string): void => {
-    setNameDialog({ mode: 'newDir', peId, targetDir: dirRel });
-    setNameValue('');
-  };
-
-  const submitNameDialog = async (): Promise<void> => {
-    if (!nameDialog) return;
-    const request =
-      nameDialog.mode === 'newFile'
-        ? buildCreateFileRequest(nameDialog.peId, nameDialog.targetDir, nameValue)
-        : buildMkdirRequest(nameDialog.peId, nameDialog.targetDir, nameValue);
-    if (!request) {
-      setNameDialog(null);
-      return;
-    }
-    setNameSubmitting(true);
-    try {
-      await initExplorerRuntime().request(request.method, request.params);
-      // Reveal the parent dir + select the new node so the user sees where it landed.
-      const newRel = joinRel(nameDialog.targetDir, nameValue.trim());
-      reveal({ pe_id: nameDialog.peId, relative_path: nameDialog.targetDir });
-      select(peKey(nameDialog.peId, newRel));
-      setNameDialog(null);
-    } catch {
-      Message.error(t(nameDialogErrorKey(nameDialog.mode)));
-    } finally {
-      setNameSubmitting(false);
-    }
-  };
 
   const handleDelete = (peId: string, rel: string, name: string, isDirectory: boolean): void => {
     Modal.confirm({
@@ -576,8 +522,6 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({
               onRemoveRoot={handleRemoveFolder}
               onOpenFile={handleOpenFile}
               onDelete={handleDelete}
-              onNewFile={handleNewFile}
-              onNewDir={handleNewDir}
               onAddToChat={activeConversationId ? handleAddToChat : undefined}
               onRevealInFolder={handleRevealInFolder}
               onCopyRelativePath={handleCopyRelativePath}
@@ -611,25 +555,6 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({
           </div>
         )}
       </div>
-      <Modal
-        title={nameDialog ? t(nameDialogTitleKey(nameDialog.mode)) : ''}
-        visible={nameDialog !== null}
-        onCancel={() => setNameDialog(null)}
-        onOk={submitNameDialog}
-        okText={t('common.create')}
-        cancelText={t('common.cancel')}
-        confirmLoading={nameSubmitting}
-        autoFocus
-        focusLock
-      >
-        <Input
-          autoFocus
-          value={nameValue}
-          onChange={setNameValue}
-          onPressEnter={submitNameDialog}
-          placeholder={t('conversation.explorer.namePlaceholder')}
-        />
-      </Modal>
     </div>
   );
 };

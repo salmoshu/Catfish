@@ -8,6 +8,7 @@ import { ipcBridge } from '@/common';
 import type { AgentStreamErrorInfo, IMessageText, IMessageTips, TMessage } from '@/common/chat/chatLib';
 import {
   composeMessage,
+  getAgentQuotaNotice,
   mergeAcpToolCallContent,
   mergeTextMessageContent,
   normalizeAgentStreamError,
@@ -717,6 +718,28 @@ const normalizeDbTipsMessage = (msg: TMessage): TMessage => {
       : typeof existingContent?.supersedes_key === 'string' && existingContent.supersedes_key
         ? existingContent.supersedes_key
         : undefined;
+
+  const quotaNotice =
+    tipType === 'error'
+      ? getAgentQuotaNotice({
+          type: 'error',
+          conversation_id: msg.conversation_id,
+          msg_id: msg.msg_id ?? msg.id,
+          data: parsed.error ?? structuredError ?? parsed.content,
+        })
+      : null;
+  if (quotaNotice) {
+    return {
+      ...msg,
+      content: {
+        content: quotaNotice,
+        type: 'warning',
+        code: 'CODEX_QUOTA_EXHAUSTED',
+        params: { detail: quotaNotice },
+        ...(supersedesKey ? { supersedes_key: supersedesKey } : {}),
+      },
+    } as IMessageTips;
+  }
 
   return {
     ...msg,

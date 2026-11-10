@@ -88,15 +88,6 @@ vi.mock('@/renderer/pages/conversation/explorer/ExplorerPanel', () => ({
       <button data-testid='do-import' onClick={() => onImportFiles?.('peA', 'sub', ['/os/a.txt', '/os/b.txt'])}>
         import
       </button>
-      <button data-testid='do-new-file' onClick={() => onNewFile?.('peA', 'src')}>
-        new-file
-      </button>
-      <button data-testid='do-new-file-root' onClick={() => onNewFile?.('peA', '')}>
-        new-file-root
-      </button>
-      <button data-testid='do-new-dir' onClick={() => onNewDir?.('peA', 'src')}>
-        new-dir
-      </button>
     </div>
   ),
 }));
@@ -203,8 +194,6 @@ describe('ExplorerContainer toolbar and folder actions', () => {
     await screen.findByTestId('roots');
     expect(screen.queryByLabelText('conversation.explorer.addFolder')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('conversation.explorer.collapseAll')).not.toBeInTheDocument();
-    expect(screen.getByTestId('do-new-file')).toBeInTheDocument();
-    expect(screen.getByTestId('do-new-dir')).toBeInTheDocument();
   });
 
   it('opens a selected file in preview via /content by ChatFileRef (pe_id + relative_path, no absolute path)', async () => {
@@ -420,68 +409,59 @@ describe('ExplorerContainer A-paste import', () => {
   });
 });
 
-describe('ExplorerContainer new file / new folder', () => {
-  const nameInput = () => screen.findByPlaceholderText('conversation.explorer.namePlaceholder');
-  const clickCreate = () => fireEvent.click(screen.getByRole('button', { name: 'common.create' }));
-  const type = (input: HTMLElement, value: string) => fireEvent.change(input, { target: { value } });
-
-  it('new file: dispatches fs/createFile with the parent dir joined to the typed name', async () => {
-    renderIt();
-    fireEvent.click(await screen.findByTestId('do-new-file'));
-    type(await nameInput(), 'index.ts');
-    clickCreate();
-    await waitFor(() =>
-      expect(fsRead).toHaveBeenCalledWith('fs/createFile', { file: { pe_id: 'peA', relative_path: 'src/index.ts' } })
+describe('ExplorerPanel inline file / folder creation', () => {
+  const startNaming = async (mode: 'newFile' | 'newDir') => {
+    const { ExplorerPanel: RealExplorerPanel } = await vi.importActual<
+      typeof import('@/renderer/pages/conversation/explorer/ExplorerPanel')
+    >('@/renderer/pages/conversation/explorer/ExplorerPanel');
+    render(
+      <RealExplorerPanel
+        projectId='p1'
+        roots={[{ pe_id: 'peA', title: 'Root', role: 'workspace', runtimeStatus: 'available' }]}
+      />
     );
-  });
+    fireEvent.contextMenu(await screen.findByText('Root'));
+    fireEvent.click(await screen.findByText(`conversation.explorer.contextMenu.${mode}`));
+    return screen.findByPlaceholderText('conversation.explorer.namePlaceholder');
+  };
 
-  it('new folder: dispatches fs/mkdir with the parent dir joined to the typed name', async () => {
-    renderIt();
-    fireEvent.click(await screen.findByTestId('do-new-dir'));
-    type(await nameInput(), 'utils');
-    clickCreate();
-    await waitFor(() =>
-      expect(fsRead).toHaveBeenCalledWith('fs/mkdir', { dir: { pe_id: 'peA', relative_path: 'src/utils' } })
-    );
-  });
+  it('shows an inline naming row and creates a file at the pe root', async () => {
+    const input = await startNaming('newFile');
+    fireEvent.change(input, { target: { value: 'top.ts' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
 
-  it('new file at a pe-root (targetDir "") joins to a bare name — no leading slash', async () => {
-    renderIt();
-    fireEvent.click(await screen.findByTestId('do-new-file-root'));
-    type(await nameInput(), 'top.ts');
-    clickCreate();
     await waitFor(() =>
       expect(fsRead).toHaveBeenCalledWith('fs/createFile', { file: { pe_id: 'peA', relative_path: 'top.ts' } })
     );
+    expect(screen.queryByRole('button', { name: 'common.create' })).not.toBeInTheDocument();
   });
 
-  it('empty name is a no-op: no request dispatched, no error toast', async () => {
-    renderIt();
-    fireEvent.click(await screen.findByTestId('do-new-file'));
-    await nameInput(); // dialog is open with an empty default
-    clickCreate(); // submit with the empty default
-    // The builder returns null on a blank name, so submit bails before any await:
-    // nothing goes over the wire and no failure surfaces — a clean dismissal, not
-    // an error. (Assert on behavior: Arco keeps the modal mounted-but-hidden.)
+  it('shows an inline naming row and creates a folder at the pe root', async () => {
+    const input = await startNaming('newDir');
+    fireEvent.change(input, { target: { value: 'utils' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() =>
+      expect(fsRead).toHaveBeenCalledWith('fs/mkdir', { dir: { pe_id: 'peA', relative_path: 'utils' } })
+    );
+    expect(screen.queryByRole('button', { name: 'common.create' })).not.toBeInTheDocument();
+  });
+
+  it('dismisses the inline naming row on Escape without dispatching a request', async () => {
+    const input = await startNaming('newFile');
+    fireEvent.keyDown(input, { key: 'Escape' });
+
+    expect(input).not.toBeInTheDocument();
     expect(fsRead).not.toHaveBeenCalled();
-    expect(Message.error).not.toHaveBeenCalled();
   });
 
-  it('surfaces newFileFailed when the create request throws (e.g. name already exists)', async () => {
+  it('keeps the inline editor available and surfaces a creation failure', async () => {
     fsRead.mockRejectedValueOnce(new Error('exists'));
-    renderIt();
-    fireEvent.click(await screen.findByTestId('do-new-file'));
-    type(await nameInput(), 'dup.ts');
-    clickCreate();
+    const input = await startNaming('newFile');
+    fireEvent.change(input, { target: { value: 'dup.ts' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
     await waitFor(() => expect(Message.error).toHaveBeenCalledWith('conversation.explorer.newFileFailed'));
-  });
-
-  it('surfaces newDirFailed when the mkdir request throws', async () => {
-    fsRead.mockRejectedValueOnce(new Error('exists'));
-    renderIt();
-    fireEvent.click(await screen.findByTestId('do-new-dir'));
-    type(await nameInput(), 'dup');
-    clickCreate();
-    await waitFor(() => expect(Message.error).toHaveBeenCalledWith('conversation.explorer.newDirFailed'));
+    expect(input).toBeInTheDocument();
   });
 });

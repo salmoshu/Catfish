@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { base64ToBlob, BINARY_MIME_MAP } from '@/renderer/utils/file/base64';
+import { base64ToArrayBuffer, base64ToBlob, BINARY_MIME_MAP } from '@/renderer/utils/file/base64';
 
 describe('base64 utils', () => {
   describe('base64ToBlob', () => {
@@ -45,12 +45,16 @@ describe('base64 utils', () => {
       expect(blob.type).toBe('image/jpeg');
     });
 
-    it('handles data URL without MIME type prefix', () => {
-      const base64 = btoa('test');
-      const dataUrl = base64;
-      const blob = base64ToBlob(dataUrl, 'text/plain');
+    it('handles raw base64 without a data URL prefix', () => {
+      const blob = base64ToBlob(btoa('test'), 'text/plain');
 
-      expect(blob.size).toBe(0);
+      expect(blob.size).toBe(4);
+    });
+
+    it('decodes raw DOCX bytes into an ArrayBuffer', () => {
+      const bytes = new Uint8Array(base64ToArrayBuffer(btoa('PK\x03\x04')));
+
+      expect(Array.from(bytes)).toEqual([80, 75, 3, 4]);
     });
 
     it('handles multiline base64', () => {
