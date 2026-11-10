@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.4.26](https://github.com/salmoshu/Catfish/releases/tag/v0.4.26) (2026-11-10)
+
+### Features
+
+- **workspace:** float plan steps over the left sidebar when the workspace is open, and close a docked plan before reopening the workspace
+- **explorer:** create files and folders through inline naming rows in the tree instead of modal dialogs
+- **word preview:** keep Word documents readable through a DOCX-to-Markdown fallback when officecli is unavailable
+
+### Bug Fixes
+
+- **conversation:** preserve the provider's quota-exhaustion details in terminal errors and restored history
+- **word preview:** decode raw base64 document bytes without requiring a data URL prefix
+
+---
+
 ## [0.4.25](https://github.com/salmoshu/Catfish/releases/tag/v0.4.25) (2026-11-09)
 
 ### Features
