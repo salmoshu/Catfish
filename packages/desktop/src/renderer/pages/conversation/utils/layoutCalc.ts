@@ -5,7 +5,7 @@ export const WORKSPACE_HEADER_HEIGHT = 32;
 export const MIN_CHAT_PANEL_PX = 360;
 export const MIN_PREVIEW_PANEL_PX = 340;
 export const MIN_WORKSPACE_PANEL_PX = 220;
-export const MAX_WORKSPACE_PANEL_PX = 500;
+export const MAX_WORKSPACE_PANEL_PX = 900;
 export const DEFAULT_WORKSPACE_PANEL_PX = 260;
 /**
  * Horizontal chrome of the Layout-hoisted preview region (stage3 FULL / P4):

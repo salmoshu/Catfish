@@ -173,6 +173,10 @@
         "title": "Seçili ajan kimlik doğrulaması istiyor",
         "body": "Seçili ajanda oturum açın veya kimlik bilgilerini yenileyin, ardından mesajı tekrar gönderin."
       },
+      "USER_AGENT_SESSION_RESUME_FAILED": {
+        "title": "Önceki oturum geri yüklenemedi",
+        "body": "Geçerli hesap önceki yürütme bağlamını geri yükleyemedi. Bu istek durduruldu ve özgün geçmiş korundu. Önceki hesaba geçip yeniden deneyin veya görev özetiyle yeni bir konuşma başlatın."
+      },
       "USER_AGENT_SESSION_NOT_FOUND": {
         "title": "Ajan oturumu kayboldu",
         "body": "Ajan bu oturumun bulunamadığını veya artık bilinmediğini bildirdi."
@@ -419,7 +423,10 @@
       "vscode": "VS Code",
       "terminal": "Terminal",
       "explorer": "Dosya Gezgini",
-      "browser": "Tarayıcı"
+      "browser": "Tarayıcı",
+      "defaultPlacement": "Yeni sekmeleri açma konumu",
+      "main": "Ana sohbet alanı",
+      "sidebar": "Sağ kenar çubuğu"
     }
   },
   "minimap": {

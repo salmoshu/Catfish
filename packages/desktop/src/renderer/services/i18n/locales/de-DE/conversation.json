@@ -190,6 +190,10 @@
         "title": "Der ausgewählte Agent benötigt Authentifizierung",
         "body": "Melde dich beim ausgewählten Agenten an oder aktualisiere dessen Anmeldedaten und sende die Nachricht erneut."
       },
+      "USER_AGENT_SESSION_RESUME_FAILED": {
+        "title": "Vorherige Sitzung konnte nicht wiederhergestellt werden",
+        "body": "Das aktuelle Konto konnte den vorherigen Ausführungskontext nicht wiederherstellen. Die Anfrage wurde gestoppt und der ursprüngliche Verlauf bleibt erhalten. Wechseln Sie zum ursprünglichen Konto und versuchen Sie es erneut oder beginnen Sie ein neues Gespräch mit einer Zusammenfassung der Aufgabe."
+      },
       "USER_AGENT_SESSION_NOT_FOUND": {
         "title": "Die Agent-Sitzung ging verloren",
         "body": "Der Agent meldete, dass diese Sitzung nicht gefunden wurde oder ihm nicht mehr bekannt ist."
@@ -434,7 +438,10 @@
       "vscode": "VS Code",
       "terminal": "Terminal",
       "explorer": "Datei-Explorer",
-      "browser": "Browser"
+      "browser": "Browser",
+      "defaultPlacement": "Neue Tabs öffnen in",
+      "main": "Hauptgesprächsbereich",
+      "sidebar": "Rechte Seitenleiste"
     }
   },
   "minimap": {

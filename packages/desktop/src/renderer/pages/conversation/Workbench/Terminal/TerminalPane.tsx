@@ -5,6 +5,7 @@
  */
 
 import { ipcBridge } from '@/common';
+import type { RemoteEnvironment } from '@/common/types/remote/environment';
 import { Button } from '@arco-design/web-react';
 import { Close, Refresh } from '@icon-park/react';
 import { Terminal as XTerm } from '@xterm/xterm';
@@ -16,6 +17,7 @@ import styles from './Terminal.module.css';
 type TerminalPaneProps = {
   paneId: string;
   cwd: string;
+  remote?: RemoteEnvironment;
   active: boolean;
   canClose: boolean;
   onFocus: () => void;
@@ -23,7 +25,16 @@ type TerminalPaneProps = {
   style: React.CSSProperties;
 };
 
-const TerminalPane: React.FC<TerminalPaneProps> = ({ paneId, cwd, active, canClose, onFocus, onClose, style }) => {
+const TerminalPane: React.FC<TerminalPaneProps> = ({
+  paneId,
+  cwd,
+  remote,
+  active,
+  canClose,
+  onFocus,
+  onClose,
+  style,
+}) => {
   const { t } = useTranslation();
   const translateRef = useRef(t);
   translateRef.current = t;
@@ -102,7 +113,7 @@ const TerminalPane: React.FC<TerminalPaneProps> = ({ paneId, cwd, active, canClo
       if (error) terminal.writeln(error instanceof Error ? error.message : String(error));
     };
     void ipcBridge.embeddedTerminal.start
-      .invoke({ terminal_id: terminalId, cwd, cols: terminal.cols, rows: terminal.rows })
+      .invoke({ terminal_id: terminalId, cwd, remote, cols: terminal.cols, rows: terminal.rows })
       .then((result) => {
         if (disposed) {
           if (result.terminal_id)
@@ -138,7 +149,7 @@ const TerminalPane: React.FC<TerminalPaneProps> = ({ paneId, cwd, active, canClo
       terminalRef.current = null;
       fitRef.current = null;
     };
-  }, [cwd, fitAndResize, attempt]);
+  }, [cwd, remote, fitAndResize, attempt]);
 
   useEffect(() => {
     if (active) terminalRef.current?.focus();

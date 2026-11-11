@@ -8,6 +8,8 @@ const preview = vi.hoisted(() => ({
   tabs: [] as Array<Record<string, unknown>>,
   activeTabId: null as string | null,
   openPreview: vi.fn(),
+  switchTab: vi.fn(),
+  moveTab: vi.fn(),
   closePreview: vi.fn(),
   closeTab: vi.fn(),
   saveContent: vi.fn(),
@@ -72,7 +74,7 @@ describe('ConversationFileTabs', () => {
     expect(screen.getAllByRole('button', { name: 'preview.closeTabTitle' })).toHaveLength(2);
 
     fireEvent.click(screen.getByRole('tab', { name: 'alpha.ts' }));
-    expect(preview.openPreview).toHaveBeenCalledWith('alpha.ts content', 'code', { file_name: 'alpha.ts' });
+    expect(preview.switchTab).toHaveBeenCalledWith('file-1');
     fireEvent.click(tabs[0]);
     expect(preview.closePreview).toHaveBeenCalledOnce();
   });

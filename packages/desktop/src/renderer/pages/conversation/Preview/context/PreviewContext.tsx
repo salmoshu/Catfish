@@ -18,6 +18,7 @@ import { listPersistedPreviewScopeKeys, previewScopeStorageKey, type PreviewScop
 import { peKey } from '@/renderer/pages/conversation/explorer/explorerModel';
 import { reflessTabKey } from './reflessTabKey';
 import { onPreviewWatchChange, reconcilePreviewWatch, resetPreviewWatch } from './previewWatchStore';
+import { getDefaultPreviewPlacement, placementOf, type PreviewPlacement } from './placementPreference';
 
 /** DOM 片段数据结构 / DOM snippet data structure */
 export interface DomSnippet {
@@ -77,6 +78,7 @@ export interface PreviewTab {
   title: string; // Tab 标题
   isDirty?: boolean; // 是否有未保存的修改 / Whether there are unsaved changes
   originalContent?: string; // 原始内容，用于对比 / Original content for comparison
+  placement?: PreviewPlacement;
 }
 
 export interface OpenPreviewOptions {
@@ -87,6 +89,7 @@ export interface OpenPreviewOptions {
    * tab to avoid losing changes).
    */
   replace?: boolean;
+  placement?: PreviewPlacement;
 }
 
 /**
@@ -119,7 +122,13 @@ export interface PreviewContextValue {
    */
   isMaximized: boolean;
   tabs: PreviewTab[]; // 所有打开的 tabs
-  activeTabId: string | null; // 当前激活的 tab ID
+  mainTabs: PreviewTab[];
+  sidebarTabs: PreviewTab[];
+  /** The focused tab, used by editor actions; each placement also has a visible tab. */
+  activeTabId: string | null;
+  mainActiveTabId: string | null;
+  sidebarActiveTabId: string | null;
+  isSidebarOpen: boolean;
 
   // 获取当前激活的 tab / Get active tab
   activeTab: PreviewTab | null;
@@ -131,17 +140,14 @@ export interface PreviewContextValue {
     metadata?: PreviewMetadata,
     options?: OpenPreviewOptions
   ) => void;
-  /**
-   * 打开浏览器 tab，省略 url 则开空白页。
-   * Open a browser tab; blank page when url is omitted.
-   */
-  openBrowserTab: (url?: string) => void;
-  /** One temporary side conversation, rendered in the workspace rather than the file tabs. */
+  openBrowserTab: (url?: string, placement?: PreviewPlacement) => void;
+  openTerminal: (workspace?: string, placement?: PreviewPlacement) => void;
   sideChat: { workspace?: string; title?: string } | null;
-  /** Focus the existing side conversation, or create one when none is open. */
-  openSideChat: (workspace?: string, title?: string) => void;
+  openSideChat: (workspace?: string, title?: string, placement?: PreviewPlacement) => void;
   closeSideChat: () => void;
-  closePreview: () => void;
+  closePreview: (placement?: PreviewPlacement) => void;
+  moveTab: (tabId: string, placement: PreviewPlacement) => void;
+  focusTab: (tabId: string) => void;
   /** 切换最大化 / Toggle maximized. */
   toggleMaximized: () => void;
   /** Discard this scope's tabs entirely (see closePreview for the difference). */
@@ -229,7 +235,14 @@ const PreviewContext = createContext<PreviewContextValue | null>(null);
 const MAX_PERSISTED_SCOPES = 12;
 
 /** Persisted per-scope preview state. */
-type PersistedScopeState = { isOpen: boolean; tabs: PreviewTab[]; activeTabId: string | null };
+type PersistedScopeState = {
+  isOpen: boolean;
+  isSidebarOpen: boolean;
+  tabs: PreviewTab[];
+  activeTabId: string | null;
+  mainActiveTabId: string | null;
+  sidebarActiveTabId: string | null;
+};
 
 // 仅持久化小体积文本预览，避免大文本导致 localStorage 写入卡顿
 // Persist only lightweight text previews to avoid localStorage jank on large files
@@ -423,22 +436,51 @@ const parsePersistedTabs = (value: unknown): PreviewTab[] => {
         // Restore the unsaved state as it was stored. Forcing `false` here is what
         // made a restored unsaved edit look saved.
         isDirty: tab.isDirty === true,
+        placement: placementOf(tab.placement) ?? 'main',
       }))
   );
 };
 
-const EMPTY_SCOPE_STATE: PersistedScopeState = { isOpen: false, tabs: [], activeTabId: null };
+const EMPTY_SCOPE_STATE: PersistedScopeState = {
+  isOpen: false,
+  isSidebarOpen: false,
+  tabs: [],
+  activeTabId: null,
+  mainActiveTabId: null,
+  sidebarActiveTabId: null,
+};
 
 /** Load a scope's persisted preview state (open tabs + visibility). */
 const loadScopeState = (scope: string): PersistedScopeState => {
   try {
     const raw = localStorage.getItem(previewScopeStorageKey(scope));
     if (!raw) return EMPTY_SCOPE_STATE;
-    const parsed = JSON.parse(raw) as { isOpen?: unknown; tabs?: unknown; activeTabId?: unknown };
+    const parsed = JSON.parse(raw) as {
+      isOpen?: unknown;
+      isSidebarOpen?: unknown;
+      tabs?: unknown;
+      activeTabId?: unknown;
+      mainActiveTabId?: unknown;
+      sidebarActiveTabId?: unknown;
+    };
     const tabs = parsePersistedTabs(parsed.tabs);
-    let activeTabId = typeof parsed.activeTabId === 'string' ? parsed.activeTabId : null;
-    if (activeTabId && !tabs.some((tab) => tab.id === activeTabId)) activeTabId = tabs[0]?.id || null;
-    return { isOpen: parsed.isOpen === true && tabs.length > 0, tabs, activeTabId };
+    const mainTabs = tabs.filter((tab) => tab.placement !== 'sidebar');
+    const sidebarTabs = tabs.filter((tab) => tab.placement === 'sidebar');
+    const validTabId = (value: unknown, candidates: PreviewTab[]): string | null => {
+      if (typeof value === 'string' && candidates.some((tab) => tab.id === value)) return value;
+      return candidates[0]?.id ?? null;
+    };
+    const mainActiveTabId = validTabId(parsed.mainActiveTabId ?? parsed.activeTabId, mainTabs);
+    const sidebarActiveTabId = validTabId(parsed.sidebarActiveTabId, sidebarTabs);
+    const activeTabId = validTabId(parsed.activeTabId, tabs) ?? mainActiveTabId ?? sidebarActiveTabId;
+    return {
+      isOpen: parsed.isOpen === true && mainTabs.length > 0,
+      isSidebarOpen: parsed.isSidebarOpen === true && sidebarTabs.length > 0,
+      tabs,
+      activeTabId,
+      mainActiveTabId,
+      sidebarActiveTabId,
+    };
   } catch {
     return EMPTY_SCOPE_STATE;
   }
@@ -504,7 +546,22 @@ const persistScopeState = (scope: string, state: PersistedScopeState): void => {
   const write = (): void => {
     const tabs = sanitizeTabsForPersistence(state.tabs);
     const activeTabId = tabs.some((t) => t.id === state.activeTabId) ? state.activeTabId : (tabs[0]?.id ?? null);
-    const payload = { isOpen: state.isOpen, tabs, activeTabId };
+    const mainTabs = tabs.filter((tab) => tab.placement !== 'sidebar');
+    const sidebarTabs = tabs.filter((tab) => tab.placement === 'sidebar');
+    const mainActiveTabId = mainTabs.some((tab) => tab.id === state.mainActiveTabId)
+      ? state.mainActiveTabId
+      : (mainTabs[0]?.id ?? null);
+    const sidebarActiveTabId = sidebarTabs.some((tab) => tab.id === state.sidebarActiveTabId)
+      ? state.sidebarActiveTabId
+      : (sidebarTabs[0]?.id ?? null);
+    const payload = {
+      isOpen: state.isOpen && mainTabs.length > 0,
+      isSidebarOpen: state.isSidebarOpen && sidebarTabs.length > 0,
+      tabs,
+      activeTabId,
+      mainActiveTabId,
+      sidebarActiveTabId,
+    };
 
     // `savedAt` drives LRU eviction, so it has to mean "the tabs here last changed",
     // not "this key was last written". Writes also happen for visibility-only changes
@@ -543,20 +600,24 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // State starts empty; the active scope's persisted state is loaded on the first
   // `closePreviewIfScopeChanged` (per-project restore, see switchScope below).
   const [isOpen, setIsOpen] = useState(false);
-  const [sideChat, setSideChat] = useState<PreviewContextValue['sideChat']>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [tabs, setTabs] = useState<PreviewTab[]>([]);
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
-  // The preview scope currently loaded into state (project id / workspace / null).
+  const [mainActiveTabId, setMainActiveTabId] = useState<string | null>(null);
+  const [sidebarActiveTabId, setSidebarActiveTabId] = useState<string | null>(null);
   const currentScopeRef = useRef<PreviewScopeKey>(null);
-  // Mirror activeTabId in a ref so setTabs updaters can read the latest value
-  // without adding activeTabId to their dependencies.
   const activeTabIdRef = useRef<string | null>(null);
-  // Mirror tabs in a ref so openPreview can inspect the current tab list before
-  // updating state. State updaters must stay pure (StrictMode may run them
-  // twice), so decisions with observable side effects are made up front.
+  const mainActiveTabIdRef = useRef<string | null>(null);
+  const sidebarActiveTabIdRef = useRef<string | null>(null);
   const tabsRef = useRef<PreviewTab[]>([]);
   tabsRef.current = tabs;
+  const mainTabs = useMemo(() => tabs.filter((tab) => tab.placement !== 'sidebar'), [tabs]);
+  const sidebarTabs = useMemo(() => tabs.filter((tab) => tab.placement === 'sidebar'), [tabs]);
+  const sideChat = useMemo<PreviewContextValue['sideChat']>(() => {
+    const tab = tabs.find((candidate) => candidate.metadata?.sideChat);
+    return tab ? { workspace: tab.metadata?.workspace, title: tab.metadata?.title || tab.title } : null;
+  }, [tabs]);
   // Set when a browser-tab open was folded into an existing tab because the cap
   // was reached, so the UI can tell the user instead of silently reusing a tab.
   const [browserTabLimitHitAt, setBrowserTabLimitHitAt] = useState<number | null>(null);
@@ -633,13 +694,15 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // to `preview-ui:<scope>`, debounced. Keeps activeTabIdRef in sync eagerly.
   useEffect(() => {
     activeTabIdRef.current = activeTabId;
+    mainActiveTabIdRef.current = mainActiveTabId;
+    sidebarActiveTabIdRef.current = sidebarActiveTabId;
     const scope = currentScopeRef.current;
     if (scope == null) return undefined;
     const timer = setTimeout(() => {
-      persistScopeState(scope, { isOpen, tabs, activeTabId });
+      persistScopeState(scope, { isOpen, isSidebarOpen, tabs, activeTabId, mainActiveTabId, sidebarActiveTabId });
     }, 150);
     return () => clearTimeout(timer);
-  }, [tabs, activeTabId, isOpen]);
+  }, [tabs, activeTabId, mainActiveTabId, sidebarActiveTabId, isOpen, isSidebarOpen]);
 
   // Keep the panel's directory subscriptions in step with its open tabs.
   //
@@ -780,6 +843,9 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       // 已打开同一内容：聚焦现有 tab，不新建 / Same content already open: focus it
       const existingTab = findPreviewTabInList(currentTabs, type, new_content, meta);
+      const targetPlacement = existingTab
+        ? (existingTab.placement ?? 'main')
+        : (options?.placement ?? getDefaultPreviewPlacement());
 
       // 浏览器 tab 上限：满了就复用最旧的一个，并给 UI 一个可提示的信号
       // Browser tab cap: when full, reuse the oldest and raise a signal the UI can
@@ -809,9 +875,8 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // new tab so changes aren't lost.
       const replaceTarget = (() => {
         if (existingTab || !options?.replace) return null;
-        const activeTab = activeTabIdRef.current
-          ? currentTabs.find((tab) => tab.id === activeTabIdRef.current)
-          : undefined;
+        const activeId = targetPlacement === 'sidebar' ? sidebarActiveTabIdRef.current : mainActiveTabIdRef.current;
+        const activeTab = activeId ? currentTabs.find((tab) => tab.id === activeId) : undefined;
         return activeTab && !activeTab.isDirty ? activeTab : null;
       })();
 
@@ -850,7 +915,8 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
           metadata: meta,
           title,
           isDirty: false,
-          originalContent: new_content, // 保存原始内容 / Save original content
+          originalContent: new_content,
+          placement: targetPlacement,
         };
 
         if (replaceTarget) {
@@ -860,7 +926,9 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         if (cappedTarget) {
           return prevTabs.map((tab) =>
-            tab.id === cappedTarget.id ? { ...tab, content: new_content, title, metadata: meta } : tab
+            tab.id === cappedTarget.id
+              ? { ...tab, content: new_content, title, metadata: meta, placement: targetPlacement }
+              : tab
           );
         }
 
@@ -868,7 +936,14 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
       });
 
       setActiveTabId(targetTabId);
-      setIsOpen(true);
+      if (targetPlacement === 'sidebar') {
+        setSidebarActiveTabId(targetTabId);
+        setIsSidebarOpen(true);
+        openWorkbenchSection('preview');
+      } else {
+        setMainActiveTabId(targetTabId);
+        setIsOpen(true);
+      }
     },
     [extractFileName, findPreviewTabInList]
   );
@@ -886,17 +961,60 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
    * points, and they must agree on the blank address and fallback title.
    */
   const openBrowserTab = useCallback(
-    (url?: string) => {
-      openPreview(url?.trim() || BROWSER_BLANK_URL, 'browser');
+    (url?: string, placement?: PreviewPlacement) => {
+      openPreview(url?.trim() || BROWSER_BLANK_URL, 'browser', undefined, { placement });
     },
     [openPreview]
   );
 
-  const openSideChat = useCallback((workspace?: string, title?: string) => {
-    setSideChat((current) => current ?? { workspace, title });
-    openWorkbenchSection('side-chat');
+  const openTerminal = useCallback(
+    (workspace?: string, placement?: PreviewPlacement) => {
+      openPreview('', 'terminal', { workspace, title: 'Terminal', transient: true }, { placement });
+    },
+    [openPreview]
+  );
+
+  const openSideChat = useCallback(
+    (workspace?: string, title?: string, placement?: PreviewPlacement) => {
+      const existing = tabsRef.current.find((tab) => tab.metadata?.sideChat);
+      if (existing) {
+        const targetPlacement = existing.placement ?? 'main';
+        setActiveTabId(existing.id);
+        if (targetPlacement === 'sidebar') {
+          setSidebarActiveTabId(existing.id);
+          setIsSidebarOpen(true);
+          openWorkbenchSection('preview');
+        } else {
+          setMainActiveTabId(existing.id);
+          setIsOpen(true);
+        }
+        return;
+      }
+      openPreview(
+        '',
+        'side-chat',
+        { workspace, title: title || 'New chat', sideChat: true, transient: true },
+        { placement }
+      );
+    },
+    [openPreview]
+  );
+  const closeSideChat = useCallback(() => {
+    const ids = new Set(tabsRef.current.filter((tab) => tab.metadata?.sideChat).map((tab) => tab.id));
+    if (ids.size === 0) return;
+    setTabs((current) => current.filter((tab) => !ids.has(tab.id)));
+    if (activeTabIdRef.current && ids.has(activeTabIdRef.current)) setActiveTabId(null);
+    if (mainActiveTabIdRef.current && ids.has(mainActiveTabIdRef.current)) {
+      const next = tabsRef.current.find((tab) => tab.placement !== 'sidebar' && !ids.has(tab.id));
+      setMainActiveTabId(next?.id ?? null);
+      if (!next) setIsOpen(false);
+    }
+    if (sidebarActiveTabIdRef.current && ids.has(sidebarActiveTabIdRef.current)) {
+      const next = tabsRef.current.find((tab) => tab.placement === 'sidebar' && !ids.has(tab.id));
+      setSidebarActiveTabId(next?.id ?? null);
+      if (!next) setIsSidebarOpen(false);
+    }
   }, []);
-  const closeSideChat = useCallback(() => setSideChat(null), []);
 
   /**
    * Hide the preview panel, keeping its tabs.
@@ -916,12 +1034,44 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
    *
    * Use {@link clearPreviewForScope} when the intent really is to discard.
    */
-  const closePreview = useCallback(() => {
+  const closePreview = useCallback((placement: PreviewPlacement = 'main') => {
     setIsMaximized(false);
-    setIsOpen(false);
+    if (placement === 'sidebar') setIsSidebarOpen(false);
+    else setIsOpen(false);
     // DOM snippets are per-session scratch state tied to the visible HTML inspector,
     // not tab content, so they are cleared with the view.
     setDomSnippets([]);
+  }, []);
+
+  const focusTab = useCallback((tabId: string) => {
+    if (tabsRef.current.some((tab) => tab.id === tabId)) setActiveTabId(tabId);
+  }, []);
+
+  const moveTab = useCallback((tabId: string, placement: PreviewPlacement) => {
+    const tab = tabsRef.current.find((candidate) => candidate.id === tabId);
+    if (!tab || (tab.placement ?? 'main') === placement) return;
+    setTabs((current) =>
+      current.map((candidate) => (candidate.id === tabId ? { ...candidate, placement } : candidate))
+    );
+    setActiveTabId(tabId);
+    if (placement === 'sidebar') {
+      setSidebarActiveTabId(tabId);
+      setIsSidebarOpen(true);
+      openWorkbenchSection('preview');
+      if (mainActiveTabIdRef.current === tabId) {
+        const next = tabsRef.current.find((candidate) => candidate.id !== tabId && candidate.placement !== 'sidebar');
+        setMainActiveTabId(next?.id ?? null);
+        if (!next) setIsOpen(false);
+      }
+    } else {
+      setMainActiveTabId(tabId);
+      setIsOpen(true);
+      if (sidebarActiveTabIdRef.current === tabId) {
+        const next = tabsRef.current.find((candidate) => candidate.id !== tabId && candidate.placement === 'sidebar');
+        setSidebarActiveTabId(next?.id ?? null);
+        if (!next) setIsSidebarOpen(false);
+      }
+    }
   }, []);
 
   /**
@@ -936,8 +1086,11 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const clearPreviewForScope = useCallback(() => {
     setIsMaximized(false);
     setIsOpen(false);
+    setIsSidebarOpen(false);
     setTabs([]);
     setActiveTabId(null);
+    setMainActiveTabId(null);
+    setSidebarActiveTabId(null);
     setDomSnippets([]);
   }, []);
 
@@ -950,7 +1103,8 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
     (scopeKey: PreviewScopeKey) => {
       const prev = currentScopeRef.current;
       if (prev === scopeKey) return;
-      if (prev != null) persistScopeState(prev, { isOpen, tabs, activeTabId });
+      if (prev != null)
+        persistScopeState(prev, { isOpen, isSidebarOpen, tabs, activeTabId, mainActiveTabId, sidebarActiveTabId });
       // Release the leaving scope's directory subscriptions.
       //
       // Placed before the state updates as a matter of habit, not because the position
@@ -964,48 +1118,47 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // would drop the subscriptions the restore had just created.
       resetPreviewWatch();
       currentScopeRef.current = scopeKey;
-      setSideChat(null);
       const loaded = scopeKey != null ? loadScopeState(scopeKey) : EMPTY_SCOPE_STATE;
       // Subscriptions for these tabs come from the tabs effect, which this setTabs
       // triggers — restored tabs are subscribed exactly like freshly opened ones.
       setTabs(loaded.tabs);
       setActiveTabId(loaded.activeTabId);
       activeTabIdRef.current = loaded.activeTabId;
+      setMainActiveTabId(loaded.mainActiveTabId);
+      mainActiveTabIdRef.current = loaded.mainActiveTabId;
+      setSidebarActiveTabId(loaded.sidebarActiveTabId);
+      sidebarActiveTabIdRef.current = loaded.sidebarActiveTabId;
       setIsOpen(loaded.isOpen);
+      setIsSidebarOpen(loaded.isSidebarOpen);
       setIsMaximized(false);
       setDomSnippets([]);
     },
-    [isOpen, tabs, activeTabId]
+    [isOpen, isSidebarOpen, tabs, activeTabId, mainActiveTabId, sidebarActiveTabId]
   );
 
-  const closeTab = useCallback(
-    (tabId: string) => {
-      setTabs((prevTabs) => {
-        // Clean up mtime record for the closed tab (keyed by ChatFileRef identity)
-        const tabToClose = prevTabs.find((tab) => tab.id === tabId);
-        if (tabToClose?.metadata?.fileRef) {
-          fileMtimeRef.current.delete(chatFileRefKey(tabToClose.metadata.fileRef));
-        }
+  const closeTab = useCallback((tabId: string) => {
+    const tabToClose = tabsRef.current.find((tab) => tab.id === tabId);
+    if (tabToClose?.metadata?.fileRef) {
+      fileMtimeRef.current.delete(chatFileRefKey(tabToClose.metadata.fileRef));
+    }
+    const newTabs = tabsRef.current.filter((tab) => tab.id !== tabId);
+    setTabs(newTabs);
 
-        const newTabs = prevTabs.filter((tab) => tab.id !== tabId);
-
-        // 如果关闭的是当前激活的 tab / If closing the active tab
-        if (tabId === activeTabId) {
-          if (newTabs.length > 0) {
-            // 切换到最后一个 tab / Switch to the last tab
-            setActiveTabId(newTabs[newTabs.length - 1].id);
-          } else {
-            // 没有 tab 了，关闭预览面板 / No more tabs, close preview panel
-            setIsOpen(false);
-            setActiveTabId(null);
-          }
-        }
-
-        return newTabs;
-      });
-    },
-    [activeTabId]
-  );
+    if (mainActiveTabIdRef.current === tabId) {
+      const next = newTabs.filter((tab) => tab.placement !== 'sidebar').at(-1);
+      setMainActiveTabId(next?.id ?? null);
+      if (!next) setIsOpen(false);
+    }
+    if (sidebarActiveTabIdRef.current === tabId) {
+      const next = newTabs.filter((tab) => tab.placement === 'sidebar').at(-1);
+      setSidebarActiveTabId(next?.id ?? null);
+      if (!next) setIsSidebarOpen(false);
+    }
+    if (activeTabIdRef.current === tabId) {
+      const next = newTabs.filter((tab) => tab.placement !== 'sidebar').at(-1) ?? newTabs.at(-1);
+      setActiveTabId(next?.id ?? null);
+    }
+  }, []);
 
   const closePreviewByIdentity = useCallback(
     (type: PreviewContentType, content?: string, meta?: PreviewMetadata) => {
@@ -1371,22 +1524,44 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return unsubscribe;
   }, []);
 
+  const switchTab = useCallback((tabId: string) => {
+    const tab = tabsRef.current.find((candidate) => candidate.id === tabId);
+    if (!tab) return;
+    setActiveTabId(tabId);
+    if (tab.placement === 'sidebar') {
+      setSidebarActiveTabId(tabId);
+      setIsSidebarOpen(true);
+      openWorkbenchSection('preview');
+    } else {
+      setMainActiveTabId(tabId);
+      setIsOpen(true);
+    }
+  }, []);
+
   const previewContextValue = useMemo(() => {
     return {
       isOpen,
+      isSidebarOpen,
       isMaximized,
       tabs,
+      mainTabs,
+      sidebarTabs,
       activeTabId,
+      mainActiveTabId,
+      sidebarActiveTabId,
       activeTab,
       openPreview,
       closePreview,
+      moveTab,
+      focusTab,
       toggleMaximized,
       clearPreviewForScope,
       closeTab,
-      switchTab: setActiveTabId,
+      switchTab,
       updateContent,
       updateTab,
       openBrowserTab,
+      openTerminal,
       sideChat,
       openSideChat,
       closeSideChat,
@@ -1408,19 +1583,27 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
   }, [
     isOpen,
+    isSidebarOpen,
     isMaximized,
     tabs,
+    mainTabs,
+    sidebarTabs,
     activeTabId,
+    mainActiveTabId,
+    sidebarActiveTabId,
     activeTab,
     openPreview,
     closePreview,
+    moveTab,
+    focusTab,
     toggleMaximized,
     clearPreviewForScope,
     closeTab,
-    setActiveTabId,
+    switchTab,
     updateContent,
     updateTab,
     openBrowserTab,
+    openTerminal,
     sideChat,
     openSideChat,
     closeSideChat,

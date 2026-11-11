@@ -11,6 +11,7 @@ import { Button } from '@arco-design/web-react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TabFadeState } from '../../hooks/useTabOverflow';
+import type { PreviewPlacement } from '../../context/placementPreference';
 
 /**
  * 单个 tab 的最大宽度。
@@ -166,6 +167,8 @@ interface PreviewTabsProps {
    * the plus button never appears in a document-only panel.
    */
   onNewBrowserTab?: () => void;
+  placement?: PreviewPlacement;
+  onMoveTab?: (tabId: string, placement: PreviewPlacement) => void;
 }
 
 /**
@@ -190,6 +193,8 @@ const PreviewTabs: React.FC<PreviewTabsProps> = ({
   onNewBrowserTab,
   isMaximized,
   onToggleMaximize,
+  placement = 'sidebar',
+  onMoveTab,
 }) => {
   const { t } = useTranslation();
   const { left: showLeftFade, right: showRightFade } = tabFadeState;
@@ -201,11 +206,31 @@ const PreviewTabs: React.FC<PreviewTabsProps> = ({
     >
       <div className='flex items-center h-36px w-full'>
         {/* Tabs 滚动区域 / Tabs scroll area */}
-        <div ref={tabsContainerRef} className='flex items-center h-full flex-1 overflow-x-auto'>
+        <div
+          ref={tabsContainerRef}
+          className='flex items-center h-full flex-1 overflow-x-auto'
+          data-preview-placement={placement}
+          onDragOver={(event) => {
+            if (!onMoveTab) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+          }}
+          onDrop={(event) => {
+            if (!onMoveTab) return;
+            const tabId = event.dataTransfer.getData('application/x-catfish-preview-tab');
+            if (tabId) onMoveTab(tabId, placement);
+            event.preventDefault();
+          }}
+        >
           {tabs.length > 0 ? (
             tabs.map((tab) => (
               <div
                 key={tab.id}
+                draggable={Boolean(onMoveTab)}
+                onDragStart={(event) => {
+                  event.dataTransfer.setData('application/x-catfish-preview-tab', tab.id);
+                  event.dataTransfer.effectAllowed = 'move';
+                }}
                 className={`flex items-center gap-6px px-10px h-full cursor-pointer transition-colors flex-shrink-0 ${tab.id === activeTabId ? 'bg-bg-1 text-t-primary' : 'text-t-secondary'}`}
                 style={{ maxWidth: `${MAX_TAB_WIDTH_PX}px` }}
                 onClick={() => onSwitchTab(tab.id)}

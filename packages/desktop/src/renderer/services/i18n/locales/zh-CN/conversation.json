@@ -190,6 +190,10 @@
         "title": "所选 Agent 需要登录",
         "body": "请先登录该 Agent 或刷新凭证，然后重新发送消息。"
       },
+      "USER_AGENT_SESSION_RESUME_FAILED": {
+        "title": "未能恢复之前的会话",
+        "body": "当前账号未能恢复之前的执行上下文，本次请求已停止，原有历史记录已保留。请切回原账号重试，或新建会话并附上任务进度。"
+      },
       "USER_AGENT_SESSION_NOT_FOUND": {
         "title": "Agent 会话已丢失",
         "body": "Agent 报告找不到当前会话，或已不再识别该会话。"
@@ -434,7 +438,10 @@
       "vscode": "VS Code",
       "terminal": "终端",
       "explorer": "文件资源管理器",
-      "browser": "浏览器"
+      "browser": "浏览器",
+      "defaultPlacement": "新标签页打开位置",
+      "main": "主会话区",
+      "sidebar": "右侧边栏"
     }
   },
   "minimap": {

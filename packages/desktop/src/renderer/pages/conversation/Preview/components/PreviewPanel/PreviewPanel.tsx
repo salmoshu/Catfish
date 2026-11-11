@@ -26,6 +26,7 @@ import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { toLocalFileHref } from '@/renderer/components/Markdown/markdownUtils';
 import { PreviewToolbarExtrasProvider, type PreviewToolbarExtras } from '../../context/PreviewToolbarExtrasContext';
 import { usePreviewContext } from '../../context/PreviewContext';
+import type { PreviewPlacement } from '../../context/placementPreference';
 import { useResizableSplit } from '@/renderer/hooks/ui/useResizableSplit';
 import { Link, Message } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -65,6 +66,8 @@ import { usePreviewKeyboardShortcuts, useScrollSync, useTabOverflow, useThemeDet
 import { useTranslation } from 'react-i18next';
 import './preview.css';
 
+const EmbeddedTerminalPanel = React.lazy(() => import('../../../Workbench/Terminal'));
+
 /**
  * 预览面板主组件
  * Main preview panel component
@@ -85,17 +88,23 @@ class SaveRefusedError extends Error {
   }
 }
 
-const PreviewPanel: React.FC<{ hideTabs?: boolean }> = ({ hideTabs = false }) => {
+const PreviewPanel: React.FC<{ hideTabs?: boolean; placement?: PreviewPlacement }> = ({
+  hideTabs = false,
+  placement = 'main',
+}) => {
   const { t, i18n } = useTranslation();
   const {
-    isOpen,
+    isOpen: mainOpen,
+    isSidebarOpen,
     isMaximized,
-    tabs,
-    activeTabId,
-    activeTab,
+    tabs: allTabs,
+    mainActiveTabId,
+    sidebarActiveTabId,
     closeTab,
     switchTab,
     closePreview,
+    moveTab,
+    focusTab,
     toggleMaximized,
     updateContent,
     saveContent,
@@ -108,6 +117,10 @@ const PreviewPanel: React.FC<{ hideTabs?: boolean }> = ({ hideTabs = false }) =>
     browserTabLimitHitAt,
     persistQuotaExceededAt,
   } = usePreviewContext();
+  const tabs = useMemo(() => allTabs.filter((tab) => (tab.placement ?? 'main') === placement), [allTabs, placement]);
+  const activeTabId = placement === 'sidebar' ? sidebarActiveTabId : mainActiveTabId;
+  const activeTab = useMemo(() => tabs.find((tab) => tab.id === activeTabId) || null, [tabs, activeTabId]);
+  const isOpen = placement === 'sidebar' ? isSidebarOpen : mainOpen;
   const layout = useLayoutContext();
 
   // 视图状态 / View states
@@ -261,7 +274,7 @@ const PreviewPanel: React.FC<{ hideTabs?: boolean }> = ({ hideTabs = false }) =>
   }, []);
 
   // 新建浏览器 tab（tab 栏加号）/ New browser tab (plus button in the tab bar)
-  const handleNewBrowserTab = useCallback(() => openBrowserTab(), [openBrowserTab]);
+  const handleNewBrowserTab = useCallback(() => openBrowserTab(undefined, placement), [openBrowserTab, placement]);
 
   /**
    * 浏览器 tab 达上限时提示用户。上限触达会复用最旧的 tab，如果不说一声，
@@ -600,8 +613,8 @@ const PreviewPanel: React.FC<{ hideTabs?: boolean }> = ({ hideTabs = false }) =>
   // it still has to pass the dirty check: otherwise "collapse" becomes another
   // route that silently discards unsaved edits.
   const handleClosePanel = useCallback(() => {
-    requestCloseBatch(tabs, closePreview);
-  }, [tabs, requestCloseBatch, closePreview]);
+    requestCloseBatch(tabs, () => closePreview(placement));
+  }, [tabs, requestCloseBatch, closePreview, placement]);
 
   // Cmd/Ctrl+W 的目标是当前 tab；没有当前 tab 时什么也不做，让按键落回默认行为。
   // Cmd/Ctrl+W targets the active tab; with none open it does nothing and lets
@@ -905,6 +918,13 @@ const PreviewPanel: React.FC<{ hideTabs?: boolean }> = ({ hideTabs = false }) =>
   // 渲染预览内容 / Render preview content
   const renderContent = () => {
     if (metadata?.sideChat) return <SideChatPanel workspace={metadata.workspace} />;
+    if (content_type === 'terminal') {
+      return (
+        <React.Suspense fallback={null}>
+          <EmbeddedTerminalPanel workspacePath={metadata?.workspace} />
+        </React.Suspense>
+      );
+    }
     if (metadata?.missingFile) return renderMissingFile();
     if (metadata?.oversized) return renderOversized();
     if (content_type === 'unsupported') return renderUnsupported();
@@ -1191,7 +1211,13 @@ const PreviewPanel: React.FC<{ hideTabs?: boolean }> = ({ hideTabs = false }) =>
       {/* bg-1 是必需的：面板必须自己铺满底色，不能依赖外层容器
           bg-1 is required: the panel paints its own background rather than
           relying on an outer container, so no window backdrop shows through. */}
-      <div ref={panelRootRef} className='h-full flex flex-col bg-1'>
+      <div
+        ref={panelRootRef}
+        className='h-full flex flex-col bg-1'
+        onPointerDownCapture={() => {
+          if (activeTabId) focusTab(activeTabId);
+        }}
+      >
         {messageContextHolder}
 
         {/* 确认对话框 / Confirmation modals */}
@@ -1217,48 +1243,54 @@ const PreviewPanel: React.FC<{ hideTabs?: boolean }> = ({ hideTabs = false }) =>
             onContextMenu={handleTabContextMenu}
             onClosePanel={handleClosePanel}
             isMaximized={isMaximized}
-            onToggleMaximize={layout?.isMobile ? undefined : toggleMaximized}
+            onToggleMaximize={layout?.isMobile || placement === 'sidebar' ? undefined : toggleMaximized}
             onNewBrowserTab={previewTabs.length > 0 ? handleNewBrowserTab : undefined}
+            placement={placement}
+            onMoveTab={moveTab}
           />
         )}
 
         {/* 工具栏（URL / 浏览器 类型不显示工具栏，因为不需要下载/编辑等功能）
             Toolbar (hidden for URL and browser types — no download/edit needed) */}
-        {content_type !== 'url' && content_type !== 'browser' && !metadata?.missingFile && !metadata?.sideChat && (
-          <PreviewToolbar
-            content_type={content_type}
-            isMarkdown={isMarkdown}
-            isHTML={isHTML}
-            viewMode={viewMode}
-            isSplitScreenEnabled={isSplitScreenEnabled}
-            file_name={metadata?.file_name || activeTab.title}
-            showOpenInSystemButton={showOpenInSystemButton}
-            hasFilePath={Boolean(metadata?.file_path)}
-            refreshState={refreshStateToken(refreshState)}
-            refreshActionable={isRefreshActionable(refreshState)}
-            onRefresh={handleRefreshClick}
-            showSave={
-              isEditable &&
-              (EDITABLE_CONTENT_TYPES as readonly string[]).includes(content_type) &&
-              !(Boolean(metadata?.oversized) || content_type === 'unsupported')
-            }
-            saveActionable={Boolean(activeTab?.isDirty)}
-            onSave={() => void handleSaveActiveTab()}
-            hasNoRenderableContent={Boolean(metadata?.oversized) || content_type === 'unsupported'}
-            onViewModeChange={(mode) => {
-              setViewMode(mode);
-              setIsSplitScreenEnabled(false); // 切换视图模式时关闭分屏 / Disable split when switching view mode
-            }}
-            onSplitScreenToggle={() => setIsSplitScreenEnabled(!isSplitScreenEnabled)}
-            onOpenInSystem={handleOpenInSystem}
-            onDownload={handleDownload}
-            onClose={handleClosePanel}
-            inspectMode={inspectMode}
-            onInspectModeToggle={() => setInspectMode(!inspectMode)}
-            leftExtra={toolbarExtras?.left}
-            rightExtra={toolbarExtras?.right}
-          />
-        )}
+        {content_type !== 'url' &&
+          content_type !== 'browser' &&
+          content_type !== 'terminal' &&
+          !metadata?.missingFile &&
+          !metadata?.sideChat && (
+            <PreviewToolbar
+              content_type={content_type}
+              isMarkdown={isMarkdown}
+              isHTML={isHTML}
+              viewMode={viewMode}
+              isSplitScreenEnabled={isSplitScreenEnabled}
+              file_name={metadata?.file_name || activeTab.title}
+              showOpenInSystemButton={showOpenInSystemButton}
+              hasFilePath={Boolean(metadata?.file_path)}
+              refreshState={refreshStateToken(refreshState)}
+              refreshActionable={isRefreshActionable(refreshState)}
+              onRefresh={handleRefreshClick}
+              showSave={
+                isEditable &&
+                (EDITABLE_CONTENT_TYPES as readonly string[]).includes(content_type) &&
+                !(Boolean(metadata?.oversized) || content_type === 'unsupported')
+              }
+              saveActionable={Boolean(activeTab?.isDirty)}
+              onSave={() => void handleSaveActiveTab()}
+              hasNoRenderableContent={Boolean(metadata?.oversized) || content_type === 'unsupported'}
+              onViewModeChange={(mode) => {
+                setViewMode(mode);
+                setIsSplitScreenEnabled(false); // 切换视图模式时关闭分屏 / Disable split when switching view mode
+              }}
+              onSplitScreenToggle={() => setIsSplitScreenEnabled(!isSplitScreenEnabled)}
+              onOpenInSystem={handleOpenInSystem}
+              onDownload={handleDownload}
+              onClose={handleClosePanel}
+              inspectMode={inspectMode}
+              onInspectModeToggle={() => setInspectMode(!inspectMode)}
+              leftExtra={toolbarExtras?.left}
+              rightExtra={toolbarExtras?.right}
+            />
+          )}
 
         {/* 预览内容 / Preview content */}
         {renderContent()}
@@ -1283,6 +1315,8 @@ const PreviewPanel: React.FC<{ hideTabs?: boolean }> = ({ hideTabs = false }) =>
           onCopyPath={handleCopyPath}
           onCopyRelativePath={handleCopyRelativePath}
           onRevealInFolder={handleRevealInFolder}
+          placement={placement}
+          onMoveTab={moveTab}
         />
       </div>
     </PreviewToolbarExtrasProvider>

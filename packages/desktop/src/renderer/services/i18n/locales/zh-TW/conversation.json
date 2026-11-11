@@ -190,6 +190,10 @@
         "title": "所選 Agent 需要登入",
         "body": "請先登入該 Agent 或更新憑證，然後重新傳送訊息。"
       },
+      "USER_AGENT_SESSION_RESUME_FAILED": {
+        "title": "無法恢復先前的對話",
+        "body": "目前帳號無法恢復先前的執行脈絡，本次請求已停止，原有歷史記錄已保留。請切回原帳號重試，或建立新對話並附上任務進度。"
+      },
       "USER_AGENT_SESSION_NOT_FOUND": {
         "title": "Agent 會話已遺失",
         "body": "Agent 回報找不到目前會話，或已不再識別該會話。"
@@ -434,7 +438,10 @@
       "vscode": "VS Code",
       "terminal": "終端機",
       "explorer": "檔案總管",
-      "browser": "瀏覽器"
+      "browser": "瀏覽器",
+      "defaultPlacement": "新分頁開啟位置",
+      "main": "主對話區",
+      "sidebar": "右側側邊欄"
     }
   },
   "minimap": {

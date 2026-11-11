@@ -4,6 +4,7 @@ import AppLoader from '@renderer/components/layout/AppLoader';
 import DocumentTitle from '@renderer/components/layout/DocumentTitle';
 import { useCrossSessionRateLimitNotice } from '@/renderer/hooks/system/useCrossSessionRateLimitNotice';
 import { useCodexCapacityAutoContinue } from '@/renderer/pages/conversation/runtime/useCodexCapacityAutoContinue';
+import { useAcpEmptyTurnRecovery } from '@/renderer/pages/conversation/runtime/useAcpEmptyTurnRecovery';
 import { useAuth } from '@renderer/hooks/context/AuthContext';
 import { TEAM_MODE_ENABLED } from '@/common/config/constants';
 const Conversation = React.lazy(() => import('@renderer/pages/conversation'));
@@ -50,6 +51,7 @@ const ProtectedLayout: React.FC<{ layout: React.ReactElement }> = ({ layout }) =
   // whole reason it is a broadcast rather than an in-conversation banner.
   useCrossSessionRateLimitNotice(user?.id);
   useCodexCapacityAutoContinue();
+  useAcpEmptyTurnRecovery();
 
   if (status === 'checking') {
     return <AppLoader />;

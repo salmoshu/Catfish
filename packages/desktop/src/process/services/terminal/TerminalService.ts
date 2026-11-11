@@ -22,6 +22,62 @@ type TerminalDependencies = {
 const dimension = (value: unknown, fallback: number): number =>
   typeof value === 'number' && Number.isFinite(value) ? Math.max(1, Math.min(1000, Math.floor(value))) : fallback;
 
+const quotePosix = (value: string): string => `'${value.replaceAll("'", "'\\''")}'`;
+
+export type TerminalLaunch = { file: string; args: string[]; cwd?: string };
+
+export const resolveTerminalLaunch = (
+  params: EmbeddedTerminalStartParams,
+  platform: NodeJS.Platform = process.platform
+): TerminalLaunch => {
+  const windows = platform === 'win32';
+  const remote = params.remote;
+  if (!remote) {
+    return {
+      file: windows ? process.env.COMSPEC || 'cmd.exe' : process.env.SHELL || '/bin/sh',
+      args: windows ? [] : ['-l'],
+      cwd: params.cwd,
+    };
+  }
+  if (!params.cwd.startsWith('/')) throw new Error('Remote terminal working directory must be an absolute POSIX path');
+  if (remote.kind === 'wsl') {
+    return {
+      file: windows ? 'wsl.exe' : 'wsl',
+      args: [
+        ...(remote.distribution ? ['-d', remote.distribution] : []),
+        ...(remote.user ? ['-u', remote.user] : []),
+        '--cd',
+        params.cwd,
+      ],
+    };
+  }
+  if (remote.kind === 'docker') {
+    return {
+      file: 'docker',
+      args: [
+        'exec',
+        '-it',
+        '-w',
+        params.cwd,
+        ...(remote.user ? ['-u', remote.user] : []),
+        remote.container,
+        'sh',
+        '-l',
+      ],
+    };
+  }
+  return {
+    file: 'ssh',
+    args: [
+      '-tt',
+      ...(remote.port ? ['-p', String(remote.port)] : []),
+      ...(remote.authType === 'privateKey' && remote.privateKeyPath ? ['-i', remote.privateKeyPath] : []),
+      `${remote.username}@${remote.host}`,
+      `cd ${quotePosix(params.cwd)} && exec sh -l`,
+    ],
+  };
+};
+
 /** Owns PTYs for individual renderer windows and releases them when their owner closes. */
 export class TerminalService {
   private readonly sessions = new Map<string, TerminalSession>();
@@ -43,22 +99,25 @@ export class TerminalService {
         throw new Error('Invalid terminal id');
       }
       if (this.sessions.has(params.terminal_id)) throw new Error('Terminal already exists');
-      if (typeof params.cwd !== 'string' || !isAbsolute(params.cwd) || !statSync(params.cwd).isDirectory()) {
+      if (
+        typeof params.cwd !== 'string' ||
+        (!params.remote && (!isAbsolute(params.cwd) || !statSync(params.cwd).isDirectory()))
+      ) {
         throw new Error('Terminal working directory must be an existing absolute directory');
       }
+      const launch = resolveTerminalLaunch(params);
       const { spawn } = await this.dependencies.loadPty();
       if (this.owners.get(ownerId) !== owner) throw new Error('Terminal window is unavailable');
       if (this.sessions.has(params.terminal_id)) throw new Error('Terminal already exists');
       const windows = process.platform === 'win32';
-      const file = windows ? process.env.COMSPEC || 'cmd.exe' : process.env.SHELL || '/bin/sh';
       const env = Object.fromEntries(
         Object.entries(process.env).filter((entry): entry is [string, string] => typeof entry[1] === 'string')
       );
-      const terminal = spawn(file, windows ? [] : ['-l'], {
+      const terminal = spawn(launch.file, launch.args, {
         name: 'xterm-256color',
         cols: dimension(params.cols, 100),
         rows: dimension(params.rows, 30),
-        cwd: params.cwd,
+        cwd: launch.cwd,
         env,
         useConpty: windows,
       });

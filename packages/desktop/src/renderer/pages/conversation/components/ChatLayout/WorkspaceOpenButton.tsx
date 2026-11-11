@@ -1,6 +1,7 @@
 import { ipcBridge } from '@/common';
 import { isElectronDesktop } from '@/renderer/utils/platform';
 import { useOptionalPreviewContext } from '@/renderer/pages/conversation/Preview/context/PreviewContext';
+import { useDefaultPreviewPlacement } from '@/renderer/pages/conversation/Preview/context/placementPreference';
 import { openWorkbenchSection } from '@/renderer/pages/conversation/Workbench/workbenchActivityStore';
 import { Browser, Command, FolderOpen, MessageOne, Plus, Terminal } from '@icon-park/react';
 import { Button, Dropdown, Tooltip } from '@arco-design/web-react';
@@ -55,7 +56,9 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
    */
   const previewContext = useOptionalPreviewContext();
   const openBrowserTab = previewContext?.openBrowserTab;
+  const openTerminal = previewContext?.openTerminal;
   const openSideChat = previewContext?.openSideChat;
+  const [defaultPlacement, setDefaultPlacement] = useDefaultPreviewPlacement();
   const [vscodeInstalled, setVscodeInstalled] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [preferredTool, setPreferredTool] = useState<ToolType | null>(null);
@@ -88,13 +91,14 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
     async (tool: ToolType) => {
       try {
         if (tool === 'terminal') {
-          openWorkbenchSection('shell');
+          if (openTerminal) openTerminal(workspacePath, defaultPlacement);
+          else openWorkbenchSection('shell');
         } else if (isExternalTool(tool)) {
           await ipcBridge.shell.openFolderWith.invoke({ folder_path: workspacePath, tool });
         } else if (tool === 'browser') {
-          openBrowserTab?.();
+          openBrowserTab?.(undefined, defaultPlacement);
         } else {
-          openSideChat?.(workspacePath, t('conversation.welcome.newConversation'));
+          openSideChat?.(workspacePath, t('conversation.welcome.newConversation'), defaultPlacement);
         }
         // Save preference
         localStorage.setItem(STORAGE_KEY, tool);
@@ -104,7 +108,7 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
       }
       setDropdownOpen(false);
     },
-    [workspacePath, openBrowserTab, openSideChat, t]
+    [workspacePath, openBrowserTab, openTerminal, openSideChat, defaultPlacement, t]
   );
 
   // Build dropdown options. Temp workspaces have no project folder, so the
@@ -142,7 +146,7 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
         available: Boolean(openSideChat),
       },
     ],
-    [t, isTemporary, vscodeInstalled, openBrowserTab, openSideChat]
+    [t, isTemporary, vscodeInstalled, openBrowserTab, openTerminal, openSideChat]
   );
 
   // Filter only available tools
@@ -186,6 +190,23 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
             {currentTool === option.key && <span className='ms-auto text-12px text-[var(--color-text-3)]'>✓</span>}
           </Button>
         </React.Fragment>
+      ))}
+      <div className='my-4px mx-8px h-1px bg-[var(--color-border-2)]' />
+      <div className='px-12px pt-6px pb-2px text-12px text-t-tertiary'>
+        {t('conversation.workspace.openWith.defaultPlacement')}
+      </div>
+      {(['main', 'sidebar'] as const).map((placement) => (
+        <Button
+          key={placement}
+          type='text'
+          className={`workspace-open-dropdown-item !text-t-primary flex items-center gap-8px px-12px py-8px cursor-pointer hover:bg-[var(--color-fill-2)] rounded-4px transition-colors ${
+            defaultPlacement === placement ? 'bg-[var(--color-fill-2)]' : ''
+          }`}
+          onClick={() => setDefaultPlacement(placement)}
+        >
+          <span className='text-14px'>{t(`conversation.workspace.openWith.${placement}`)}</span>
+          {defaultPlacement === placement && <span className='ms-auto text-12px text-[var(--color-text-3)]'>✓</span>}
+        </Button>
       ))}
     </div>
   );

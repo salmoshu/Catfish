@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { IPty } from 'node-pty';
-import { TerminalService } from '@process/services/terminal/TerminalService';
+import { TerminalService, resolveTerminalLaunch } from '@process/services/terminal/TerminalService';
 
 const fixture = () => {
   let output: (data: string) => void = vi.fn();
@@ -127,5 +127,89 @@ describe('owned terminal sessions', () => {
     await f.service.start(1, params);
     expect((await f.service.start(1, params)).error).toContain('already exists');
     expect(f.spawn).toHaveBeenCalledTimes(1);
+  });
+
+  it('builds an interactive SSH launch without embedding credentials', () => {
+    const launch = resolveTerminalLaunch({
+      terminal_id: 'ssh-1',
+      cwd: '/srv/robo-gnss',
+      remote: {
+        id: 'remote-1',
+        name: 'Build host',
+        kind: 'ssh',
+        host: 'builder.example',
+        port: 2222,
+        username: 'robot',
+        authType: 'privateKey',
+        privateKeyPath: '/home/user/.ssh/id_ed25519',
+        createdAt: 0,
+        updatedAt: 0,
+      },
+    });
+    expect(launch.file).toBe('ssh');
+    expect(launch.args).toEqual([
+      '-tt',
+      '-p',
+      '2222',
+      '-i',
+      '/home/user/.ssh/id_ed25519',
+      'robot@builder.example',
+      "cd '/srv/robo-gnss' && exec sh -l",
+    ]);
+    expect(launch.cwd).toBeUndefined();
+  });
+
+  it('builds WSL and Docker launches in the remote working directory', () => {
+    const wsl = resolveTerminalLaunch(
+      {
+        terminal_id: 'wsl-1',
+        cwd: '/home/winchell/project',
+        remote: {
+          id: 'remote-2',
+          name: 'WSL',
+          kind: 'wsl',
+          distribution: 'Ubuntu-20.04',
+          user: 'winchell',
+          createdAt: 0,
+          updatedAt: 0,
+        },
+      },
+      'win32'
+    );
+    expect(wsl.file).toBe('wsl.exe');
+    expect(wsl.args).toEqual(['-d', 'Ubuntu-20.04', '-u', 'winchell', '--cd', '/home/winchell/project']);
+
+    const docker = resolveTerminalLaunch({
+      terminal_id: 'docker-1',
+      cwd: '/workspace',
+      remote: {
+        id: 'remote-3',
+        name: 'Container',
+        kind: 'docker',
+        container: 'catfish-dev',
+        user: 'root',
+        createdAt: 0,
+        updatedAt: 0,
+      },
+    });
+    expect(docker.args).toEqual(['exec', '-it', '-w', '/workspace', '-u', 'root', 'catfish-dev', 'sh', '-l']);
+  });
+
+  it('starts a remote shell without requiring the remote path to exist locally', async () => {
+    const f = fixture();
+    const result = await f.service.start(1, {
+      terminal_id: 'remote-terminal',
+      cwd: '/definitely/not/a/local/directory',
+      remote: {
+        id: 'remote-4',
+        name: 'WSL',
+        kind: 'wsl',
+        distribution: 'Ubuntu-20.04',
+        createdAt: 0,
+        updatedAt: 0,
+      },
+    });
+    expect(result).toEqual({ terminal_id: 'remote-terminal' });
+    expect(f.spawn.mock.calls[0][0]).toBe(process.platform === 'win32' ? 'wsl.exe' : 'wsl');
   });
 });

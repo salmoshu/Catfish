@@ -54,7 +54,7 @@ describe('MessageAcpTerminalOutput', () => {
     const stop = screen.getByTestId('terminal-card-stop');
     const open = screen.getByTestId('terminal-open-workbench');
     expect(stop).toHaveAttribute('aria-label', 'Stop');
-    expect(stop.className).toContain('rgb(var(--danger-6))');
+    expect(stop).toHaveStyle({ color: 'var(--danger-emphasis)' });
     expect(stop.className).toContain('items-center');
     expect(stop).not.toHaveTextContent('Stop');
     expect(stop.querySelector('svg')).not.toBeNull();

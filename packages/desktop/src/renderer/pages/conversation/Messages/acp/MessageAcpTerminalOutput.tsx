@@ -98,7 +98,8 @@ const MessageAcpTerminalOutput: React.FC<{ message: IMessageAcpTerminalOutput }>
           <Button
             type='text'
             size='mini'
-            className='shrink-0 !inline-flex !items-center !justify-center !text-[rgb(var(--danger-6))] hover:!text-[rgb(var(--danger-7))]'
+            className='shrink-0 !inline-flex !items-center !justify-center'
+            style={{ color: 'var(--danger-emphasis)' }}
             aria-label={t('conversation.terminal.stop', { defaultValue: 'Stop' })}
             title={t('conversation.terminal.stop', { defaultValue: 'Stop' })}
             loading={killing}

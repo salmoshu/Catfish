@@ -20,11 +20,24 @@ const ConversationFileTabs: React.FC<{ agentLabel?: string; agentIcon?: React.Re
   agentIcon,
 }) => {
   const { t } = useTranslation();
-  const { isOpen, tabs = [], activeTabId, openPreview, closePreview, closeTab, saveContent } = usePreviewContext();
+  const {
+    isOpen,
+    tabs = [],
+    mainTabs: providedMainTabs,
+    activeTabId,
+    mainActiveTabId,
+    switchTab,
+    closePreview,
+    closeTab,
+    moveTab,
+    saveContent,
+  } = usePreviewContext();
   const [pendingClose, setPendingClose] = useState<PreviewTab | null>(null);
   const [saving, setSaving] = useState(false);
+  const mainTabs = providedMainTabs ?? tabs.filter((tab) => tab.placement !== 'sidebar');
+  const selectedTabId = providedMainTabs === undefined ? activeTabId : mainActiveTabId;
 
-  const fileTabs = tabs.filter((tab) => !tab.metadata?.sideChat);
+  const fileTabs = mainTabs.filter((tab) => !tab.metadata?.sideChat || tab.content_type === 'side-chat');
   if (fileTabs.length === 0) return null;
 
   const requestClose = (tab: PreviewTab) => {
@@ -83,6 +96,16 @@ const ConversationFileTabs: React.FC<{ agentLabel?: string; agentIcon?: React.Re
         role='tablist'
         aria-label={t('conversation.fileTabs.label')}
         data-testid='conversation-file-tabs'
+        data-preview-placement='main'
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = 'move';
+        }}
+        onDrop={(event) => {
+          const tabId = event.dataTransfer.getData('application/x-catfish-preview-tab');
+          if (tabId) moveTab(tabId, 'main');
+          event.preventDefault();
+        }}
       >
         <Button
           type='text'
@@ -92,13 +115,13 @@ const ConversationFileTabs: React.FC<{ agentLabel?: string; agentIcon?: React.Re
           className={classNames('conversation-file-tab conversation-file-tab--agent', {
             'conversation-file-tab--active': !isOpen,
           })}
-          onClick={closePreview}
+          onClick={() => closePreview()}
         >
           {agentIcon}
           <span className='truncate'>{agentLabel || t('conversation.fileTabs.agent')}</span>
         </Button>
         {fileTabs.map((tab) => {
-          const active = isOpen && activeTabId === tab.id;
+          const active = isOpen && mainActiveTabId === tab.id;
           const absolute = previewTabPaths(tab).absolute;
           return (
             <Dropdown
@@ -107,6 +130,9 @@ const ConversationFileTabs: React.FC<{ agentLabel?: string; agentIcon?: React.Re
               position='bl'
               droplist={
                 <Menu>
+                  <Menu.Item key='move-sidebar' onClick={() => moveTab(tab.id, 'sidebar')}>
+                    {t('preview.moveToSidebar')}
+                  </Menu.Item>
                   <Menu.Item
                     key='copy-path'
                     disabled={!canCopyAbsolutePath(absolute, isElectronDesktop())}
@@ -121,6 +147,11 @@ const ConversationFileTabs: React.FC<{ agentLabel?: string; agentIcon?: React.Re
                 className={classNames('conversation-file-tab conversation-file-tab--file', styles.fileTab, {
                   'conversation-file-tab--active': active,
                 })}
+                draggable
+                onDragStart={(event) => {
+                  event.dataTransfer.setData('application/x-catfish-preview-tab', tab.id);
+                  event.dataTransfer.effectAllowed = 'move';
+                }}
               >
                 <Button
                   type='text'
@@ -128,7 +159,7 @@ const ConversationFileTabs: React.FC<{ agentLabel?: string; agentIcon?: React.Re
                   aria-selected={active}
                   className={classNames('conversation-file-tab__select', styles.select)}
                   title={tab.title}
-                  onClick={() => openPreview(tab.content, tab.content_type, tab.metadata)}
+                  onClick={() => switchTab(tab.id)}
                 >
                   <span className={styles.label}>{tab.title}</span>
                   {tab.isDirty && <span className='conversation-file-tab__dirty' aria-hidden='true' />}

@@ -79,6 +79,7 @@ const requiredAgentErrorCodes = [
   'USER_AGENT_PROTOCOL_ERROR',
   'USER_AGENT_PROTOCOL_MISMATCH',
   'USER_AGENT_NO_PREVIOUS_SESSION',
+  'USER_AGENT_SESSION_RESUME_FAILED',
   'USER_AGENT_OPENCLAW_GATEWAY_UNREACHABLE',
   'USER_AGENT_COMMAND_NOT_FOUND',
   'USER_AGENT_MISSING_ENV',
@@ -123,6 +124,22 @@ describe('MessageTips — FeedbackButton wiring', () => {
 
   it('does not render FeedbackButton on success tips', () => {
     render(<MessageTips message={buildTips('success')} />);
+    expect(screen.queryByText('settings.oneClickFeedback')).not.toBeInTheDocument();
+  });
+
+  it('shows a persisted recovery failure as a localized chat error with preserved-history guidance', () => {
+    render(
+      <MessageTips
+        message={buildTips('error', 'Recovery failed', {
+          code: 'USER_AGENT_SESSION_RESUME_FAILED',
+          ownership: 'user_agent',
+          retryable: false,
+          feedback_recommended: false,
+        })}
+      />
+    );
+    expect(screen.getByText('Previous session could not be restored')).toBeInTheDocument();
+    expect(screen.getByText(enConversation.agentError.codes.USER_AGENT_SESSION_RESUME_FAILED.body)).toBeInTheDocument();
     expect(screen.queryByText('settings.oneClickFeedback')).not.toBeInTheDocument();
   });
 

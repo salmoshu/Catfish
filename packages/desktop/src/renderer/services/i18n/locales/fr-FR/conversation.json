@@ -190,6 +190,10 @@
         "title": "L'agent sélectionné a besoin d'une authentification",
         "body": "Connectez-vous à l'agent sélectionné ou actualisez ses informations d'identification, puis renvoyez le message."
       },
+      "USER_AGENT_SESSION_RESUME_FAILED": {
+        "title": "Impossible de restaurer la session précédente",
+        "body": "Le compte actuel n’a pas pu restaurer le contexte d’exécution précédent. Cette demande a été arrêtée et l’historique d’origine a été conservé. Revenez au compte d’origine et réessayez, ou commencez une nouvelle conversation avec un résumé de la tâche."
+      },
       "USER_AGENT_SESSION_NOT_FOUND": {
         "title": "La session de l'agent a été perdue",
         "body": "L'agent a signalé que cette session n'a pas été trouvée ou qu'elle ne lui est plus connue."
@@ -434,7 +438,10 @@
       "vscode": "VS Code",
       "terminal": "Terminal",
       "explorer": "Explorateur de fichiers",
-      "browser": "Navigateur"
+      "browser": "Navigateur",
+      "defaultPlacement": "Ouvrir les nouveaux onglets dans",
+      "main": "Zone de conversation principale",
+      "sidebar": "Barre latérale droite"
     }
   },
   "minimap": {

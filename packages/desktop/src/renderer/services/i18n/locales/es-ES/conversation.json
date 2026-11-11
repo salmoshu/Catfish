@@ -190,6 +190,10 @@
         "title": "El agente seleccionado necesita autenticación",
         "body": "Inicia sesión en el agente seleccionado o actualiza sus credenciales, luego vuelve a enviar el mensaje."
       },
+      "USER_AGENT_SESSION_RESUME_FAILED": {
+        "title": "No se pudo restaurar la sesión anterior",
+        "body": "La cuenta actual no pudo restaurar el contexto de ejecución anterior. Esta solicitud se detuvo y el historial original se conservó. Vuelve a la cuenta original e inténtalo de nuevo, o inicia una conversación nueva con un resumen de la tarea."
+      },
       "USER_AGENT_SESSION_NOT_FOUND": {
         "title": "La sesión del agente se perdió",
         "body": "El agente ya no reconoce esta sesión. Inicia un nuevo chat o reconecta el agente."
@@ -434,7 +438,10 @@
       "vscode": "VS Code",
       "terminal": "Terminal",
       "explorer": "Explorador de archivos",
-      "browser": "Navegador"
+      "browser": "Navegador",
+      "defaultPlacement": "Abrir nuevas pestañas en",
+      "main": "Área de conversación principal",
+      "sidebar": "Barra lateral derecha"
     }
   },
   "minimap": {

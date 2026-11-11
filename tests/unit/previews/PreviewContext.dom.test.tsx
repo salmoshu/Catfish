@@ -70,16 +70,19 @@ describe('PreviewContext', () => {
     expect(result.current.tabs[0].content_type).toBe('markdown');
   });
 
-  it('keeps one side conversation and leaves file tabs and their selection intact', () => {
+  it('keeps one side conversation as a tab without replacing the file tab', () => {
     const { result } = renderHook(() => usePreviewContext(), { wrapper });
     act(() => result.current.openPreview('document', 'code', { title: 'notes.ts' }));
-    const selectedTab = result.current.activeTabId;
+    const selectedTab = result.current.mainActiveTabId;
     act(() => result.current.openSideChat('/repo', 'New Chat'));
     const first = result.current.sideChat;
     act(() => result.current.openSideChat('/different', 'New Chat'));
     expect(result.current.sideChat).toBe(first);
-    expect(result.current.tabs).toHaveLength(1);
-    expect(result.current.activeTabId).toBe(selectedTab);
+    expect(result.current.tabs).toHaveLength(2);
+    expect(result.current.mainActiveTabId).toBe(result.current.activeTabId);
+    expect(result.current.mainActiveTabId).not.toBe(selectedTab);
+    act(() => result.current.switchTab(selectedTab!));
+    expect(result.current.mainActiveTabId).toBe(selectedTab);
   });
 
   it('closes the side conversation and discards it on a project switch', () => {
@@ -190,5 +193,35 @@ describe('PreviewContext', () => {
       result.current.closePreviewIfScopeChanged('project:some-other-project' as PreviewScopeKey);
     });
     expect(result.current.isMaximized).toBe(false);
+  });
+
+  it('moves a tab between the main area and sidebar with independent active tabs', () => {
+    const { result } = renderHook(() => usePreviewContext(), { wrapper });
+    act(() => result.current.openPreview('document', 'code', { title: 'notes.ts' }));
+    const tabId = result.current.activeTabId!;
+    expect(result.current.mainTabs.map((tab) => tab.id)).toEqual([tabId]);
+    expect(result.current.sidebarTabs).toEqual([]);
+
+    act(() => result.current.moveTab(tabId, 'sidebar'));
+    expect(result.current.mainTabs).toEqual([]);
+    expect(result.current.sidebarTabs.map((tab) => tab.id)).toEqual([tabId]);
+    expect(result.current.sidebarActiveTabId).toBe(tabId);
+    expect(result.current.isSidebarOpen).toBe(true);
+    expect(result.current.isOpen).toBe(false);
+
+    act(() => result.current.moveTab(tabId, 'main'));
+    expect(result.current.mainActiveTabId).toBe(tabId);
+    expect(result.current.isOpen).toBe(true);
+    expect(result.current.isSidebarOpen).toBe(false);
+  });
+
+  it('opens terminal and side chat in the configured placement without persisting them', () => {
+    const { result } = renderHook(() => usePreviewContext(), { wrapper });
+    act(() => result.current.openTerminal('/repo', 'sidebar'));
+    expect(result.current.sidebarTabs[0]?.content_type).toBe('terminal');
+    expect(result.current.sidebarTabs[0]?.metadata?.transient).toBe(true);
+    act(() => result.current.openSideChat('/repo', 'New Chat', 'main'));
+    expect(result.current.mainTabs.some((tab) => tab.content_type === 'side-chat')).toBe(true);
+    expect(result.current.mainTabs.find((tab) => tab.content_type === 'side-chat')?.metadata?.transient).toBe(true);
   });
 });

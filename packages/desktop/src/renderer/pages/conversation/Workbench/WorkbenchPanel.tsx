@@ -83,7 +83,16 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
   const { state, update } = useWorkbenchPanelState(projectId, conversationId);
   const activeSection: WorkbenchSection = state.section;
   const activity = useWorkbenchActivity(conversationId);
-  const { isOpen: previewOpen, activeTab, openPreview, openBrowserTab, sideChat, closeSideChat } = usePreviewContext();
+  const {
+    isSidebarOpen: previewOpen,
+    sidebarTabs = [],
+    sidebarActiveTabId,
+    switchTab,
+    openBrowserTab,
+    sideChat,
+    closeSideChat,
+  } = usePreviewContext();
+  const activeTab = sidebarTabs.find((tab) => tab.id === sidebarActiveTabId) ?? null;
   useEffect(() => {
     onSectionChange?.(activeSection);
     notifyWorkbenchSectionChange(activeSection);
@@ -117,12 +126,12 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
       notifyWorkbenchSectionChange(section);
       if (section !== 'preview' || previewOpen) return;
       if (activeTab) {
-        openPreview(activeTab.content, activeTab.content_type, activeTab.metadata);
+        switchTab(activeTab.id);
       } else {
-        openBrowserTab();
+        openBrowserTab(undefined, 'sidebar');
       }
     },
-    [activeTab, openBrowserTab, openPreview, previewOpen, update]
+    [activeTab, openBrowserTab, switchTab, previewOpen, update]
   );
 
   return (
@@ -179,7 +188,7 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
           hidden={activeSection !== 'preview'}
         >
           {previewOpen && activeTab ? (
-            <PreviewPanel />
+            <PreviewPanel placement='sidebar' />
           ) : (
             <div className='workbench-empty'>
               <span>
@@ -187,7 +196,7 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
                   defaultValue: 'Open a file, diff or browser tab from the workspace.',
                 })}
               </span>
-              <Button type='primary' size='small' onClick={() => openBrowserTab()}>
+              <Button type='primary' size='small' onClick={() => openBrowserTab(undefined, 'sidebar')}>
                 {t('messages.workbench.openBrowser', { defaultValue: 'New browser tab' })}
               </Button>
             </div>

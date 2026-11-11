@@ -42,6 +42,7 @@
   --success: #16c456;
   --warning: #ff9500;
   --danger: #ff3849;
+  --danger-emphasis: #ff3849;
   --info: #525252;
 
   /* Border Colors - Light Mode */
@@ -85,7 +86,7 @@
   --ui-caption-font-size: 12px;
   --ui-caption-line-height: 18px;
   --text-tertiary: #00000073;
-  --text-selection: #52525233;
+  --text-selection: #52525266;
   --surface-glass: #ffffffb3;
   --input-focus-border: #52525273;
   --input-focus-shadow: 0 4px 16px #5252521a;
@@ -154,6 +155,7 @@
   --success: #16c456;
   --warning: #ff9f0a;
   --danger: #ff4756;
+  --danger-emphasis: #ff4756;
   --info: #d4d4d4;
 
   /* Border Colors - Dark Mode */
@@ -184,7 +186,7 @@
   --border-special: var(--border-base); /* 特殊边框色 */
   --color-guid-agent-bar: #1f1f1f; /* 首页 Agent 选择条背景 - 暗色 */
   --text-tertiary: #ffffff6b;
-  --text-selection: #d4d4d433;
+  --text-selection: #d4d4d466;
   --surface-glass: #121212b3;
   --input-focus-border: #d4d4d480;
   --input-focus-shadow: 0 4px 16px #d4d4d426;

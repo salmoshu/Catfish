@@ -9,6 +9,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { isMacOS } from '@/renderer/utils/platform';
 import type { PreviewTab } from './PreviewTabs';
+import type { PreviewPlacement } from '../../context/placementPreference';
 
 /**
  * 上下文菜单状态
@@ -128,6 +129,8 @@ interface PreviewContextMenuProps {
    * Show the tab's file in the OS file manager
    */
   onRevealInFolder: (tabId: string) => void;
+  placement?: PreviewPlacement;
+  onMoveTab?: (tabId: string, placement: PreviewPlacement) => void;
 }
 
 /**
@@ -183,6 +186,8 @@ const PreviewContextMenu: React.FC<PreviewContextMenuProps> = ({
   onCopyPath,
   onCopyRelativePath,
   onRevealInFolder,
+  placement = 'sidebar',
+  onMoveTab,
 }) => {
   const { t } = useTranslation();
   const contextMenuRef = useRef<HTMLDivElement>(null);
@@ -298,6 +303,15 @@ const PreviewContextMenu: React.FC<PreviewContextMenuProps> = ({
         minWidth: '180px',
       }}
     >
+      {onMoveTab && (
+        <>
+          <MenuItem
+            label={t(placement === 'sidebar' ? 'preview.moveToMain' : 'preview.moveToSidebar')}
+            onSelect={select(() => onMoveTab(tabId, placement === 'sidebar' ? 'main' : 'sidebar'))}
+          />
+          <MenuDivider />
+        </>
+      )}
       {/* 关闭当前 Tab / Close this tab.
           永远可用：即便只剩一个 tab 也应当能关掉它，这与关闭左侧/右侧/其他不同 —
           那几项在没有对应目标时才置灰。

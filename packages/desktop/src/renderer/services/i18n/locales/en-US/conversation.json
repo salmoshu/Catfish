@@ -190,6 +190,10 @@
         "title": "The selected agent needs authentication",
         "body": "Log in to the selected agent or refresh its credentials, then send the message again."
       },
+      "USER_AGENT_SESSION_RESUME_FAILED": {
+        "title": "Previous session could not be restored",
+        "body": "The current account could not restore the previous execution context. This request was stopped, and the original history was preserved. Switch back to the original account and retry, or start a new conversation with a task summary."
+      },
       "USER_AGENT_SESSION_NOT_FOUND": {
         "title": "The agent session was lost",
         "body": "The agent reported that this session was not found or is no longer known to it."
@@ -434,7 +438,10 @@
       "vscode": "VS Code",
       "terminal": "Terminal",
       "explorer": "File Explorer",
-      "browser": "Browser"
+      "browser": "Browser",
+      "defaultPlacement": "Open new tabs in",
+      "main": "Main conversation area",
+      "sidebar": "Right sidebar"
     }
   },
   "minimap": {

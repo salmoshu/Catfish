@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   kill: vi.fn(),
   desktop: vi.fn(() => true),
   environment: vi.fn<() => BackendEnvironment>(() => ({ type: 'local' })),
+  list: vi.fn(),
   listeners: new Set<(output: EmbeddedTerminalOutput) => void>(),
   terminals: [] as {
     write: ReturnType<typeof vi.fn>;
@@ -33,6 +34,7 @@ vi.mock('@/common', () => ({
         },
       },
     },
+    remoteEnvironment: { list: { invoke: mocks.list } },
   },
 }));
 vi.mock('@/renderer/utils/platform', () => ({ isElectronDesktop: mocks.desktop }));
@@ -69,6 +71,7 @@ describe('embedded terminal panes', () => {
     mocks.listeners.clear();
     mocks.desktop.mockReturnValue(true);
     mocks.environment.mockReturnValue({ type: 'local' });
+    mocks.list.mockResolvedValue([]);
     mocks.start.mockImplementation(async (params: EmbeddedTerminalStartParams) => ({
       terminal_id: params.terminal_id,
     }));
@@ -148,11 +151,28 @@ describe('embedded terminal panes', () => {
     expect(mocks.start).not.toHaveBeenCalled();
   });
 
-  it('does not launch a local shell for a remote project', () => {
+  it('launches an interactive shell through the active remote environment', async () => {
     mocks.environment.mockReturnValue({ type: 'remote', id: 'remote-1', name: 'Remote project', kind: 'ssh' });
+    mocks.list.mockResolvedValue([
+      {
+        id: 'remote-1',
+        name: 'Remote project',
+        kind: 'ssh',
+        host: 'builder.example',
+        port: 22,
+        username: 'robot',
+        authType: 'password',
+        status: 'connected',
+        createdAt: 0,
+        updatedAt: 0,
+      },
+    ]);
     render(<EmbeddedTerminalPanel workspacePath='/remote/repo' />);
-    expect(screen.getByText('conversation.explorer.terminal.unavailable')).toBeInTheDocument();
-    expect(mocks.start).not.toHaveBeenCalled();
+    await waitFor(() => expect(mocks.start).toHaveBeenCalledTimes(1));
+    expect(mocks.start.mock.calls[0][0]).toMatchObject({
+      cwd: '/remote/repo',
+      remote: expect.objectContaining({ id: 'remote-1', kind: 'ssh', host: 'builder.example' }),
+    });
   });
 
   it('does not attempt desktop IPC from a browser', () => {

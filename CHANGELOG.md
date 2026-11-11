@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.4.28](https://github.com/salmoshu/Catfish/releases/tag/v0.4.28) (2026-11-11)
+
+### Features
+
+- **preview tabs:** open files, browser pages, interactive terminals, and side chats in the main conversation tab row or the right sidebar, with a persistent default placement, context-menu moves, and drag-and-drop between placements
+- **workspace:** allow the right sidebar to resize up to 900px
+- **terminal:** support interactive shells in SSH, WSL, and Docker project environments, including interactive authentication
+
+### Bug Fixes
+
+- **documents:** strengthen text-selection contrast so selected content is visible in light and dark themes
+- **terminal:** use a dedicated red token for the command Stop control so the neutral conversation palette no longer overrides it
+- **conversation:** retry a transient empty ACP turn once after application restart, reusing the original user message without retry loops
+- **cron:** align the scheduled-task indicator in the conversation header
+- **ci:** dispatch release retries as separate workflow runs instead of rerunning the active run
+
+---
+
 ## [0.4.26](https://github.com/salmoshu/Catfish/releases/tag/v0.4.26) (2026-11-10)
 
 ### Features

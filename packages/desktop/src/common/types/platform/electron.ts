@@ -15,6 +15,7 @@ export type EmbeddedTerminalStartParams = {
   cwd: string;
   cols?: number;
   rows?: number;
+  remote?: import('@/common/types/remote/environment').RemoteEnvironment;
 };
 
 export type EmbeddedTerminalStartResult = { terminal_id: string; error?: string };
