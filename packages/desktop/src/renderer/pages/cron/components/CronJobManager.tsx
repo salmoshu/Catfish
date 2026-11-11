@@ -105,14 +105,14 @@ const CronJobManager: React.FC<CronJobManagerProps> = ({ conversation_id, cron_j
       <Button
         type='text'
         size='small'
-        className='cron-job-manager-button chat-header-cron-pill !h-auto !w-auto !min-w-0 !px-0 !py-0'
+        className='cron-job-manager-button chat-header-cron-pill !inline-flex !h-28px !w-auto !min-w-0 !items-center !justify-center !px-0 !py-0 !leading-none'
         onClick={() => navigate(`/scheduled/${job.id}`)}
       >
         <span
           data-testid='cron-job-manager'
-          className='inline-flex items-center gap-2px rounded-full px-8px py-2px bg-2'
+          className='inline-flex h-20px items-center gap-2px rounded-full bg-2 px-8px py-2px leading-none'
         >
-          <AlarmClock theme='outline' size={16} fill={iconColors.primary} />
+          <AlarmClock theme='outline' size={16} fill={iconColors.primary} className='block' />
           <span
             className={`ms-4px w-8px h-8px rounded-full ${hasError ? 'bg-[#f53f3f]' : isPaused ? 'bg-[#ff7d00]' : 'bg-[#00b42a]'}`}
           />
