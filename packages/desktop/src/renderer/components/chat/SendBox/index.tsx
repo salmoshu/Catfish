@@ -68,7 +68,6 @@ import { allSupportedExts } from '@renderer/services/FileService';
 import SpeechInputButton from '@/renderer/components/chat/SpeechInputButton';
 import { appendSpeechTranscript } from '@/renderer/hooks/system/useSpeechInput';
 import { createChainedDispatch, useLiveTranscriptInsertion } from '@/renderer/hooks/system/useLiveTranscriptInsertion';
-import { getConversationInputHistory, isCaretOnFirstLine } from '@/renderer/utils/chat/messageHistory';
 import './sendbox.css';
 import styles from './SendBox.module.css';
 import { useInputUndo } from './useInputUndo';
@@ -349,8 +348,6 @@ const SendBox: React.FC<{
   const latestInputRef = useLatestRef(input);
   const setInputRef = useLatestRef(setInput);
   const messageList = useMessageList();
-  const [historyNavigationIndex, setHistoryNavigationIndex] = useState<number | null>(null);
-  const historyDraftRef = useRef<string | null>(null);
   const [replyQuote, setReplyQuote] = useState<ReplyQuote | null>(null);
   const [caretPosition, setCaretPosition] = useState(0);
   const [prefillFocusRequest, setPrefillFocusRequest] = useState<{
@@ -573,10 +570,6 @@ const SendBox: React.FC<{
     [canMentionSessions, input]
   );
   const deferredAtFileQuery = useDeferredValue(activeAtFileQuery?.query ?? '');
-  const inputHistory = useMemo(
-    () => getConversationInputHistory(messageList, conversationContext?.conversation_id),
-    [conversationContext?.conversation_id, messageList]
-  );
   const unmatchedSelectedWorkspaceItems = useMemo(() => {
     if (!selectedWorkspaceItems?.length) {
       return [];
@@ -650,8 +643,20 @@ const SendBox: React.FC<{
 
   // Priority on name collisions: builtin > ACP agent commands > session skills.
   const mergedSlashCommands = useMemo(
-    () => mergeSlashCommands(builtinSlashCommands, slash_commands, skillSlashCommands),
-    [builtinSlashCommands, slash_commands, skillSlashCommands]
+    () =>
+      mergeSlashCommands(
+        builtinSlashCommands,
+        slash_commands.map((command) => {
+          const descriptions: Record<string, string> = {
+            plan: t('messages.plan.description'),
+            default: t('messages.plan.defaultDescription'),
+            goal: t('messages.goal.description'),
+          };
+          return descriptions[command.name] ? { ...command, description: descriptions[command.name] } : command;
+        }),
+        skillSlashCommands
+      ),
+    [builtinSlashCommands, slash_commands, skillSlashCommands, t]
   );
 
   const slashController = useSlashCommandController({
@@ -883,10 +888,6 @@ const SendBox: React.FC<{
   }, [input, isInputFocused, isMobile, isSingleLine, syncHighlightTextMetrics]);
 
   const handleTextAreaChange = (value: string) => {
-    if (historyNavigationIndex !== null) {
-      historyDraftRef.current = null;
-      setHistoryNavigationIndex(null);
-    }
     if (conversationExport.isOpen && value) {
       conversationExport.closeExportFlow();
     }
@@ -1401,107 +1402,12 @@ const SendBox: React.FC<{
   }, []);
 
   useEffect(() => {
-    historyDraftRef.current = null;
-    setHistoryNavigationIndex(null);
     mentionOwnedPathsRef.current = new Set();
     everMentionOwnedPathsRef.current = new Set();
     externalOwnedPathsRef.current = new Set();
     selectedItemByPathRef.current = new Map();
     suppressedExternalAppendPathsRef.current = new Set();
   }, [conversationContext?.conversation_id]);
-
-  const applyHistoryInput = useCallback(
-    (value: string) => {
-      setInputRef.current(value);
-      requestAnimationFrame(() => {
-        const textarea = containerRef.current?.querySelector('textarea');
-        if (!(textarea instanceof HTMLTextAreaElement)) {
-          return;
-        }
-        const caret = textarea.value.length;
-        textarea.setSelectionRange(caret, caret);
-      });
-    },
-    [setInputRef]
-  );
-
-  const exitHistoryNavigation = useCallback(
-    (restoreDraft: boolean) => {
-      const draft = historyDraftRef.current;
-      historyDraftRef.current = null;
-      setHistoryNavigationIndex(null);
-      if (restoreDraft && draft !== null) {
-        applyHistoryInput(draft);
-      }
-    },
-    [applyHistoryInput]
-  );
-
-  const handleHistoryKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
-      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
-        return false;
-      }
-
-      if (!(event.currentTarget instanceof HTMLTextAreaElement)) {
-        return false;
-      }
-
-      if (event.key === 'Escape' && historyNavigationIndex !== null) {
-        event.preventDefault();
-        exitHistoryNavigation(true);
-        return true;
-      }
-
-      if (!inputHistory.length) {
-        return false;
-      }
-
-      if (event.key === 'ArrowUp') {
-        if (historyNavigationIndex === null && !isCaretOnFirstLine(event.currentTarget)) {
-          return false;
-        }
-
-        const nextIndex =
-          historyNavigationIndex === null ? 0 : Math.min(historyNavigationIndex + 1, inputHistory.length - 1);
-        const nextValue = inputHistory[nextIndex];
-        if (nextValue === undefined) {
-          return false;
-        }
-
-        if (historyNavigationIndex === null) {
-          historyDraftRef.current = latestInputRef.current;
-        }
-
-        event.preventDefault();
-        setHistoryNavigationIndex(nextIndex);
-        applyHistoryInput(nextValue);
-        return true;
-      }
-
-      if (event.key === 'ArrowDown' && historyNavigationIndex !== null) {
-        event.preventDefault();
-        if (historyNavigationIndex === 0) {
-          exitHistoryNavigation(true);
-          return true;
-        }
-
-        const nextIndex = historyNavigationIndex - 1;
-        const nextValue = inputHistory[nextIndex];
-        if (nextValue === undefined) {
-          exitHistoryNavigation(true);
-          return true;
-        }
-
-        setHistoryNavigationIndex(nextIndex);
-        applyHistoryInput(nextValue);
-        return true;
-      }
-
-      return false;
-    },
-    [applyHistoryInput, exitHistoryNavigation, historyNavigationIndex, inputHistory, latestInputRef]
-  );
 
   const handleAtSessionMenuKeyDown = useCallback(
     (event: React.KeyboardEvent): boolean => {
@@ -1600,8 +1506,6 @@ const SendBox: React.FC<{
         message.warning(t('conversation.sideQuestion.attachmentsNotAllowed'));
         return;
       }
-      historyDraftRef.current = null;
-      setHistoryNavigationIndex(null);
       setInput('');
       void btwCommand.ask(normalizedQuestion);
       return;
@@ -1629,8 +1533,6 @@ const SendBox: React.FC<{
       domSnippetCount: domSnippets.length,
     });
     setIsLoading(true);
-    historyDraftRef.current = null;
-    setHistoryNavigationIndex(null);
 
     // 构建消息内容 / Build message content
     let finalMessage = expandImageReferences(input, imageReferencesRef.current.references);
@@ -2254,8 +2156,7 @@ const SendBox: React.FC<{
                   handleAddToDraftShortcut(event) ||
                   handleAtSessionMenuKeyDown(event) ||
                   handleAtFileMenuKeyDown(event) ||
-                  handleOverlayKeyDown(event) ||
-                  handleHistoryKeyDown(event)
+                  handleOverlayKeyDown(event)
                 );
               })}
             ></Input.TextArea>

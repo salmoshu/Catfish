@@ -34,6 +34,7 @@ const {
   draftContentRef,
   messageWarningMock,
   stopInvokeMock,
+  setConfigOptionInvokeMock,
 } = vi.hoisted(() => ({
   sendMessageInvokeMock: vi.fn(),
   addOrUpdateMessageMock: vi.fn(),
@@ -76,6 +77,7 @@ const {
   draftContentRef: { current: '' },
   messageWarningMock: vi.fn(),
   stopInvokeMock: vi.fn().mockResolvedValue(undefined),
+  setConfigOptionInvokeMock: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/common', () => ({
@@ -83,6 +85,9 @@ vi.mock('@/common', () => ({
     acpConversation: {
       sendMessage: {
         invoke: sendMessageInvokeMock,
+      },
+      setConfigOption: {
+        invoke: setConfigOptionInvokeMock,
       },
     },
     conversation: {
@@ -97,6 +102,7 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
   default: ({
     onSend,
     onChange,
+    onStop,
     tools,
     rightTools,
     sendButtonPrefix,
@@ -114,6 +120,7 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
   }: {
     onSend: (message: string) => Promise<void>;
     onChange?: (value: string) => void;
+    onStop?: () => void;
     tools?: React.ReactNode;
     rightTools?: React.ReactNode;
     sendButtonPrefix?: React.ReactNode;
@@ -148,6 +155,9 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
         {topRightOverlay}
         <button type='button' onClick={() => onChange?.('hello')}>
           change
+        </button>
+        <button type='button' onClick={onStop}>
+          stop
         </button>
         {/* Stands in for choosing a conversation in the `@@` picker. */}
         <button type='button' onClick={() => onSelectedSessionsChange?.([{ id: 'conv_target' }])}>
@@ -489,6 +499,57 @@ describe('AcpSendBox', () => {
       );
     });
     await waitFor(() => expect(screen.queryByTestId('goal-composer')).not.toBeInTheDocument());
+  });
+
+  it('applies /plan to the runtime and sends only the remaining task text', async () => {
+    const setConfigOption = vi.fn().mockResolvedValue(undefined);
+    useAcpConfigOptionsMock.mockReturnValue({
+      setStatus: { state: 'idle' },
+      mode: {
+        id: 'mode',
+        category: 'mode',
+        currentValue: 'default',
+        options: [
+          { value: 'default', label: 'Default' },
+          { value: 'plan', label: 'Plan' },
+        ],
+      },
+      model: null,
+      thoughtLevel: null,
+      reload: vi.fn(),
+      setConfigOption,
+    });
+    sendMessageInvokeMock.mockResolvedValue({ turn_id: 'turn-plan', runtime: {}, msg_id: 'message-plan' });
+    render(<AcpSendBox conversation_id='conv-1' backend='claude' messageState={makeMessageState()} />);
+    const { onExecute } = useConversationCommandQueueSpy.mock.calls[0][0] as {
+      onExecute: (item: { input: string; files: []; sessions?: string[] }) => Promise<void>;
+    };
+
+    await act(async () => {
+      await onExecute({ input: '/plan Investigate the failure', files: [] });
+    });
+
+    expect(setConfigOption).toHaveBeenCalledWith('mode', 'plan');
+    expect(sendMessageInvokeMock).toHaveBeenCalledWith(
+      expect.objectContaining({ input: 'Investigate the failure', conversation_id: 'conv-1' })
+    );
+  });
+
+  it('pauses a native Codex goal when stopping without an active turn', async () => {
+    const messageState = makeMessageState();
+    messageState.slashCommands = [{ name: 'goal', description: 'Start goal', kind: 'template', source: 'acp' }];
+    render(<AcpSendBox conversation_id='conv-1' backend='codex' messageState={messageState} />);
+
+    await act(async () => {
+      screen.getByRole('button', { name: 'stop' }).click();
+    });
+
+    expect(setConfigOptionInvokeMock).toHaveBeenCalledWith({
+      conversation_id: 'conv-1',
+      option_id: 'goal_status',
+      value: 'paused',
+    });
+    expect(stopInvokeMock).not.toHaveBeenCalled();
   });
 
   it('shows a progress ring with a window size, a hollow ring without one, and nothing without usage', () => {

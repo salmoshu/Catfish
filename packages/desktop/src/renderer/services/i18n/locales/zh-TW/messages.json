@@ -56,12 +56,14 @@
     "objectivePlaceholder": "Agent 需要完成什麼目標？",
     "completionCriterion": "完成條件",
     "completionPlaceholder": "如何判斷目標已完成？",
-    "start": "啟動目標"
+    "start": "啟動目標",
+    "description": "設定持續目標，或使用 status、pause、resume、clear 管理目標"
   },
   "anchorRail": {
     "label": "對話訊息錨點",
     "tickAria": "跳轉到第 {{index}} 則訊息",
-    "searchAria": "搜尋對話內容"
+    "searchAria": "搜尋對話內容",
+    "copyInstruction": "複製指令"
   },
   "availableCommands": "{{count}} 個可用指令",
   "availableCommands_one": "{{count}} 個可用指令",
@@ -149,5 +151,10 @@
   "editedFilesCount_one": "編輯了 {{count}} 處",
   "moreFiles_one": "還有 {{count}} 個檔案",
   "editedFilesCount_other": "編輯了 {{count}} 處",
-  "moreFiles_other": "還有 {{count}} 個檔案"
+  "moreFiles_other": "還有 {{count}} 個檔案",
+  "plan": {
+    "description": "切換至計畫模式，可在指令後附上任務",
+    "defaultDescription": "切換至執行模式",
+    "unsupported": "此 Agent 未提供要求的計畫模式"
+  }
 }

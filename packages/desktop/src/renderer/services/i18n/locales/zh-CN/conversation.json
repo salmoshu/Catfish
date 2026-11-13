@@ -91,7 +91,8 @@
     "archiveProjectConfirm": "确定归档项目「{{name}}」吗？项目下的 {{count}} 个对话也会一起归档。归档后可在设置的归档页恢复或删除。",
     "archiving": "归档中...",
     "expandAllProjects": "展开全部项目会话",
-    "collapseAllProjects": "折叠全部项目会话"
+    "collapseAllProjects": "折叠全部项目会话",
+    "hasDraft": "有未发送的草稿"
   },
   "historySearch": {
     "tooltip": "检索会话",
@@ -192,7 +193,7 @@
       },
       "USER_AGENT_SESSION_RESUME_FAILED": {
         "title": "未能恢复之前的会话",
-        "body": "当前账号未能恢复之前的执行上下文，本次请求已停止，原有历史记录已保留。请切回原账号重试，或新建会话并附上任务进度。"
+        "body": "未能恢复之前的执行上下文，本次请求已停止，原有历史记录已保留。请重试恢复，或新建会话并附上任务进度。"
       },
       "USER_AGENT_SESSION_NOT_FOUND": {
         "title": "Agent 会话已丢失",
@@ -612,7 +613,7 @@
         "body": "这次请求没有产生任何可见回复。"
       },
       "ACP_EMPTY_TURN_NEEDS_AUTH": {
-        "body": "这次请求没有产生任何可见回复。若你已登录，可能是后端瞬时或连接问题，请重试或新建对话；若尚未登录，可尝试登录：{{hint}}。"
+        "body": "这次请求没有产生任何可见回复。"
       },
       "ACP_EMPTY_TURN_TOKEN_LIMIT": {
         "body": "这次请求没有产生任何可见回复。当前会话可能已接近上下文长度上限，建议重试，或新建对话后再试。"
@@ -646,6 +647,18 @@
       },
       "CODEX_CAPACITY_CONTINUE_FAILED": {
         "body": "容量不足导致上一轮结束后，Catfish 自动发送“继续”失败。排队命令仍保持暂停，请稍后手动继续。"
+      },
+      "ACP_RUNTIME_RECOVERED": {
+        "body": "执行进程已重新建立，并已加载原会话。上一条指令未自动重发，请手动重试。"
+      },
+      "ACP_RUNTIME_RECOVERY_FAILED": {
+        "body": "未能恢复原会话。历史记录已保留，上一条指令未重发，请手动重试或重启会话运行时。"
+      },
+      "CODEX_PLAN_MODE_CHANGED": {
+        "body": "已切换工作模式：{{mode}}。后续任务将使用此模式。"
+      },
+      "CODEX_GOAL_STATUS": {
+        "body": "目标状态：{{status}}。{{objective}}"
       }
     }
   },

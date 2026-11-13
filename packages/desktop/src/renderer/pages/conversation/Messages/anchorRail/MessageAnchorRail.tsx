@@ -7,7 +7,8 @@
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import { dispatchChatMessageJump, dispatchChatSearchPanelOpen } from '@/renderer/utils/chat/chatMinimapEvents';
 import KimiIcon from '@renderer/components/base/KimiIcon';
-import { Button } from '@arco-design/web-react';
+import { Button, Dropdown, Menu, Message } from '@arco-design/web-react';
+import { copyText } from '@/renderer/utils/ui/clipboard';
 import classNames from 'classnames';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -56,6 +57,7 @@ const MessageAnchorRail: React.FC = () => {
   const [railHeight, setRailHeight] = useState(0);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [directoryOpen, setDirectoryOpen] = useState(false);
+  const [copyMenuOpen, setCopyMenuOpen] = useState(false);
 
   useEffect(() => {
     const host = railNode?.parentElement;
@@ -159,11 +161,21 @@ const MessageAnchorRail: React.FC = () => {
   );
 
   const clearHover = useCallback(() => {
+    if (copyMenuOpen) return;
     pointerYRef.current = null;
     setPointerOffset(null);
     setActiveIndex(null);
     setDirectoryOpen(false);
-  }, []);
+  }, [copyMenuOpen]);
+
+  const copyInstruction = async (anchor: MessageAnchorItem): Promise<void> => {
+    try {
+      await copyText(anchor.input);
+      Message.success(t('common.copySuccess'));
+    } catch {
+      Message.error(t('common.copyFailed'));
+    }
+  };
 
   const openDirectory = useCallback(() => setDirectoryOpen(true), []);
 
@@ -267,24 +279,34 @@ const MessageAnchorRail: React.FC = () => {
         }}
       >
         {anchors.map((anchor, index) => (
-          <Button
+          <Dropdown
             key={anchor.messageId}
-            type='text'
-            size='mini'
-            htmlType='button'
-            className={classNames(styles.flyoutItem, activeIndex === index && styles.flyoutActive)}
-            data-anchor-flyout-index={index}
-            data-testid='message-anchor-flyout-item'
-            aria-label={t('messages.anchorRail.tickAria', { index: anchor.index })}
-            aria-current={activeIndex === index ? 'location' : undefined}
-            onClick={() => jumpToAnchor(anchor)}
-            onFocus={() => {
-              focusAnchor(index);
-              revealIndex(index);
-            }}
+            trigger='contextMenu'
+            onVisibleChange={setCopyMenuOpen}
+            droplist={
+              <Menu onClickMenuItem={() => void copyInstruction(anchor)}>
+                <Menu.Item key='copy'>{t('messages.anchorRail.copyInstruction')}</Menu.Item>
+              </Menu>
+            }
           >
-            <span className={styles.flyoutLabel}>{anchor.question}</span>
-          </Button>
+            <Button
+              type='text'
+              size='mini'
+              htmlType='button'
+              className={classNames(styles.flyoutItem, activeIndex === index && styles.flyoutActive)}
+              data-anchor-flyout-index={index}
+              data-testid='message-anchor-flyout-item'
+              aria-label={t('messages.anchorRail.tickAria', { index: anchor.index })}
+              aria-current={activeIndex === index ? 'location' : undefined}
+              onClick={() => jumpToAnchor(anchor)}
+              onFocus={() => {
+                focusAnchor(index);
+                revealIndex(index);
+              }}
+            >
+              <span className={styles.flyoutLabel}>{anchor.question}</span>
+            </Button>
+          </Dropdown>
         ))}
       </div>
 

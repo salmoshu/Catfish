@@ -96,6 +96,8 @@ const requiredAgentErrorCodes = [
 
 const requiredAgentTipCodes = [
   'ACP_EMPTY_TURN',
+  'ACP_EMPTY_TURN_NEEDS_AUTH',
+  'ACP_EMPTY_TURN_TOKEN_LIMIT',
   'ACP_EMPTY_TURN_MAX_TOKENS',
   'ACP_EMPTY_TURN_MAX_TURN_REQUESTS',
   'ACP_EMPTY_TURN_REFUSAL',
@@ -313,6 +315,19 @@ describe('MessageTips — FeedbackButton wiring', () => {
     );
 
     expect(screen.getByText('This request produced no visible reply.')).toBeInTheDocument();
+  });
+
+  it('keeps legacy empty-reply diagnostics visible without asserting a login failure', () => {
+    render(
+      <MessageTips
+        message={buildTips('info', '', undefined, {
+          code: 'ACP_EMPTY_TURN_NEEDS_AUTH',
+          params: { hint: 'Open the device-code login flow in a terminal.' },
+        })}
+      />
+    );
+    expect(screen.getByText('This request produced no visible reply.')).toBeInTheDocument();
+    expect(screen.queryByText(/sign in|signed in/)).not.toBeInTheDocument();
   });
 
   it('renders localized warning tips from code-only payloads', () => {

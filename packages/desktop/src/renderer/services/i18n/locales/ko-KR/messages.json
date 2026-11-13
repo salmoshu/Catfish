@@ -56,12 +56,14 @@
     "objectivePlaceholder": "에이전트가 무엇을 달성해야 하나요?",
     "completionCriterion": "완료 조건",
     "completionPlaceholder": "목표 완료를 어떻게 확인하나요?",
-    "start": "목표 시작"
+    "start": "목표 시작",
+    "description": "지속 목표를 설정하거나 status, pause, resume, clear로 관리합니다"
   },
   "anchorRail": {
     "label": "대화 메시지 앵커",
     "tickAria": "{{index}}번째 메시지로 이동",
-    "searchAria": "대화 검색"
+    "searchAria": "대화 검색",
+    "copyInstruction": "지시 복사"
   },
   "availableCommands": "{{count}}개의 사용 가능한 명령어",
   "availableCommands_one": "{{count}}개의 사용 가능한 명령어",
@@ -149,5 +151,10 @@
   "editedFilesCount_one": "{{count}}개 파일 편집",
   "moreFiles_one": "파일 {{count}}개 더 보기",
   "editedFilesCount_other": "{{count}}개 파일 편집",
-  "moreFiles_other": "파일 {{count}}개 더 보기"
+  "moreFiles_other": "파일 {{count}}개 더 보기",
+  "plan": {
+    "description": "계획 모드로 전환합니다. 작업을 함께 입력할 수 있습니다",
+    "defaultDescription": "실행 모드로 전환",
+    "unsupported": "이 에이전트는 요청한 계획 모드를 제공하지 않습니다"
+  }
 }

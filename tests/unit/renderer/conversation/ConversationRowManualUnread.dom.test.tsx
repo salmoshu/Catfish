@@ -5,7 +5,7 @@
  */
 
 import type { TChatConversation } from '@/common/config/storage';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -38,6 +38,7 @@ vi.mock('@/renderer/utils/ui/siderTooltip', () => ({
   getSiderTooltipProps: () => ({ disabled: true }),
 }));
 
+import { getSendBoxDraftHook } from '@/renderer/hooks/chat/useSendBoxDraft';
 import ConversationRow from '@/renderer/pages/conversation/GroupedHistory/ConversationRow';
 import type { ConversationRowProps } from '@/renderer/pages/conversation/GroupedHistory/types';
 
@@ -113,5 +114,28 @@ describe('conversation mark-as-unread menu item', () => {
 
     expect(screen.queryByText('conversation.history.markAsUnread')).not.toBeInTheDocument();
     expect(screen.queryByText('conversation.history.markAsRead')).not.toBeInTheDocument();
+  });
+
+  it('shows an unsent draft marker and removes it when the draft is cleared', async () => {
+    const useDraft = getSendBoxDraftHook('acp', {
+      _type: 'acp',
+      content: '',
+      atPath: [],
+      uploadFile: [],
+    });
+    const { result } = renderHook(() => useDraft(conversation.id));
+    render(<ConversationRow {...makeProps({ menuVisible: false })} />);
+
+    act(() => {
+      result.current.mutate((draft) => ({ ...draft, content: 'Unsent task' }));
+    });
+    expect(await screen.findByTestId(`conversation-draft-${conversation.id}`)).toBeInTheDocument();
+
+    act(() => {
+      result.current.mutate(() => undefined);
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId(`conversation-draft-${conversation.id}`)).not.toBeInTheDocument();
+    });
   });
 });

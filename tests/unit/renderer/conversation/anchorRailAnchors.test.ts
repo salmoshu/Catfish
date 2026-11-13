@@ -36,6 +36,12 @@ const toolMessage = (id: string): TMessage =>
   }) as unknown as TMessage;
 
 describe('buildMessageAnchors', () => {
+  it('preserves the full instruction while keeping the directory preview short', () => {
+    const input = `  ${'long instruction '.repeat(25)}\n  preserve indentation`;
+    const [anchor] = buildMessageAnchors([textMessage('u1', 'right', input)]);
+    expect(anchor.input).toBe(input);
+    expect(anchor.question.length).toBeLessThan(input.length);
+  });
   it('creates one anchor per user message with the turn reply attached', () => {
     const anchors = buildMessageAnchors([
       textMessage('u1', 'right', 'first question'),

@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.4.29](https://github.com/salmoshu/Catfish/releases/tag/v0.4.29) (2026-11-13)
+
+### Features
+
+- **conversation directory:** copy the complete original user instruction from a directory item's context menu without jumping or sending it
+- **sidebar:** mark conversations with unsent drafts while preserving their existing activity and unread states
+- **composer:** expose localized planning and goal command descriptions and apply `/plan` or `/default` through the active runtime mode
+
+### Bug Fixes
+
+- **composer:** keep Up and Down focused on caret movement instead of replacing the current draft with conversation history
+- **clipboard images:** name pasted images with the local date and time and keep same-second attachments distinct
+- **conversation recovery:** restart a transient empty-turn runtime once after it becomes idle, preserve the original session, report the result, and never replay the user's instruction automatically
+- **codex:** pause native goal continuation when stopping between turns
+- **terminal cards:** use a consistently filled square for the Stop action
+- **agent diagnostics:** keep legacy empty-reply notices neutral instead of asserting that authentication failed
+
+---
+
 ## [0.4.28](https://github.com/salmoshu/Catfish/releases/tag/v0.4.28) (2026-11-11)
 
 ### Features

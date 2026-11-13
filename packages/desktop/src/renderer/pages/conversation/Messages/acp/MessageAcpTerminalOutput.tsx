@@ -7,7 +7,7 @@
 import { ipcBridge } from '@/common';
 import type { IMessageAcpTerminalOutput } from '@/common/chat/chatLib';
 import { Button, Card, Tag } from '@arco-design/web-react';
-import { Down, Right, Square, Terminal } from '@icon-park/react';
+import { Down, Right, Terminal } from '@icon-park/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { openWorkbenchSection } from '../../Workbench/workbenchActivityStore';
@@ -105,7 +105,7 @@ const MessageAcpTerminalOutput: React.FC<{ message: IMessageAcpTerminalOutput }>
             loading={killing}
             onClick={handleStop}
             data-testid='terminal-card-stop'
-            icon={<Square theme='filled' size='12' fill='currentColor' />}
+            icon={<span aria-hidden='true' className='block size-10px rounded-1px bg-current' />}
           />
         )}
         <Button

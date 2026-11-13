@@ -11,6 +11,7 @@ import FlexFullContainer from '@/renderer/components/layout/FlexFullContainer';
 import { usePresetAssistantInfo } from '@/renderer/hooks/agent/usePresetAssistantInfo';
 import { CronJobIndicator } from '@/renderer/pages/cron';
 import { useTitleRename } from '@/renderer/pages/conversation/hooks/useTitleRename';
+import { useConversationHasDraft } from '@/renderer/hooks/chat/useSendBoxDraft';
 import { resolveConversationLeadingMark } from '@/renderer/pages/conversation/utils/conversationAssistantIdentity';
 import { cleanupSiderTooltips, getSiderTooltipProps } from '@/renderer/utils/ui/siderTooltip';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
@@ -111,6 +112,7 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
     }
   );
   const isPinned = isConversationPinned(conversation);
+  const hasDraft = useConversationHasDraft(conversation.id) && !selected;
   // Fork-lineage badge: present only on forked conversations (extra.fork is
   // server-minted by the fork API). Parent name resolves from the loaded
   // sidebar list; a deleted/unloaded parent degrades to the generic tip.
@@ -159,7 +161,7 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
   const showWaitingConfirmation = isWaitingConfirmation && !batchMode;
 
   const renderCompletionUnreadDot = () => {
-    if (batchMode || !hasUnread || isGenerating || isWaitingConfirmation) {
+    if (batchMode || !hasUnread || isGenerating || isWaitingConfirmation || hasDraft) {
       return null;
     }
 
@@ -303,13 +305,28 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
           </span>
         )}
         {renderCompletionUnreadDot()}
+        {hasDraft &&
+          !menuVisible &&
+          !batchMode &&
+          !editingTitle &&
+          !collapsed &&
+          !isGenerating &&
+          !isWaitingConfirmation && (
+            <span
+              className='absolute end-8px top-1/2 -translate-y-1/2 flex items-center text-t-secondary group-hover:hidden group-focus-within:hidden'
+              aria-label={t('conversation.history.hasDraft')}
+              data-testid={`conversation-draft-${conversation.id}`}
+            >
+              <EditOne theme='outline' size='14' />
+            </span>
+          )}
         {!batchMode && !editingTitle && (
           <div
             className={classNames(
               'absolute end-8px top-1/2 -translate-y-1/2 items-center justify-end !collapsed-hidden',
               {
                 flex: isMobile || menuVisible,
-                'hidden group-hover:flex': !isMobile && !menuVisible,
+                'hidden group-hover:flex group-focus-within:flex': !isMobile && !menuVisible,
               }
             )}
             onClick={(event) => {
@@ -402,7 +419,7 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
                   'flex-center cursor-pointer transition-colors text-t-secondary hover:text-t-primary size-20px rd-4px sider-action-btn',
                   {
                     flex: isMobile || menuVisible,
-                    'hidden group-hover:flex': !isMobile && !menuVisible,
+                    'hidden group-hover:flex group-focus-within:flex': !isMobile && !menuVisible,
                   }
                 )}
                 onClick={(event) => {

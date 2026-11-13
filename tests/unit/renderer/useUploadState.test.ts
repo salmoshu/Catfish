@@ -8,9 +8,17 @@
  * conversation lifecycle).
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 
 import { abortUpload, abortUploads, trackUpload } from '@/renderer/hooks/file/useUploadState';
+import { PasteService } from '@/renderer/services/PasteService';
+
+const { uploadFileViaHttpMock } = vi.hoisted(() => ({ uploadFileViaHttpMock: vi.fn() }));
+
+vi.mock('@/renderer/services/FileService', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/renderer/services/FileService')>();
+  return { ...actual, uploadFileViaHttp: uploadFileViaHttpMock };
+});
 
 describe('useUploadState abort wiring', () => {
   it('invokes onAbort exactly once when abortUpload is called', () => {
@@ -84,5 +92,63 @@ describe('useUploadState abort wiring', () => {
 
     sendbox.finish();
     workspace.finish();
+  });
+});
+
+describe('PasteService clipboard image names', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 10, 13, 9, 8, 7));
+    uploadFileViaHttpMock.mockImplementation(async (file: File) => `/uploads/${file.name}`);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const pasteImages = async (files: File[], onFilesAdded = vi.fn()) => {
+    const event = {
+      stopPropagation: vi.fn(),
+      clipboardData: { getData: () => '', files },
+    };
+    const handled = await PasteService.handlePaste(event as never, ['.png'], onFilesAdded, undefined, 'conv-1');
+    return { handled, onFilesAdded };
+  };
+
+  it('names a clipboard image with the local date and time', async () => {
+    const image = new File(['image'], 'image.png', { type: 'image/png' });
+
+    const { handled, onFilesAdded } = await pasteImages([image]);
+
+    expect(handled).toBe(true);
+    expect(uploadFileViaHttpMock.mock.calls[0][0]).toEqual(expect.objectContaining({ name: '20261113-090807.png' }));
+    expect(onFilesAdded).toHaveBeenCalledWith([
+      expect.objectContaining({ name: '20261113-090807.png', path: '/uploads/20261113-090807.png' }),
+    ]);
+  });
+
+  it('keeps same-second images in one batch distinct', async () => {
+    const images = [
+      new File(['first'], 'image.png', { type: 'image/png' }),
+      new File(['second'], 'clipboard.png', { type: 'image/png' }),
+    ];
+
+    await pasteImages(images);
+
+    const names = uploadFileViaHttpMock.mock.calls.map(([file]) => (file as File).name);
+    expect(names).toEqual(['20261113-090807.png', '20261113-090807_2.png']);
+  });
+
+  it('does not add an attachment when the upload fails', async () => {
+    uploadFileViaHttpMock.mockRejectedValueOnce(new Error('network unavailable'));
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const image = new File(['image'], 'image.png', { type: 'image/png' });
+
+    const { handled, onFilesAdded } = await pasteImages([image]);
+
+    expect(handled).toBe(true);
+    expect(onFilesAdded).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 });

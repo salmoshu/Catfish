@@ -56,12 +56,14 @@
     "objectivePlaceholder": "エージェントに達成してほしいことは何ですか？",
     "completionCriterion": "完了条件",
     "completionPlaceholder": "ゴールの完了をどのように判断しますか？",
-    "start": "ゴールを開始"
+    "start": "ゴールを開始",
+    "description": "継続的な目標を設定するか、status、pause、resume、clear で管理します"
   },
   "anchorRail": {
     "label": "会話メッセージのアンカー",
     "tickAria": "メッセージ {{index}} へ移動",
-    "searchAria": "会話を検索"
+    "searchAria": "会話を検索",
+    "copyInstruction": "指示をコピー"
   },
   "availableCommands": "{{count}} 個の利用可能なコマンド",
   "availableCommands_one": "{{count}} 個の利用可能なコマンド",
@@ -149,5 +151,10 @@
   "editedFilesCount_one": "{{count}} 件を編集",
   "moreFiles_one": "ほか {{count}} ファイル",
   "editedFilesCount_other": "{{count}} 件を編集",
-  "moreFiles_other": "ほか {{count}} ファイル"
+  "moreFiles_other": "ほか {{count}} ファイル",
+  "plan": {
+    "description": "計画モードに切り替えます。タスクも指定できます",
+    "defaultDescription": "実行モードに切り替える",
+    "unsupported": "このエージェントは要求された計画モードに対応していません"
+  }
 }

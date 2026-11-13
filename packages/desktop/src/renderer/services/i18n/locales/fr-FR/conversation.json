@@ -91,7 +91,8 @@
     "archiveProjectConfirm": "Archive project \"{{name}}\"? Its {{count}} conversation(s) will be archived too. You can restore or delete them from Archived in Settings.",
     "archiving": "Archiving...",
     "expandAllProjects": "Développer toutes les conversations de projet",
-    "collapseAllProjects": "Réduire toutes les conversations de projet"
+    "collapseAllProjects": "Réduire toutes les conversations de projet",
+    "hasDraft": "Brouillon non envoyé"
   },
   "historySearch": {
     "tooltip": "Rechercher des messages",
@@ -192,7 +193,7 @@
       },
       "USER_AGENT_SESSION_RESUME_FAILED": {
         "title": "Impossible de restaurer la session précédente",
-        "body": "Le compte actuel n’a pas pu restaurer le contexte d’exécution précédent. Cette demande a été arrêtée et l’historique d’origine a été conservé. Revenez au compte d’origine et réessayez, ou commencez une nouvelle conversation avec un résumé de la tâche."
+        "body": "Impossible de restaurer le contexte d’exécution précédent. La demande a été arrêtée et l’historique conservé. Réessayez la restauration ou ouvrez une conversation avec un résumé de l’avancement."
       },
       "USER_AGENT_SESSION_NOT_FOUND": {
         "title": "La session de l'agent a été perdue",
@@ -612,7 +613,7 @@
         "body": "Cette demande n'a produit aucune réponse visible."
       },
       "ACP_EMPTY_TURN_NEEDS_AUTH": {
-        "body": "Cette requête n'a produit aucune réponse visible. Si vous êtes déjà connecté, il peut s'agir d'un problème temporaire du backend ou de connexion — réessayez ou démarrez une nouvelle conversation. Si vous n'êtes pas encore connecté, vous pouvez vous connecter : {{hint}}."
+        "body": "Cette demande n'a produit aucune réponse visible."
       },
       "ACP_EMPTY_TURN_TOKEN_LIMIT": {
         "body": "Cette requête n'a produit aucune réponse visible. La conversation actuelle approche peut-être de la limite de longueur de contexte — réessayez ou démarrez une nouvelle conversation, puis réessayez."
@@ -646,6 +647,18 @@
       },
       "CODEX_CAPACITY_CONTINUE_FAILED": {
         "body": "Catfish n'a pas pu envoyer Continuer automatiquement après l'erreur de capacité. Les commandes en file restent en pause ; poursuivez manuellement lorsque vous êtes prêt."
+      },
+      "ACP_RUNTIME_RECOVERED": {
+        "body": "L’agent a redémarré et la session initiale a été chargée. L’instruction précédente n’a pas été renvoyée ; réessayez manuellement."
+      },
+      "ACP_RUNTIME_RECOVERY_FAILED": {
+        "body": "Impossible de restaurer la session initiale. L’historique est conservé et l’instruction n’a pas été renvoyée. Réessayez manuellement ou redémarrez l’environnement d’exécution."
+      },
+      "CODEX_PLAN_MODE_CHANGED": {
+        "body": "Mode de travail défini sur {{mode}}. Il sera utilisé pour les prochaines tâches."
+      },
+      "CODEX_GOAL_STATUS": {
+        "body": "État de l’objectif : {{status}}. {{objective}}"
       }
     }
   },

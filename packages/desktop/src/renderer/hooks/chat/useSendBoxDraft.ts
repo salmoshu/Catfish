@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import useSWR from 'swr';
 import type { FileOrFolderItem } from '@/renderer/utils/file/fileTypes';
 export type { FileOrFolderItem } from '@/renderer/utils/file/fileTypes';
@@ -40,6 +40,23 @@ const store: SendBoxDraftStore = {
   acp: new Map(),
   codex: new Map(),
   aionrs: new Map(),
+};
+
+const draftListeners = new Set<() => void>();
+const subscribeDrafts = (listener: () => void): (() => void) => {
+  draftListeners.add(listener);
+  return () => {
+    draftListeners.delete(listener);
+  };
+};
+
+/** Reports unsent text across composers without mounting another composer. */
+export const useConversationHasDraft = (conversation_id: string): boolean => {
+  const snapshot = useCallback(
+    () => Object.values(store).some((drafts) => Boolean(drafts.get(conversation_id)?.content.trim())),
+    [conversation_id]
+  );
+  return useSyncExternalStore(subscribeDrafts, snapshot, snapshot);
 };
 
 export type ConversationSendBoxPrefill = {
@@ -151,6 +168,7 @@ const setDraft = <K extends DraftConversationType>(
     default:
       break;
   }
+  draftListeners.forEach((listener) => listener());
 };
 
 const getDraft = <K extends DraftConversationType>(

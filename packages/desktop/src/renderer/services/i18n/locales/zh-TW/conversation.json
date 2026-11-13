@@ -91,7 +91,8 @@
     "archiveProjectConfirm": "確定歸檔專案「{{name}}」嗎？專案下的 {{count}} 個對話也會一起歸檔。歸檔後可在設定的歸檔頁恢復或刪除。",
     "archiving": "歸檔中...",
     "expandAllProjects": "展開全部專案會話",
-    "collapseAllProjects": "摺疊全部專案會話"
+    "collapseAllProjects": "摺疊全部專案會話",
+    "hasDraft": "有未傳送的草稿"
   },
   "historySearch": {
     "tooltip": "搜尋訊息",
@@ -192,7 +193,7 @@
       },
       "USER_AGENT_SESSION_RESUME_FAILED": {
         "title": "無法恢復先前的對話",
-        "body": "目前帳號無法恢復先前的執行脈絡，本次請求已停止，原有歷史記錄已保留。請切回原帳號重試，或建立新對話並附上任務進度。"
+        "body": "無法恢復先前的執行上下文。此次請求已停止，歷史記錄已保留。請重試恢復，或建立新對話並附上任務進度。"
       },
       "USER_AGENT_SESSION_NOT_FOUND": {
         "title": "Agent 會話已遺失",
@@ -612,7 +613,7 @@
         "body": "這次請求沒有產生任何可見回覆。"
       },
       "ACP_EMPTY_TURN_NEEDS_AUTH": {
-        "body": "這次請求沒有產生任何可見回覆。若你已登入，可能是後端瞬時或連線問題，請重試或新建對話；若尚未登入，可嘗試登入：{{hint}}。"
+        "body": "這次請求沒有產生任何可見回覆。"
       },
       "ACP_EMPTY_TURN_TOKEN_LIMIT": {
         "body": "這次請求沒有產生任何可見回覆。目前的對話可能已接近上下文長度上限，建議重試，或新建對話後再試。"
@@ -646,6 +647,18 @@
       },
       "CODEX_CAPACITY_CONTINUE_FAILED": {
         "body": "容量不足導致上一輪結束後，Catfish 自動傳送「繼續」失敗。排隊命令仍保持暫停，請稍後手動繼續。"
+      },
+      "ACP_RUNTIME_RECOVERED": {
+        "body": "執行程序已重新建立，並已載入原對話。上一條指令未自動重送，請手動重試。"
+      },
+      "ACP_RUNTIME_RECOVERY_FAILED": {
+        "body": "無法恢復原對話。歷史記錄已保留，指令未重送，請手動重試或重新啟動對話執行環境。"
+      },
+      "CODEX_PLAN_MODE_CHANGED": {
+        "body": "已切換工作模式：{{mode}}。後續任務將使用此模式。"
+      },
+      "CODEX_GOAL_STATUS": {
+        "body": "目標狀態：{{status}}。{{objective}}"
       }
     }
   },

@@ -6,12 +6,12 @@
 
 import { ipcBridge } from '@/common';
 import type { IConversationTurnCompletedEvent, IResponseMessage } from '@/common/adapter/ipcBridge';
-import type { TMessage } from '@/common/chat/chatLib';
-import { localSendAccepted, localSendFailed, localSendStarted } from './conversationRuntimeViewStore';
+import { parseError } from '@/common/utils';
 import { getConversationOrNull } from '@/renderer/pages/conversation/utils/conversationCache';
 import { useEffect, useRef } from 'react';
+import { localRestartFailed, localRestartStarted, localRestartSucceeded } from './conversationRuntimeViewStore';
 
-type PendingRetry = { conversation_id: string; turn_id: string };
+type PendingRecovery = { conversation_id: string; turn_id: string };
 
 const keyOf = (conversationId: string, turnId: string): string => `${conversationId}:${turnId}`;
 
@@ -21,32 +21,39 @@ export const isRecoverableEmptyTurnTip = (message: IResponseMessage): boolean =>
   return data?.code === 'ACP_EMPTY_TURN_NEEDS_AUTH';
 };
 
-export const latestUserText = (messages: TMessage[]): { id: string; text: string } | null => {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index];
-    if (message.type !== 'text' || message.position !== 'right') continue;
-    const text = typeof message.content?.content === 'string' ? message.content.content.trim() : '';
-    if (text) return { id: message.id, text };
-  }
-  return null;
+const showRecoveryResult = (
+  pending: PendingRecovery,
+  code: 'ACP_RUNTIME_RECOVERED' | 'ACP_RUNTIME_RECOVERY_FAILED',
+  type: 'success' | 'warning'
+): void => {
+  ipcBridge.conversation.responseStream.emit({
+    type: 'tips',
+    conversation_id: pending.conversation_id,
+    msg_id: `acp-runtime-recovery:${pending.turn_id}:${code}`,
+    turn_id: pending.turn_id,
+    data: { type, code, content: '' },
+  });
 };
 
-/** Retry one transient empty ACP turn after an application restart, never the same user message twice. */
+/** Restart one transient empty-turn runtime after it becomes idle, without replaying user input. */
 export function useAcpEmptyTurnRecovery(): void {
-  const pendingRef = useRef(new Map<string, PendingRetry>());
-  const retriedMessageIdsRef = useRef(new Set<string>());
-  const sendingRef = useRef(new Set<string>());
+  const pendingRef = useRef(new Map<string, PendingRecovery>());
+  const attemptedRef = useRef(new Set<string>());
+  const recoveringRef = useRef(new Set<string>());
 
   useEffect(() => {
     let disposed = false;
 
-    const retry = async (pending: PendingRetry): Promise<void> => {
+    const recover = async (pending: PendingRecovery): Promise<void> => {
       const key = keyOf(pending.conversation_id, pending.turn_id);
-      if (sendingRef.current.has(key)) return;
-      sendingRef.current.add(key);
+      if (recoveringRef.current.has(key) || attemptedRef.current.has(key)) return;
+      recoveringRef.current.add(key);
       try {
         const conversation = await getConversationOrNull(pending.conversation_id);
-        if (disposed || !conversation?.runtime) return;
+        if (disposed || !conversation?.runtime) {
+          pendingRef.current.delete(key);
+          return;
+        }
         const runtime = conversation.runtime;
         if (runtime.turn_id && runtime.turn_id !== pending.turn_id) {
           pendingRef.current.delete(key);
@@ -54,43 +61,44 @@ export function useAcpEmptyTurnRecovery(): void {
         }
         if (runtime.turn_id === pending.turn_id || runtime.is_processing || !runtime.can_send_message) return;
 
-        const page = await ipcBridge.database.getConversationMessages.invoke({
-          conversation_id: pending.conversation_id,
-          limit: 30,
-          content_mode: 'full',
-        });
-        const original = latestUserText(page.items);
-        if (!original || retriedMessageIdsRef.current.has(original.id)) {
-          pendingRef.current.delete(key);
-          return;
-        }
-
-        retriedMessageIdsRef.current.add(original.id);
         pendingRef.current.delete(key);
-        localSendStarted(pending.conversation_id);
+        attemptedRef.current.add(key);
+        localRestartStarted(pending.conversation_id);
         try {
-          const result = await ipcBridge.acpConversation.sendMessage.invoke({
+          const result = await ipcBridge.conversation.restartRuntime.invoke({
             conversation_id: pending.conversation_id,
-            input: original.text,
-            files: [],
           });
-          if (!disposed) localSendAccepted(pending.conversation_id, result.turn_id, result.runtime, result.msg_id);
+          if (disposed) return;
+          localRestartSucceeded(pending.conversation_id, result.runtime);
+          showRecoveryResult(
+            pending,
+            result.recovered ? 'ACP_RUNTIME_RECOVERED' : 'ACP_RUNTIME_RECOVERY_FAILED',
+            result.recovered ? 'success' : 'warning'
+          );
         } catch (error) {
-          if (!disposed) {
-            localSendFailed(pending.conversation_id, {
-              kind: 'ordinary',
-              reason: error instanceof Error ? error.message : String(error),
-            });
+          if (disposed) return;
+          let currentRuntime = null;
+          try {
+            currentRuntime = (await getConversationOrNull(pending.conversation_id))?.runtime ?? null;
+          } catch {
+            // Keep the local restart gate usable when the follow-up lookup fails.
           }
+          if (disposed) return;
+          localRestartFailed(pending.conversation_id, currentRuntime, parseError(error) || 'runtime restart failed');
+          showRecoveryResult(pending, 'ACP_RUNTIME_RECOVERY_FAILED', 'warning');
         }
+      } catch {
+        pendingRef.current.delete(key);
       } finally {
-        sendingRef.current.delete(key);
+        recoveringRef.current.delete(key);
       }
     };
 
     const offResponse = ipcBridge.conversation.responseStream.on((message: IResponseMessage) => {
       if (!isRecoverableEmptyTurnTip(message) || !message.turn_id) return;
-      pendingRef.current.set(keyOf(message.conversation_id, message.turn_id), {
+      const key = keyOf(message.conversation_id, message.turn_id);
+      if (attemptedRef.current.has(key)) return;
+      pendingRef.current.set(key, {
         conversation_id: message.conversation_id,
         turn_id: message.turn_id,
       });
@@ -98,13 +106,19 @@ export function useAcpEmptyTurnRecovery(): void {
     const offCompleted = ipcBridge.conversation.turnCompleted.on((event: IConversationTurnCompletedEvent) => {
       const key = keyOf(event.session_id, event.turn_id);
       const pending = pendingRef.current.get(key);
-      if (pending) void retry(pending);
+      if (!pending) return;
+      if (event.state === 'stopped') {
+        pendingRef.current.delete(key);
+        return;
+      }
+      void recover(pending);
     });
 
     return () => {
       disposed = true;
       pendingRef.current.clear();
-      sendingRef.current.clear();
+      attemptedRef.current.clear();
+      recoveringRef.current.clear();
       offResponse();
       offCompleted();
     };

@@ -91,7 +91,8 @@
     "archiveProjectConfirm": "Archive project \"{{name}}\"? Its {{count}} conversation(s) will be archived too. You can restore or delete them from Archived in Settings.",
     "archiving": "Archiving...",
     "expandAllProjects": "Expandir todas as conversas do projeto",
-    "collapseAllProjects": "Recolher todas as conversas do projeto"
+    "collapseAllProjects": "Recolher todas as conversas do projeto",
+    "hasDraft": "Rascunho não enviado"
   },
   "historySearch": {
     "tooltip": "Pesquisar mensagens",
@@ -193,7 +194,7 @@
       },
       "USER_AGENT_SESSION_RESUME_FAILED": {
         "title": "Não foi possível restaurar a sessão anterior",
-        "body": "A conta atual não conseguiu restaurar o contexto de execução anterior. Esta solicitação foi interrompida e o histórico original foi preservado. Volte à conta original e tente novamente ou inicie uma nova conversa com um resumo da tarefa."
+        "body": "Não foi possível restaurar o contexto de execução anterior. A solicitação foi interrompida e o histórico preservado. Tente restaurar novamente ou inicie outra conversa com um resumo do progresso."
       },
       "USER_AGENT_SESSION_NOT_FOUND": {
         "title": "A sessão do agente foi perdida",
@@ -618,7 +619,7 @@
         "body": "Esta solicitação não gerou nenhuma resposta visível."
       },
       "ACP_EMPTY_TURN_NEEDS_AUTH": {
-        "body": "Esta solicitação não produziu nenhuma resposta visível. Se você já fez login, pode ser um problema temporário de backend ou de conexão — tente novamente ou inicie uma nova conversa. Se ainda não fez login, você pode fazer login: {{hint}}."
+        "body": "Esta solicitação não gerou nenhuma resposta visível."
       },
       "ACP_EMPTY_TURN_TOKEN_LIMIT": {
         "body": "Esta solicitação não produziu nenhuma resposta visível. A conversa atual pode estar se aproximando do limite de comprimento de contexto — tente novamente ou inicie uma nova conversa e tente de novo."
@@ -652,6 +653,18 @@
       },
       "CODEX_CAPACITY_CONTINUE_FAILED": {
         "body": "O Catfish não conseguiu enviar Continuar automaticamente após o erro de capacidade. Os comandos na fila continuam pausados; continue manualmente quando estiver pronto."
+      },
+      "ACP_RUNTIME_RECOVERED": {
+        "body": "O agente foi reiniciado e a sessão original foi carregada. A instrução anterior não foi reenviada; tente novamente manualmente."
+      },
+      "ACP_RUNTIME_RECOVERY_FAILED": {
+        "body": "Não foi possível restaurar a sessão original. O histórico foi preservado e a instrução não foi reenviada. Tente manualmente ou reinicie o ambiente de execução."
+      },
+      "CODEX_PLAN_MODE_CHANGED": {
+        "body": "Modo de trabalho alterado para {{mode}}. Ele será usado nas próximas tarefas."
+      },
+      "CODEX_GOAL_STATUS": {
+        "body": "Estado da meta: {{status}}. {{objective}}"
       }
     }
   },

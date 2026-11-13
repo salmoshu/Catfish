@@ -91,7 +91,8 @@
     "archiveProjectConfirm": "Archive project \"{{name}}\"? Its {{count}} conversation(s) will be archived too. You can restore or delete them from Archived in Settings.",
     "archiving": "Archiving...",
     "expandAllProjects": "Alle Projektchats einblenden",
-    "collapseAllProjects": "Alle Projektchats ausblenden"
+    "collapseAllProjects": "Alle Projektchats ausblenden",
+    "hasDraft": "Ungesendeter Entwurf"
   },
   "historySearch": {
     "tooltip": "Nachrichten durchsuchen",
@@ -192,7 +193,7 @@
       },
       "USER_AGENT_SESSION_RESUME_FAILED": {
         "title": "Vorherige Sitzung konnte nicht wiederhergestellt werden",
-        "body": "Das aktuelle Konto konnte den vorherigen Ausführungskontext nicht wiederherstellen. Die Anfrage wurde gestoppt und der ursprüngliche Verlauf bleibt erhalten. Wechseln Sie zum ursprünglichen Konto und versuchen Sie es erneut oder beginnen Sie ein neues Gespräch mit einer Zusammenfassung der Aufgabe."
+        "body": "Der vorherige Ausführungskontext konnte nicht wiederhergestellt werden. Die Anfrage wurde gestoppt und der Verlauf erhalten. Wiederherstellung erneut versuchen oder ein neues Gespräch mit dem bisherigen Fortschritt beginnen."
       },
       "USER_AGENT_SESSION_NOT_FOUND": {
         "title": "Die Agent-Sitzung ging verloren",
@@ -613,7 +614,7 @@
         "body": "Diese Anfrage hat keine sichtbare Antwort erzeugt."
       },
       "ACP_EMPTY_TURN_NEEDS_AUTH": {
-        "body": "Diese Anfrage hat keine sichtbare Antwort erzeugt. Wenn Sie bereits angemeldet sind, kann es sich um ein vorübergehendes Backend- oder Verbindungsproblem handeln – versuchen Sie es erneut oder starten Sie eine neue Unterhaltung. Wenn Sie noch nicht angemeldet sind, können Sie sich anmelden – {{hint}}."
+        "body": "Diese Anfrage hat keine sichtbare Antwort erzeugt."
       },
       "ACP_EMPTY_TURN_TOKEN_LIMIT": {
         "body": "Diese Anfrage hat keine sichtbare Antwort erzeugt. Die aktuelle Unterhaltung nähert sich möglicherweise der Kontextlängenbegrenzung – versuchen Sie es erneut oder starten Sie eine neue Unterhaltung und versuchen Sie es noch einmal."
@@ -647,6 +648,18 @@
       },
       "CODEX_CAPACITY_CONTINUE_FAILED": {
         "body": "Catfish konnte nach dem Kapazitätsfehler nicht automatisch Fortsetzen senden. Wartende Befehle bleiben pausiert; fahre bei Bedarf manuell fort."
+      },
+      "ACP_RUNTIME_RECOVERED": {
+        "body": "Der Agent wurde neu gestartet und die ursprüngliche Sitzung geladen. Die vorherige Anweisung wurde nicht erneut gesendet; bitte manuell wiederholen."
+      },
+      "ACP_RUNTIME_RECOVERY_FAILED": {
+        "body": "Die ursprüngliche Sitzung konnte nicht wiederhergestellt werden. Der Verlauf blieb erhalten und die Anweisung wurde nicht erneut gesendet. Manuell wiederholen oder die Laufzeit neu starten."
+      },
+      "CODEX_PLAN_MODE_CHANGED": {
+        "body": "Arbeitsmodus auf {{mode}} geändert. Er gilt für nachfolgende Aufgaben."
+      },
+      "CODEX_GOAL_STATUS": {
+        "body": "Zielstatus: {{status}}. {{objective}}"
       }
     }
   },

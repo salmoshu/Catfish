@@ -91,7 +91,8 @@
     "archiveProjectConfirm": "Archive project \"{{name}}\"? Its {{count}} conversation(s) will be archived too. You can restore or delete them from Archived in Settings.",
     "archiving": "Archiving...",
     "expandAllProjects": "すべてのプロジェクト会話を展開",
-    "collapseAllProjects": "すべてのプロジェクト会話を折りたたむ"
+    "collapseAllProjects": "すべてのプロジェクト会話を折りたたむ",
+    "hasDraft": "未送信の下書き"
   },
   "historySearch": {
     "tooltip": "メッセージを検索",
@@ -192,7 +193,7 @@
       },
       "USER_AGENT_SESSION_RESUME_FAILED": {
         "title": "前のセッションを復元できませんでした",
-        "body": "現在のアカウントでは以前の実行コンテキストを復元できませんでした。今回のリクエストは停止し、元の履歴は保持されています。元のアカウントに戻して再試行するか、作業の進捗を添えて新しい会話を開始してください。"
+        "body": "以前の実行コンテキストを復元できませんでした。リクエストを停止し、履歴を保持しました。復元を再試行するか、進捗を添えて新しい会話を開始してください。"
       },
       "USER_AGENT_SESSION_NOT_FOUND": {
         "title": "エージェントセッションが失われました",
@@ -612,7 +613,7 @@
         "body": "このリクエストでは、表示できる返信はありませんでした。"
       },
       "ACP_EMPTY_TURN_NEEDS_AUTH": {
-        "body": "このリクエストは可視的な応答を生成しませんでした。すでにサインインしている場合は、バックエンドの一時的な問題や接続の問題の可能性があります。再試行するか、新しい会話を開始してください。まだサインインしていない場合は、サインインできます：{{hint}}。"
+        "body": "このリクエストでは、表示できる返信はありませんでした。"
       },
       "ACP_EMPTY_TURN_TOKEN_LIMIT": {
         "body": "このリクエストは可視的な応答を生成しませんでした。現在の会話がコンテキスト長の上限に近づいている可能性があります。再試行するか、新しい会話を開始してからもう一度お試しください。"
@@ -646,6 +647,18 @@
       },
       "CODEX_CAPACITY_CONTINUE_FAILED": {
         "body": "容量エラーの後、Catfish が自動で「続き」を送信できませんでした。キュー内のコマンドは一時停止したままです。準備ができたら手動で続行してください。"
+      },
+      "ACP_RUNTIME_RECOVERED": {
+        "body": "エージェントを再起動し、元のセッションを読み込みました。前の指示は再送していません。手動で再試行してください。"
+      },
+      "ACP_RUNTIME_RECOVERY_FAILED": {
+        "body": "元のセッションを復元できませんでした。履歴は保持され、指示は再送していません。手動で再試行するか、実行環境を再起動してください。"
+      },
+      "CODEX_PLAN_MODE_CHANGED": {
+        "body": "作業モードを {{mode}} に変更しました。以降のタスクに適用されます。"
+      },
+      "CODEX_GOAL_STATUS": {
+        "body": "目標の状態：{{status}}。{{objective}}"
       }
     }
   },

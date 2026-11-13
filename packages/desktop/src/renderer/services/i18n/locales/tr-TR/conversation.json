@@ -91,7 +91,8 @@
     "archiveProjectConfirm": "Archive project \"{{name}}\"? Its {{count}} conversation(s) will be archived too. You can restore or delete them from Archived in Settings.",
     "archiving": "Archiving...",
     "expandAllProjects": "Tüm proje sohbetlerini genişlet",
-    "collapseAllProjects": "Tüm proje sohbetlerini daralt"
+    "collapseAllProjects": "Tüm proje sohbetlerini daralt",
+    "hasDraft": "Gönderilmemiş taslak"
   },
   "historySearch": {
     "tooltip": "Mesajları ara",
@@ -175,7 +176,7 @@
       },
       "USER_AGENT_SESSION_RESUME_FAILED": {
         "title": "Önceki oturum geri yüklenemedi",
-        "body": "Geçerli hesap önceki yürütme bağlamını geri yükleyemedi. Bu istek durduruldu ve özgün geçmiş korundu. Önceki hesaba geçip yeniden deneyin veya görev özetiyle yeni bir konuşma başlatın."
+        "body": "Önceki yürütme bağlamı geri yüklenemedi. İstek durduruldu ve geçmiş korundu. Kurtarmayı tekrar deneyin veya ilerleme özetiyle yeni sohbet başlatın."
       },
       "USER_AGENT_SESSION_NOT_FOUND": {
         "title": "Ajan oturumu kayboldu",
@@ -614,7 +615,7 @@
         "body": "Bu istek görünür bir yanıt üretmedi."
       },
       "ACP_EMPTY_TURN_NEEDS_AUTH": {
-        "body": "Bu istek görünür bir yanıt üretmedi. Zaten oturum açtıysanız, bu geçici bir arka uç veya bağlantı sorunu olabilir; tekrar deneyin ya da yeni bir sohbet başlatın. Henüz oturum açmadıysanız oturum açabilirsiniz: {{hint}}."
+        "body": "Bu istek görünür bir yanıt üretmedi."
       },
       "ACP_EMPTY_TURN_TOKEN_LIMIT": {
         "body": "Bu istek görünür bir yanıt üretmedi. Geçerli sohbet bağlam uzunluğu sınırına yaklaşmış olabilir; tekrar deneyin veya yeni bir sohbet başlatıp yeniden deneyin."
@@ -648,6 +649,18 @@
       },
       "CODEX_CAPACITY_CONTINUE_FAILED": {
         "body": "Catfish, kapasite hatasının ardından otomatik olarak Devam komutunu gönderemedi. Sıradaki komutlar duraklatılmış kalır; hazır olduğunuzda el ile devam edin."
+      },
+      "ACP_RUNTIME_RECOVERED": {
+        "body": "Ajan yeniden başlatıldı ve önceki oturum yüklendi. Önceki talimat yeniden gönderilmedi; elle tekrar deneyin."
+      },
+      "ACP_RUNTIME_RECOVERY_FAILED": {
+        "body": "Önceki oturum geri yüklenemedi. Geçmiş korundu ve talimat yeniden gönderilmedi. Elle tekrar deneyin veya çalışma ortamını yeniden başlatın."
+      },
+      "CODEX_PLAN_MODE_CHANGED": {
+        "body": "Çalışma modu {{mode}} olarak değiştirildi. Sonraki görevlerde uygulanır."
+      },
+      "CODEX_GOAL_STATUS": {
+        "body": "Hedef durumu: {{status}}. {{objective}}"
       }
     }
   },

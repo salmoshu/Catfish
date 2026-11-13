@@ -56,12 +56,14 @@
     "objectivePlaceholder": "What should the agent accomplish?",
     "completionCriterion": "Completion criterion",
     "completionPlaceholder": "How will you know the goal is complete?",
-    "start": "Start goal"
+    "start": "Start goal",
+    "description": "Set a persistent goal, or manage it with status, pause, resume, clear"
   },
   "anchorRail": {
     "label": "Conversation message anchors",
     "tickAria": "Jump to message {{index}}",
-    "searchAria": "Search conversation"
+    "searchAria": "Search conversation",
+    "copyInstruction": "Copy instruction"
   },
   "availableCommands": "{{count}} Available Commands",
   "availableCommands_one": "{{count}} Available Command",
@@ -149,5 +151,10 @@
   "editedFilesCount_one": "Edited {{count}} file",
   "moreFiles_one": "{{count}} more file",
   "editedFilesCount_other": "Edited {{count}} files",
-  "moreFiles_other": "{{count}} more files"
+  "moreFiles_other": "{{count}} more files",
+  "plan": {
+    "description": "Switch to planning mode; optionally include a task",
+    "defaultDescription": "Switch to execution mode",
+    "unsupported": "This agent does not offer the requested planning mode"
+  }
 }

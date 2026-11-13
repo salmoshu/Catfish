@@ -56,12 +56,14 @@
     "objectivePlaceholder": "Que doit accomplir l'agent ?",
     "completionCriterion": "Critère d'achèvement",
     "completionPlaceholder": "Comment saurez-vous que l'objectif est atteint ?",
-    "start": "Démarrer l'objectif"
+    "start": "Démarrer l'objectif",
+    "description": "Définir un objectif persistant ou le gérer avec status, pause, resume, clear"
   },
   "anchorRail": {
     "label": "Ancres des messages de la conversation",
     "tickAria": "Aller au message {{index}}",
-    "searchAria": "Rechercher dans la conversation"
+    "searchAria": "Rechercher dans la conversation",
+    "copyInstruction": "Copier l’instruction"
   },
   "availableCommands": "{{count}} commandes disponibles",
   "availableCommands_one": "{{count}} commande disponible",
@@ -149,5 +151,10 @@
   "editedFilesCount_one": "{{count}} fichiers modifiés",
   "moreFiles_one": "{{count}} fichiers supplémentaires",
   "editedFilesCount_other": "{{count}} fichiers modifiés",
-  "moreFiles_other": "{{count}} fichiers supplémentaires"
+  "moreFiles_other": "{{count}} fichiers supplémentaires",
+  "plan": {
+    "description": "Passer en mode planification ; une tâche peut être ajoutée",
+    "defaultDescription": "Passer en mode exécution",
+    "unsupported": "Cet agent ne propose pas le mode de planification demandé"
+  }
 }

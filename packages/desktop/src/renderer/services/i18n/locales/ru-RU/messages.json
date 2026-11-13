@@ -60,12 +60,14 @@
     "objectivePlaceholder": "Что должен сделать агент?",
     "completionCriterion": "Критерий завершения",
     "completionPlaceholder": "Как вы поймёте, что цель достигнута?",
-    "start": "Начать цель"
+    "start": "Начать цель",
+    "description": "Задать постоянную цель или управлять ею через status, pause, resume, clear"
   },
   "anchorRail": {
     "label": "Якоря сообщений диалога",
     "tickAria": "Перейти к сообщению {{index}}",
-    "searchAria": "Поиск по переписке"
+    "searchAria": "Поиск по переписке",
+    "copyInstruction": "Копировать инструкцию"
   },
   "availableCommands": "{{count}} доступных команд",
   "availableCommands_one": "{{count}} доступная команда",
@@ -155,5 +157,10 @@
   "editedFilesCount_one": "Изменено файлов: {{count}}",
   "moreFiles_one": "Ещё файлов: {{count}}",
   "editedFilesCount_other": "Изменено файлов: {{count}}",
-  "moreFiles_other": "Ещё файлов: {{count}}"
+  "moreFiles_other": "Ещё файлов: {{count}}",
+  "plan": {
+    "description": "Переключить в режим планирования; можно добавить задачу",
+    "defaultDescription": "Переключить в режим выполнения",
+    "unsupported": "Этот агент не поддерживает запрошенный режим планирования"
+  }
 }

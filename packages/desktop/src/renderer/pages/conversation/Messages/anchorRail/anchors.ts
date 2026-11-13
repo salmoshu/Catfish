@@ -17,6 +17,8 @@ export type MessageAnchorItem = {
   index: number;
   /** Truncated user question for the expanded outline row. */
   question: string;
+  /** Complete user input, preserving whitespace for clipboard copying. */
+  input: string;
   /** Truncated first AI reply of the turn; empty when the turn has no reply yet. */
   answer: string;
   /** Message id used to scroll the chat area to this turn. */
@@ -49,6 +51,7 @@ export const buildMessageAnchors = (messages: TMessage[]): MessageAnchorItem[] =
       current = {
         index: anchors.length + 1,
         question: truncate(text, PREVIEW_MAX_LEN),
+        input: message.content.content,
         answer: '',
         messageId: message.id,
         msgId: message.msg_id,

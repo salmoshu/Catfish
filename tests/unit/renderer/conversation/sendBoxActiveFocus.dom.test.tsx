@@ -59,7 +59,15 @@ vi.mock('@/renderer/pages/conversation/Preview', () => ({
 }));
 
 vi.mock('@/renderer/pages/conversation/Messages/hooks', () => ({
-  useMessageList: () => [],
+  useMessageList: () => [
+    {
+      id: 'prior-input',
+      type: 'text',
+      position: 'right',
+      conversation_id: 'sendbox-active-focus-conversation',
+      content: { content: 'Previous task instruction' },
+    },
+  ],
 }));
 
 vi.mock('@/renderer/hooks/file/useConversationExport', () => ({
@@ -167,6 +175,16 @@ const SendBoxHarness = ({
 };
 
 describe('SendBox active-controlled focus', () => {
+  it('keeps the draft intact when moving the caret with Up and Down', () => {
+    render(<SendBoxHarness initialValue='unfinished draft' />);
+    const input = screen.getByTestId('sendbox-input') as HTMLTextAreaElement;
+    input.setSelectionRange(0, 0);
+    fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(input.value).toBe('unfinished draft');
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    expect(input.value).toBe('unfinished draft');
+  });
+
   it('keeps Enter mapped to Send while Draft box has its own icon action', async () => {
     const onSend = vi.fn().mockResolvedValue(undefined);
     const onAddToDraft = vi.fn();

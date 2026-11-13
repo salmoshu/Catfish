@@ -56,12 +56,14 @@
     "objectivePlaceholder": "Ajan neyi başarmalı?",
     "completionCriterion": "Tamamlanma ölçütü",
     "completionPlaceholder": "Hedefin tamamlandığını nasıl anlayacaksınız?",
-    "start": "Hedefi başlat"
+    "start": "Hedefi başlat",
+    "description": "Kalıcı hedef belirleyin veya status, pause, resume, clear ile yönetin"
   },
   "anchorRail": {
     "label": "Sohbet mesajı bağlantı noktaları",
     "tickAria": "{{index}}. mesaja git",
-    "searchAria": "Sohbette ara"
+    "searchAria": "Sohbette ara",
+    "copyInstruction": "Talimatı kopyala"
   },
   "availableCommands": "{{count}} Kullanılabilir Komut",
   "availableCommands_one": "{{count}} Kullanılabilir Komut",
@@ -149,5 +151,10 @@
   "editedFilesCount_one": "{{count}} dosya düzenlendi",
   "moreFiles_one": "{{count}} dosya daha",
   "editedFilesCount_other": "{{count}} dosya düzenlendi",
-  "moreFiles_other": "{{count}} dosya daha"
+  "moreFiles_other": "{{count}} dosya daha",
+  "plan": {
+    "description": "Planlama moduna geçin; isterseniz bir görev ekleyin",
+    "defaultDescription": "Yürütme moduna geç",
+    "unsupported": "Bu ajan istenen planlama modunu sunmuyor"
+  }
 }

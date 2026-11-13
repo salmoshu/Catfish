@@ -1,14 +1,27 @@
 import React from 'react';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MessageAnchorRail from '@/renderer/pages/conversation/Messages/anchorRail/MessageAnchorRail';
 
-const { jumpMock, searchMock } = vi.hoisted(() => ({
+const { jumpMock, searchMock, copyMock, messageSuccessMock, messageErrorMock } = vi.hoisted(() => ({
   jumpMock: vi.fn(),
   searchMock: vi.fn(),
+  copyMock: vi.fn().mockResolvedValue(undefined),
+  messageSuccessMock: vi.fn(),
+  messageErrorMock: vi.fn(),
 }));
+
+vi.mock('@arco-design/web-react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@arco-design/web-react')>();
+  return {
+    ...actual,
+    Message: { success: messageSuccessMock, error: messageErrorMock },
+  };
+});
+
+vi.mock('@/renderer/utils/ui/clipboard', () => ({ copyText: copyMock }));
 
 vi.mock('@/renderer/utils/chat/chatMinimapEvents', () => ({
   dispatchChatMessageJump: jumpMock,
@@ -25,8 +38,22 @@ vi.mock('@/renderer/pages/conversation/Messages/hooks', () => ({
 
 vi.mock('@/renderer/pages/conversation/Messages/anchorRail/useConversationAnchors', () => ({
   useConversationAnchors: () => [
-    { index: 1, question: 'First user question', answer: '', messageId: 'message-1', msgId: 'msg-1' },
-    { index: 2, question: 'Second user question', answer: '', messageId: 'message-2', msgId: 'msg-2' },
+    {
+      index: 1,
+      question: 'First user question',
+      input: 'First user question\n  full instruction',
+      answer: '',
+      messageId: 'message-1',
+      msgId: 'msg-1',
+    },
+    {
+      index: 2,
+      question: 'Second user question',
+      input: 'Second user question',
+      answer: '',
+      messageId: 'message-2',
+      msgId: 'msg-2',
+    },
   ],
 }));
 
@@ -39,6 +66,16 @@ vi.mock('react-i18next', () => ({
 describe('MessageAnchorRail', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('copies the complete user instruction from the directory context menu without sending or jumping', async () => {
+    render(<MessageAnchorRail />);
+    fireEvent.pointerEnter(screen.getByTestId('message-anchor-rail-zone'));
+    fireEvent.contextMenu(screen.getAllByTestId('message-anchor-flyout-item')[0]);
+    fireEvent.click(await screen.findByText('messages.anchorRail.copyInstruction'));
+    await waitFor(() => expect(copyMock).toHaveBeenCalledWith('First user question\n  full instruction'));
+    await waitFor(() => expect(messageSuccessMock).toHaveBeenCalledWith('common.copySuccess'));
+    expect(jumpMock).not.toHaveBeenCalled();
   });
 
   it('renders vertical marks and expandable question labels', () => {

@@ -56,12 +56,14 @@
     "objectivePlaceholder": "¿Qué debe lograr el agente?",
     "completionCriterion": "Criterio de finalización",
     "completionPlaceholder": "¿Cómo sabrás que el objetivo está completo?",
-    "start": "Iniciar objetivo"
+    "start": "Iniciar objetivo",
+    "description": "Definir un objetivo persistente o gestionarlo con status, pause, resume, clear"
   },
   "anchorRail": {
     "label": "Anclas de mensajes de la conversación",
     "tickAria": "Ir al mensaje {{index}}",
-    "searchAria": "Buscar en la conversación"
+    "searchAria": "Buscar en la conversación",
+    "copyInstruction": "Copiar instrucción"
   },
   "availableCommands": "{{count}} comandos disponibles",
   "availableCommands_one": "{{count}} comando disponible",
@@ -149,5 +151,10 @@
   "editedFilesCount_one": "{{count}} archivos editados",
   "moreFiles_one": "{{count}} archivos más",
   "editedFilesCount_other": "{{count}} archivos editados",
-  "moreFiles_other": "{{count}} archivos más"
+  "moreFiles_other": "{{count}} archivos más",
+  "plan": {
+    "description": "Cambiar al modo de planificación; puedes incluir una tarea",
+    "defaultDescription": "Cambiar al modo de ejecución",
+    "unsupported": "Este agente no ofrece el modo de planificación solicitado"
+  }
 }

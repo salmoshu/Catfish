@@ -56,12 +56,14 @@
     "objectivePlaceholder": "O que o agente deve realizar?",
     "completionCriterion": "Critério de conclusão",
     "completionPlaceholder": "Como você saberá que a meta foi concluída?",
-    "start": "Iniciar meta"
+    "start": "Iniciar meta",
+    "description": "Definir uma meta persistente ou gerenciá-la com status, pause, resume, clear"
   },
   "anchorRail": {
     "label": "Âncoras das mensagens da conversa",
     "tickAria": "Ir para a mensagem {{index}}",
-    "searchAria": "Pesquisar na conversa"
+    "searchAria": "Pesquisar na conversa",
+    "copyInstruction": "Copiar instrução"
   },
   "availableCommands": "{{count}} Comandos Disponíveis",
   "availableCommands_one": "{{count}} Comando Disponível",
@@ -149,5 +151,10 @@
   "editedFilesCount_one": "{{count}} arquivos editados",
   "moreFiles_one": "Mais {{count}} arquivos",
   "editedFilesCount_other": "{{count}} arquivos editados",
-  "moreFiles_other": "Mais {{count}} arquivos"
+  "moreFiles_other": "Mais {{count}} arquivos",
+  "plan": {
+    "description": "Mudar para o modo de planejamento; opcionalmente inclua uma tarefa",
+    "defaultDescription": "Mudar para o modo de execução",
+    "unsupported": "Este agente não oferece o modo de planejamento solicitado"
+  }
 }

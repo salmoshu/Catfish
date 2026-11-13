@@ -56,12 +56,14 @@
     "objectivePlaceholder": "عامل باید چه کاری انجام دهد؟",
     "completionCriterion": "شرط تکمیل",
     "completionPlaceholder": "از کجا می‌دانید هدف کامل شده است؟",
-    "start": "شروع هدف"
+    "start": "شروع هدف",
+    "description": "تعیین هدف پایدار یا مدیریت آن با status، pause، resume، clear"
   },
   "anchorRail": {
     "label": "لنگرهای پیام‌های گفتگو",
     "tickAria": "رفتن به پیام {{index}}",
-    "searchAria": "جست‌وجو در گفتگو"
+    "searchAria": "جست‌وجو در گفتگو",
+    "copyInstruction": "کپی دستور"
   },
   "availableCommands": "{{count}} دستور موجود",
   "availableCommands_one": "{{count}} دستور موجود",
@@ -149,5 +151,10 @@
   "editedFilesCount_one": "{{count}} فایل ویرایش شد",
   "moreFiles_one": "{{count}} فایل دیگر",
   "editedFilesCount_other": "{{count}} فایل ویرایش شد",
-  "moreFiles_other": "{{count}} فایل دیگر"
+  "moreFiles_other": "{{count}} فایل دیگر",
+  "plan": {
+    "description": "تغییر به حالت برنامه‌ریزی؛ می‌توانید کار را نیز وارد کنید",
+    "defaultDescription": "تغییر به حالت اجرا",
+    "unsupported": "این عامل حالت برنامه‌ریزی درخواستی را ارائه نمی‌کند"
+  }
 }

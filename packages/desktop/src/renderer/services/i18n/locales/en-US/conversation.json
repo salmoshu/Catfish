@@ -91,7 +91,8 @@
     "archiveProjectConfirm": "Archive project \"{{name}}\"? Its {{count}} conversation(s) will be archived too. You can restore or delete them from Archived in Settings.",
     "archiving": "Archiving...",
     "expandAllProjects": "Expand all project conversations",
-    "collapseAllProjects": "Collapse all project conversations"
+    "collapseAllProjects": "Collapse all project conversations",
+    "hasDraft": "Unsent draft"
   },
   "historySearch": {
     "tooltip": "Search messages",
@@ -192,7 +193,7 @@
       },
       "USER_AGENT_SESSION_RESUME_FAILED": {
         "title": "Previous session could not be restored",
-        "body": "The current account could not restore the previous execution context. This request was stopped, and the original history was preserved. Switch back to the original account and retry, or start a new conversation with a task summary."
+        "body": "The previous execution context could not be restored. This request stopped and existing history was preserved. Retry recovery, or start a new conversation with a progress summary."
       },
       "USER_AGENT_SESSION_NOT_FOUND": {
         "title": "The agent session was lost",
@@ -612,7 +613,7 @@
         "body": "This request produced no visible reply."
       },
       "ACP_EMPTY_TURN_NEEDS_AUTH": {
-        "body": "This request produced no visible reply. If you're already signed in, this may be a transient backend or connection issue — try again or start a new conversation. If you're not signed in yet, you can sign in — {{hint}}."
+        "body": "This request produced no visible reply."
       },
       "ACP_EMPTY_TURN_TOKEN_LIMIT": {
         "body": "This request produced no visible reply. The current conversation may be approaching the context length limit — try again, or start a new conversation and retry."
@@ -646,6 +647,18 @@
       },
       "CODEX_CAPACITY_CONTINUE_FAILED": {
         "body": "Catfish could not automatically send Continue after the capacity failure. Queued commands remain paused; continue manually when ready."
+      },
+      "ACP_RUNTIME_RECOVERED": {
+        "body": "The agent process was restarted and the original session was loaded. Your previous instruction was not resent; retry it manually."
+      },
+      "ACP_RUNTIME_RECOVERY_FAILED": {
+        "body": "The original session could not be restored. History was preserved and your instruction was not resent. Retry manually or restart the session runtime."
+      },
+      "CODEX_PLAN_MODE_CHANGED": {
+        "body": "Working mode changed to {{mode}}. Subsequent tasks will use this mode."
+      },
+      "CODEX_GOAL_STATUS": {
+        "body": "Goal status: {{status}}. {{objective}}"
       }
     }
   },

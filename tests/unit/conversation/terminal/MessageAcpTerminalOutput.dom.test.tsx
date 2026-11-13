@@ -57,7 +57,7 @@ describe('MessageAcpTerminalOutput', () => {
     expect(stop).toHaveStyle({ color: 'var(--danger-emphasis)' });
     expect(stop.className).toContain('items-center');
     expect(stop).not.toHaveTextContent('Stop');
-    expect(stop.querySelector('svg')).not.toBeNull();
+    expect(stop.querySelector('span[aria-hidden="true"]')).toHaveClass('size-10px', 'bg-current');
     expect(open).toHaveAttribute('aria-label', 'Terminal');
     expect(open.className).toContain('items-center');
     expect(open).not.toHaveTextContent('Terminal');

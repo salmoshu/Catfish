@@ -312,11 +312,25 @@ const AcpSendBox: React.FC<{
   });
 
   const executeCommand = useCallback(
-    async ({ input, files, sessions }: Pick<ConversationCommandQueueItem, 'input' | 'files' | 'sessions'>) => {
+    async ({
+      input: rawInput,
+      files,
+      sessions,
+    }: Pick<ConversationCommandQueueItem, 'input' | 'files' | 'sessions'>) => {
+      let input = rawInput;
       // Plain user text; the backend resolves each ChatFileRef and injects the
       // [[AION_FILES]] marker at the send edge (no front-end path/marker building).
       try {
         if (teamPermission) await teamPermission.warmupSession();
+        const planCommand = /^\/(plan|default)(?:\s+([\s\S]*))?$/i.exec(input.trim());
+        if (planCommand && backend !== 'codex' && runtimeMode) {
+          const target = planCommand[1].toLowerCase() === 'plan' ? 'plan' : 'default';
+          const option = runtimeMode.options.find((item) => item.value === target);
+          if (!option) throw new Error(t('messages.plan.unsupported'));
+          await runtimeConfig.setConfigOption(runtimeMode.id, option.value);
+          input = planCommand[2]?.trim() ?? '';
+          if (!input) return;
+        }
         void checkAndUpdateTitle(conversation_id, input);
         if (teamSendMessage) {
           await teamSendMessage({ input, files });
@@ -431,6 +445,8 @@ Please check your local CLI tool authentication status`,
       t,
       teamPermission,
       teamSendMessage,
+      runtimeConfig,
+      runtimeMode,
     ]
   );
 
@@ -733,6 +749,18 @@ Please check your local CLI tool authentication status`,
     // UI state is still reset via finally.
     const turnId = runtimeView.activeTurnId;
     if (!turnId) {
+      if (backend === 'codex' && supportsGoal) {
+        try {
+          await ipcBridge.acpConversation.setConfigOption.invoke({
+            conversation_id,
+            option_id: 'goal_status',
+            value: 'paused',
+          });
+        } catch (error) {
+          console.warn('[AcpSendBox] Failed to stop native goal continuation', error);
+          Message.error(t('agent.runtimeRestart.failed'));
+        }
+      }
       resetState();
       resetActiveExecution('stop');
       return;
@@ -948,7 +976,14 @@ Please check your local CLI tool authentication status`,
           </>
         }
         onSend={onSendHandler}
-        slash_commands={slashCommands}
+        slash_commands={
+          backend !== 'codex' && runtimeMode?.options.some((item) => item.value === 'plan')
+            ? [
+                ...(slashCommands ?? []),
+                { name: 'plan', description: t('messages.plan.description'), kind: 'template', source: 'builtin' },
+              ]
+            : slashCommands
+        }
         onSlashBuiltinCommand={onSlashBuiltinCommand}
         allowSendWhileLoading
         compactActions={false}

@@ -56,12 +56,14 @@
     "objectivePlaceholder": "Agent 需要完成什么目标？",
     "completionCriterion": "完成条件",
     "completionPlaceholder": "如何判断目标已完成？",
-    "start": "启动目标"
+    "start": "启动目标",
+    "description": "设置持续目标，或使用 status、pause、resume、clear 管理目标"
   },
   "anchorRail": {
     "label": "对话消息锚点",
     "tickAria": "跳转到第 {{index}} 条消息",
-    "searchAria": "搜索对话内容"
+    "searchAria": "搜索对话内容",
+    "copyInstruction": "复制指令"
   },
   "availableCommands": "{{count}} 个可用命令",
   "availableCommands_one": "{{count}} 个可用命令",
@@ -149,5 +151,10 @@
   "editedFilesCount_one": "编辑了 {{count}} 处",
   "moreFiles_one": "还有 {{count}} 个文件",
   "editedFilesCount_other": "编辑了 {{count}} 处",
-  "moreFiles_other": "还有 {{count}} 个文件"
+  "moreFiles_other": "还有 {{count}} 个文件",
+  "plan": {
+    "description": "切换到计划模式，可在命令后附上任务",
+    "defaultDescription": "切换到执行模式",
+    "unsupported": "此 Agent 未提供所请求的计划模式"
+  }
 }

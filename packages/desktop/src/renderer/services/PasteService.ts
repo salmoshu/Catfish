@@ -50,13 +50,6 @@ async function createTempFile(
 
 type PasteHandler = (event: React.ClipboardEvent | ClipboardEvent) => Promise<boolean>;
 
-/**
- * Per-SendBox counter used to assign stable names to clipboard images. The
- * hook owns one instance and passes it into `handlePaste`, so sequence
- * numbers persist across multiple paste actions within the same mount.
- */
-export type ImageCounter = { next: () => number };
-
 // MIME 类型到文件扩展名的映射
 function getExtensionFromMimeType(mimeType: string): string {
   const mimeMap: Record<string, string> = {
@@ -71,16 +64,7 @@ function getExtensionFromMimeType(mimeType: string): string {
   return mimeMap[mimeType] || '.png'; // 默认为 .png
 }
 
-// 浏览器把剪贴板图片默认命名成 image.png / image.jpg 之类，这种名字
-// 跟 MIME 一一对应、没有实际语义，应视为系统默认名并由我们重命名。
-const BROWSER_DEFAULT_IMAGE_NAME_RE = /^image\.(png|jpe?g|gif|webp|bmp|svg)$/i;
-// 我们自己旧版本的默认名，形如 `2024-01-02_03-04-05` 前缀。
-const LEGACY_SYSTEM_GENERATED_NAME_RE = /^[a-zA-Z]?_?\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}/;
-
-function isSystemGeneratedImageName(name: string | undefined | null): boolean {
-  if (!name) return true;
-  return LEGACY_SYSTEM_GENERATED_NAME_RE.test(name) || BROWSER_DEFAULT_IMAGE_NAME_RE.test(name);
-}
+const padTwoDigits = (value: number): string => value.toString().padStart(2, '0');
 
 class PasteServiceClass {
   private handlers: Map<string, PasteHandler> = new Map();
@@ -162,8 +146,7 @@ class PasteServiceClass {
     onFilesAdded: (files: FileMetadata[]) => void,
     onTextPaste?: (text: string) => void,
     conversation_id?: string,
-    source: UploadSource = 'sendbox',
-    imageCounter?: ImageCounter
+    source: UploadSource = 'sendbox'
   ): Promise<boolean> {
     // 立即事件冒泡,避免全局监听器重复处理
     event.stopPropagation();
@@ -192,21 +175,11 @@ class PasteServiceClass {
               const arrayBuffer = await file.arrayBuffer();
               const uint8Array = new Uint8Array(arrayBuffer);
 
-              // Generate a concise filename; replace system-generated default names.
-              // 剪贴板里的图片通常叫 `image.png` 这种 MIME 默认名，优先按调用方传入的
-              // imageCounter 递增序号命名（跨多次粘贴保持唯一）；没给 counter 时退回
-              // 到时间戳兜底。
-              const isSystemGenerated = isSystemGeneratedImageName(file.name);
-              let file_name: string;
-              if (!isSystemGenerated && file.name) {
-                file_name = file.name;
-              } else if (imageCounter) {
-                file_name = `image-${imageCounter.next()}${fileExt}`;
-              } else {
-                const now = new Date();
-                const timeStr = `${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
-                file_name = `pasted_image_${timeStr}${fileExt}`;
-              }
+              // Clipboard images use the local copy time; backend create_new handles collisions.
+              const now = new Date();
+              const date = `${now.getFullYear()}${padTwoDigits(now.getMonth() + 1)}${padTwoDigits(now.getDate())}`;
+              const time = `${padTwoDigits(now.getHours())}${padTwoDigits(now.getMinutes())}${padTwoDigits(now.getSeconds())}`;
+              let file_name = `${date}-${time}${fileExt}`;
               // Ensure unique filename within the same paste batch to prevent
               // collisions when multiple images are pasted simultaneously
               if (usedFileNames.has(file_name)) {

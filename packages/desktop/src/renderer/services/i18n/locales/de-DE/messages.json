@@ -56,12 +56,14 @@
     "objectivePlaceholder": "Was soll der Agent erreichen?",
     "completionCriterion": "Abschlusskriterium",
     "completionPlaceholder": "Woran erkennen Sie, dass das Ziel erreicht ist?",
-    "start": "Ziel starten"
+    "start": "Ziel starten",
+    "description": "Ein dauerhaftes Ziel setzen oder mit status, pause, resume, clear verwalten"
   },
   "anchorRail": {
     "label": "Anker für Unterhaltungsnachrichten",
     "tickAria": "Zu Nachricht {{index}} springen",
-    "searchAria": "Unterhaltung durchsuchen"
+    "searchAria": "Unterhaltung durchsuchen",
+    "copyInstruction": "Anweisung kopieren"
   },
   "availableCommands": "{{count}} verfügbare Befehle",
   "availableCommands_one": "{{count}} verfügbarer Befehl",
@@ -149,5 +151,10 @@
   "editedFilesCount_one": "{{count}} Dateien bearbeitet",
   "moreFiles_one": "{{count}} weitere Dateien",
   "editedFilesCount_other": "{{count}} Dateien bearbeitet",
-  "moreFiles_other": "{{count}} weitere Dateien"
+  "moreFiles_other": "{{count}} weitere Dateien",
+  "plan": {
+    "description": "In den Planungsmodus wechseln; optional eine Aufgabe angeben",
+    "defaultDescription": "In den Ausführungsmodus wechseln",
+    "unsupported": "Dieser Agent bietet den angeforderten Planungsmodus nicht an"
+  }
 }
