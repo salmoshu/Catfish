@@ -6,6 +6,14 @@ import type { TMessage } from '@/common/chat/chatLib';
 import type { ToolMessage } from '@/common/chat/normalizeToolCall';
 import MessageToolGroupSummary from '@/renderer/pages/conversation/Messages/components/MessageToolGroupSummary';
 
+const fileChangesMock = vi.hoisted(() => vi.fn());
+vi.mock('@/renderer/pages/conversation/Messages/MessageFileChanges', () => ({
+  default: (props: unknown) => {
+    fileChangesMock(props);
+    return <div data-testid='inline-file-changes' />;
+  },
+}));
+
 vi.mock('@/common', () => ({
   ipcBridge: {
     database: {
@@ -92,5 +100,38 @@ describe('MessageToolGroupSummary', () => {
       });
     });
     expect(await screen.findByText('full output')).toBeInTheDocument();
+  });
+
+  it('renders a real file change from a mixed text-and-diff tool result', () => {
+    const message = {
+      id: 'message-edit',
+      conversation_id: 'conversation-1',
+      type: 'acp_tool_call',
+      content: {
+        update: {
+          tool_call_id: 'tool-edit',
+          status: 'completed',
+          title: 'Edit file',
+          kind: 'edit',
+          raw_input: { file_path: '/workspace/app.ts' },
+          content: [
+            { type: 'content', content: { type: 'text', text: 'Edited successfully' } },
+            { type: 'diff', path: '/workspace/app.ts', old_text: 'before', new_text: 'after' },
+          ],
+        },
+      },
+    } as unknown as ToolMessage;
+    render(<MessageToolGroupSummary messages={[message]} isProcessing={false} />);
+
+    fireEvent.click(screen.getByText('View Steps · {{count}}'));
+    fireEvent.click(screen.getByText('Edit file'));
+
+    expect(fileChangesMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        diffsChanges: [
+          expect.objectContaining({ fullPath: '/workspace/app.ts', diff: expect.stringContaining('after') }),
+        ],
+      })
+    );
   });
 });

@@ -5,7 +5,6 @@
  */
 
 import { ipcBridge } from '@/common';
-import { openWorkbenchSection } from '@/renderer/pages/conversation/Workbench/workbenchActivityStore';
 import type { PreviewContentType } from '@/common/types/office/preview';
 import type { ChatFileRef, ContentEncoding } from '@/common/types/chatFile';
 import { chatFileRefKey, isChatFileRef } from '@/common/types/chatFile';
@@ -939,7 +938,6 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (targetPlacement === 'sidebar') {
         setSidebarActiveTabId(targetTabId);
         setIsSidebarOpen(true);
-        openWorkbenchSection('preview');
       } else {
         setMainActiveTabId(targetTabId);
         setIsOpen(true);
@@ -983,7 +981,6 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (targetPlacement === 'sidebar') {
           setSidebarActiveTabId(existing.id);
           setIsSidebarOpen(true);
-          openWorkbenchSection('preview');
         } else {
           setMainActiveTabId(existing.id);
           setIsOpen(true);
@@ -1057,7 +1054,6 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (placement === 'sidebar') {
       setSidebarActiveTabId(tabId);
       setIsSidebarOpen(true);
-      openWorkbenchSection('preview');
       if (mainActiveTabIdRef.current === tabId) {
         const next = tabsRef.current.find((candidate) => candidate.id !== tabId && candidate.placement !== 'sidebar');
         setMainActiveTabId(next?.id ?? null);
@@ -1531,7 +1527,6 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (tab.placement === 'sidebar') {
       setSidebarActiveTabId(tabId);
       setIsSidebarOpen(true);
-      openWorkbenchSection('preview');
     } else {
       setMainActiveTabId(tabId);
       setIsOpen(true);

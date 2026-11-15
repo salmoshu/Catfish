@@ -128,7 +128,13 @@
   "atSession.hint": "Введите для поиска беседы",
   "atSession.empty": "Беседы не найдены",
   "atSession.menuLabel": "Упоминания бесед",
+  "structured": {
+    "before": "До",
+    "after": "После"
+  },
   "fork": {
+    "currentAgent": "Текущий Agent",
+    "configApplyFailed": "Беседа создана, но выбранные параметры выполнения не удалось применить: {{message}}",
     "action": "Ответвить отсюда",
     "errorTurnInFlight": "Дождитесь завершения текущего ответа перед ответвлением",
     "errorParentUnbound": "У этой беседы ещё нет серверной сессии для ответвления",

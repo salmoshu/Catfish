@@ -122,7 +122,13 @@
     "yesAlwaysAllowServer": "Sim, sempre permitir todas as ferramentas do servidor \"{{serverName}}\"",
     "no": "Não (esc)"
   },
+  "structured": {
+    "before": "Antes",
+    "after": "Depois"
+  },
   "fork": {
+    "currentAgent": "Agent atual",
+    "configApplyFailed": "A conversa foi criada, mas as opções de execução selecionadas não puderam ser aplicadas: {{message}}",
     "action": "Bifurcar a partir daqui",
     "errorTurnInFlight": "Aguarde a resposta atual terminar antes de bifurcar",
     "errorParentUnbound": "Esta conversa ainda não tem uma sessão de backend para bifurcar",

@@ -320,7 +320,9 @@ describe('MessageAcpToolCall image output', () => {
       />
     );
 
-    expect(screen.getByText(/"prompt": "一只小猫"/)).toBeInTheDocument();
+    expect(screen.getByText('Prompt')).toBeInTheDocument();
+    expect(screen.getByText('一只小猫')).toBeInTheDocument();
+    expect(screen.queryByText(/"prompt"/)).not.toBeInTheDocument();
     expect(screen.getByText('done')).toBeInTheDocument();
     expect(screen.getAllByTestId('file-changes-panel')).toHaveLength(2);
   });

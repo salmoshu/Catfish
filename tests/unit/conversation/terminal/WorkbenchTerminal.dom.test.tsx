@@ -9,6 +9,13 @@ import {
 } from '@/renderer/pages/conversation/Workbench/workbenchActivityStore';
 import { resetWorkbenchPanelStateForTest } from '@/renderer/pages/conversation/Workbench/workbenchPanelState';
 
+const previewState = vi.hoisted(() => ({
+  isSidebarOpen: false,
+  sidebarTabs: [] as Array<{ id: string; title: string; content: string; content_type: 'code' }>,
+  sidebarActiveTabId: null as string | null,
+  closePreview: vi.fn(),
+}));
+
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('@/common', () => ({
   ipcBridge: { project: { get: { invoke: vi.fn() } }, shell: { checkToolInstalled: { invoke: async () => false } } },
@@ -30,8 +37,15 @@ vi.mock('@/renderer/utils/workspace/backendCache', () => ({
   getActiveBackendEnvironment: () => ({ type: 'local' }),
 }));
 vi.mock('@/renderer/pages/conversation/Preview', () => ({
-  usePreviewContext: () => ({ isOpen: false, activeTab: null, sideChat: null }),
-  PreviewPanel: () => null,
+  usePreviewContext: () => ({
+    ...previewState,
+    isOpen: false,
+    activeTab: null,
+    sideChat: null,
+    openBrowserTab: vi.fn(),
+    switchTab: vi.fn(),
+  }),
+  PreviewPanel: () => <div data-testid='sidebar-preview'>Preview content</div>,
 }));
 vi.mock('@/renderer/pages/conversation/Preview/context/PreviewContext', () => ({
   useOptionalPreviewContext: () => null,
@@ -76,6 +90,10 @@ beforeEach(() => {
   localStorage.clear();
   resetWorkbenchPanelStateForTest();
   resetWorkbenchActivityForTest();
+  previewState.isSidebarOpen = false;
+  previewState.sidebarTabs = [];
+  previewState.sidebarActiveTabId = null;
+  previewState.closePreview.mockClear();
 });
 
 describe('workspace terminal entries', () => {
@@ -103,5 +121,19 @@ describe('workspace terminal entries', () => {
     });
     await waitFor(() => expect(screen.getByText('agent-command')).toBeVisible());
     expect(screen.queryByTestId('manual-terminal')).not.toBeInTheDocument();
+  });
+
+  it('keeps workspace navigation visible above a moved sidebar file preview', () => {
+    previewState.isSidebarOpen = true;
+    previewState.sidebarActiveTabId = 'file-tab';
+    previewState.sidebarTabs = [{ id: 'file-tab', title: 'app.ts', content: 'content', content_type: 'code' }];
+
+    render(<WorkbenchPanel projectId='project' />);
+
+    expect(screen.getByRole('tab', { name: 'conversation.explorer.tabs.files' })).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'conversation.explorer.tabs.changes' })).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'messages.workbench.terminal' })).toBeVisible();
+    expect(screen.getByTestId('sidebar-preview')).toBeVisible();
+    expect(document.querySelector('.workbench-body')).toHaveAttribute('data-preview-visible', 'true');
   });
 });

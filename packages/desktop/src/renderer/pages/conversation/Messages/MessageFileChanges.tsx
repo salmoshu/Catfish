@@ -6,6 +6,7 @@
 
 import FileChangesPanel, { type FileChangeItem } from '@/renderer/components/base/FileChangesPanel';
 import { usePreviewLauncher } from '@/renderer/hooks/file/usePreviewLauncher';
+import { openWorkbenchSection } from '@/renderer/pages/conversation/Workbench/workbenchActivityStore';
 import {
   extractContentFromDiff,
   mergeFileChanges,
@@ -54,8 +55,10 @@ const MessageFileChanges: React.FC<MessageFileChangesProps> = ({
       if (!fileInfo) return;
 
       const { contentType, editable, language } = getFileTypeInfo(fileInfo.file_name);
+      if (variant === 'summary') openWorkbenchSection('changes');
 
       void launchPreview({
+        placement: variant === 'summary' ? 'sidebar' : undefined,
         relativePath: fileInfo.fullPath,
         file_name: fileInfo.file_name,
         contentType,
@@ -65,15 +68,17 @@ const MessageFileChanges: React.FC<MessageFileChangesProps> = ({
         diffContent: fileInfo.diff,
       });
     },
-    [fileChanges, launchPreview]
+    [fileChanges, launchPreview, variant]
   );
 
   const handleDiffClick = useCallback(
     (file: FileChangeItem) => {
       const fileInfo = fileChanges.find((candidate) => candidate.fullPath === file.fullPath);
       if (!fileInfo) return;
+      if (variant === 'summary') openWorkbenchSection('changes');
 
       void launchPreview({
+        placement: variant === 'summary' ? 'sidebar' : undefined,
         file_name: fileInfo.file_name,
         contentType: 'diff',
         editable: false,
@@ -81,7 +86,7 @@ const MessageFileChanges: React.FC<MessageFileChangesProps> = ({
         diffContent: fileInfo.diff,
       });
     },
-    [fileChanges, launchPreview]
+    [fileChanges, launchPreview, variant]
   );
 
   if (fileChanges.length === 0) {

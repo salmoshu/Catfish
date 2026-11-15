@@ -16,6 +16,7 @@ export type AgentRuntimeCatalog = {
   config_options?: unknown;
   handshake?: {
     available_commands?: unknown;
+    config_options?: unknown;
   };
 };
 
@@ -57,6 +58,10 @@ function normalizeConfigOptions(value: unknown): AcpSessionConfigOption[] {
   }
 
   return payload.config_options as AcpSessionConfigOption[];
+}
+
+export function getAgentRuntimeConfigOptions(agent: AgentRuntimeCatalog | null | undefined): AcpSessionConfigOption[] {
+  return normalizeConfigOptions(agent?.config_options ?? agent?.handshake?.config_options);
 }
 
 function normalizeModelOption(value: unknown): AcpModelInfo['available_models'][number] | null {

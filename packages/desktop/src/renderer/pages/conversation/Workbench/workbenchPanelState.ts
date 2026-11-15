@@ -12,7 +12,7 @@ const states = new Map<string, WorkbenchPanelState>();
 const listeners = new Set<() => void>();
 const sections = new Set(['files', 'changes', 'preview', 'terminal', 'shell', 'agents']);
 
-/** Open a workspace section, closing a docked plan only when the workspace was closed. */
+/** Open a workspace section and move any open plan to its floating presentation. */
 export function openWorkbenchWorkspace(
   state: WorkbenchPanelState,
   section: WorkbenchPanelState['section']
@@ -21,7 +21,6 @@ export function openWorkbenchWorkspace(
     ...state,
     section,
     workspaceOpen: true,
-    planOpen: state.workspaceOpen ? state.planOpen : false,
   };
 }
 

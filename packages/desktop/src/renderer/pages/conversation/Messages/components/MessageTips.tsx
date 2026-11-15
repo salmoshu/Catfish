@@ -10,7 +10,7 @@ import { Attention, CheckOne, Info } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import MarkdownView from '@renderer/components/Markdown';
+import StructuredContent from '@renderer/components/chat/StructuredContent';
 import ButlerDiagnoseButton from '@renderer/components/base/ButlerDiagnoseButton';
 import FeedbackButton from '@renderer/components/base/FeedbackButton';
 import CollapsibleContent from '@renderer/components/chat/CollapsibleContent';
@@ -201,8 +201,13 @@ const MessageTips: React.FC<{ message: IMessageTips }> = ({ message }) => {
     return (
       <div className='w-full'>
         <div className='p-x-12px p-y-4px'>
-          <div className='text-center text-13px text-t-secondary whitespace-break-spaces [word-break:break-word]'>
-            {localizedTipBody}
+          <div
+            className={classNames('text-13px text-t-secondary [word-break:break-word]', {
+              'text-center': !json,
+              'whitespace-break-spaces': !json,
+            })}
+          >
+            {json ? <StructuredContent value={data} /> : localizedTipBody}
           </div>
         </div>
       </div>
@@ -216,7 +221,7 @@ const MessageTips: React.FC<{ message: IMessageTips }> = ({ message }) => {
           <div className='flex items-start gap-4px'>
             {icon[type] || icon.warning}
             <div className='flex-1 min-w-0'>
-              <MarkdownView>{`\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``}</MarkdownView>
+              <StructuredContent value={data} />
             </div>
           </div>
           {type === 'error' && (

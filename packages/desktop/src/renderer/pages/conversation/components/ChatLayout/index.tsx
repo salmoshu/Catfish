@@ -25,7 +25,10 @@ import { Button, Layout as ArcoLayout } from '@arco-design/web-react';
 import { Close } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import { useCurrentProject } from '@/renderer/pages/conversation/explorer/currentProjectStore';
-import { useWorkbenchPanelState } from '@/renderer/pages/conversation/Workbench/workbenchPanelState';
+import {
+  openWorkbenchWorkspace,
+  useWorkbenchPanelState,
+} from '@/renderer/pages/conversation/Workbench/workbenchPanelState';
 import {
   WORKBENCH_OPEN_EVENT,
   type WorkbenchOpenDetail,
@@ -125,10 +128,9 @@ const ChatLayout: React.FC<{
     if (previewHosted || projectId || !workspaceEnabled) return;
     const openSidePanel = (event: Event) => {
       const section = (event as CustomEvent<WorkbenchOpenDetail>).detail?.section;
-      if (section === 'preview') {
-        updatePanels((current) => ({ ...current, section }));
-        setRightSiderCollapsed(false);
-      }
+      if (section === 'plan') return;
+      updatePanels((current) => openWorkbenchWorkspace(current, section === 'preview' ? current.section : section));
+      setRightSiderCollapsed(false);
     };
     window.addEventListener(WORKBENCH_OPEN_EVENT, openSidePanel);
     return () => window.removeEventListener(WORKBENCH_OPEN_EVENT, openSidePanel);
@@ -164,14 +166,14 @@ const ChatLayout: React.FC<{
       {workspaceEnabled && !projectId && conversation_id && (
         <div hidden={!localPlanDocked} className='h-full min-h-0' data-plan-panel-slot={conversation_id} />
       )}
-      <div hidden={isSidebarOpen || localPlanDocked} className='h-full'>
-        {props.sider}
+      <div hidden={localPlanDocked} className='h-full min-h-0 flex flex-col'>
+        <div className={isSidebarOpen ? 'shrink-0' : 'h-full min-h-0'}>{props.sider}</div>
+        {isSidebarOpen && (
+          <div className='flex-1 min-h-0'>
+            <PreviewPanel placement='sidebar' />
+          </div>
+        )}
       </div>
-      {isSidebarOpen && (
-        <div hidden={localPlanDocked} className='h-full min-h-0'>
-          <PreviewPanel placement='sidebar' />
-        </div>
-      )}
     </>
   );
 
@@ -334,6 +336,7 @@ const ChatLayout: React.FC<{
             {/* Chat area - always mounted, never unmounted on preview toggle */}
             <div
               className='flex flex-col relative'
+              data-chat-content-area={conversation_id}
               style={{
                 flexGrow: isPreviewOpen && isDesktop ? 0 : 1,
                 flexShrink: 0,

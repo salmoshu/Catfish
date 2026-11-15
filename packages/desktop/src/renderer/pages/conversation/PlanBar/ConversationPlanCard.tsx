@@ -33,16 +33,22 @@ const ConversationPlanCard: React.FC<{ conversation_id: string }> = ({ conversat
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [state.planOpen, state.workspaceOpen, toggle]);
-  const [slots, setSlots] = useState<{ trigger: Element | null; panel: Element | null }>({
+  const [slots, setSlots] = useState<{ trigger: Element | null; panel: Element | null; chat: Element | null }>({
     trigger: null,
     panel: null,
+    chat: null,
   });
   const floating = state.workspaceOpen || (!projectId && !slots.panel);
   useLayoutEffect(() => {
     const findSlots = () => {
       const trigger = document.querySelector(`[data-plan-card-slot="${conversation_id}"]`);
       const panel = document.querySelector(`[data-plan-panel-slot="${conversation_id}"]`);
-      setSlots((current) => (current.trigger === trigger && current.panel === panel ? current : { trigger, panel }));
+      const chat = document.querySelector(`[data-chat-content-area="${conversation_id}"]`);
+      setSlots((current) =>
+        current.trigger === trigger && current.panel === panel && current.chat === chat
+          ? current
+          : { trigger, panel, chat }
+      );
     };
     findSlots();
     const observer = new MutationObserver(findSlots);
@@ -78,7 +84,7 @@ const ConversationPlanCard: React.FC<{ conversation_id: string }> = ({ conversat
             role='dialog'
             aria-label={t('conversation.planBar.title')}
             data-plan-presentation='floating'
-            className={`${styles.floatingPlan} ${state.workspaceOpen ? styles.floatingPlanLeft : ''}`}
+            className={styles.floatingPlan}
           >
             <Button
               type='text'
@@ -90,7 +96,7 @@ const ConversationPlanCard: React.FC<{ conversation_id: string }> = ({ conversat
             />
             <ConversationPlanBar conversation_id={conversation_id} variant='panel' />
           </div>,
-          document.body
+          slots.chat ?? document.body
         )}
     </>
   );

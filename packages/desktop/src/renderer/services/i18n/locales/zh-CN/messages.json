@@ -122,7 +122,13 @@
     "yesAlwaysAllowServer": "是，始终允许来自服务器 \"{{serverName}}\" 的所有工具",
     "no": "否 (esc)"
   },
+  "structured": {
+    "before": "修改前",
+    "after": "修改后"
+  },
   "fork": {
+    "currentAgent": "当前 Agent",
+    "configApplyFailed": "已创建新会话，但无法应用所选的运行配置：{{message}}",
     "action": "从此处分叉",
     "errorTurnInFlight": "请等待当前回复完成后再分叉",
     "errorParentUnbound": "该会话还没有可分叉的后端会话",

@@ -40,6 +40,8 @@ const forkMocks = vi.hoisted(() => ({
   assistants: vi.fn().mockResolvedValue([]),
   ensureRuntime: vi.fn().mockResolvedValue(undefined),
   navigate: vi.fn(),
+  managedAgents: vi.fn().mockResolvedValue([]),
+  setConfigOption: vi.fn().mockResolvedValue({}),
 }));
 
 vi.mock('@/common', () => ({
@@ -53,6 +55,10 @@ vi.mock('@/common', () => ({
       readContent: { invoke: vi.fn() },
     },
     assistants: { list: { invoke: forkMocks.assistants } },
+    acpConversation: {
+      getManagedAgents: { invoke: forkMocks.managedAgents },
+      setConfigOption: { invoke: forkMocks.setConfigOption },
+    },
     conversation: {
       fork: { invoke: forkMocks.fork },
       ensureRuntime: { invoke: forkMocks.ensureRuntime },
@@ -172,12 +178,14 @@ vi.mock('@arco-design/web-react', async (importOriginal) => ({
     value,
     options,
     onChange,
+    'aria-label': ariaLabel,
   }: {
     value: string;
     options: { value: string; label: string }[];
     onChange: (value: string) => void;
+    'aria-label'?: string;
   }) => (
-    <select aria-label='Target Agent' value={value} onChange={(event) => onChange(event.target.value)}>
+    <select aria-label={ariaLabel ?? 'Target Agent'} value={value} onChange={(event) => onChange(event.target.value)}>
       {options.map((option) => (
         <option key={option.value} value={option.value}>
           {option.label}
@@ -710,6 +718,15 @@ describe('MessageText attachment paths', () => {
     // The whole point: the content endpoint is never hit for an oversized file.
     expect(ipcBridge.fs.readContent.invoke).not.toHaveBeenCalled();
   });
+
+  it('renders assistant JSON as semantic fields instead of a raw code dump', () => {
+    renderMessageText(JSON.stringify({ command: 'bun run test', file_path: '/workspace/demo/app.ts', attempts: 2 }));
+
+    expect(screen.getByTestId('structured-content')).toHaveTextContent('bun run test');
+    expect(screen.getByText('File path')).toBeInTheDocument();
+    expect(screen.getByText('/workspace/demo/app.ts')).toBeInTheDocument();
+    expect(screen.queryByText(/"command"/)).not.toBeInTheDocument();
+  });
 });
 
 describe('MessageText team system notices', () => {
@@ -812,7 +829,13 @@ describe('MessageText fork entry point', () => {
   ) => {
     render(
       <ConversationProvider
-        value={{ conversation_id: 'conv-fork', workspace: '/workspace/demo', type: 'acp', forkCapability: capability }}
+        value={{
+          conversation_id: 'conv-fork',
+          workspace: '/workspace/demo',
+          type: 'acp',
+          backend: 'codex',
+          forkCapability: capability,
+        }}
       >
         <MessageText message={forkMessage()} isLastMessage={props.isLastMessage} hasForkAnchor={props.hasForkAnchor} />
       </ConversationProvider>
@@ -823,6 +846,9 @@ describe('MessageText fork entry point', () => {
     forkMocks.fork.mockReset().mockResolvedValue({ id: 'conv-forked' });
     forkMocks.ensureRuntime.mockReset().mockResolvedValue(undefined);
     forkMocks.navigate.mockReset();
+    forkMocks.assistants.mockReset().mockResolvedValue([]);
+    forkMocks.managedAgents.mockReset().mockResolvedValue([]);
+    forkMocks.setConfigOption.mockReset().mockResolvedValue({});
   });
 
   it('offers summary fork when the agent declares no native capability', () => {
@@ -854,6 +880,7 @@ describe('MessageText fork entry point', () => {
     renderWithCapability({ at_turn: true }, { isLastMessage: false, hasForkAnchor: true });
     fireEvent.click(screen.getByTestId('message-fork-button'));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'messages.fork.action' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'messages.fork.startContinuation' }));
     await waitFor(() => {
       expect(forkMocks.fork).toHaveBeenCalledWith({
         conversation_id: 'conv-fork',
@@ -871,11 +898,14 @@ describe('MessageText fork entry point', () => {
     fireEvent.click(button);
     const action = await screen.findByRole('menuitem', { name: 'messages.fork.action' });
     fireEvent.click(action);
-    fireEvent.click(action);
+    const submit = await screen.findByRole('button', { name: 'messages.fork.startContinuation' });
+    fireEvent.click(submit);
+    fireEvent.click(submit);
     await waitFor(() => expect(forkMocks.fork).toHaveBeenCalledTimes(1));
     await new Promise((resolve) => setTimeout(resolve, 0));
     fireEvent.click(button);
     fireEvent.click(await screen.findByRole('menuitem', { name: 'messages.fork.action' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'messages.fork.startContinuation' }));
     await waitFor(() => expect(forkMocks.fork).toHaveBeenCalledTimes(2));
     expect(forkMocks.fork.mock.calls[0][0].operation_id).toBe(forkMocks.fork.mock.calls[1][0].operation_id);
     expect(forkMocks.navigate).toHaveBeenCalledWith('/conversation/conv-retried');
@@ -909,6 +939,58 @@ describe('MessageText fork entry point', () => {
         continue_task: true,
       })
     );
+  });
+
+  it('applies the selected model, thought level and permission mode to the forked runtime', async () => {
+    const configOptions = [
+      {
+        id: 'model',
+        category: 'model',
+        type: 'select',
+        current_value: 'gpt-old',
+        options: [
+          { value: 'gpt-old', name: 'Old' },
+          { value: 'gpt-new', name: 'New' },
+        ],
+      },
+      {
+        id: 'reasoning_effort',
+        category: 'thought_level',
+        type: 'select',
+        current_value: 'high',
+        options: [
+          { value: 'high', name: 'High' },
+          { value: 'max', name: 'Max' },
+        ],
+      },
+      {
+        id: 'mode',
+        category: 'mode',
+        type: 'select',
+        current_value: 'default',
+        options: [
+          { value: 'default', name: 'Default' },
+          { value: 'plan', name: 'Plan' },
+        ],
+      },
+    ];
+    forkMocks.managedAgents.mockResolvedValue([{ id: 'codex', backend: 'codex', config_options: configOptions }]);
+    forkMocks.ensureRuntime.mockResolvedValue({ config_options: configOptions });
+    renderWithCapability({ at_turn: true }, { isLastMessage: true });
+    fireEvent.click(screen.getByTestId('message-fork-button'));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'messages.fork.action' }));
+
+    fireEvent.change(await screen.findByRole('combobox', { name: 'common.model' }), { target: { value: 'gpt-new' } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'agent.thoughtLevel.label' }), { target: { value: 'max' } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'agentMode.switchMode' }), { target: { value: 'plan' } });
+    fireEvent.click(screen.getByRole('button', { name: 'messages.fork.startContinuation' }));
+
+    await waitFor(() => expect(forkMocks.setConfigOption).toHaveBeenCalledTimes(3));
+    expect(forkMocks.setConfigOption.mock.calls.map(([request]) => request)).toEqual([
+      { conversation_id: 'conv-forked', option_id: 'model', value: 'gpt-new' },
+      { conversation_id: 'conv-forked', option_id: 'reasoning_effort', value: 'max' },
+      { conversation_id: 'conv-forked', option_id: 'mode', value: 'plan' },
+    ]);
   });
 });
 

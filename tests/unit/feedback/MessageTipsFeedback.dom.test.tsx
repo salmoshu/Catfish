@@ -305,6 +305,14 @@ describe('MessageTips — FeedbackButton wiring', () => {
     expect(container.querySelector('svg')).not.toBeInTheDocument();
   });
 
+  it('renders JSON info payloads as fields instead of raw JSON text', () => {
+    render(<MessageTips message={buildTips('info', JSON.stringify({ status: 'ready', attempts: 2 }))} />);
+
+    expect(screen.getByTestId('structured-content')).toHaveTextContent('ready');
+    expect(screen.getByText('Attempts')).toBeInTheDocument();
+    expect(screen.queryByText(/"status"/)).not.toBeInTheDocument();
+  });
+
   it('renders the same localized copy for command empty turns', () => {
     render(
       <MessageTips

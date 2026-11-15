@@ -210,6 +210,7 @@ describe('independent workspace and plan panels', () => {
       <>
         <Button onClick={() => dispatchWorkspaceToggleEvent()}>Toggle workspace</Button>
         <div data-plan-card-slot={scope.conversationId} />
+        <div data-chat-content-area={scope.conversationId} data-testid='chat-content-area' />
         <ProjectPanelHost widthPx={320} collapsed={collapsed} onExpand={() => setCollapsed(false)} />
         <ConversationPlanCard conversation_id={scope.conversationId} />
       </>
@@ -244,7 +245,7 @@ describe('independent workspace and plan panels', () => {
     [false, false, 'plan', false, true],
     [true, false, 'plan', true, true],
     [true, false, 'workspace', false, false],
-    [false, true, 'workspace', true, false],
+    [false, true, 'workspace', true, true],
     [false, true, 'plan', false, false],
     [true, true, 'workspace', false, true],
     [true, true, 'plan', true, false],
@@ -271,15 +272,15 @@ describe('independent workspace and plan panels', () => {
     expect(document.querySelector('[data-workbench]')).toHaveAttribute('data-active-section', 'files');
   });
 
-  it('persists the workspace after opening it closes the docked plan', () => {
+  it('persists the workspace and moves a docked plan to its floating presentation', () => {
     const view = setupPanels(false, false);
     fireEvent.click(screen.getByRole('button', { name: 'conversation.planBar.title' }));
     fireEvent.click(screen.getByRole('button', { name: 'Toggle workspace' }));
-    expectPresentation(true, false);
+    expectPresentation(true, true);
     view.unmount();
     resetWorkbenchPanelStateForTest();
     render(<Harness />);
-    expectPresentation(true, false);
+    expectPresentation(true, true);
   });
 
   it('keeps the workspace docked and mounted when closing the floating plan', () => {
@@ -313,8 +314,10 @@ describe('independent workspace and plan panels', () => {
     setupPanels(true, false);
     const explorer = screen.getByTestId('workspace-explorer');
     fireEvent.click(screen.getByRole('button', { name: 'conversation.planBar.title' }));
-    expect(screen.getByRole('dialog', { name: 'conversation.planBar.title' })).toBeVisible();
-    expect(screen.getByRole('dialog', { name: 'conversation.planBar.title' }).className).toContain('floatingPlanLeft');
+    const floatingPlan = screen.getByRole('dialog', { name: 'conversation.planBar.title' });
+    expect(floatingPlan).toBeVisible();
+    expect(floatingPlan.parentElement).toBe(screen.getByTestId('chat-content-area'));
+    expect(floatingPlan.className).not.toContain('floatingPlanLeft');
     expect(screen.getByTestId('workspace-explorer')).toBe(explorer);
     expectPresentation(true, true);
     fireEvent.keyDown(window, { key: 'Escape' });

@@ -30,6 +30,9 @@ export interface ConversationContextValue {
    */
   type: 'acp' | 'codex' | 'aionrs';
 
+  /** Concrete runtime backend used to resolve fork configuration options. */
+  backend?: string;
+
   /**
    * Cron job ID (if this conversation was created by a scheduled task)
    */

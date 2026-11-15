@@ -130,7 +130,13 @@
   "copyLastOutput": {
     "empty": "No response to copy yet"
   },
+  "structured": {
+    "before": "До",
+    "after": "Після"
+  },
   "fork": {
+    "currentAgent": "Поточний Agent",
+    "configApplyFailed": "Розмову створено, але вибрані параметри виконання не вдалося застосувати: {{message}}",
     "action": "Відгалузити звідси",
     "errorTurnInFlight": "Дочекайтеся завершення поточної відповіді перед відгалуженням",
     "errorParentUnbound": "У цієї розмови ще немає серверної сесії для відгалуження",

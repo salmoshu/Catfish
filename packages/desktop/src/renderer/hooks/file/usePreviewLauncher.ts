@@ -7,6 +7,7 @@
 import { joinPath } from '@/common/chat/chatLib';
 import { localFileRef } from '@/common/types/chatFile';
 import type { PreviewContentType } from '@/common/types/office/preview';
+import type { PreviewPlacement } from '@/renderer/pages/conversation/Preview/context/placementPreference';
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import { usePreviewContext } from '@/renderer/pages/conversation/Preview';
 import { resolvePreviewPayload, upgradeFileRef } from '@/renderer/utils/file/previewPayload';
@@ -36,6 +37,8 @@ interface PreviewLaunchOptions {
   fallbackContent?: string;
   /** 只读 diff 内容回退 / Read-only diff fallback */
   diffContent?: string;
+  /** Target preview area; defaults to the user's saved placement. */
+  placement?: PreviewPlacement;
 }
 
 /**
@@ -70,6 +73,7 @@ export const usePreviewLauncher = () => {
       editable,
       fallbackContent,
       diffContent,
+      placement,
     }: PreviewLaunchOptions) => {
       setLoading(true);
       setErrorKind(null);
@@ -105,10 +109,15 @@ export const usePreviewLauncher = () => {
       // 1. 乐观预览：如果有回退内容（如 Diff 中提取的内容），立即显示 / Optimistic preview: Show fallback content immediately if available
       let hasOpened = false;
       if (typeof fallbackContent === 'string') {
-        openPreview(fallbackContent, contentType, {
-          ...metadata,
-          editable,
-        });
+        openPreview(
+          fallbackContent,
+          contentType,
+          {
+            ...metadata,
+            editable,
+          },
+          { placement }
+        );
         hasOpened = true;
       }
 
@@ -122,17 +131,22 @@ export const usePreviewLauncher = () => {
             // and lastModified (the save-time If-Match); oversized files are never read.
             const payload = await resolvePreviewPayload(fileRef, contentType);
 
-            openPreview(payload.content, contentType, {
-              ...metadata,
-              // 超限文件只读：没有内容可编辑，也没有半截内容可被写回。
-              // Oversized files are read-only: no content to edit, and no partial
-              // content that could be written back over the full file.
-              editable: payload.oversized ? false : editable,
-              oversized: payload.oversized,
-              sizeBytes: payload.sizeBytes,
-              thresholdBytes: payload.thresholdBytes,
-              lastModified: payload.lastModified,
-            });
+            openPreview(
+              payload.content,
+              contentType,
+              {
+                ...metadata,
+                // 超限文件只读：没有内容可编辑，也没有半截内容可被写回。
+                // Oversized files are read-only: no content to edit, and no partial
+                // content that could be written back over the full file.
+                editable: payload.oversized ? false : editable,
+                oversized: payload.oversized,
+                sizeBytes: payload.sizeBytes,
+                thresholdBytes: payload.thresholdBytes,
+                lastModified: payload.lastModified,
+              },
+              { placement }
+            );
             return;
           } catch (error) {
             // 读取失败，如果已经显示了乐观预览，则只记录警告
@@ -148,10 +162,15 @@ export const usePreviewLauncher = () => {
         if (!hasOpened) {
           // 显示 diff 内容（只读）/ Show diff content (read-only)
           if (diffContent) {
-            openPreview(diffContent, 'diff', {
-              ...metadata,
-              editable: false,
-            });
+            openPreview(
+              diffContent,
+              'diff',
+              {
+                ...metadata,
+                editable: false,
+              },
+              { placement }
+            );
             return;
           }
         }

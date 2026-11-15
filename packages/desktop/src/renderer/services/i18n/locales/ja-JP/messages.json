@@ -122,7 +122,13 @@
     "yesAlwaysAllowServer": "はい、サーバー \"{{serverName}}\" のすべてのツールを常に許可",
     "no": "いいえ (esc)"
   },
+  "structured": {
+    "before": "変更前",
+    "after": "変更後"
+  },
   "fork": {
+    "currentAgent": "現在の Agent",
+    "configApplyFailed": "新しい会話を作成しましたが、選択した実行設定を適用できませんでした：{{message}}",
     "action": "ここから分岐",
     "errorTurnInFlight": "現在の応答が完了してから分岐してください",
     "errorParentUnbound": "この会話にはまだ分岐できるバックエンドセッションがありません",

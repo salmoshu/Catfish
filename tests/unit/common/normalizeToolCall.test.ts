@@ -38,7 +38,7 @@ describe('normalizeToolCall', () => {
     });
   });
 
-  it('ignores malformed ACP content items in compact history output', () => {
+  it('ignores malformed ACP content items while retaining valid diff data', () => {
     const result = normalizeAcpToolCall({
       id: 'message-2',
       conversation_id: 'conversation-1',
@@ -55,6 +55,7 @@ describe('normalizeToolCall', () => {
       },
     } as unknown as IMessageAcpToolCall);
 
-    expect(result?.output).toBe('[diff] /workspace/file.ts');
+    expect(result?.output).toBeUndefined();
+    expect(result?.diffs).toEqual([{ path: '/workspace/file.ts', old_text: 'old', new_text: 'new' }]);
   });
 });

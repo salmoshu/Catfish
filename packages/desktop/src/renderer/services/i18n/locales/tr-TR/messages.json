@@ -122,7 +122,13 @@
     "yesAlwaysAllowServer": "Evet, \"{{serverName}}\" sunucusundaki tüm araçlara her zaman izin ver",
     "no": "Hayır (esc)"
   },
+  "structured": {
+    "before": "Önce",
+    "after": "Sonra"
+  },
   "fork": {
+    "currentAgent": "Geçerli Agent",
+    "configApplyFailed": "Konuşma oluşturuldu ancak seçilen çalışma seçenekleri uygulanamadı: {{message}}",
     "action": "Buradan çatalla",
     "errorTurnInFlight": "Çatallamadan önce mevcut yanıtın bitmesini bekleyin",
     "errorParentUnbound": "Bu konuşmanın henüz çatallanacak bir arka uç oturumu yok",

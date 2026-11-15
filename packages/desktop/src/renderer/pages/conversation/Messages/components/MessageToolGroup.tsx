@@ -18,6 +18,7 @@ import { useDiffPreviewHandlers } from '@/renderer/hooks/file/useDiffPreviewHand
 import { parseDiff } from '@/renderer/utils/file/diffUtils';
 import MessageFileChanges from '../MessageFileChanges';
 import CollapsibleContent from '@renderer/components/chat/CollapsibleContent';
+import StructuredContent from '@renderer/components/chat/StructuredContent';
 import LocalImageView from '@renderer/components/media/LocalImageView';
 import MarkdownView from '@renderer/components/Markdown';
 import { ToolConfirmationOutcome } from '@renderer/utils/common';
@@ -434,19 +435,20 @@ const ToolResultDisplay: React.FC<{
     // 如果是错误，继续走下面的 JSON 显示逻辑
   }
 
-  // 将结果转换为字符串 Convert result to string
-  const display = typeof result_display === 'string' ? result_display : JSON.stringify(result_display, null, 2);
-
   // 使用 CollapsibleContent 包装长内容
   // Wrap long content with CollapsibleContent
   return (
     <CollapsibleContent maxHeight={RESULT_MAX_HEIGHT} defaultCollapsed={true} useMask={false}>
-      <pre
-        className='text-t-primary whitespace-pre-wrap break-words m-0'
-        style={{ fontSize: `${TEXT_CONFIG.FONT_SIZE}px`, lineHeight: TEXT_CONFIG.LINE_HEIGHT }}
-      >
-        {display}
-      </pre>
+      {typeof result_display === 'string' ? (
+        <pre
+          className='text-t-primary whitespace-pre-wrap break-words m-0'
+          style={{ fontSize: `${TEXT_CONFIG.FONT_SIZE}px`, lineHeight: TEXT_CONFIG.LINE_HEIGHT }}
+        >
+          {result_display}
+        </pre>
+      ) : (
+        <StructuredContent value={result_display} />
+      )}
     </CollapsibleContent>
   );
 };

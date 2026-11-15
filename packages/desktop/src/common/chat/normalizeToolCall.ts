@@ -3,6 +3,12 @@ import { getAcpImagePath } from './acpToolCallOutput';
 
 export type NormalizedToolStatus = 'pending' | 'running' | 'completed' | 'error' | 'canceled';
 
+export type NormalizedToolDiff = {
+  path: string;
+  old_text?: string | null;
+  new_text?: string | null;
+};
+
 export interface NormalizedToolCall {
   key: string;
   name: string;
@@ -14,6 +20,7 @@ export interface NormalizedToolCall {
   messageId?: string;
   conversationId?: string;
   imagePath?: string;
+  diffs?: NormalizedToolDiff[];
 }
 
 const formatValue = (value: unknown): string => {
@@ -153,17 +160,34 @@ export function normalizeAcpToolCall(message: IMessageAcpToolCall): NormalizedTo
   const rawInput = update.rawInput ?? update.raw_input;
   const input = rawInput ? formatValue(rawInput) : undefined;
 
+  const diffs: NormalizedToolDiff[] = Array.isArray(update.content)
+    ? update.content.flatMap((item) => {
+        if (typeof item !== 'object' || item === null || item.type !== 'diff' || typeof item.path !== 'string')
+          return [];
+        const hasOldText = typeof item.old_text === 'string';
+        const hasNewText = typeof item.new_text === 'string';
+        if (!hasOldText && !hasNewText) return [];
+        return [
+          {
+            path: item.path,
+            old_text: hasOldText ? item.old_text : undefined,
+            new_text: hasNewText ? item.new_text : undefined,
+          },
+        ];
+      })
+    : [];
+
   let output: string | undefined;
   if (Array.isArray(update.content) && update.content.length) {
-    output = update.content
-      .map((item) => {
-        if (typeof item !== 'object' || item === null) return '';
-        if (item.type === 'content' && item.content?.text) return item.content.text;
-        if (item.type === 'diff' && 'path' in item) return `[diff] ${item.path}`;
-        return '';
-      })
-      .filter(Boolean)
-      .join('\n');
+    output =
+      update.content
+        .map((item) => {
+          if (typeof item !== 'object' || item === null) return '';
+          if (item.type === 'content' && item.content?.text) return item.content.text;
+          return '';
+        })
+        .filter(Boolean)
+        .join('\n') || undefined;
   }
 
   const keyParam = buildParamSummary(update.kind, rawInput);
@@ -179,6 +203,7 @@ export function normalizeAcpToolCall(message: IMessageAcpToolCall): NormalizedTo
     messageId: message.id,
     conversationId: message.conversation_id,
     imagePath: getAcpImagePath(update),
+    diffs: diffs.length > 0 ? diffs : undefined,
   };
 }
 

@@ -7,6 +7,8 @@
 import type { TChatConversation } from '@/common/config/storage';
 import React from 'react';
 import { ExplorerContainer } from '../explorer/ExplorerContainer';
+import { useOptionalPreviewContext } from '../Preview';
+import { openWorkbenchWorkspace, useWorkbenchPanelState } from '../Workbench/workbenchPanelState';
 
 /**
  * ChatLayout's right-sider content. The legacy per-conversation Workspace tree
@@ -22,8 +24,22 @@ import { ExplorerContainer } from '../explorer/ExplorerContainer';
 const ChatSlider: React.FC<{
   conversation?: TChatConversation;
 }> = ({ conversation }) => {
+  const preview = useOptionalPreviewContext();
+  const projectId = conversation?.project_id ?? null;
+  const { state, update } = useWorkbenchPanelState(projectId, conversation?.id ?? null);
   if (conversation?.project_id) {
-    return <ExplorerContainer projectId={conversation.project_id} />;
+    return (
+      <ExplorerContainer
+        projectId={conversation.project_id}
+        activeSection={state.section}
+        contentHidden={Boolean(preview?.isSidebarOpen && preview.sidebarActiveTabId)}
+        onSectionChange={(section) => {
+          if (section === 'plan') return;
+          preview?.closePreview('sidebar');
+          update((current) => openWorkbenchWorkspace(current, section));
+        }}
+      />
+    );
   }
   return <div />;
 };

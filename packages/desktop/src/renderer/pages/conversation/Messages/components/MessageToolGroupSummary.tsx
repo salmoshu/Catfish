@@ -8,6 +8,9 @@ import { getAcpImageFileName } from '@/common/chat/acpToolCallOutput';
 import type { NormalizedToolCall, NormalizedToolStatus, ToolMessage } from '@/common/chat/normalizeToolCall';
 import { normalizeToolMessages, hasRunningToolMessages } from '@/common/chat/normalizeToolCall';
 import LocalImageView from '@/renderer/components/media/LocalImageView';
+import StructuredContent from '@/renderer/components/chat/StructuredContent';
+import MessageFileChanges from '../MessageFileChanges';
+import { parseFileChange } from '@/renderer/utils/file/diffUtils';
 import { downloadFileFromPath } from '@/renderer/utils/file/download';
 import { isAgentToolName } from '../../Workbench/workbenchActivity';
 import { openWorkbenchSection } from '../../Workbench/workbenchActivityStore';
@@ -39,7 +42,9 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall; isProcessing: boolean
   const [loadingFull, setLoadingFull] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const displayItem = fullItem ?? item;
-  const hasDetail = Boolean(displayItem.input || displayItem.output || item.truncated || item.imagePath);
+  const hasDetail = Boolean(
+    displayItem.input || displayItem.output || displayItem.diffs?.length || item.truncated || item.imagePath
+  );
   const [messageApi, messageContext] = Message.useMessage();
   const handleDownloadImage = useCallback(
     async (path: string) => {
@@ -126,13 +131,18 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall; isProcessing: boolean
           {displayItem.input && (
             <div className='tool-detail-section'>
               <div className='tool-detail-label'>{t('messages.toolGroup.input', { defaultValue: 'Input' })}</div>
-              <pre className='tool-detail-content'>{displayItem.input}</pre>
+              <StructuredContent value={displayItem.input} />
             </div>
+          )}
+          {displayItem.diffs && displayItem.diffs.length > 0 && (
+            <MessageFileChanges
+              diffsChanges={displayItem.diffs.map((diff) => parseFileChange(diff.path, diff.old_text, diff.new_text))}
+            />
           )}
           {displayItem.output && (
             <div className='tool-detail-section'>
               <div className='tool-detail-label'>{t('messages.toolGroup.output', { defaultValue: 'Output' })}</div>
-              <pre className='tool-detail-content'>{displayItem.output}</pre>
+              <StructuredContent value={displayItem.output} />
             </div>
           )}
         </div>

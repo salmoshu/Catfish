@@ -8,6 +8,7 @@ import type { IMessageAcpToolCall } from '@/common/chat/chatLib';
 import { getAcpImageFileName, getAcpImagePath } from '@/common/chat/acpToolCallOutput';
 import FileChangesPanel from '@/renderer/components/base/FileChangesPanel';
 import LocalImageView from '@/renderer/components/media/LocalImageView';
+import StructuredContent from '@/renderer/components/chat/StructuredContent';
 import { useDiffPreviewHandlers } from '@/renderer/hooks/file/useDiffPreviewHandlers';
 import { collectMessageFileChanges, parseFileChange } from '@/renderer/utils/file/diffUtils';
 import MessageFileChanges from '../MessageFileChanges';
@@ -144,7 +145,7 @@ const MessageAcpToolCall: React.FC<{ message: IMessageAcpToolCall }> = ({ messag
               {typeof rawInput === 'string' ? (
                 <MarkdownView>{`\`\`\`\n${rawInput}\n\`\`\``}</MarkdownView>
               ) : (
-                <pre className='bg-1 p-2 rounded text-xs overflow-x-auto'>{JSON.stringify(rawInput, null, 2)}</pre>
+                <StructuredContent value={rawInput} />
               )}
             </div>
           )}

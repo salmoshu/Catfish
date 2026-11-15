@@ -122,7 +122,13 @@
     "yesAlwaysAllowServer": "بله، همیشه اجازه تمام ابزارها از سرور «{{serverName}}» بده",
     "no": "خیر (esc)"
   },
+  "structured": {
+    "before": "قبل",
+    "after": "بعد"
+  },
   "fork": {
+    "currentAgent": "Agent فعلی",
+    "configApplyFailed": "گفتگو ایجاد شد، اما گزینه‌های اجرای انتخاب‌شده اعمال نشدند: {{message}}",
     "action": "انشعاب از اینجا",
     "errorTurnInFlight": "پیش از انشعاب صبر کنید تا پاسخ فعلی کامل شود",
     "errorParentUnbound": "این گفتگو هنوز نشست پشتیبانی برای انشعاب ندارد",

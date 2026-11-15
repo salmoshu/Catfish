@@ -122,7 +122,13 @@
     "yesAlwaysAllowServer": "Ja, alle Tools vom Server \"{{serverName}}\" immer erlauben",
     "no": "Nein (Esc)"
   },
+  "structured": {
+    "before": "Vorher",
+    "after": "Nachher"
+  },
   "fork": {
+    "currentAgent": "Aktueller Agent",
+    "configApplyFailed": "Die Konversation wurde erstellt, aber die ausgewählten Laufzeitoptionen konnten nicht angewendet werden: {{message}}",
     "action": "Ab hier verzweigen",
     "errorTurnInFlight": "Warten Sie, bis die aktuelle Antwort abgeschlossen ist, bevor Sie verzweigen",
     "errorParentUnbound": "Diese Unterhaltung hat noch keine Backend-Sitzung zum Verzweigen",

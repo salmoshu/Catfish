@@ -8,12 +8,14 @@ import type { IMessageToolCall } from '@/common/chat/chatLib';
 import { normalizeToolCall } from '@/common/chat/normalizeToolCall';
 import type { NormalizedToolStatus } from '@/common/chat/normalizeToolCall';
 import FileChangesPanel from '@/renderer/components/base/FileChangesPanel';
+import StructuredContent from '@/renderer/components/chat/StructuredContent';
 import { useDiffPreviewHandlers } from '@/renderer/hooks/file/useDiffPreviewHandlers';
 import { parseDiff } from '@/renderer/utils/file/diffUtils';
 import { Badge } from '@arco-design/web-react';
 import KimiIcon from '@renderer/components/base/KimiIcon';
 import { createTwoFilesPatch } from 'diff';
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { BadgeProps } from '@arco-design/web-react';
 import './MessageToolGroupSummary.css';
 
@@ -56,6 +58,7 @@ const ReplacePreview: React.FC<{ message: IMessageToolCall }> = ({ message }) =>
 
 const MessageToolCall: React.FC<{ message: IMessageToolCall }> = ({ message }) => {
   const { name } = message.content;
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   if (name === 'replace' || name === 'Edit') {
@@ -100,14 +103,14 @@ const MessageToolCall: React.FC<{ message: IMessageToolCall }> = ({ message }) =
         <div className='tool-detail-panel m-l-20px m-t-4px'>
           {normalized.input && (
             <div className='tool-detail-section'>
-              <div className='tool-detail-label'>Input</div>
-              <pre className='tool-detail-content'>{normalized.input}</pre>
+              <div className='tool-detail-label'>{t('messages.toolGroup.input')}</div>
+              <StructuredContent value={normalized.input} />
             </div>
           )}
           {normalized.output && (
             <div className='tool-detail-section'>
-              <div className='tool-detail-label'>Output</div>
-              <pre className='tool-detail-content'>{normalized.output}</pre>
+              <div className='tool-detail-label'>{t('messages.toolGroup.output')}</div>
+              <StructuredContent value={normalized.output} />
             </div>
           )}
         </div>

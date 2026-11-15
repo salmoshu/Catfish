@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.4.30](https://github.com/salmoshu/Catfish/releases/tag/v0.4.30) (2026-11-15)
+
+### Features
+
+- **conversation rendering:** replace raw JSON payloads with semantic command, path, link, list, and before/after views across assistant messages, tool details, permission requests, and diagnostics
+- **file changes:** preserve real diff data inside mixed-content tool steps and open completed-turn file names or change counts directly in the right sidebar
+- **fork:** choose the target agent, model, thought level, and permission mode from runtime-backed options, then apply them to the new conversation
+
+### Bug Fixes
+
+- **sidebar preview:** keep Files, Changes, Terminal, and Agents navigation visible above moved file tabs in both project and standalone conversations
+- **plan:** anchor floating plan steps to the chat content's top-right corner instead of the application window's left side
+
+---
+
 ## [0.4.29](https://github.com/salmoshu/Catfish/releases/tag/v0.4.29) (2026-11-13)
 
 ### Features

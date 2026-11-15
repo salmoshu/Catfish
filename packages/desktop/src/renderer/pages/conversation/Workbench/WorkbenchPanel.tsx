@@ -6,6 +6,7 @@ import type { NormalizedToolCall, NormalizedToolStatus } from '@/common/chat/nor
 import { ExplorerContainer } from '@/renderer/pages/conversation/explorer/ExplorerContainer';
 import { useCurrentConversation } from '@/renderer/pages/conversation/explorer/currentConversationStore';
 import { PreviewPanel, usePreviewContext } from '@/renderer/pages/conversation/Preview';
+import StructuredContent from '@/renderer/components/chat/StructuredContent';
 import SideChatPanel from '@/renderer/pages/conversation/Preview/components/PreviewPanel/SideChatPanel';
 import type { WorkbenchSection } from './workbenchActivity';
 import {
@@ -61,8 +62,8 @@ const WorkbenchAgentCard: React.FC<{ agent: NormalizedToolCall }> = ({ agent }) 
       {agent.description && <div className='workbench-agent-card__description'>{agent.description}</div>}
       {expanded && (
         <div className='workbench-agent-card__detail'>
-          {agent.input && <pre>{agent.input}</pre>}
-          {agent.output && <pre>{agent.output}</pre>}
+          {agent.input && <StructuredContent value={agent.input} />}
+          {agent.output && <StructuredContent value={agent.output} />}
         </div>
       )}
     </div>
@@ -91,8 +92,10 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
     openBrowserTab,
     sideChat,
     closeSideChat,
+    closePreview,
   } = usePreviewContext();
   const activeTab = sidebarTabs.find((tab) => tab.id === sidebarActiveTabId) ?? null;
+  const previewVisible = Boolean(previewOpen && activeTab);
   useEffect(() => {
     onSectionChange?.(activeSection);
     notifyWorkbenchSectionChange(activeSection);
@@ -122,31 +125,33 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
         update((current) => ({ ...current, planOpen: true }));
         return;
       }
+      if (section === 'preview') {
+        update((current) => openWorkbenchWorkspace(current, current.section));
+        if (previewOpen) return;
+        if (activeTab) switchTab(activeTab.id);
+        else openBrowserTab(undefined, 'sidebar');
+        return;
+      }
+      if (previewOpen) closePreview('sidebar');
       update((current) => openWorkbenchWorkspace(current, section));
       notifyWorkbenchSectionChange(section);
-      if (section !== 'preview' || previewOpen) return;
-      if (activeTab) {
-        switchTab(activeTab.id);
-      } else {
-        openBrowserTab(undefined, 'sidebar');
-      }
     },
-    [activeTab, openBrowserTab, switchTab, previewOpen, update]
+    [activeTab, closePreview, openBrowserTab, switchTab, previewOpen, update]
   );
 
   return (
     <div className='workbench' data-workbench data-active-section={activeSection}>
-      <div className='workbench-body'>
+      <div className='workbench-body' data-preview-visible={previewVisible ? 'true' : undefined}>
         <section
           id={`workbench-panel-${activeSection === 'terminal' || activeSection === 'changes' ? activeSection : 'files'}`}
-          role={activeSection === 'preview' || activeSection === 'side-chat' ? 'complementary' : 'tabpanel'}
+          role={activeSection === 'side-chat' ? 'complementary' : 'tabpanel'}
           aria-labelledby={`workbench-tab-${activeSection === 'terminal' || activeSection === 'changes' ? activeSection : 'files'}`}
-          hidden={activeSection === 'preview' || activeSection === 'side-chat'}
+          hidden={activeSection === 'side-chat' && !previewVisible}
         >
           <ExplorerContainer
             projectId={projectId}
             activeSection={activeSection}
-            contentHidden={activeSection === 'agents'}
+            contentHidden={previewVisible || activeSection === 'agents'}
             terminalActivity={activity.terminals}
             onSectionChange={selectSection}
           />
@@ -154,7 +159,7 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
         <section
           data-side-chat-panel
           aria-label={t('conversation.welcome.newConversation')}
-          hidden={activeSection !== 'side-chat'}
+          hidden={activeSection !== 'side-chat' || previewVisible}
           className='h-full min-h-0 flex flex-col'
         >
           <div className='flex items-center gap-8px shrink-0 px-12px h-44px border-b border-[var(--color-border-2)]'>
@@ -185,9 +190,9 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
           role='tabpanel'
           aria-labelledby='workbench-tab-preview'
           className='preview-panel'
-          hidden={activeSection !== 'preview'}
+          hidden={!previewVisible}
         >
-          {previewOpen && activeTab ? (
+          {previewVisible && activeTab ? (
             <PreviewPanel placement='sidebar' />
           ) : (
             <div className='workbench-empty'>
@@ -206,7 +211,7 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
           id='workbench-panel-agents'
           role='tabpanel'
           aria-labelledby='workbench-tab-agents'
-          hidden={activeSection !== 'agents'}
+          hidden={activeSection !== 'agents' || previewVisible}
         >
           {activity.agents.length > 0 ? (
             <div className='workbench-activity-list'>

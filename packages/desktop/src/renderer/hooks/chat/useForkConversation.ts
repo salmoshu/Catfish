@@ -12,8 +12,40 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { emitter } from '@/renderer/utils/emitter';
 import type { TFunction } from 'i18next';
+import { findConfigOption, getOptionCurrentValue } from '@/renderer/hooks/agent/useAcpConfigOptions';
 
 const pendingOperations = new Map<string, string>();
+
+export type ForkConversationOptions = {
+  targetAgentId?: string;
+  modelId?: string;
+  thoughtLevel?: string;
+  mode?: string;
+};
+
+const applyForkConfiguration = async (conversationId: string, options: ForkConversationOptions): Promise<void> => {
+  const runtime = await ipcBridge.conversation.ensureRuntime.invoke({ conversation_id: conversationId });
+  const selections = [
+    { category: 'model', fallbackIds: ['model'], value: options.modelId },
+    { category: 'thought_level', fallbackIds: ['thought_level', 'reasoning_effort'], value: options.thoughtLevel },
+    { category: 'mode', fallbackIds: ['mode'], value: options.mode },
+  ];
+  for (const selection of selections) {
+    if (!selection.value) continue;
+    const option = findConfigOption(runtime.config_options, selection.category, selection.fallbackIds);
+    if (!option || (option.options.length > 0 && !option.options.some((choice) => choice.value === selection.value))) {
+      throw new Error(`Unsupported fork ${selection.category} option`);
+    }
+    if (getOptionCurrentValue(option) === selection.value) continue;
+    // Runtime writes are sequential because concurrent updates are rejected as config_update_in_progress.
+    // eslint-disable-next-line no-await-in-loop
+    await ipcBridge.acpConversation.setConfigOption.invoke({
+      conversation_id: conversationId,
+      option_id: option.id,
+      value: selection.value,
+    });
+  }
+};
 
 /**
  * Map a fork API failure to a user-facing message. The backend carries stable
@@ -42,10 +74,11 @@ export function useForkConversation(conversationId: string | undefined) {
   const forkingRef = useRef(false);
 
   return useCallback(
-    async (messageId: string, targetAgentId?: string) => {
+    async (messageId: string, options: ForkConversationOptions = {}) => {
       if (!conversationId || forkingRef.current) return;
       forkingRef.current = true;
-      const key = `${conversationId}:${messageId}:${targetAgentId ?? ''}`;
+      const { targetAgentId, modelId, thoughtLevel, mode } = options;
+      const key = `${conversationId}:${messageId}:${JSON.stringify([targetAgentId, modelId, thoughtLevel, mode])}`;
       const operationId = pendingOperations.get(key) ?? crypto.randomUUID();
       pendingOperations.set(key, operationId);
       try {
@@ -61,9 +94,14 @@ export function useForkConversation(conversationId: string | undefined) {
         pendingOperations.delete(key);
         emitter.emit('chat.history.refresh');
         void navigate(`/conversation/${forked.id}`);
-        // Lazy fork + eager surfacing: materialize the backend session now so
-        // "parent session gone" style failures show up before the first send.
-        void ipcBridge.conversation.ensureRuntime.invoke({ conversation_id: forked.id }).catch((): void => undefined);
+        // Materialize the target before applying its runtime-specific options.
+        if (modelId || thoughtLevel || mode) {
+          void applyForkConfiguration(forked.id, options).catch((error) => {
+            Message.error(t('messages.fork.configApplyFailed', { message: parseError(error) }));
+          });
+        } else {
+          void ipcBridge.conversation.ensureRuntime.invoke({ conversation_id: forked.id }).catch((): void => undefined);
+        }
       } catch (error) {
         console.error('Failed to fork conversation:', error);
         Message.error(getForkErrorMessage(error, t));

@@ -108,6 +108,18 @@
   height: auto;
 }
 
+.workbench-body[data-preview-visible='true'] {
+  flex-direction: column;
+}
+
+.workbench-body[data-preview-visible='true'] > section:first-child {
+  flex: 0 0 auto;
+}
+
+.workbench-body[data-preview-visible='true'] > section:first-child > .h-full {
+  height: auto;
+}
+
 .workbench-empty {
   display: flex;
   min-width: 0;

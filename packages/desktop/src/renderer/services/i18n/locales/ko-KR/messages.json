@@ -122,7 +122,13 @@
     "yesAlwaysAllowServer": "예, 서버 \"{{serverName}}\"의 모든 도구 항상 허용",
     "no": "아니요 (esc)"
   },
+  "structured": {
+    "before": "변경 전",
+    "after": "변경 후"
+  },
   "fork": {
+    "currentAgent": "현재 Agent",
+    "configApplyFailed": "새 대화를 만들었지만 선택한 실행 옵션을 적용할 수 없습니다: {{message}}",
     "action": "여기서 분기",
     "errorTurnInFlight": "현재 응답이 완료된 후 분기하세요",
     "errorParentUnbound": "이 대화에는 아직 분기할 백엔드 세션이 없습니다",
