@@ -1,15 +1,18 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { delimiter, dirname, join } from 'node:path';
 
 const {
+  extractArchive,
   getActionsArtifactName,
   getActionsArtifactMissingMessage,
   prepareCatfishcore,
 } = require('../../../packages/shared-scripts/src/prepare-catfishcore');
 
 const posixFakeToolchainIt = process.platform === 'win32' ? it.skip : it;
+const windowsZipIt = process.platform === 'win32' ? it : it.skip;
 
 function writeFile(filePath: string, contents = 'x') {
   mkdirSync(dirname(filePath), { recursive: true });
@@ -201,6 +204,32 @@ describe('prepare-catfishcore GitHub Actions artifact resolver', () => {
     } finally {
       if (previousPath === undefined) delete process.env.PATH;
       else process.env.PATH = previousPath;
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('prepare-catfishcore Windows archive extraction', () => {
+  windowsZipIt('extracts a ZIP through the compatible .NET API into an existing directory', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'catfishcore-zip-extraction-'));
+    const quote = (value: string) => `'${value.replace(/'/g, "''")}'`;
+    try {
+      const sourceDir = join(tmp, 'source');
+      const archivePath = join(tmp, 'catfishcore.zip');
+      const outputDir = join(tmp, 'output');
+      writeFile(join(sourceDir, 'catfishcore.exe'), 'binary');
+      mkdirSync(outputDir, { recursive: true });
+      execFileSync('powershell', [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        `Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory(${quote(sourceDir)}, ${quote(archivePath)})`,
+      ]);
+
+      extractArchive(archivePath, outputDir, 'win32');
+
+      expect(readFileSync(join(outputDir, 'catfishcore.exe'), 'utf8')).toBe('binary');
+    } finally {
       rmSync(tmp, { recursive: true, force: true });
     }
   });

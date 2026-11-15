@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.31](https://github.com/salmoshu/Catfish/releases/tag/v0.4.31) (2026-11-15)
+
+### Bug Fixes
+
+- **Windows release:** extract CatfishCore ZIP archives through the compatible two-argument .NET API instead of the failing Expand-Archive overload
+
+---
+
 ## [0.4.30](https://github.com/salmoshu/Catfish/releases/tag/v0.4.30) (2026-11-15)
 
 ### Features

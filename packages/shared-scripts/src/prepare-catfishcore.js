@@ -230,7 +230,9 @@ function extractArchive(archivePath, outputDir, platform) {
   ensureDirectory(outputDir);
   if (platform === 'win32' || archivePath.endsWith('.zip')) {
     if (platform === 'win32') {
-      const ps = `Expand-Archive -LiteralPath '${archivePath.replace(/'/g, "''")}' -DestinationPath '${outputDir.replace(/'/g, "''")}' -Force`;
+      const archiveLiteral = `'${archivePath.replace(/'/g, "''")}'`;
+      const outputLiteral = `'${outputDir.replace(/'/g, "''")}'`;
+      const ps = `Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::ExtractToDirectory(${archiveLiteral}, ${outputLiteral})`;
       execFileSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', ps]);
     } else {
       execFileSync('unzip', ['-o', archivePath, '-d', outputDir]);
@@ -586,6 +588,7 @@ function prepareCatfishcore(options) {
 }
 
 module.exports = {
+  extractArchive,
   getActionsArtifactMissingMessage,
   getActionsArtifactName,
   prepareCatfishcore,
