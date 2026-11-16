@@ -63,6 +63,8 @@
   "forward": "앞으로",
   "historyBack": "뒤로",
   "more": "더보기",
+  "moreItems": "{{target}} 더 보기",
+  "collapseItems": "{{target}} 접기",
   "refresh": "새로고침",
   "readOnly": "읽기 전용",
   "tray.showWindow": "Catfish 표시",

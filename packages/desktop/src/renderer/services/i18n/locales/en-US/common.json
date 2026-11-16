@@ -63,6 +63,8 @@
   "forward": "Forward",
   "historyBack": "Back",
   "more": "More",
+  "moreItems": "More {{target}}",
+  "collapseItems": "Collapse {{target}}",
   "refresh": "Refresh",
   "readOnly": "Read only",
   "tray.showWindow": "Show Catfish",

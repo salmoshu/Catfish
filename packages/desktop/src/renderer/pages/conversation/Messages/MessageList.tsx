@@ -306,14 +306,8 @@ const MessageItem: React.FC<{
           );
         case 'tips':
           return <MessageTips message={message}></MessageTips>;
-        case 'tool_call': {
-          const changes = collectMessageFileChanges(message);
-          return changes.length > 0 ? (
-            <MessageFileChanges diffsChanges={changes} />
-          ) : (
-            <MessageToolCall message={message} />
-          );
-        }
+        case 'tool_call':
+          return <MessageToolCall message={message} isProcessing={isProcessing} />;
         case 'tool_group':
           return <MessageToolGroup message={message} isProcessing={isProcessing}></MessageToolGroup>;
         case 'agent_status':
@@ -325,7 +319,7 @@ const MessageItem: React.FC<{
         case 'ask':
           return <MessageQuestion message={message}></MessageQuestion>;
         case 'acp_tool_call':
-          return <MessageAcpToolCall message={message}></MessageAcpToolCall>;
+          return <MessageAcpToolCall message={message} isProcessing={isProcessing}></MessageAcpToolCall>;
         case 'acp_terminal_output':
           return <MessageAcpTerminalOutput message={message}></MessageAcpTerminalOutput>;
         case 'thinking':
@@ -507,6 +501,17 @@ const MessageList: React.FC<{
     () => collapseCompletedTurnWork(groupedList, isProcessing),
     [groupedList, isProcessing]
   );
+
+  const activeTurnMessageIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (!isProcessing) return ids;
+    for (let index = list.length - 1; index >= 0; index--) {
+      // An unconsumed mid-turn instruction still belongs to the current task.
+      if (list[index].position === 'right' && list[index].status !== 'pending') break;
+      ids.add(list[index].id);
+    }
+    return ids;
+  }, [list, isProcessing]);
 
   const turnFileSummaries = useMemo(() => {
     const summaries = new Map<string, FileChangeInfo[]>();
@@ -837,6 +842,7 @@ const MessageList: React.FC<{
   };
 
   const renderItem = (_index: number, item: (typeof processedList)[0]) => {
+    const processing = getProcessedItemSourceMessageIds(item).some((id) => activeTurnMessageIds.has(id));
     const highlighted = matchesTargetMessage(item, highlightedMessageId);
     if ('type' in item && item.type === 'artifact') {
       return (
@@ -886,7 +892,7 @@ const MessageList: React.FC<{
             {item.type === 'file_summary' && <MessageFileChanges diffsChanges={item.diffs} />}
             {item.type === 'tool_summary' && (
               <>
-                <MessageToolGroupSummary messages={item.messages} isProcessing={isProcessing} />
+                <MessageToolGroupSummary messages={item.messages} isProcessing={processing} />
                 {item.messages.some((message) => collectMessageFileChanges(message, true).length > 0) && (
                   <MessageFileChanges
                     diffsChanges={item.messages.flatMap((message) => collectMessageFileChanges(message, true))}
@@ -916,7 +922,7 @@ const MessageList: React.FC<{
           showCopyRow={showCopyRow}
           isLastMessage={message.id === lastMessageId}
           hasForkAnchor={forkAnchoredIds.has(message.id)}
-          isProcessing={isProcessing}
+          isProcessing={processing}
           turnTexts={aiTurnTextsById.get(message.id)}
         ></MessageItem>
         {renderStandaloneTurnActions(message.id)}

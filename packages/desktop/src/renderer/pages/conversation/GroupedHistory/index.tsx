@@ -30,12 +30,15 @@ import { useDragAndDrop } from './hooks/useDragAndDrop';
 import type { ConversationRowProps, WorkspaceGroupedHistoryProps } from './types';
 import {
   ENVIRONMENT_PROJECTS_CHANGED,
+  environmentKey,
   environmentProjectKey,
   readEnvironmentProjects,
 } from '@/renderer/utils/workspace/environmentProjects';
 import { buildProjectOrder } from '@/renderer/utils/workspace/projectOrder';
 import { getBackendEnvironment } from '@/common/adapter/httpBridge';
 import { writeExpandedWorkspaces } from './hooks/useWorkspaceExpansionState';
+
+const SIDER_VISIBLE_LIMIT = 8;
 
 const ProjectExpandIcon: React.FC = () => (
   <svg className='block' width='16' height='16' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
@@ -70,6 +73,8 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
   const isMobile = layout?.isMobile ?? false;
   const { getJobStatus, markAsRead, setActiveConversation } = useCronJobsMap();
   const [environmentHistory, setEnvironmentHistory] = useState(readEnvironmentProjects);
+  const [showAllProjects, setShowAllProjects] = useState(false);
+  const [showAllConversations, setShowAllConversations] = useState(false);
   useEffect(() => {
     const refresh = () => setEnvironmentHistory(readEnvironmentProjects());
     window.addEventListener(ENVIRONMENT_PROJECTS_CHANGED, refresh);
@@ -285,6 +290,30 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
     );
   }, [conversationActivityAt, environmentHistory, projectGroups]);
 
+  const projectCandidateKeys = useMemo(() => {
+    const active = getBackendEnvironment();
+    const activeKey = active ? environmentKey(active) : null;
+    const otherProjects = activeKey
+      ? environmentHistory.filter((entry) => environmentKey(entry.environment) !== activeKey)
+      : [];
+    const environment = active ?? { type: 'local' as const };
+    const keys = [
+      ...projectGroups.map((group) => environmentProjectKey(environment, group.workspace)),
+      ...otherProjects.flatMap((entry) =>
+        entry.projects.map((project) => environmentProjectKey(entry.environment, project.workspace))
+      ),
+    ];
+    return keys.toSorted(
+      (left, right) =>
+        (projectOrder.get(left) ?? Number.MAX_SAFE_INTEGER) - (projectOrder.get(right) ?? Number.MAX_SAFE_INTEGER)
+    );
+  }, [environmentHistory, projectGroups, projectOrder]);
+  const visibleProjectKeys = useMemo(
+    () => new Set(showAllProjects ? projectCandidateKeys : projectCandidateKeys.slice(0, SIDER_VISIBLE_LIMIT)),
+    [projectCandidateKeys, showAllProjects]
+  );
+  const hasMoreProjects = projectCandidateKeys.length > SIDER_VISIBLE_LIMIT;
+
   const allProjectKeys = useMemo(() => {
     const environment = getBackendEnvironment() ?? { type: 'local' as const };
     return [
@@ -338,6 +367,64 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
         .filter((section) => section.items.length > 0),
     [timelineSections]
   );
+  const conversationCount = conversationOnlySections.reduce((count, section) => count + section.items.length, 0);
+  const visibleConversationSections = useMemo(() => {
+    if (showAllConversations) return conversationOnlySections;
+    let remaining = SIDER_VISIBLE_LIMIT;
+    return conversationOnlySections
+      .map((section) => {
+        const items = section.items.slice(0, remaining);
+        remaining -= items.length;
+        return { ...section, items };
+      })
+      .filter((section) => section.items.length > 0);
+  }, [conversationOnlySections, showAllConversations]);
+
+  const renderOverflowToggle = (
+    expanded: boolean,
+    onToggle: () => void,
+    target: string,
+    testId: string,
+    order?: number
+  ) => {
+    const label = t(expanded ? 'common.collapseItems' : 'common.moreItems', { target });
+    return (
+      <Button
+        type='text'
+        size='mini'
+        data-testid={testId}
+        aria-label={label}
+        aria-expanded={expanded}
+        title={label}
+        style={{ order }}
+        className={classNames(
+          '!h-28px !text-13px !text-t-secondary hover:!text-t-primary',
+          collapsed ? '!w-full !p-0 !justify-center' : '!justify-start !px-12px'
+        )}
+        icon={
+          collapsed ? (
+            <Right
+              theme='outline'
+              size={12}
+              className={classNames('transition-transform', expanded ? '-rotate-90' : 'rotate-90')}
+            />
+          ) : undefined
+        }
+        onClick={onToggle}
+      >
+        {collapsed ? undefined : label}
+      </Button>
+    );
+  };
+  const projectOverflowToggle = hasMoreProjects
+    ? renderOverflowToggle(
+        showAllProjects,
+        () => setShowAllProjects((current) => !current),
+        t('conversation.history.projectsSection'),
+        'project-overflow-toggle',
+        projectOrder.size + 2
+      )
+    : null;
 
   if (timelineSections.length === 0 && pinnedConversations.length === 0) {
     return (
@@ -345,6 +432,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
         {afterPinnedContent}
         <EnvironmentProjects
           collapsed={collapsed}
+          visibleProjectKeys={visibleProjectKeys}
           heading={
             !collapsed && (
               <SectionLabel
@@ -361,6 +449,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
             </div>
           }
         />
+        {!collapsedSections.has('projects') && projectOverflowToggle}
       </>
     );
   }
@@ -509,6 +598,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
                 projectGroups.map((group) => {
                   const environment = getBackendEnvironment() ?? { type: 'local' as const };
                   const workspaceKey = environmentProjectKey(environment, group.workspace);
+                  if (!visibleProjectKeys.has(workspaceKey)) return null;
                   const projectExpanded =
                     expandedWorkspaces.includes(workspaceKey) || expandedWorkspaces.includes(group.workspace);
                   const showProjectActivity =
@@ -635,7 +725,9 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
               projectOrder.get(environmentProjectKey(environment, project.workspace)) ?? projectOrder.size + 1
             }
             isConversationGenerating={isConversationGenerating}
+            visibleProjectKeys={visibleProjectKeys}
           />
+          {!collapsedSections.has('projects') && projectOverflowToggle}
         </div>
 
         {/* L1: Conversations section — peer to projects, internally split by timeline */}
@@ -645,7 +737,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
               <SectionLabel sectionKey='conversations' label={t('conversation.history.conversationsSection')} />
             )}
             {!collapsedSections.has('conversations') &&
-              conversationOnlySections.map((section) => (
+              visibleConversationSections.map((section) => (
                 <div key={section.timeline} className='min-w-0'>
                   {!collapsed && conversationOnlySections.length > 1 && (
                     <div className='flex items-center px-16px h-24px select-none'>
@@ -657,6 +749,14 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
                   )}
                 </div>
               ))}
+            {!collapsedSections.has('conversations') &&
+              conversationCount > SIDER_VISIBLE_LIMIT &&
+              renderOverflowToggle(
+                showAllConversations,
+                () => setShowAllConversations((current) => !current),
+                t('conversation.history.conversationsSection'),
+                'conversation-overflow-toggle'
+              )}
           </div>
         )}
       </div>

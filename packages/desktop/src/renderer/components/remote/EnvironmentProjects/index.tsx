@@ -39,6 +39,7 @@ type Props = {
   emptyContent?: React.ReactNode;
   getProjectOrder?: (environment: History['environment'], project: EnvironmentProject) => number;
   isConversationGenerating?: (conversationId: string) => boolean;
+  visibleProjectKeys?: ReadonlySet<string>;
 };
 
 const EnvironmentProjects: React.FC<Props> = ({
@@ -48,6 +49,7 @@ const EnvironmentProjects: React.FC<Props> = ({
   emptyContent,
   getProjectOrder,
   isConversationGenerating,
+  visibleProjectKeys,
 }) => {
   const { t } = useTranslation();
   const [history, setHistory] = useState(readEnvironmentProjects);
@@ -194,6 +196,7 @@ const EnvironmentProjects: React.FC<Props> = ({
         visibleHistory.map((entry) =>
           entry.projects.map((project) => {
             const key = environmentProjectKey(entry.environment, project.workspace);
+            if (visibleProjectKeys && !visibleProjectKeys.has(key)) return null;
             const isRemote = entry.environment.type === 'remote';
             const name = getLastDirectoryName(project.workspace);
             const actionLabel = isRemote ? t('mcp.connect') : t('conversation.history.newConversationInProject');

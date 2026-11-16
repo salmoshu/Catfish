@@ -62,6 +62,8 @@
   "forward": "Weiterleiten",
   "historyBack": "Zurück",
   "more": "Mehr",
+  "moreItems": "Mehr {{target}}",
+  "collapseItems": "{{target}} einklappen",
   "refresh": "Aktualisieren",
   "readOnly": "Schreibgeschützt",
   "tray.showWindow": "Catfish anzeigen",

@@ -64,6 +64,8 @@
   "goToSettings": "Перейти к настройкам",
   "forward": "Вперёд",
   "more": "Ещё",
+  "moreItems": "Больше: {{target}}",
+  "collapseItems": "Свернуть: {{target}}",
   "refresh": "Обновить",
   "readOnly": "Только чтение",
   "tray.showWindow": "Показать Catfish",

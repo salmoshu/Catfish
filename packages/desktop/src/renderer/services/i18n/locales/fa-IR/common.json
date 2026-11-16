@@ -63,6 +63,8 @@
   "forward": "جلو",
   "historyBack": "عقب",
   "more": "بیشتر",
+  "moreItems": "{{target}} بیشتر",
+  "collapseItems": "بستن {{target}}",
   "refresh": "بازخوانی",
   "readOnly": "فقط خواندنی",
   "tray.showWindow": "نمایش Catfish",

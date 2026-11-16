@@ -124,7 +124,22 @@
   },
   "structured": {
     "before": "قبل",
-    "after": "بعد"
+    "after": "بعد",
+    "fields": {
+      "filePath": "مسیر فایل",
+      "fileName": "نام فایل",
+      "path": "مسیر",
+      "description": "توضیح",
+      "workingDirectory": "پوشه کاری",
+      "pattern": "الگو",
+      "query": "عبارت جستجو",
+      "url": "نشانی",
+      "timeout": "مهلت",
+      "exitCode": "کد خروج",
+      "status": "وضعیت",
+      "output": "خروجی",
+      "content": "محتوا"
+    }
   },
   "fork": {
     "currentAgent": "Agent فعلی",
@@ -162,5 +177,26 @@
     "description": "تغییر به حالت برنامه‌ریزی؛ می‌توانید کار را نیز وارد کنید",
     "defaultDescription": "تغییر به حالت اجرا",
     "unsupported": "این عامل حالت برنامه‌ریزی درخواستی را ارائه نمی‌کند"
+  },
+  "toolActions": {
+    "read": "خواندن فایل",
+    "edit": "ویرایش فایل",
+    "write": "نوشتن فایل",
+    "execute": "اجرای دستور",
+    "output": "خواندن نتیجه دستور",
+    "search": "جستجو",
+    "list": "فهرست فایل‌ها",
+    "fetch": "دریافت صفحه",
+    "delete": "حذف فایل",
+    "wait": "انتظار برای نتیجه",
+    "other": "عملیات ابزار"
+  },
+  "toolStatus": {
+    "pending": "در انتظار",
+    "running": "در حال اجرا",
+    "completed": "تکمیل شد",
+    "error": "ناموفق",
+    "canceled": "لغو شد",
+    "incomplete": "ناتمام"
   }
 }

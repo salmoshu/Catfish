@@ -63,6 +63,8 @@
   "forward": "前进",
   "historyBack": "后退",
   "more": "更多",
+  "moreItems": "更多{{target}}",
+  "collapseItems": "收起{{target}}",
   "refresh": "刷新",
   "readOnly": "只读",
   "tray.showWindow": "显示 Catfish",

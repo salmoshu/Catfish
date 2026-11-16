@@ -53,12 +53,20 @@ type RemoteRuntimeCompatibility = {
 };
 
 /**
- * The v0.2.4 Linux x64 release requires glibc 2.34; v0.2.3 requires 2.30.
- * Keep the fallback specific to that artifact so ARM64 and macOS retain the
+ * The v0.2.4 through v0.2.6 Linux x64 releases require glibc 2.34; v0.2.3 requires 2.30.
+ * Keep the fallback specific to those artifacts so ARM64 and macOS retain the
  * requested release.
  */
 const REMOTE_RUNTIME_COMPATIBILITY: Record<string, RemoteRuntimeCompatibility> = {
   'v0.2.4': {
+    minimumGlibc: { major: 2, minor: 34 },
+    fallbackVersions: ['v0.2.3'],
+  },
+  'v0.2.5': {
+    minimumGlibc: { major: 2, minor: 34 },
+    fallbackVersions: ['v0.2.3'],
+  },
+  'v0.2.6': {
     minimumGlibc: { major: 2, minor: 34 },
     fallbackVersions: ['v0.2.3'],
   },

@@ -62,6 +62,8 @@
   "forward": "Reenviar",
   "historyBack": "Atrás",
   "more": "Más",
+  "moreItems": "Más {{target}}",
+  "collapseItems": "Contraer {{target}}",
   "refresh": "Actualizar",
   "readOnly": "Solo lectura",
   "tray.showWindow": "Mostrar Catfish",

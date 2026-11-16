@@ -2,6 +2,18 @@ import type { IMessageAcpToolCall, IMessageToolCall, IMessageToolGroup } from '.
 import { getAcpImagePath } from './acpToolCallOutput';
 
 export type NormalizedToolStatus = 'pending' | 'running' | 'completed' | 'error' | 'canceled';
+export type ToolDisplayStatus = NormalizedToolStatus | 'incomplete';
+export type ToolAction =
+  | 'read'
+  | 'edit'
+  | 'write'
+  | 'execute'
+  | 'output'
+  | 'search'
+  | 'list'
+  | 'fetch'
+  | 'delete'
+  | 'wait';
 
 export type NormalizedToolDiff = {
   path: string;
@@ -9,11 +21,12 @@ export type NormalizedToolDiff = {
   new_text?: string | null;
 };
 
-export interface NormalizedToolCall {
+export type NormalizedToolCall = {
   key: string;
   name: string;
   status: NormalizedToolStatus;
   description?: string;
+  action?: ToolAction;
   input?: string;
   output?: string;
   truncated?: boolean;
@@ -21,7 +34,95 @@ export interface NormalizedToolCall {
   conversationId?: string;
   imagePath?: string;
   diffs?: NormalizedToolDiff[];
-}
+};
+
+const stringField = (value: unknown): string | undefined =>
+  typeof value === 'string' && value.trim() ? value.trim() : undefined;
+
+const asRecord = (value: unknown): Record<string, unknown> | undefined =>
+  typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
+
+const TOOL_ACTIONS: Record<string, ToolAction> = {
+  read: 'read',
+  readfile: 'read',
+  fileread: 'read',
+  edit: 'edit',
+  editfile: 'edit',
+  fileedit: 'edit',
+  replace: 'edit',
+  applypatch: 'edit',
+  write: 'write',
+  writefile: 'write',
+  filewrite: 'write',
+  createfile: 'write',
+  execute: 'execute',
+  exec: 'execute',
+  execcommand: 'execute',
+  executecommand: 'execute',
+  runcommand: 'execute',
+  shell: 'execute',
+  shellcommand: 'execute',
+  runshellcommand: 'execute',
+  bash: 'execute',
+  writestdin: 'output',
+  terminaloutput: 'output',
+  readcommandoutput: 'output',
+  search: 'search',
+  searchfiles: 'search',
+  grep: 'search',
+  glob: 'search',
+  rg: 'search',
+  list: 'list',
+  listdirectory: 'list',
+  fetch: 'fetch',
+  webfetch: 'fetch',
+  delete: 'delete',
+  deletefile: 'delete',
+  wait: 'wait',
+  waitforresult: 'wait',
+};
+
+const actionForName = (name: string): ToolAction | undefined => {
+  const key = name
+    .replace(/^functions\./, '')
+    .replace(/[\s_-]/g, '')
+    .toLowerCase();
+  return Object.hasOwn(TOOL_ACTIONS, key) ? TOOL_ACTIONS[key] : undefined;
+};
+
+const summarizeTool = (
+  name: string,
+  input: unknown,
+  description?: string,
+  kind?: string
+): Pick<NormalizedToolCall, 'action' | 'description'> => {
+  const fields = asRecord(input);
+  const command = stringField(fields?.command) ?? stringField(fields?.cmd);
+  const action =
+    actionForName(name) ??
+    // ACP execute also covers custom tools such as image generation. Only call it
+    // a shell command when the payload or tool name establishes that meaning.
+    (kind === 'execute' && !command ? undefined : actionForName(kind ?? ''));
+  const purpose = stringField(fields?.description) ?? stringField(description);
+  const path = stringField(fields?.file_path) ?? stringField(fields?.path) ?? stringField(fields?.file_name);
+  const fileName = path?.split(/[/\\]/).findLast((part) => part.length > 0);
+  const customTitle = action && !actionForName(name) && name !== command && name !== path ? name : undefined;
+  const query = stringField(fields?.pattern) ?? stringField(fields?.query);
+
+  return {
+    action,
+    description:
+      (purpose !== command && purpose !== name ? purpose : undefined) ??
+      customTitle ??
+      (['read', 'edit', 'write', 'delete', 'list'].includes(action ?? '') ? fileName : undefined) ??
+      (action === 'search' && query ? `"${query}"` : undefined) ??
+      (action === 'fetch' ? stringField(fields?.url) : undefined),
+  };
+};
+
+/** Preserve known outcomes; an ended turn does not prove unfinished tools succeeded. */
+export const getToolDisplayStatus = (status: NormalizedToolStatus, isProcessing: boolean): ToolDisplayStatus =>
+  !isProcessing && (status === 'pending' || status === 'running') ? 'incomplete' : status;
 
 const formatValue = (value: unknown): string => {
   if (typeof value === 'string') return value;
@@ -61,15 +162,11 @@ const getResultDisplayText = (
   return undefined;
 };
 
+/** Normalize legacy tool groups without replacing the supplied purpose with raw arguments. */
 export function normalizeToolGroup(message: IMessageToolGroup): NormalizedToolCall[] {
   if (!Array.isArray(message.content)) return [];
   return message.content.map(({ name, call_id, description, confirmationDetails, status, result_display }) => {
-    let desc = typeof description === 'string' ? description.slice(0, 100) : '';
     const type = confirmationDetails?.type;
-    if (type === 'edit') desc = confirmationDetails.file_name;
-    if (type === 'exec') desc = confirmationDetails.command;
-    if (type === 'info') desc = confirmationDetails.urls?.join(';') || confirmationDetails.title;
-    if (type === 'mcp') desc = confirmationDetails.server_name + ':' + confirmationDetails.tool_name;
 
     let input: string | undefined;
     if (confirmationDetails) {
@@ -83,7 +180,7 @@ export function normalizeToolGroup(message: IMessageToolGroup): NormalizedToolCa
       key: call_id,
       name,
       status: normalizeToolGroupStatus(status),
-      description: desc,
+      ...summarizeTool(name, confirmationDetails, description, type === 'exec' ? 'execute' : type),
       input,
       output: getResultDisplayText(result_display),
     };
@@ -98,6 +195,9 @@ function normalizeAcpStatus(status: string): NormalizedToolStatus {
       return 'completed';
     case 'failed':
       return 'error';
+    case 'canceled':
+    case 'cancelled':
+      return 'canceled';
     case 'in_progress':
       return 'running';
     case 'pending':
@@ -105,38 +205,6 @@ function normalizeAcpStatus(status: string): NormalizedToolStatus {
       return 'pending';
   }
 }
-
-const buildParamSummary = (kind: string, rawInput?: Record<string, unknown>): string | undefined => {
-  if (!rawInput) return undefined;
-
-  if (kind === 'read' || kind === 'edit') {
-    return (rawInput.file_path as string) || (rawInput.path as string) || (rawInput.file_name as string);
-  }
-  if (kind === 'execute') {
-    return rawInput.command as string;
-  }
-  if (kind === 'search' || kind === 'grep') {
-    const parts: string[] = [];
-    if (rawInput.pattern) parts.push(`"${rawInput.pattern}"`);
-    if (rawInput.path) parts.push(`in ${rawInput.path}`);
-    else if (rawInput.glob) parts.push(`in ${rawInput.glob}`);
-    return parts.length > 0 ? parts.join(' ') : undefined;
-  }
-  if (kind === 'glob') {
-    const parts: string[] = [];
-    if (rawInput.pattern) parts.push(`${rawInput.pattern}`);
-    if (rawInput.path) parts.push(`in ${rawInput.path}`);
-    return parts.length > 0 ? parts.join(' ') : undefined;
-  }
-  if (kind === 'write') {
-    return (rawInput.file_path as string) || (rawInput.path as string);
-  }
-
-  for (const key of ['file_path', 'command', 'path', 'pattern', 'query', 'url']) {
-    if (rawInput[key] && typeof rawInput[key] === 'string') return rawInput[key] as string;
-  }
-  return undefined;
-};
 
 type AcpToolCallUpdateCompat = IMessageAcpToolCall['content']['update'] & {
   session_update?: string;
@@ -152,6 +220,7 @@ type AcpToolCallContentCompat = IMessageAcpToolCall['content'] & {
   update?: AcpToolCallUpdateCompat;
 };
 
+/** Normalize live and persisted ACP tool updates while preserving complete details. */
 export function normalizeAcpToolCall(message: IMessageAcpToolCall): NormalizedToolCall | undefined {
   const content = message.content as AcpToolCallContentCompat | undefined;
   const update = content?.update;
@@ -190,20 +259,20 @@ export function normalizeAcpToolCall(message: IMessageAcpToolCall): NormalizedTo
         .join('\n') || undefined;
   }
 
-  const keyParam = buildParamSummary(update.kind, rawInput);
+  const name = stringField(update.title) ?? update.kind ?? 'Tool';
 
   return {
     key: update.tool_call_id,
-    name: update.title || update.kind || 'Tool',
+    name,
     status: normalizeAcpStatus(update.status),
-    description: keyParam || (rawInput?.command as string) || update.kind,
+    ...summarizeTool(name, rawInput, undefined, update.kind),
     input,
     output,
     truncated: content?._compact?.truncated === true,
     messageId: message.id,
     conversationId: message.conversation_id,
     imagePath: getAcpImagePath(update),
-    diffs: diffs.length > 0 ? diffs : undefined,
+    diffs: diffs.length > 0 && !content?._compact?.truncated ? diffs : undefined,
   };
 }
 
@@ -224,23 +293,30 @@ function normalizeToolCallStatus(status?: string): NormalizedToolStatus {
   }
 }
 
+/** Normalize native tool calls into the same presentation used for ACP steps. */
 export function normalizeToolCall(message: IMessageToolCall): NormalizedToolCall | undefined {
   const { call_id, name, status, input, output, args, description } = message.content;
   if (!call_id) return undefined;
-
-  const displayInput = input
-    ? formatValue(input)
-    : args && Object.keys(args).length > 0
-      ? formatValue(args)
+  const fields = { ...asRecord(input), ...asRecord(args) };
+  const path = stringField(fields.file_path) ?? stringField(fields.path) ?? stringField(fields.file_name);
+  const before = fields.old_string ?? fields.old_text;
+  const after = fields.new_string ?? fields.new_text ?? fields.content;
+  const action = actionForName(name);
+  const diffs: NormalizedToolDiff[] | undefined =
+    (action === 'edit' || action === 'write') && path && typeof after === 'string'
+      ? [{ path, old_text: typeof before === 'string' ? before : undefined, new_text: after }]
       : undefined;
+
+  const displayInput = Object.keys(fields).length > 0 ? formatValue(fields) : input ? formatValue(input) : undefined;
 
   return {
     key: call_id,
     name,
     status: normalizeToolCallStatus(status),
-    description: description || undefined,
+    ...summarizeTool(name, fields, description),
     input: displayInput,
-    output,
+    output: output ?? stringField(message.content.error),
+    diffs,
   };
 }
 

@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.5.0](https://github.com/salmoshu/Catfish/releases/tag/v0.5.0) (2026-11-16)
+
+### Features
+
+- **sidebar:** initially show eight Projects, standalone conversations, or Teams, with localized More and Collapse controls for longer lists
+- **conversation tools:** unify action summaries and expandable step details across tool and terminal messages
+
+### Bug Fixes
+
+- **remote environments:** unwrap standard Core API responses when loading remote agents and conversations, and retain runtime fallback for older Linux systems
+- **Codex:** bundle CatfishCore v0.2.6, which resumes paginated threads without requesting deprecated full-history turns, preserves session context across runtime rebuilds, and upgrades vulnerable dependencies
+- **conversation rendering:** keep processing indicators scoped to the active turn and settle stale tool steps when the session finishes
+- **composer:** preserve IME composition on Safari and avoid unintended touch-keyboard submission
+- **clipboard:** retain a copy fallback when the modern Clipboard API is rejected
+- **API keys:** return masked status values instead of exposing stored keys
+- **packaged data:** resolve the real application data directory instead of the CLI compatibility link
+- **Windows icons:** keep executable icon patching mandatory so desktop shortcuts and the taskbar retain the Catfish icon
+
+---
+
 ## [0.4.31](https://github.com/salmoshu/Catfish/releases/tag/v0.4.31) (2026-11-15)
 
 ### Bug Fixes

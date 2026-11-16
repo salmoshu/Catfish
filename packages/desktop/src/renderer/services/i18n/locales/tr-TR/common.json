@@ -63,6 +63,8 @@
   "forward": "İleri",
   "historyBack": "Geri",
   "more": "Daha Fazla",
+  "moreItems": "Daha fazla {{target}} göster",
+  "collapseItems": "{{target}} listesini daralt",
   "refresh": "Yenile",
   "readOnly": "Salt okunur",
   "tray.showWindow": "Catfish'yi Göster",

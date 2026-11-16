@@ -65,6 +65,8 @@
   "forward": "Вперед",
   "historyBack": "Назад",
   "more": "Більше",
+  "moreItems": "Більше: {{target}}",
+  "collapseItems": "Згорнути: {{target}}",
   "refresh": "Оновити",
   "readOnly": "Лише читання",
   "tray.showWindow": "Показати Catfish",

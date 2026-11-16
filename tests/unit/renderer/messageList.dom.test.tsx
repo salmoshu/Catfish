@@ -163,8 +163,16 @@ vi.mock('@/renderer/pages/conversation/Messages/components/MessageSkillSuggest',
 }));
 
 vi.mock('@/renderer/pages/conversation/Messages/components/MessageToolGroupSummary', () => ({
-  default: ({ messages }: { messages: Array<IMessageToolGroup | IMessageAcpToolCall> }) => (
-    <div data-testid='tool-summary'>{messages.map((message) => message.id).join(',')}</div>
+  default: ({
+    messages,
+    isProcessing,
+  }: {
+    messages: Array<IMessageToolGroup | IMessageAcpToolCall>;
+    isProcessing?: boolean;
+  }) => (
+    <div data-testid='tool-summary' data-processing={String(isProcessing)}>
+      {messages.map((message) => message.id).join(',')}
+    </div>
   ),
 }));
 
@@ -911,7 +919,7 @@ describe('MessageList', () => {
     }
   );
 
-  it('shows paths and line counts for legacy write_file operations as well as the final summary', () => {
+  it('keeps legacy file edits in step rows and preserves their final file summary', () => {
     const message: IMessageToolCall = {
       id: 'write-file',
       msg_id: 'write-file',
@@ -928,9 +936,41 @@ describe('MessageList', () => {
     render(<MessageList />, {
       wrapper: ({ children }) => <Wrapper messages={[message]}>{children}</Wrapper>,
     });
-    expect(screen.getByTestId('file-changes')).toHaveTextContent('/workspace/new.ts');
-    expect(screen.getByTestId('file-changes')).toHaveAttribute('data-insertions', '2');
+    expect(screen.getByText('tool_call')).toBeVisible();
     expect(screen.getByTestId('file-changes-summary')).toHaveAttribute('data-insertions', '2');
+  });
+
+  it('does not restart the step indicators of an earlier turn when a new turn is active', () => {
+    mockIsProcessing = true;
+    const previousTool = createAcpToolCall({ id: 'previous-tool', status: 'in_progress' });
+    const currentTool = createAcpToolCall({ id: 'current-tool', status: 'in_progress' });
+    const user = (id: string): IMessageText =>
+      ({ id, type: 'text', position: 'right', content: { content: id } }) as IMessageText;
+    render(<MessageList />, {
+      wrapper: ({ children }) => (
+        <Wrapper messages={[user('first-task'), previousTool, user('second-task'), currentTool]}>{children}</Wrapper>
+      ),
+    });
+
+    const summaries = screen.getAllByTestId('tool-summary');
+    expect(summaries[0]).toHaveAttribute('data-processing', 'false');
+    expect(summaries[1]).toHaveAttribute('data-processing', 'true');
+  });
+
+  it('keeps the current steps active while a mid-turn instruction awaits receipt', () => {
+    mockIsProcessing = true;
+    const currentTool = createAcpToolCall({ id: 'active-before-receipt', status: 'in_progress' });
+    const pending = {
+      id: 'pending-instruction',
+      type: 'text',
+      position: 'right',
+      status: 'pending',
+      content: { content: 'Also check the camera' },
+    } as IMessageText;
+    render(<MessageList />, {
+      wrapper: ({ children }) => <Wrapper messages={[currentTool, pending]}>{children}</Wrapper>,
+    });
+    expect(screen.getByTestId('tool-summary')).toHaveAttribute('data-processing', 'true');
   });
 
   it('keeps mixed legacy tool groups in View Steps without dropping non-file tools', () => {

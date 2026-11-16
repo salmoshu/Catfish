@@ -263,4 +263,56 @@ describe('active remote grouped history', () => {
     expect(container.querySelector('.workspace-collapse .arco-spin')).toBeNull();
     expect(screen.getByRole('img', { name: 'RemoteProject' }).querySelector('[data-kimi-icon="globe"]')).not.toBeNull();
   });
+
+  it('limits projects and conversations to eight until each overflow control is expanded', () => {
+    const history = mocks.history();
+    const projectItems = Array.from({ length: 9 }, (_, index) => {
+      const itemConversation = {
+        ...conversation,
+        id: `project-chat-${index}`,
+        name: `project-chat-${index}`,
+        extra: { ...conversation.extra, workspace: `/home/user/Project-${index}` },
+      } as TChatConversation;
+      return {
+        type: 'workspace',
+        time: 9 - index,
+        workspaceGroup: {
+          workspace: `/home/user/Project-${index}`,
+          display_name: `Project-${index}`,
+          conversations: [itemConversation],
+        },
+      };
+    });
+    const conversationItems = Array.from({ length: 9 }, (_, index) => ({
+      type: 'conversation',
+      time: 9 - index,
+      conversation: {
+        ...conversation,
+        id: `standalone-chat-${index}`,
+        name: `standalone-chat-${index}`,
+        extra: { ...conversation.extra, workspace: undefined, custom_workspace: false },
+      } as TChatConversation,
+    }));
+    mocks.history.mockReturnValue({
+      ...history,
+      expandedWorkspaces: [],
+      timelineSections: [{ timeline: 'Recent', items: [...projectItems, ...conversationItems] }],
+    });
+    render(<WorkspaceGroupedHistory />);
+
+    expect(screen.queryByText('Project-8')).not.toBeInTheDocument();
+    expect(screen.queryByText('standalone-chat-8')).not.toBeInTheDocument();
+    const projectToggle = screen.getByTestId('project-overflow-toggle');
+    const conversationToggle = screen.getByTestId('conversation-overflow-toggle');
+
+    fireEvent.click(projectToggle);
+    expect(screen.getByText('Project-8')).toBeInTheDocument();
+    fireEvent.click(projectToggle);
+    expect(screen.queryByText('Project-8')).not.toBeInTheDocument();
+
+    fireEvent.click(conversationToggle);
+    expect(screen.getByText('standalone-chat-8')).toBeInTheDocument();
+    fireEvent.click(conversationToggle);
+    expect(screen.queryByText('standalone-chat-8')).not.toBeInTheDocument();
+  });
 });

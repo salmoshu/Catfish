@@ -5,6 +5,7 @@
  */
 
 import { AuthType } from '@/common/types/provider/authType';
+import { maskApiKey } from '@/common/utils/protocolDetector';
 
 /**
  * Multi-API Key Manager with Time-based Blacklisting
@@ -137,14 +138,17 @@ export class ApiKeyManager {
   }
 
   /**
-   * Get current key status for debugging
+   * Get current key status for debugging.
+   *
+   * Keys are masked because this return value may be serialized into logs,
+   * error reports and IPC payloads.
    */
   getStatus(): {
     authType: AuthType;
     envKey: string;
     current: number;
     total: number;
-    keys: string[];
+    maskedKeys: string[];
     blacklisted: number[];
   } {
     const now = Date.now();
@@ -161,7 +165,7 @@ export class ApiKeyManager {
       envKey: this.envKey,
       current: this.currentIndex + 1,
       total: this.keys.length,
-      keys: this.keys,
+      maskedKeys: this.keys.map(maskApiKey),
       blacklisted,
     };
   }

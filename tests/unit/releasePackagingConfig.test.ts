@@ -110,6 +110,15 @@ describe('release packaging configuration', () => {
     expect(winBlock).not.toContain('    - zip');
   });
 
+  it('always embeds the Catfish icon in Windows executables', () => {
+    const config = readProjectFile('packages/desktop/electron-builder.yml');
+    const winBlock = yamlBlock(config, 'win');
+    const buildScript = readProjectFile('scripts/build-with-builder.js');
+
+    expect(winBlock).toContain('  icon: resources/app.ico');
+    expect(buildScript).not.toContain('signAndEditExecutable=false');
+  });
+
   itWithWorkflow('uploads mac zip artifacts without a stale Windows zip glob', () => {
     const workflow = readProjectFile('.github/workflows/_build-reusable.yml');
 

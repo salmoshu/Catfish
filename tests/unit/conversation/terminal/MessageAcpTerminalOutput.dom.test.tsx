@@ -10,7 +10,10 @@ vi.mock('@/common', () => ({
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, options?: { defaultValue?: string }) => options?.defaultValue ?? key,
+    t: (key: string, options?: Record<string, unknown>) => {
+      const template = typeof options?.defaultValue === 'string' ? options.defaultValue : key;
+      return template.replace(/\{\{(\w+)\}\}/g, (_match, name: string) => String(options?.[name] ?? name));
+    },
   }),
 }));
 
@@ -31,10 +34,20 @@ const message = (output: string, running = false): IMessageAcpTerminalOutput => 
 });
 
 describe('MessageAcpTerminalOutput', () => {
+  it('keeps a nonzero command exit visible in the collapsed summary', () => {
+    const failed = message('command failed');
+    failed.content.exit_status = { exit_code: 7 };
+    render(<MessageAcpTerminalOutput message={failed} />);
+    expect(screen.getByTestId('terminal-card-status')).toHaveTextContent('Exit 7');
+    expect(screen.getByTestId('terminal-card-status')).toHaveClass('arco-tag-red');
+    expect(screen.queryByTestId('terminal-card-output')).not.toBeInTheDocument();
+  });
+
   it('keeps completed output collapsed and reveals the request and response on demand', () => {
     render(<MessageAcpTerminalOutput message={message('completed output')} />);
 
-    expect(screen.getByTestId('terminal-card-command')).toHaveTextContent('git status');
+    expect(screen.getByTestId('terminal-card-command')).toHaveTextContent('Run command');
+    expect(screen.queryByText(/git status/)).not.toBeInTheDocument();
     expect(screen.getByTestId('terminal-card-toggle')).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByTestId('terminal-card-output')).toBeNull();
     expect(screen.queryByTestId('terminal-card-preview')).toBeNull();
@@ -72,12 +85,13 @@ describe('MessageAcpTerminalOutput', () => {
     ]);
   });
 
-  it('shows only the last three output lines while running', () => {
+  it('keeps raw output out of the running summary and reveals it on request', () => {
     render(<MessageAcpTerminalOutput message={message('first\nsecond\nthird\nfourth\n', true)} />);
 
-    expect(screen.getByTestId('terminal-card-preview').textContent).toBe('second\nthird\nfourth');
-    expect(screen.getByTestId('terminal-card-preview')).not.toHaveTextContent('first');
+    expect(screen.queryByTestId('terminal-card-preview')).toBeNull();
     expect(screen.queryByTestId('terminal-card-output')).toBeNull();
     expect(screen.getByTestId('terminal-card-stop')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('terminal-card-toggle'));
+    expect(screen.getByTestId('terminal-card-output')).toHaveTextContent('first');
   });
 });

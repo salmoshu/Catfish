@@ -19,7 +19,26 @@ export const parseStructuredValue = (value: unknown): unknown => {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-const fieldLabel = (key: string): string => {
+const FIELD_LABELS = {
+  filepath: 'filePath',
+  filename: 'fileName',
+  path: 'path',
+  description: 'description',
+  cwd: 'workingDirectory',
+  workdir: 'workingDirectory',
+  workingdirectory: 'workingDirectory',
+  pattern: 'pattern',
+  query: 'query',
+  url: 'url',
+  timeout: 'timeout',
+  timeoutms: 'timeout',
+  exitcode: 'exitCode',
+  status: 'status',
+  output: 'output',
+  content: 'content',
+} as const;
+
+const fallbackFieldLabel = (key: string): string => {
   const words = key
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     .replace(/[_-]+/g, ' ')
@@ -38,6 +57,15 @@ const textBlock = (value: string, className = '') => (
 const StructuredContent: React.FC<{ value: unknown }> = ({ value: input }) => {
   const { t } = useTranslation();
   const value = parseStructuredValue(input);
+  const fieldLabel = (key: string): string => {
+    const normalized = key.replace(/[_-]/g, '').toLowerCase();
+    const field = Object.hasOwn(FIELD_LABELS, normalized)
+      ? FIELD_LABELS[normalized as keyof typeof FIELD_LABELS]
+      : undefined;
+    return field
+      ? t(`messages.structured.fields.${field}`, { defaultValue: fallbackFieldLabel(key) })
+      : fallbackFieldLabel(key);
+  };
 
   const renderScalar = (scalar: string | number | boolean): React.ReactNode => {
     if (typeof scalar === 'string' && /^https?:\/\/\S+$/.test(scalar)) {
@@ -77,12 +105,13 @@ const StructuredContent: React.FC<{ value: unknown }> = ({ value: input }) => {
 
     const entries = Object.entries(current);
     if (entries.length === 0) return <span className='text-t-tertiary'>—</span>;
-    const command = typeof current.command === 'string' ? current.command : undefined;
+    const command =
+      typeof current.command === 'string' ? current.command : typeof current.cmd === 'string' ? current.cmd : undefined;
     const oldValue = current.old_string ?? current.old_text;
     const newValue = current.new_string ?? current.new_text;
     const hasEditPair = typeof oldValue === 'string' || typeof newValue === 'string';
     const consumedKeys = new Set([
-      ...(command !== undefined ? ['command'] : []),
+      ...(command !== undefined ? [typeof current.command === 'string' ? 'command' : 'cmd'] : []),
       ...(hasEditPair ? ['old_string', 'old_text', 'new_string', 'new_text'] : []),
     ]);
 

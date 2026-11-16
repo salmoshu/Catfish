@@ -124,7 +124,22 @@
   },
   "structured": {
     "before": "Önce",
-    "after": "Sonra"
+    "after": "Sonra",
+    "fields": {
+      "filePath": "Dosya yolu",
+      "fileName": "Dosya adı",
+      "path": "Yol",
+      "description": "Açıklama",
+      "workingDirectory": "Çalışma dizini",
+      "pattern": "Desen",
+      "query": "Sorgu",
+      "url": "URL",
+      "timeout": "Zaman aşımı",
+      "exitCode": "Çıkış kodu",
+      "status": "Durum",
+      "output": "Çıktı",
+      "content": "İçerik"
+    }
   },
   "fork": {
     "currentAgent": "Geçerli Agent",
@@ -162,5 +177,26 @@
     "description": "Planlama moduna geçin; isterseniz bir görev ekleyin",
     "defaultDescription": "Yürütme moduna geç",
     "unsupported": "Bu ajan istenen planlama modunu sunmuyor"
+  },
+  "toolActions": {
+    "read": "Dosya oku",
+    "edit": "Dosya düzenle",
+    "write": "Dosya yaz",
+    "execute": "Komut çalıştır",
+    "output": "Komut sonucunu oku",
+    "search": "Ara",
+    "list": "Dosyaları listele",
+    "fetch": "Sayfayı getir",
+    "delete": "Dosya sil",
+    "wait": "Sonucu bekle",
+    "other": "Araç işlemi"
+  },
+  "toolStatus": {
+    "pending": "Bekliyor",
+    "running": "Çalışıyor",
+    "completed": "Tamamlandı",
+    "error": "Başarısız",
+    "canceled": "İptal edildi",
+    "incomplete": "Tamamlanmadı"
   }
 }

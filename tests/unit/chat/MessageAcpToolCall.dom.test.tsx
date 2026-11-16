@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IMessageAcpToolCall } from '@/common/chat/chatLib';
 import type { FileChangesPanelProps } from '@/renderer/components/base/FileChangesPanel';
@@ -33,6 +33,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('@arco-design/web-react', () => ({
+  Spin: () => <span data-testid='tool-running' />,
   Card: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
   Tag: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
   Button: ({ children, onClick, ...props }: { children?: React.ReactNode; onClick?: () => void }) => (
@@ -59,6 +60,7 @@ vi.mock('@/renderer/components/base/FileChangesPanel', () => ({
       data-title={title}
       data-insertions={files[0]?.insertions ?? 0}
       data-deletions={files[0]?.deletions ?? 0}
+      data-file-count={files.length}
     />
   ),
 }));
@@ -92,6 +94,8 @@ const baseUpdate: IMessageAcpToolCall['content']['update'] = {
   title: 'Image generation',
   kind: 'execute',
 };
+
+const expandDetails = () => fireEvent.click(screen.getByRole('button', { expanded: false }));
 
 describe('MessageAcpToolCall image output', () => {
   beforeEach(() => {
@@ -180,7 +184,7 @@ describe('MessageAcpToolCall image output', () => {
     await waitFor(() => {
       expect(mockMessageError).toHaveBeenCalledWith('acp.image.download_error');
     });
-    expect(consoleError).toHaveBeenCalledWith('[MessageAcpToolCall] Failed to download image:', expect.any(Error));
+    expect(consoleError).toHaveBeenCalledWith('[MessageToolGroupSummary] Failed to download image:', expect.any(Error));
     expect(mockMessageSuccess).not.toHaveBeenCalled();
     consoleError.mockRestore();
   });
@@ -238,9 +242,9 @@ describe('MessageAcpToolCall image output', () => {
 
   it('renders kind fallback labels when title is missing', () => {
     const cases: Array<[IMessageAcpToolCall['content']['update']['kind'], string]> = [
-      ['edit', 'File Edit'],
-      ['read', 'File Read'],
-      ['execute', 'Shell Command'],
+      ['edit', 'messages.toolActions.edit'],
+      ['read', 'messages.toolActions.read'],
+      ['execute', 'messages.toolActions.execute'],
       ['custom' as IMessageAcpToolCall['content']['update']['kind'], 'custom'],
     ];
 
@@ -269,7 +273,7 @@ describe('MessageAcpToolCall image output', () => {
         })}
       />
     );
-    expect(screen.getByText('Pending')).toBeInTheDocument();
+    expect(screen.getByLabelText('messages.toolStatus.pending')).toBeInTheDocument();
 
     rerender(
       <MessageAcpToolCall
@@ -279,7 +283,7 @@ describe('MessageAcpToolCall image output', () => {
         })}
       />
     );
-    expect(screen.getByText('In Progress')).toBeInTheDocument();
+    expect(screen.getByLabelText('messages.toolStatus.running')).toBeInTheDocument();
   });
 
   it('renders raw input and content variants', () => {
@@ -320,11 +324,13 @@ describe('MessageAcpToolCall image output', () => {
       />
     );
 
+    expect(screen.queryByText('一只小猫')).not.toBeInTheDocument();
+    expandDetails();
     expect(screen.getByText('Prompt')).toBeInTheDocument();
     expect(screen.getByText('一只小猫')).toBeInTheDocument();
     expect(screen.queryByText(/"prompt"/)).not.toBeInTheDocument();
     expect(screen.getByText('done')).toBeInTheDocument();
-    expect(screen.getAllByTestId('file-changes-panel')).toHaveLength(2);
+    expect(screen.getByTestId('file-changes-panel')).toHaveAttribute('data-file-count', '2');
   });
 
   it('keeps the failure status visible when a file edit fails', () => {
@@ -337,7 +343,7 @@ describe('MessageAcpToolCall image output', () => {
         })}
       />
     );
-    expect(screen.getByText('failed')).toBeVisible();
+    expect(screen.getByText('messages.toolStatus.error')).toBeVisible();
   });
 
   it('calculates insertion and deletion totals from complete ACP diff content', () => {
@@ -357,13 +363,14 @@ describe('MessageAcpToolCall image output', () => {
       />
     );
 
+    expandDetails();
     const panel = screen.getByTestId('file-changes-panel');
     expect(panel).toHaveAttribute('data-title', 'messages.fileChangesCount');
     expect(panel).toHaveAttribute('data-insertions', '2');
     expect(panel).toHaveAttribute('data-deletions', '1');
   });
 
-  it('shows a diff-only file change without duplicate tool details', () => {
+  it('keeps a diff-only change collapsed and reveals its real diff on request', () => {
     render(
       <MessageAcpToolCall
         message={createMessage({
@@ -381,12 +388,14 @@ describe('MessageAcpToolCall image output', () => {
       />
     );
 
-    expect(screen.getByTestId('file-changes-panel')).toBeInTheDocument();
+    expect(screen.queryByTestId('file-changes-panel')).not.toBeInTheDocument();
     expect(screen.queryByText(/Tool Call ID/)).not.toBeInTheDocument();
     expect(screen.queryByText(/workspace\/file.ts/)).not.toBeInTheDocument();
+    expandDetails();
+    expect(screen.getByTestId('file-changes-panel')).toBeInTheDocument();
   });
 
-  it('renders string raw input as markdown', () => {
+  it('reveals string raw input only when expanded', () => {
     render(
       <MessageAcpToolCall
         message={createMessage({
@@ -396,6 +405,8 @@ describe('MessageAcpToolCall image output', () => {
       />
     );
 
+    expect(screen.queryByText(/echo hello/)).not.toBeInTheDocument();
+    expandDetails();
     expect(screen.getByText(/echo hello/)).toBeInTheDocument();
   });
 

@@ -1,12 +1,24 @@
-import type { BadgeProps } from '@arco-design/web-react';
-import { Badge, Button, Message, Spin, Tooltip } from '@arco-design/web-react';
-import { Checklist, Down, Download, Right } from '@icon-park/react';
+import { Button, Message, Spin, Tooltip } from '@arco-design/web-react';
+import {
+  Checklist,
+  Delete,
+  Down,
+  Download,
+  EditOne,
+  FileText,
+  FolderOpen,
+  Link,
+  Right,
+  Search,
+  Terminal,
+  Time,
+} from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
 import { getAcpImageFileName } from '@/common/chat/acpToolCallOutput';
-import type { NormalizedToolCall, NormalizedToolStatus, ToolMessage } from '@/common/chat/normalizeToolCall';
-import { normalizeToolMessages, hasRunningToolMessages } from '@/common/chat/normalizeToolCall';
+import type { NormalizedToolCall, ToolAction, ToolDisplayStatus, ToolMessage } from '@/common/chat/normalizeToolCall';
+import { getToolDisplayStatus, normalizeToolMessages, hasRunningToolMessages } from '@/common/chat/normalizeToolCall';
 import LocalImageView from '@/renderer/components/media/LocalImageView';
 import StructuredContent from '@/renderer/components/chat/StructuredContent';
 import MessageFileChanges from '../MessageFileChanges';
@@ -16,20 +28,40 @@ import { isAgentToolName } from '../../Workbench/workbenchActivity';
 import { openWorkbenchSection } from '../../Workbench/workbenchActivityStore';
 import './MessageToolGroupSummary.css';
 
-const statusToBadge = (status: NormalizedToolStatus): BadgeProps['status'] => {
-  switch (status) {
-    case 'completed':
-      return 'success';
-    case 'error':
-      return 'error';
-    case 'running':
-      return 'processing';
-    case 'canceled':
-      return 'default';
-    case 'pending':
-    default:
-      return 'default';
-  }
+const ACTION_LABELS: Record<ToolAction, string> = {
+  read: 'Read file',
+  edit: 'Edit file',
+  write: 'Write file',
+  execute: 'Run command',
+  output: 'Read command output',
+  search: 'Search',
+  list: 'List files',
+  fetch: 'Fetch page',
+  delete: 'Delete file',
+  wait: 'Wait for result',
+};
+
+const ACTION_ICONS: Record<ToolAction | 'other', React.ReactNode> = {
+  read: <FileText size='16' />,
+  edit: <EditOne size='16' />,
+  write: <EditOne size='16' />,
+  execute: <Terminal size='16' />,
+  output: <Terminal size='16' />,
+  search: <Search size='16' />,
+  list: <FolderOpen size='16' />,
+  fetch: <Link size='16' />,
+  delete: <Delete size='16' />,
+  wait: <Time size='16' />,
+  other: <Checklist size='16' />,
+};
+
+const STATUS_LABELS: Record<ToolDisplayStatus, string> = {
+  pending: 'Pending',
+  running: 'Running',
+  completed: 'Completed',
+  error: 'Failed',
+  canceled: 'Canceled',
+  incomplete: 'Incomplete',
 };
 
 const ToolItemDetail: React.FC<{ item: NormalizedToolCall; isProcessing: boolean }> = ({ item, isProcessing }) => {
@@ -42,6 +74,14 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall; isProcessing: boolean
   const [loadingFull, setLoadingFull] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const displayItem = fullItem ?? item;
+  const displayStatus = getToolDisplayStatus(displayItem.status, isProcessing);
+  const statusLabel = t(`messages.toolStatus.${displayStatus}`, { defaultValue: STATUS_LABELS[displayStatus] });
+  const actionLabel = displayItem.action
+    ? t(`messages.toolActions.${displayItem.action}`, { defaultValue: ACTION_LABELS[displayItem.action] })
+    : displayItem.name === 'Tool'
+      ? t('messages.toolActions.other', { defaultValue: 'Tool' })
+      : displayItem.name;
+  const needsAttention = ['error', 'canceled', 'incomplete'].includes(displayStatus);
   const hasDetail = Boolean(
     displayItem.input || displayItem.output || displayItem.diffs?.length || item.truncated || item.imagePath
   );
@@ -70,6 +110,7 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall; isProcessing: boolean
       });
       const next = normalizeToolMessages([message as ToolMessage]).find((candidate) => candidate.key === item.key);
       if (next) setFullItem(next);
+      else setLoadError(true);
     } catch {
       setLoadError(true);
     } finally {
@@ -88,18 +129,25 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall; isProcessing: boolean
 
   const heading = (
     <>
-      <span className='tool-row__rail'>
-        <Badge
-          status={statusToBadge(isProcessing ? item.status : 'completed')}
-          className={isProcessing && item.status === 'running' ? 'badge-breathing' : ''}
-        />
+      <span
+        className={`tool-row__rail ${displayStatus === 'error' ? 'text-danger' : needsAttention ? 'text-warning' : ''}`}
+        aria-label={statusLabel}
+      >
+        {displayStatus === 'running' ? <Spin size={12} /> : ACTION_ICONS[displayItem.action ?? 'other']}
       </span>
       <span className='tool-row__heading'>
-        <span className='tool-row__name'>{displayItem.name}</span>
-        {displayItem.description && displayItem.description !== displayItem.name && (
-          <span className='tool-row__description'>{displayItem.description}</span>
+        <span className='tool-row__name'>{actionLabel}</span>
+        {displayItem.description && displayItem.description !== actionLabel && (
+          <span className='tool-row__description' title={displayItem.description}>
+            {displayItem.description}
+          </span>
         )}
       </span>
+      {needsAttention && (
+        <span className={`shrink-0 text-12px ${displayStatus === 'error' ? 'text-danger' : 'text-warning'}`}>
+          {statusLabel}
+        </span>
+      )}
       {hasDetail && (
         <span className={`tool-row__chevron${expanded ? ' tool-row__chevron--open' : ''}`}>
           <Down size='12' />
@@ -151,7 +199,7 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall; isProcessing: boolean
         <div className='group relative ml-28px mt-8px overflow-hidden rounded-12px border bg-1 p-2 max-w-280px'>
           <LocalImageView
             src={item.imagePath}
-            alt={getAcpImageFileName(item.imagePath)}
+            alt={item.imagePath.split(/[/\\]/).pop() || t('acp.image.generated_alt')}
             className='max-w-full max-h-320px object-contain rounded-8px'
           />
           <Tooltip content={t('acp.image.download')}>
@@ -171,19 +219,31 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall; isProcessing: boolean
   );
 };
 
-const MessageToolGroupSummary: React.FC<{ messages: ToolMessage[]; isProcessing?: boolean }> = ({
-  messages,
-  isProcessing = true,
-}) => {
+const MessageToolGroupSummary: React.FC<{
+  messages: ToolMessage[];
+  isProcessing?: boolean;
+  variant?: 'group' | 'step';
+}> = ({ messages, isProcessing = true, variant = 'group' }) => {
   const { t } = useTranslation();
   const hasRunning = isProcessing && hasRunningToolMessages(messages);
-  const [showMore, setShowMore] = useState(hasRunning);
+  const [showMore, setShowMore] = useState(isProcessing);
 
   useEffect(() => {
-    setShowMore(hasRunning);
-  }, [hasRunning]);
+    setShowMore(isProcessing);
+  }, [isProcessing]);
 
   const tools = useMemo(() => normalizeToolMessages(messages), [messages]);
+
+  if (tools.length === 0) return null;
+  if (variant === 'step') {
+    return (
+      <div className='tool-group-summary'>
+        {tools.map((item) => (
+          <ToolItemDetail key={item.key} item={item} isProcessing={isProcessing} />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className='tool-group-summary' data-processing={hasRunning ? 'true' : 'false'}>

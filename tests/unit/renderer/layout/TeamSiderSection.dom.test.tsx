@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TTeam } from '@/common/types/team/teamTypes';
@@ -89,6 +89,8 @@ vi.mock('@arco-design/web-react', async () => {
   Modal.confirm = vi.fn();
 
   return {
+    Button: ({ children, onClick }: { children?: React.ReactNode; onClick?: () => void }) =>
+      ReactModule.createElement('button', { onClick }, children),
     Input: () => null,
     Message: { success: vi.fn(), error: vi.fn() },
     Modal,
@@ -175,5 +177,24 @@ describe('TeamSiderSection running state', () => {
 
     expect(screen.getByTestId('collapsed-team-icon-idle-team')).toHaveAttribute('data-mock-icon', 'Peoples');
     expect(screen.queryByTestId('collapsed-team-spinner-idle-team')).not.toBeInTheDocument();
+  });
+
+  it('shows eight teams by default and toggles the remaining teams on demand', () => {
+    localStorage.setItem('team-section-expanded', 'true');
+    for (let index = 0; index < 7; index += 1) {
+      teams.push({ ...teams[1], id: `extra-team-${index}`, name: `Extra team ${index}` });
+    }
+    try {
+      renderSection(false);
+
+      expect(screen.getAllByTestId(/^sider-item-/)).toHaveLength(8);
+      expect(screen.queryByTestId('sider-item-Extra team 6')).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'common.moreItems' }));
+      expect(screen.getByTestId('sider-item-Extra team 6')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'common.collapseItems' }));
+      expect(screen.queryByTestId('sider-item-Extra team 6')).not.toBeInTheDocument();
+    } finally {
+      teams.splice(2);
+    }
   });
 });

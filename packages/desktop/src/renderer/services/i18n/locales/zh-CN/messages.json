@@ -124,7 +124,22 @@
   },
   "structured": {
     "before": "修改前",
-    "after": "修改后"
+    "after": "修改后",
+    "fields": {
+      "filePath": "文件路径",
+      "fileName": "文件名",
+      "path": "路径",
+      "description": "说明",
+      "workingDirectory": "工作目录",
+      "pattern": "匹配模式",
+      "query": "查询内容",
+      "url": "网址",
+      "timeout": "超时时间",
+      "exitCode": "退出码",
+      "status": "状态",
+      "output": "输出",
+      "content": "内容"
+    }
   },
   "fork": {
     "currentAgent": "当前 Agent",
@@ -162,5 +177,26 @@
     "description": "切换到计划模式，可在命令后附上任务",
     "defaultDescription": "切换到执行模式",
     "unsupported": "此 Agent 未提供所请求的计划模式"
+  },
+  "toolActions": {
+    "read": "阅读",
+    "edit": "编辑",
+    "write": "写入",
+    "execute": "运行命令",
+    "output": "读取命令结果",
+    "search": "搜索",
+    "list": "查看目录",
+    "fetch": "读取网页",
+    "delete": "删除文件",
+    "wait": "等待结果",
+    "other": "工具操作"
+  },
+  "toolStatus": {
+    "pending": "等待执行",
+    "running": "执行中",
+    "completed": "已完成",
+    "error": "失败",
+    "canceled": "已取消",
+    "incomplete": "未完成"
   }
 }

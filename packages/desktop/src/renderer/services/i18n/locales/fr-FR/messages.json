@@ -124,7 +124,22 @@
   },
   "structured": {
     "before": "Avant",
-    "after": "Après"
+    "after": "Après",
+    "fields": {
+      "filePath": "Chemin du fichier",
+      "fileName": "Nom du fichier",
+      "path": "Chemin",
+      "description": "Description",
+      "workingDirectory": "Répertoire de travail",
+      "pattern": "Motif",
+      "query": "Requête",
+      "url": "URL",
+      "timeout": "Délai",
+      "exitCode": "Code de sortie",
+      "status": "État",
+      "output": "Sortie",
+      "content": "Contenu"
+    }
   },
   "fork": {
     "currentAgent": "Agent actuel",
@@ -162,5 +177,26 @@
     "description": "Passer en mode planification ; une tâche peut être ajoutée",
     "defaultDescription": "Passer en mode exécution",
     "unsupported": "Cet agent ne propose pas le mode de planification demandé"
+  },
+  "toolActions": {
+    "read": "Lire le fichier",
+    "edit": "Modifier le fichier",
+    "write": "Écrire le fichier",
+    "execute": "Exécuter une commande",
+    "output": "Lire le résultat de la commande",
+    "search": "Rechercher",
+    "list": "Lister les fichiers",
+    "fetch": "Charger la page",
+    "delete": "Supprimer le fichier",
+    "wait": "Attendre le résultat",
+    "other": "Action de l’outil"
+  },
+  "toolStatus": {
+    "pending": "En attente",
+    "running": "En cours",
+    "completed": "Terminé",
+    "error": "Échec",
+    "canceled": "Annulé",
+    "incomplete": "Incomplet"
   }
 }

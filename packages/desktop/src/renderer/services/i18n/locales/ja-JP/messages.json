@@ -124,7 +124,22 @@
   },
   "structured": {
     "before": "変更前",
-    "after": "変更後"
+    "after": "変更後",
+    "fields": {
+      "filePath": "ファイルパス",
+      "fileName": "ファイル名",
+      "path": "パス",
+      "description": "説明",
+      "workingDirectory": "作業ディレクトリ",
+      "pattern": "パターン",
+      "query": "検索内容",
+      "url": "URL",
+      "timeout": "タイムアウト",
+      "exitCode": "終了コード",
+      "status": "状態",
+      "output": "出力",
+      "content": "内容"
+    }
   },
   "fork": {
     "currentAgent": "現在の Agent",
@@ -162,5 +177,26 @@
     "description": "計画モードに切り替えます。タスクも指定できます",
     "defaultDescription": "実行モードに切り替える",
     "unsupported": "このエージェントは要求された計画モードに対応していません"
+  },
+  "toolActions": {
+    "read": "ファイルを読む",
+    "edit": "ファイルを編集",
+    "write": "ファイルを書き込む",
+    "execute": "コマンドを実行",
+    "output": "コマンド結果を読む",
+    "search": "検索",
+    "list": "ファイル一覧",
+    "fetch": "ページを取得",
+    "delete": "ファイルを削除",
+    "wait": "結果を待つ",
+    "other": "ツール操作"
+  },
+  "toolStatus": {
+    "pending": "待機中",
+    "running": "実行中",
+    "completed": "完了",
+    "error": "失敗",
+    "canceled": "キャンセル済み",
+    "incomplete": "未完了"
   }
 }

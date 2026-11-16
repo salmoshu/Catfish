@@ -124,7 +124,22 @@
   },
   "structured": {
     "before": "Vorher",
-    "after": "Nachher"
+    "after": "Nachher",
+    "fields": {
+      "filePath": "Dateipfad",
+      "fileName": "Dateiname",
+      "path": "Pfad",
+      "description": "Beschreibung",
+      "workingDirectory": "Arbeitsverzeichnis",
+      "pattern": "Muster",
+      "query": "Suchanfrage",
+      "url": "URL",
+      "timeout": "Zeitlimit",
+      "exitCode": "Exit-Code",
+      "status": "Status",
+      "output": "Ausgabe",
+      "content": "Inhalt"
+    }
   },
   "fork": {
     "currentAgent": "Aktueller Agent",
@@ -162,5 +177,26 @@
     "description": "In den Planungsmodus wechseln; optional eine Aufgabe angeben",
     "defaultDescription": "In den Ausführungsmodus wechseln",
     "unsupported": "Dieser Agent bietet den angeforderten Planungsmodus nicht an"
+  },
+  "toolActions": {
+    "read": "Datei lesen",
+    "edit": "Datei bearbeiten",
+    "write": "Datei schreiben",
+    "execute": "Befehl ausführen",
+    "output": "Befehlsergebnis lesen",
+    "search": "Suchen",
+    "list": "Dateien auflisten",
+    "fetch": "Seite abrufen",
+    "delete": "Datei löschen",
+    "wait": "Auf Ergebnis warten",
+    "other": "Werkzeugaktion"
+  },
+  "toolStatus": {
+    "pending": "Ausstehend",
+    "running": "Wird ausgeführt",
+    "completed": "Abgeschlossen",
+    "error": "Fehlgeschlagen",
+    "canceled": "Abgebrochen",
+    "incomplete": "Unvollständig"
   }
 }

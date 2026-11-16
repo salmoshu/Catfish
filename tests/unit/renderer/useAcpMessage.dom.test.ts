@@ -353,6 +353,26 @@ describe('useAcpMessage', () => {
     });
   });
 
+  it('loads slash commands on mount when legacy warmup is skipped', async () => {
+    vi.mocked(getConversationOrNull).mockResolvedValue(null);
+    getSlashCommandsInvokeMock.mockResolvedValue([
+      {
+        command: 'review',
+        description: 'Review the current diff',
+      },
+    ]);
+
+    const { result } = renderHook(() => useAcpMessage('conv-1', { skipWarmup: true }));
+
+    await waitFor(() => {
+      expect(ensureRuntimeInvokeMock).toHaveBeenCalledWith({ conversation_id: 'conv-1' });
+      expect(getSlashCommandsInvokeMock).toHaveBeenCalledTimes(1);
+      expect(result.current.slashCommands).toEqual([
+        expect.objectContaining({ name: 'review', description: 'Review the current diff' }),
+      ]);
+    });
+  });
+
   it('uses injected runtime preparation for initial slash commands in team mode', async () => {
     vi.mocked(getConversationOrNull).mockResolvedValue(null);
     const prepareRuntime = vi.fn().mockResolvedValue(undefined);

@@ -124,7 +124,22 @@
   },
   "structured": {
     "before": "修改前",
-    "after": "修改後"
+    "after": "修改後",
+    "fields": {
+      "filePath": "檔案路徑",
+      "fileName": "檔案名稱",
+      "path": "路徑",
+      "description": "說明",
+      "workingDirectory": "工作目錄",
+      "pattern": "比對模式",
+      "query": "查詢內容",
+      "url": "網址",
+      "timeout": "逾時時間",
+      "exitCode": "結束代碼",
+      "status": "狀態",
+      "output": "輸出",
+      "content": "內容"
+    }
   },
   "fork": {
     "currentAgent": "目前 Agent",
@@ -162,5 +177,26 @@
     "description": "切換至計畫模式，可在指令後附上任務",
     "defaultDescription": "切換至執行模式",
     "unsupported": "此 Agent 未提供要求的計畫模式"
+  },
+  "toolActions": {
+    "read": "閱讀",
+    "edit": "編輯",
+    "write": "寫入",
+    "execute": "執行命令",
+    "output": "讀取命令結果",
+    "search": "搜尋",
+    "list": "查看目錄",
+    "fetch": "讀取網頁",
+    "delete": "刪除檔案",
+    "wait": "等待結果",
+    "other": "工具操作"
+  },
+  "toolStatus": {
+    "pending": "等待執行",
+    "running": "執行中",
+    "completed": "已完成",
+    "error": "失敗",
+    "canceled": "已取消",
+    "incomplete": "未完成"
   }
 }

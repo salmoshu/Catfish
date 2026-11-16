@@ -81,7 +81,7 @@ describe('MessageToolGroupSummary ACP image output', () => {
       },
     };
 
-    render(<MessageToolGroupSummary messages={[message]} />);
+    render(<MessageToolGroupSummary messages={[message]} isProcessing={false} />);
     fireEvent.click(screen.getByText('messages.toolGroup.viewSteps'));
 
     const image = screen.getByTestId('local-image');
@@ -112,7 +112,7 @@ describe('MessageToolGroupSummary ACP image output', () => {
       },
     };
 
-    render(<MessageToolGroupSummary messages={[message]} />);
+    render(<MessageToolGroupSummary messages={[message]} isProcessing={false} />);
     fireEvent.click(screen.getByText('messages.toolGroup.viewSteps'));
     fireEvent.click(screen.getByLabelText('acp.image.download_aria'));
 
@@ -144,7 +144,7 @@ describe('MessageToolGroupSummary ACP image output', () => {
       },
     };
 
-    render(<MessageToolGroupSummary messages={[message]} />);
+    render(<MessageToolGroupSummary messages={[message]} isProcessing={false} />);
     fireEvent.click(screen.getByText('messages.toolGroup.viewSteps'));
     fireEvent.click(screen.getByLabelText('acp.image.download_aria'));
 
@@ -178,7 +178,7 @@ describe('MessageToolGroupSummary ACP image output', () => {
       },
     };
 
-    render(<MessageToolGroupSummary messages={[message]} />);
+    render(<MessageToolGroupSummary messages={[message]} isProcessing={false} />);
     fireEvent.click(screen.getByText('messages.toolGroup.viewSteps'));
 
     expect(screen.getByLabelText('acp.image.download_aria')).toBeInTheDocument();
@@ -197,7 +197,7 @@ describe('MessageToolGroupSummary ACP image output', () => {
       },
     };
 
-    render(<MessageToolGroupSummary messages={[message]} />);
+    render(<MessageToolGroupSummary messages={[message]} isProcessing={false} />);
     fireEvent.click(screen.getByText('messages.toolGroup.viewSteps'));
 
     expect(screen.queryByTestId('local-image')).not.toBeInTheDocument();

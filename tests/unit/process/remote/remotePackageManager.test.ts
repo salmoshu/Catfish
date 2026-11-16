@@ -35,6 +35,10 @@ describe('RemotePackageManager', () => {
     expect(getRemoteVersionCandidates('v0.2.4', { major: 2, minor: 31 })).toEqual(['v0.2.3']);
     expect(getRemoteVersionCandidates('v0.2.4', { major: 2, minor: 33 })).toEqual(['v0.2.3']);
     expect(getRemoteVersionCandidates('v0.2.4', { major: 2, minor: 34 })).toEqual(['v0.2.4', 'v0.2.3']);
+    expect(getRemoteVersionCandidates('v0.2.5', { major: 2, minor: 31 })).toEqual(['v0.2.3']);
+    expect(getRemoteVersionCandidates('v0.2.5', { major: 2, minor: 34 })).toEqual(['v0.2.5', 'v0.2.3']);
+    expect(getRemoteVersionCandidates('v0.2.6', { major: 2, minor: 31 })).toEqual(['v0.2.3']);
+    expect(getRemoteVersionCandidates('v0.2.6', { major: 2, minor: 34 })).toEqual(['v0.2.6', 'v0.2.3']);
   });
 
   it('recognizes dynamic-loader glibc failures for version fallback', () => {

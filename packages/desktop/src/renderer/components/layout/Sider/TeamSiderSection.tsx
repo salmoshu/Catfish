@@ -5,7 +5,7 @@
  */
 
 import { EditOne, FolderClose, Peoples, Plus, Pushpin, Right } from '@icon-park/react';
-import { Input, Message, Modal, Spin, Tooltip } from '@arco-design/web-react';
+import { Button, Input, Message, Modal, Spin, Tooltip } from '@arco-design/web-react';
 import classNames from 'classnames';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -97,6 +97,38 @@ const TeamSiderSection: React.FC<TeamSiderSectionProps> = ({
     const unpinned = teams.filter((team) => !pinnedIds.includes(team.id));
     return [...pinned, ...unpinned];
   }, [teams, pinnedIds]);
+  const [showAllTeams, setShowAllTeams] = useState(false);
+  const visibleTeams = showAllTeams ? sortedTeams : sortedTeams.slice(0, 8);
+  const teamOverflowLabel = t(showAllTeams ? 'common.collapseItems' : 'common.moreItems', {
+    target: t('team.sider.title'),
+  });
+  const teamOverflowToggle =
+    sortedTeams.length > 8 ? (
+      <Button
+        type='text'
+        size='mini'
+        data-testid='team-overflow-toggle'
+        aria-label={teamOverflowLabel}
+        aria-expanded={showAllTeams}
+        title={teamOverflowLabel}
+        className={classNames(
+          '!h-28px !text-13px !text-t-secondary hover:!text-t-primary',
+          collapsed ? '!w-full !p-0 !justify-center' : '!justify-start !px-12px'
+        )}
+        icon={
+          collapsed ? (
+            <Right
+              theme='outline'
+              size={12}
+              className={classNames('transition-transform', showAllTeams ? '-rotate-90' : 'rotate-90')}
+            />
+          ) : undefined
+        }
+        onClick={() => setShowAllTeams((current) => !current)}
+      >
+        {collapsed ? undefined : teamOverflowLabel}
+      </Button>
+    ) : null;
 
   const handleTeamClick = useCallback(
     (team_id: string) => {
@@ -133,7 +165,7 @@ const TeamSiderSection: React.FC<TeamSiderSectionProps> = ({
       {collapsed ? (
         sortedTeams.length > 0 && (
           <div className='shrink-0 flex flex-col gap-2px'>
-            {sortedTeams.map((team) => {
+            {visibleTeams.map((team) => {
               const isActive = pathname.startsWith(`/team/${team.id}`);
               const isRunning = isTeamRunning(team.id);
               return (
@@ -175,6 +207,7 @@ const TeamSiderSection: React.FC<TeamSiderSectionProps> = ({
                 </Tooltip>
               );
             })}
+            {teamOverflowToggle}
           </div>
         )
       ) : (
@@ -217,7 +250,7 @@ const TeamSiderSection: React.FC<TeamSiderSectionProps> = ({
           </div>
           {expanded &&
             sortedTeams.length > 0 &&
-            sortedTeams.map((team) => {
+            visibleTeams.map((team) => {
               const isPinned = pinnedIds.includes(team.id);
               const menuItems: SiderMenuItem[] = [
                 {
@@ -284,6 +317,7 @@ const TeamSiderSection: React.FC<TeamSiderSectionProps> = ({
                 </div>
               );
             })}
+          {expanded && teamOverflowToggle}
         </div>
       )}
       <TeamCreateModal

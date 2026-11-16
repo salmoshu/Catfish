@@ -1,6 +1,6 @@
 {
   "name": "catfish",
-  "version": "0.4.31",
+  "version": "0.5.0",
   "description": "Transform your command-line AI agent into a modern, efficient AI Chat interface.",
   "keywords": [],
   "license": "Apache-2.0",
@@ -267,7 +267,7 @@
   "engines": {
     "node": ">=22 <25"
   },
-  "aioncoreVersion": "v0.2.4",
+  "aioncoreVersion": "v0.2.6",
   "electronRebuild": {
     "electronVersion": "^37.3.1"
   },

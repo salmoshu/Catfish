@@ -6,7 +6,7 @@
 
 import { ipcBridge } from '@/common';
 import type { IMessageAcpTerminalOutput } from '@/common/chat/chatLib';
-import { Button, Card, Tag } from '@arco-design/web-react';
+import { Button, Tag } from '@arco-design/web-react';
 import { Down, Right, Terminal } from '@icon-park/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -66,17 +66,17 @@ const MessageAcpTerminalOutput: React.FC<{ message: IMessageAcpTerminalOutput }>
       {t('conversation.terminal.exited', { defaultValue: 'Exit {{code}}', code: exit?.exit_code ?? '?' })}
     </Tag>
   );
-  const preview = running ? content.output?.trimEnd().split(/\r?\n/).slice(-3).join('\n') : '';
+  const commandLabel = t('messages.toolActions.execute', { defaultValue: 'Run command' });
 
   return (
-    <Card className='w-full mb-8px overflow-hidden' size='small' bordered>
+    <div className='tool-row my-4px min-w-0'>
       <div className='flex items-center gap-8px min-w-0'>
         <Button
           type='text'
           size='mini'
           className='!inline-flex flex-1 min-w-0 !items-center justify-start gap-6px !px-0 !text-start'
           aria-expanded={expanded}
-          aria-label={content.command}
+          aria-label={commandLabel}
           data-testid='terminal-card-toggle'
           onClick={() => setExpanded((value) => !value)}
         >
@@ -85,13 +85,10 @@ const MessageAcpTerminalOutput: React.FC<{ message: IMessageAcpTerminalOutput }>
           ) : (
             <Right size='14' className='shrink-0 inline-flex items-center justify-center' />
           )}
-          <code
-            dir='ltr'
-            className='min-w-0 truncate font-mono text-13px text-t-primary'
-            data-testid='terminal-card-command'
-          >
-            $ {content.command}
-          </code>
+          <Terminal size='16' className='shrink-0 text-t-secondary' />
+          <span className='min-w-0 truncate text-14px text-t-secondary' data-testid='terminal-card-command'>
+            {commandLabel}
+          </span>
         </Button>
         {statusTag}
         {running && (
@@ -119,15 +116,6 @@ const MessageAcpTerminalOutput: React.FC<{ message: IMessageAcpTerminalOutput }>
           icon={<Terminal size='16' />}
         />
       </div>
-      {preview && !expanded && (
-        <pre
-          data-testid='terminal-card-preview'
-          dir='ltr'
-          className='m-0 mt-8px max-h-72px overflow-hidden whitespace-pre-wrap rounded-6px bg-1 p-8px font-mono text-12px leading-18px text-t-secondary'
-        >
-          {preview}
-        </pre>
-      )}
       {expanded && (
         <div className='mt-12px flex flex-col gap-12px' data-testid='terminal-card-details'>
           <section>
@@ -156,7 +144,7 @@ const MessageAcpTerminalOutput: React.FC<{ message: IMessageAcpTerminalOutput }>
           </section>
         </div>
       )}
-    </Card>
+    </div>
   );
 };
 

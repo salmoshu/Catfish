@@ -32,25 +32,25 @@ describe('ApiKeyManager', () => {
     });
 
     it('parses comma-separated keys', () => {
-      const manager = new ApiKeyManager('key1,key2,key3', AuthType.USE_OPENAI);
+      const manager = new ApiKeyManager('sk-alpha-0001,sk-bravo-0002,sk-delta-0003', AuthType.USE_OPENAI);
       expect(manager.hasMultipleKeys()).toBe(true);
       const status = manager.getStatus();
-      expect(status.keys).toEqual(['key1', 'key2', 'key3']);
+      expect(status.maskedKeys).toEqual(['sk-a...0001', 'sk-b...0002', 'sk-d...0003']);
       expect(status.total).toBe(3);
     });
 
     it('parses newline-separated keys', () => {
-      const manager = new ApiKeyManager('key1\nkey2\nkey3', AuthType.USE_ANTHROPIC);
+      const manager = new ApiKeyManager('sk-alpha-0001\nsk-bravo-0002\nsk-delta-0003', AuthType.USE_ANTHROPIC);
       expect(manager.hasMultipleKeys()).toBe(true);
       const status = manager.getStatus();
-      expect(status.keys).toEqual(['key1', 'key2', 'key3']);
+      expect(status.maskedKeys).toEqual(['sk-a...0001', 'sk-b...0002', 'sk-d...0003']);
       expect(status.envKey).toBe('ANTHROPIC_API_KEY');
     });
 
     it('trims whitespace and filters empty lines', () => {
-      const manager = new ApiKeyManager(' key1 , key2 ,  ,key3  ', AuthType.USE_OPENAI);
+      const manager = new ApiKeyManager(' sk-alpha-0001 , sk-bravo-0002 ,  ,sk-delta-0003  ', AuthType.USE_OPENAI);
       const status = manager.getStatus();
-      expect(status.keys).toEqual(['key1', 'key2', 'key3']);
+      expect(status.maskedKeys).toEqual(['sk-a...0001', 'sk-b...0002', 'sk-d...0003']);
     });
   });
 
@@ -180,7 +180,8 @@ describe('ApiKeyManager', () => {
       expect(status).toHaveProperty('envKey', 'ANTHROPIC_API_KEY');
       expect(status).toHaveProperty('current');
       expect(status).toHaveProperty('total', 3);
-      expect(status).toHaveProperty('keys');
+      expect(status).toHaveProperty('maskedKeys');
+      expect(status).not.toHaveProperty('keys');
       expect(status).toHaveProperty('blacklisted');
       expect(Array.isArray(status.blacklisted)).toBe(true);
     });
@@ -206,5 +207,38 @@ describe('ApiKeyManager', () => {
       const key = manager.getCurrentKey();
       expect(['key1', 'key2', 'key3', 'key4', 'key5']).toContain(key);
     });
+  });
+});
+
+// Status output can reach logs, error reports and IPC, so credentials must stay masked.
+describe('ApiKeyManager credential masking', () => {
+  const SECRETS = ['sk-alpha-secret-0001', 'sk-bravo-secret-0002'];
+
+  it('never returns or serializes a plaintext key', () => {
+    const status = new ApiKeyManager(SECRETS.join(','), AuthType.USE_OPENAI).getStatus();
+    const serialized = JSON.stringify(status);
+
+    expect(status.maskedKeys).toEqual(['sk-a...0001', 'sk-b...0002']);
+    expect(status).not.toHaveProperty('keys');
+    for (const secret of SECRETS) {
+      expect(Object.values(status).flat()).not.toContain(secret);
+      expect(serialized).not.toContain(secret);
+    }
+  });
+
+  it('fully masks a key too short to show edges', () => {
+    const status = new ApiKeyManager('short', AuthType.USE_OPENAI).getStatus();
+
+    expect(status.maskedKeys).toEqual(['***']);
+    expect(JSON.stringify(status)).not.toContain('short');
+  });
+
+  it('keeps the debugging fields that carry no secret', () => {
+    const status = new ApiKeyManager(SECRETS.join(','), AuthType.USE_OPENAI).getStatus();
+
+    expect(status.total).toBe(2);
+    expect(status.envKey).toBe('OPENAI_API_KEY');
+    expect(status.blacklisted).toEqual([]);
+    expect(status.current).toBeGreaterThanOrEqual(1);
   });
 });

@@ -63,6 +63,8 @@
   "forward": "進む",
   "historyBack": "戻る",
   "more": "その他",
+  "moreItems": "さらに{{target}}を表示",
+  "collapseItems": "{{target}}を折りたたむ",
   "refresh": "更新",
   "readOnly": "読み取り専用",
   "tray.showWindow": "Catfish を表示",

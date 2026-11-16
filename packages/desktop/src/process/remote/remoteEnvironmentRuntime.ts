@@ -46,7 +46,11 @@ async function requestRemoteRuntime<T>(id: string, path: string, method: 'GET' |
   if (!port) throw new Error('Remote environment is not connected');
   const response = await fetch(`http://127.0.0.1:${port}${path}`, { method });
   if (!response.ok) throw new Error(`Remote runtime request failed (${response.status})`);
-  return (await response.json()) as T;
+  const payload: unknown = await response.json();
+  if (payload && typeof payload === 'object' && 'data' in payload) {
+    return (payload as { data: T }).data;
+  }
+  return payload as T;
 }
 
 export function initRemoteEnvironmentBridge(): void {
@@ -56,11 +60,8 @@ export function initRemoteEnvironmentBridge(): void {
     return result.items.map(fromApiConversation);
   });
   remote.conversations.provider(async ({ id }) => {
-    const port = getRemoteEnvironmentManager().portFor(id);
-    if (!port) return [];
-    const response = await fetch(`http://127.0.0.1:${port}/api/conversations?limit=10000`);
-    if (!response.ok) throw new Error(`Remote conversation query failed (${response.status})`);
-    const result = (await response.json()) as { items: TChatConversation[] };
+    if (!getRemoteEnvironmentManager().portFor(id)) return [];
+    const result = await requestRemoteRuntime<{ items: TChatConversation[] }>(id, '/api/conversations?limit=10000');
     return result.items.map(fromApiConversation);
   });
   remote.agents.provider(({ id }) => requestRemoteRuntime<ManagedAgent[]>(id, '/api/agents/management'));
