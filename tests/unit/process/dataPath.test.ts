@@ -9,8 +9,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { fsMocks, platformState } = vi.hoisted(() => ({
   fsMocks: {
+    existsSync: vi.fn(() => false),
     lstatSync: vi.fn(),
+    mkdirSync: vi.fn(),
+    readlinkSync: vi.fn(),
     symlinkSync: vi.fn(),
+    unlinkSync: vi.fn(),
   },
   platformState: {
     isPackaged: false,
@@ -34,8 +38,12 @@ vi.mock('fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('fs')>();
   return {
     ...actual,
+    existsSync: fsMocks.existsSync,
     lstatSync: fsMocks.lstatSync,
+    mkdirSync: fsMocks.mkdirSync,
+    readlinkSync: fsMocks.readlinkSync,
     symlinkSync: fsMocks.symlinkSync,
+    unlinkSync: fsMocks.unlinkSync,
   };
 });
 

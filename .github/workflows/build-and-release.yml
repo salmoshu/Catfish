@@ -12,6 +12,12 @@ on:
     tags:
       - '*'
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Existing stable release tag to publish from the selected source ref'
+        required: false
+        type: string
+        default: ''
 
 env:
   BUN_INSTALL_REGISTRY: 'https://registry.npmjs.org/'
@@ -22,8 +28,8 @@ jobs:
     name: Code Quality
     runs-on: ubuntu-latest
     outputs:
-      publish_artifacts: ${{ vars.PUBLISH_RELEASE == 'true' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-dev-')) }}
-    if: github.ref == 'refs/heads/dev' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-dev-'))
+      publish_artifacts: ${{ vars.PUBLISH_RELEASE == 'true' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-dev-')) || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && !contains(inputs.release_tag, '-dev-')) }}
+    if: github.ref == 'refs/heads/dev' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-dev-')) || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && !contains(inputs.release_tag, '-dev-'))
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -32,6 +38,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+
+      - name: Validate manual release input
+        if: github.event_name == 'workflow_dispatch' && inputs.release_tag != ''
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Manual release_tag must be a stable semantic version tag such as v0.5.0."
+            exit 1
+          fi
+          VERSION=$(node -p "require('./package.json').version")
+          if [[ "$RELEASE_TAG" != "v$VERSION" ]]; then
+            echo "::error::$RELEASE_TAG does not match package.json version $VERSION."
+            exit 1
+          fi
+          git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null
 
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
@@ -61,7 +83,7 @@ jobs:
     uses: ./.github/workflows/_build-reusable.yml
     needs: code-quality
     # dev 分支或正式 tag 触发构建（排除 -dev- tag，避免重复构建）
-    if: needs.code-quality.outputs.publish_artifacts == 'true' && needs.code-quality.result == 'success' && (github.ref == 'refs/heads/dev' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-dev-')))
+    if: needs.code-quality.outputs.publish_artifacts == 'true' && needs.code-quality.result == 'success' && (github.ref == 'refs/heads/dev' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-dev-')) || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && !contains(inputs.release_tag, '-dev-')))
     with:
       skip_code_quality: true
       matrix: >-
@@ -80,7 +102,7 @@ jobs:
     uses: ./.github/workflows/pack-web-cli.yml
     needs: code-quality
     # 与桌面构建同频触发：dev 分支或正式 tag（排除 -dev- tag）
-    if: needs.code-quality.outputs.publish_artifacts == 'true' && needs.code-quality.result == 'success' && (github.ref == 'refs/heads/dev' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-dev-')))
+    if: needs.code-quality.outputs.publish_artifacts == 'true' && needs.code-quality.result == 'success' && (github.ref == 'refs/heads/dev' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-dev-')) || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && !contains(inputs.release_tag, '-dev-')))
     with:
       ref: ''
       append_commit_hash: false
@@ -270,8 +292,8 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     needs: [code-quality, build-pipeline, create-tag, pack-web-cli]
-    # Tag 推送时 create-tag 会被跳过，所以需要检查两种情况（排除 -dev- tag 避免重复）
-    if: always() && needs.code-quality.result == 'success' && (needs.create-tag.result == 'success' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-dev-'))) && (needs.code-quality.outputs.publish_artifacts != 'true' || (needs.build-pipeline.result == 'success' && needs.pack-web-cli.result == 'success'))
+    # Tag/manual release runs skip create-tag; dev builds still require its output.
+    if: always() && needs.code-quality.result == 'success' && (needs.create-tag.result == 'success' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-dev-')) || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && !contains(inputs.release_tag, '-dev-'))) && (needs.code-quality.outputs.publish_artifacts != 'true' || (needs.build-pipeline.result == 'success' && needs.pack-web-cli.result == 'success'))
     # dev 分支使用 dev-release 环境，正式 tag 使用 release 环境
     environment: ${{ needs.create-tag.outputs.is_dev == 'true' && 'dev-release' || 'release' }}
 
@@ -281,9 +303,15 @@ jobs:
 
       - name: Get version for release
         id: version
+        env:
+          MANUAL_RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          # 判断触发来源：正式 tag 推送 or dev 分支
-          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+          # Manual repair builds use the selected source ref but publish to an existing tag.
+          if [[ -n "$MANUAL_RELEASE_TAG" ]]; then
+            TAG_NAME="$MANUAL_RELEASE_TAG"
+            IS_DEV="false"
+            echo "🚀 Publishing repaired source to existing tag: $TAG_NAME"
+          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
             # 正式 Tag 推送触发（-dev- tag 已被排除，不会到达这里）
             TAG_NAME="${GITHUB_REF#refs/tags/}"
             IS_DEV="false"

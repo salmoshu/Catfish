@@ -5,7 +5,7 @@
  */
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 
 const renderMock = vi.hoisted(() => vi.fn());
@@ -98,6 +98,10 @@ describe('MermaidBlock pan/zoom', () => {
   it('shows zoom controls and applies/resets scale when enablePanZoom is set', async () => {
     render(<MermaidBlock code={'graph TD; A-->B'} enablePanZoom />);
     const diagram = await screen.findByTestId('mermaid-diagram');
+    // Settle the SVG reset effect before dispatching a user gesture.
+    await act(async () => {
+      await Promise.resolve();
+    });
     // Pan viewport clips (hidden overflow) instead of native scroll.
     expect(diagram.style.overflow).toBe('hidden');
 
@@ -139,6 +143,10 @@ describe('MermaidBlock pan/zoom', () => {
   it('opens the zoom overlay on click without panning when drag-to-pan is enabled', async () => {
     render(<MermaidBlock code={'graph TD; A-->B'} enablePanZoom />);
     const diagram = await screen.findByTestId('mermaid-diagram');
+    // Settle the SVG reset effect before dispatching a user gesture.
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     fireEvent.pointerDown(diagram, { pointerId: 1, button: 0, clientX: 10, clientY: 10 });
     fireEvent.pointerMove(diagram, { pointerId: 1, clientX: 12, clientY: 11 });
@@ -152,6 +160,10 @@ describe('MermaidBlock pan/zoom', () => {
   it('pans instead of opening the overlay when the pointer drags past the threshold', async () => {
     render(<MermaidBlock code={'graph TD; A-->B'} enablePanZoom />);
     const diagram = await screen.findByTestId('mermaid-diagram');
+    // Settle the SVG reset effect before dispatching a user gesture.
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     fireEvent.pointerDown(diagram, { pointerId: 1, button: 0, clientX: 10, clientY: 10 });
     fireEvent.pointerMove(diagram, { pointerId: 1, clientX: 60, clientY: 40 });

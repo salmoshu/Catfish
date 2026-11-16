@@ -83,6 +83,18 @@ describe('release packaging configuration', () => {
     expect(workflow).toContain('draft: true');
   });
 
+  it('repairs a release from the selected source without moving its existing tag', () => {
+    const workflow = readProjectFile('.github/workflows/build-and-release.yml');
+    const manualReleaseGate =
+      "(github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && !contains(inputs.release_tag, '-dev-'))";
+
+    expect(workflow.match(new RegExp(manualReleaseGate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'))).toHaveLength(5);
+    expect(workflow).toContain('git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG"');
+    expect(workflow).toContain('if [[ "$RELEASE_TAG" != "v$VERSION" ]]');
+    expect(workflow).toContain('if [[ -n "$MANUAL_RELEASE_TAG" ]]');
+    expect(workflow).not.toContain('target_commitish:');
+  });
+
   it('uses supported macOS runners for build workflows', () => {
     for (const path of [
       '.github/workflows/build-and-release.yml',
