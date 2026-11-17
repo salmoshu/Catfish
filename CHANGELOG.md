@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.1](https://github.com/salmoshu/Catfish/releases/tag/v0.5.1) (2026-11-18)
+
+### Bug Fixes
+
+- **conversation:** bundle CatfishCore v0.2.7 and allow a bounded handoff window for trailing ACP terminal activity before diagnosing an empty reply, without replaying user instructions
+- **sidebar:** present project and conversation overflow controls as natural list rows with directional icons
+- **composer:** use the native `/goal` slash command instead of a separate Goal button and composer
+
+---
+
 ## [0.5.0](https://github.com/salmoshu/Catfish/releases/tag/v0.5.0) (2026-11-16)
 
 ### Features

@@ -14,7 +14,6 @@ import MobileActionSheet, {
 } from '@/renderer/components/chat/MobileActionSheet';
 import SendBox from '@/renderer/components/chat/SendBox';
 import ThoughtDisplay from '@/renderer/components/chat/ThoughtDisplay';
-import { buildGoalCommand, GoalComposer } from '@/renderer/components/chat/GoalComposer';
 import FileAttachButton from '@/renderer/components/media/FileAttachButton';
 import { audioExts, getFileExtension, imageExts } from '@/renderer/services/FileService';
 import FilePreview from '@/renderer/components/media/FilePreview';
@@ -188,8 +187,6 @@ const AcpSendBox: React.FC<{
   );
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
   const [currentMode, setCurrentMode] = useState<string | undefined>(session_mode);
-  const [goalOpen, setGoalOpen] = useState(false);
-  const [goalStarting, setGoalStarting] = useState(false);
   const supportsGoal = (slashCommands ?? []).some((command) => command.name.toLowerCase() === 'goal');
   const prepareRuntimeConfig = useCallback(async () => {
     if (teamPermission) return;
@@ -815,22 +812,6 @@ Please check your local CLI tool authentication status`,
     [effectiveHandleStop, enqueue, executeCommand, prioritize, remove, supportsMidturnDelivery]
   );
   const sendBoxWidthClass = getChatSurfaceWidthClass();
-  const handleGoalStart = useCallback(
-    async (objective: string, completionCriterion: string) => {
-      setGoalStarting(true);
-      try {
-        await executeCommand({
-          input: buildGoalCommand(objective, completionCriterion),
-          files: [],
-          sessions: undefined,
-        });
-        setGoalOpen(false);
-      } finally {
-        setGoalStarting(false);
-      }
-    },
-    [executeCommand]
-  );
 
   return (
     <div className={`${sendBoxWidthClass} flex flex-col mt-auto mb-16px`}>
@@ -857,12 +838,6 @@ Please check your local CLI tool authentication status`,
         onRetryStart={teamRuntime?.onRetryStart ? () => void teamRuntime.onRetryStart?.() : undefined}
       />
       <CrossSessionDisabledBanner />
-      <GoalComposer
-        open={goalOpen}
-        starting={goalStarting}
-        onCancel={() => setGoalOpen(false)}
-        onStart={handleGoalStart}
-      />
       <SendBox
         onMobilePlusClick={isMobile ? () => setIsMobileSheetOpen(true) : undefined}
         value={content}
@@ -919,22 +894,7 @@ Please check your local CLI tool authentication status`,
             )}
           </div>
         }
-        rightTools={
-          <div className='flex items-center gap-8px min-w-0'>
-            {supportsGoal && (
-              <Button
-                type='text'
-                size='small'
-                data-testid='goal-toggle'
-                aria-expanded={goalOpen}
-                onClick={() => setGoalOpen((current) => !current)}
-              >
-                {t('messages.goal.action', { defaultValue: 'Goal' })}
-              </Button>
-            )}
-            {composerTools}
-          </div>
-        }
+        rightTools={<div className='flex items-center gap-8px min-w-0'>{composerTools}</div>}
         prefix={
           <>
             {uploadFile.length > 0 && (

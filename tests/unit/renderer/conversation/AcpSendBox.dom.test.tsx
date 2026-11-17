@@ -117,6 +117,7 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
     onSelectedSessionsChange,
     crossSessionEnabled,
     isTeamConversation,
+    slash_commands,
   }: {
     onSend: (message: string) => Promise<void>;
     onChange?: (value: string) => void;
@@ -135,6 +136,7 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
     onSelectedSessionsChange?: (sessions: Array<{ id: string }>) => void;
     crossSessionEnabled?: boolean;
     isTeamConversation?: boolean;
+    slash_commands?: Array<{ name: string }>;
   }) => {
     sendBoxPropsSpy({
       active,
@@ -146,6 +148,7 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
       selectedSessions,
       crossSessionEnabled,
       isTeamConversation,
+      slash_commands,
     });
     return (
       <div>
@@ -409,6 +412,20 @@ describe('AcpSendBox', () => {
     expect(screen.getByTestId('file-attach-button').nextElementSibling).toBe(screen.getByTestId('acp-mode-label'));
   });
 
+  it('preserves the shrinkable model-tool layout without a separate Goal button', () => {
+    render(
+      <AcpSendBox
+        conversation_id='conv-1'
+        backend='kimi'
+        messageState={makeMessageState()}
+        composerTools={<div data-testid='model-tool'>Model</div>}
+      />
+    );
+
+    expect(screen.getByTestId('model-tool').parentElement).toHaveClass('flex', 'items-center', 'gap-8px', 'min-w-0');
+    expect(screen.queryByTestId('goal-toggle')).not.toBeInTheDocument();
+  });
+
   it('uses raw English backend values for authorization mode labels', () => {
     isMobileMock.current = true;
     useAcpConfigOptionsMock.mockReturnValue({
@@ -471,34 +488,33 @@ describe('AcpSendBox', () => {
     });
   });
 
-  it('shows Goal only for a declared capability and sends it through ACP', async () => {
-    const { unmount } = render(
-      <AcpSendBox conversation_id='conv-1' backend='claude' messageState={makeMessageState()} />
-    );
-    expect(screen.queryByTestId('goal-toggle')).not.toBeInTheDocument();
-    unmount();
-
+  it('keeps Goal in the native slash commands without a separate button or composer', async () => {
     const messageState = makeMessageState();
     messageState.slashCommands = [{ name: 'goal', description: 'Start goal', kind: 'template', source: 'acp' }];
     sendMessageInvokeMock.mockResolvedValue({ turn_id: 'goal-turn', runtime: {}, msg_id: 'goal-message' });
     render(<AcpSendBox conversation_id='conv-1' backend='claude' messageState={messageState} />);
-    fireEvent.click(screen.getByTestId('goal-toggle'));
-    const [objective, criterion] = screen.getAllByRole('textbox');
-    fireEvent.change(objective, { target: { value: 'Finish the UI' } });
-    fireEvent.change(criterion, { target: { value: 'Tests pass' } });
-    fireEvent.click(screen.getByTestId('goal-start'));
 
-    await waitFor(() => {
-      expect(sendMessageInvokeMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          conversation_id: 'conv-1',
-          input: '/goal Finish the UI\n\nCompletion criterion: Tests pass',
-          files: [],
-          sessions: undefined,
-        })
-      );
+    expect(screen.queryByTestId('goal-toggle')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('goal-composer')).not.toBeInTheDocument();
+    expect(sendBoxPropsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ slash_commands: expect.arrayContaining([expect.objectContaining({ name: 'goal' })]) })
+    );
+
+    const { onExecute } = useConversationCommandQueueSpy.mock.calls[0][0] as {
+      onExecute: (item: { input: string; files: []; sessions?: string[] }) => Promise<void>;
+    };
+    await act(async () => {
+      await onExecute({ input: '/goal Finish the UI\n\nCompletion criterion: Tests pass', files: [] });
     });
-    await waitFor(() => expect(screen.queryByTestId('goal-composer')).not.toBeInTheDocument());
+
+    expect(sendMessageInvokeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        conversation_id: 'conv-1',
+        input: '/goal Finish the UI\n\nCompletion criterion: Tests pass',
+        files: [],
+        sessions: undefined,
+      })
+    );
   });
 
   it('applies /plan to the runtime and sends only the remaining task text', async () => {

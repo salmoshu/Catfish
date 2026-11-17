@@ -304,6 +304,8 @@ describe('active remote grouped history', () => {
     expect(screen.queryByText('standalone-chat-8')).not.toBeInTheDocument();
     const projectToggle = screen.getByTestId('project-overflow-toggle');
     const conversationToggle = screen.getByTestId('conversation-overflow-toggle');
+    expect(projectToggle).toHaveClass('!w-full', '!items-center', '!gap-8px', '!rd-6px');
+    expect(projectToggle.querySelector('.rotate-90')).not.toBeNull();
 
     fireEvent.click(projectToggle);
     expect(screen.getByText('Project-8')).toBeInTheDocument();

@@ -398,17 +398,16 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
         title={label}
         style={{ order }}
         className={classNames(
-          '!h-28px !text-13px !text-t-secondary hover:!text-t-primary',
-          collapsed ? '!w-full !p-0 !justify-center' : '!justify-start !px-12px'
+          '!h-30px !w-full !items-center !gap-8px !rd-6px !text-12px !font-normal',
+          '!text-t-tertiary transition-colors hover:!bg-fill-2 hover:!text-t-primary',
+          collapsed ? '!p-0 !justify-center' : '!justify-start !px-12px'
         )}
         icon={
-          collapsed ? (
-            <Right
-              theme='outline'
-              size={12}
-              className={classNames('transition-transform', expanded ? '-rotate-90' : 'rotate-90')}
-            />
-          ) : undefined
+          <Right
+            theme='outline'
+            size={12}
+            className={classNames('shrink-0 transition-transform', expanded ? '-rotate-90' : 'rotate-90')}
+          />
         }
         onClick={onToggle}
       >
