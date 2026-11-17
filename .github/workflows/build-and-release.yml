@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Existing stable release tag to publish from the selected source ref'
+        description: 'Stable release tag; a missing tag is created only after all candidate builds succeed'
         required: false
         type: string
         default: ''
@@ -29,6 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       publish_artifacts: ${{ vars.PUBLISH_RELEASE == 'true' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-dev-')) || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && !contains(inputs.release_tag, '-dev-')) }}
+      release_tag_exists: ${{ steps.release_tag.outputs.exists }}
+      release_tag_oid: ${{ steps.release_tag.outputs.oid }}
     if: github.ref == 'refs/heads/dev' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-dev-')) || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && !contains(inputs.release_tag, '-dev-'))
     steps:
       - name: Checkout code
@@ -40,6 +42,7 @@ jobs:
           node-version: '22'
 
       - name: Validate manual release input
+        id: release_tag
         if: github.event_name == 'workflow_dispatch' && inputs.release_tag != ''
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
@@ -53,12 +56,39 @@ jobs:
             echo "::error::$RELEASE_TAG does not match package.json version $VERSION."
             exit 1
           fi
-          git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null
+          set +e
+          TAG_OUTPUT=$(git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" 2>&1)
+          TAG_STATUS=$?
+          set -e
+          if [[ $TAG_STATUS -eq 0 ]]; then
+            TAG_OID=$(printf '%s\n' "$TAG_OUTPUT" | awk 'NR == 1 { print $1 }')
+            if [[ ! "$TAG_OID" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "::error::Could not resolve the existing $RELEASE_TAG object ID."
+              exit 1
+            fi
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "oid=$TAG_OID" >> "$GITHUB_OUTPUT"
+          elif [[ $TAG_STATUS -eq 2 ]]; then
+            if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+              echo "::error::A new stable tag may only be created from a manual run on main."
+              exit 1
+            fi
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "oid=" >> "$GITHUB_OUTPUT"
+          else
+            echo "$TAG_OUTPUT"
+            echo "::error::Could not query $RELEASE_TAG (git exit $TAG_STATUS); refusing to treat it as absent."
+            exit "$TAG_STATUS"
+          fi
 
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+
+      - name: Check release environment
+        if: github.event_name == 'workflow_dispatch' && inputs.release_tag != ''
+        run: node packages/shared-scripts/src/release/releasePreflight.js --root . --commands node,git,bun,curl --min-free-gb 4
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -326,6 +356,35 @@ jobs:
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "is_dev=$IS_DEV" >> $GITHUB_OUTPUT
 
+      - name: Verify stable release tag is unchanged
+        if: github.event_name == 'workflow_dispatch' && inputs.release_tag != ''
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          EXPECTED_EXISTS: ${{ needs.code-quality.outputs.release_tag_exists }}
+          EXPECTED_OID: ${{ needs.code-quality.outputs.release_tag_oid }}
+        run: |
+          set +e
+          TAG_OUTPUT=$(git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" 2>&1)
+          TAG_STATUS=$?
+          set -e
+          if [[ $TAG_STATUS -ne 0 && $TAG_STATUS -ne 2 ]]; then
+            echo "$TAG_OUTPUT"
+            echo "::error::Could not recheck $RELEASE_TAG (git exit $TAG_STATUS)."
+            exit "$TAG_STATUS"
+          fi
+          ACTUAL_EXISTS=$([[ $TAG_STATUS -eq 0 ]] && printf true || printf false)
+          if [[ "$ACTUAL_EXISTS" != "$EXPECTED_EXISTS" ]]; then
+            echo "::error::$RELEASE_TAG was created or removed while candidate builds were running."
+            exit 1
+          fi
+          if [[ "$EXPECTED_EXISTS" == "true" ]]; then
+            ACTUAL_OID=$(printf '%s\n' "$TAG_OUTPUT" | awk 'NR == 1 { print $1 }')
+            if [[ "$ACTUAL_OID" != "$EXPECTED_OID" ]]; then
+              echo "::error::$RELEASE_TAG moved from $EXPECTED_OID to $ACTUAL_OID; refusing to publish."
+              exit 1
+            fi
+          fi
+
       - name: Download all build artifacts
         if: needs.code-quality.outputs.publish_artifacts == 'true'
         uses: actions/download-artifact@v7
@@ -361,6 +420,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag_name }}
+          target_commitish: ${{ github.event_name == 'workflow_dispatch' && needs.code-quality.outputs.release_tag_exists == 'false' && github.sha || '' }}
           name: ${{ steps.version.outputs.is_dev == 'true' && format('Development Build {0}', steps.version.outputs.tag_name) || steps.version.outputs.tag_name }}
           files: |
             release-assets/**/*.exe

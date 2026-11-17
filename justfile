@@ -294,6 +294,22 @@ dist:
     bun run dist
 
 # ============================================================
+# Release safety and verification
+# ============================================================
+
+# Validate local tools, project files, disk space, and optional packaging resources
+release-preflight *ARGS:
+    node packages/shared-scripts/src/release/releasePreflight.js {{ARGS}}
+
+# Watch one exact workflow run/source commit and verify its release assets
+release-watch *ARGS:
+    node packages/shared-scripts/src/release/releaseMonitor.js --watch {{ARGS}}
+
+# Verify an existing workflow and release without polling
+release-verify *ARGS:
+    node packages/shared-scripts/src/release/releaseMonitor.js --verify-only {{ARGS}}
+
+# ============================================================
 # Code Quality
 # ============================================================
 

@@ -104,6 +104,22 @@ bunx vitest run
 | i18n errors   | Check for missing keys; run `bun run i18n:types` to regenerate types |
 | Test failures | Fix the failing test or implementation; re-run `bunx vitest run`     |
 
+## Development and Release Workflow
+
+Use targeted tests while diagnosing a change, and run the complete `just push` gate only after the fixes are ready. Do not use the full gate as a failure-discovery loop. For CatfishCore, collect independent failures once with `just diagnose`, then use `just test-affected -p <crate>` while fixing them.
+
+Run long tests, builds, and release monitors as background tasks and act on their completion notifications; do not hold a foreground shell open with `sleep` or repeated process polling. Avoid running CPU-heavy local tests and packaging at the same time, since resource contention makes both slower and can create misleading failures.
+
+Check the release environment before packaging, then monitor or verify the exact source commit and workflow run:
+
+```bash
+bun run release:preflight -- --require-dependencies --network
+bun run release:watch -- --repo salmoshu/Catfish --profile catfish --run-id 123456789 --sha <full-40-character-commit> --tag v0.5.0
+bun run release:verify -- --repo salmoshu/Catfish --profile catfish --run-id 123456789 --sha <full-40-character-commit> --tag v0.5.0
+```
+
+For a manual stable release from `main`, a new tag is created only after every candidate build and package succeeds. Existing tags are immutable repair targets: their object IDs are checked again before publishing and are never moved. For infrastructure failures, explicitly rerun only failed jobs after inspecting the failure; do not launch another full build blindly.
+
 ## Enforcement
 
 When these rules are not followed, maintainers may:

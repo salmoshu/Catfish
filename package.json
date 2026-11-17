@@ -70,6 +70,9 @@
     "test:smoke:installer:failure-messagebox": "node scripts/smoke-installer-failure-messagebox.js",
     "test:smoke:installer:self-lock": "node scripts/smoke-installer-self-lock.js",
     "test:smoke:installer:rstrtmgr-ui": "node scripts/smoke-installer-rstrtmgr-ui.js",
+    "release:preflight": "node packages/shared-scripts/src/release/releasePreflight.js",
+    "release:watch": "node packages/shared-scripts/src/release/releaseMonitor.js --watch",
+    "release:verify": "node packages/shared-scripts/src/release/releaseMonitor.js --verify-only",
     "prepare": "husky",
     "postinstall": "node scripts/postinstall.js",
     "test:bun": "bun test packages/desktop/src/process/services/database/drivers/*.bun.test.ts"

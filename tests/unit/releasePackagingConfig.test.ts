@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { relative, resolve } from 'node:path';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, relative, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 
 const projectRoot = resolve(__dirname, '../..');
 const itWithBash = spawnSync('bash', ['--version'], { encoding: 'utf8' }).status === 0 ? it : it.skip;
@@ -20,6 +21,209 @@ function yamlBlock(content: string, key: string): string {
   const nextTopLevelKey = rest.search(/^[a-zA-Z][a-zA-Z0-9]*:\s*$/m);
   return nextTopLevelKey === -1 ? rest : rest.slice(0, nextTopLevelKey);
 }
+
+type ReleaseRun = {
+  id: number;
+  head_sha: string;
+  head_branch: string;
+  event: string;
+  status: string;
+  conclusion: string;
+  html_url: string;
+};
+
+type ReleaseJob = {
+  name: string;
+  status: string;
+  conclusion: string;
+  html_url: string;
+};
+
+type GitHubRelease = {
+  tag_name: string;
+  draft: boolean;
+  prerelease: boolean;
+  html_url: string;
+  assets: { name: string; size: number }[];
+};
+
+type ReleaseVerification = {
+  expectedJobCount: number;
+  expectedAssetCount: number;
+  assetCount: number;
+};
+
+type ReleaseProfilesModule = {
+  getProfile: (name: string) => { jobs: { name: string }[] };
+  expectedReleaseAssets: (profile: string, tag: string) => string[];
+};
+
+type ReleaseMonitorModule = {
+  parseArgs: (argv: string[]) => { sha: string; tag: string; runId?: string };
+  selectRun: (runs: ReleaseRun[], options: { sha: string; event?: string; branch?: string }) => ReleaseRun | undefined;
+  buildVerification: (input: {
+    profile: string;
+    tag: string;
+    run: ReleaseRun;
+    jobs: ReleaseJob[];
+    release: GitHubRelease | null;
+    expectedCommit: string;
+  }) => ReleaseVerification;
+};
+
+type ReleasePreflightModule = {
+  runPreflight: (options: {
+    root: string;
+    commands: string[];
+    minFreeGb: number;
+    network: boolean;
+  }) => Promise<{ ok: boolean; checks: { name: string; ok: boolean }[] }>;
+};
+
+const require = createRequire(import.meta.url);
+const releaseProfiles = require(
+  resolve(projectRoot, 'packages/shared-scripts/src/release/releaseProfiles.js')
+) as ReleaseProfilesModule;
+const releaseMonitor = require(
+  resolve(projectRoot, 'packages/shared-scripts/src/release/releaseMonitor.js')
+) as ReleaseMonitorModule;
+const releasePreflight = require(
+  resolve(projectRoot, 'packages/shared-scripts/src/release/releasePreflight.js')
+) as ReleasePreflightModule;
+
+const expectedCommit = 'a'.repeat(40);
+const successfulRun: ReleaseRun = {
+  id: 123,
+  head_sha: expectedCommit,
+  head_branch: 'main',
+  event: 'workflow_dispatch',
+  status: 'completed',
+  conclusion: 'success',
+  html_url: 'https://example.test/runs/123',
+};
+
+function successfulJobs(profile: string): ReleaseJob[] {
+  return releaseProfiles.getProfile(profile).jobs.map((job) => ({
+    name: job.name,
+    status: 'completed',
+    conclusion: 'success',
+    html_url: `https://example.test/jobs/${encodeURIComponent(job.name)}`,
+  }));
+}
+
+function stableRelease(profile: string, tag: string): GitHubRelease {
+  return {
+    tag_name: tag,
+    draft: false,
+    prerelease: false,
+    html_url: `https://example.test/releases/${tag}`,
+    assets: releaseProfiles.expectedReleaseAssets(profile, tag).map((name) => ({ name, size: 1 })),
+  };
+}
+
+function createMinimalProject(root: string): void {
+  for (const path of ['package.json', 'bun.lock', 'packages/desktop/electron-builder.yml', 'resources/app.ico']) {
+    const filePath = resolve(root, path);
+    mkdirSync(dirname(filePath), { recursive: true });
+    writeFileSync(filePath, path === 'package.json' ? JSON.stringify({ version: '1.2.3' }) : 'test');
+  }
+}
+
+describe('release safety tools', () => {
+  it.each([
+    ['catfish', 'v0.5.0', 13, 25],
+    ['core', 'v0.2.6', 8, 7],
+  ])('verifies the complete %s release contract', (profile, tag, jobCount, assetCount) => {
+    const report = releaseMonitor.buildVerification({
+      profile,
+      tag,
+      run: successfulRun,
+      jobs: successfulJobs(profile),
+      release: stableRelease(profile, tag),
+      expectedCommit,
+    });
+
+    expect(report.expectedJobCount).toBe(jobCount);
+    expect(report.expectedAssetCount).toBe(assetCount);
+    expect(report.assetCount).toBe(assetCount);
+  });
+
+  it('selects only the expected commit and source filters', () => {
+    const staleRun = { ...successfulRun, id: 122, head_sha: 'b'.repeat(40) };
+
+    expect(releaseMonitor.selectRun([staleRun], { sha: expectedCommit })).toBeUndefined();
+    expect(
+      releaseMonitor.selectRun([staleRun, successfulRun], {
+        sha: expectedCommit,
+        event: 'workflow_dispatch',
+        branch: 'main',
+      })
+    ).toEqual(successfulRun);
+  });
+
+  it('rejects missing jobs and empty or unexpected release assets', () => {
+    const jobs = successfulJobs('core').slice(1);
+    const release = stableRelease('core', 'v0.2.6');
+    release.assets[0].size = 0;
+
+    expect(() =>
+      releaseMonitor.buildVerification({
+        profile: 'core',
+        tag: 'v0.2.6',
+        run: successfulRun,
+        jobs,
+        release,
+        expectedCommit,
+      })
+    ).toThrow(/Required job is not successful[\s\S]*Missing or empty assets/);
+  });
+
+  it('requires an immutable commit, stable tag, and explicit run for failed-job retries', () => {
+    expect(() => releaseMonitor.parseArgs([])).toThrow('--sha requires the full expected source commit');
+    expect(() => releaseMonitor.parseArgs(['--sha', expectedCommit, '--tag', 'v0.5.0-dev-abc'])).toThrow(
+      '--tag requires a stable tag'
+    );
+    expect(() => releaseMonitor.parseArgs(['--sha', expectedCommit, '--tag', 'v0.5.0', '--rerun-failed'])).toThrow(
+      '--rerun-failed requires --run-id'
+    );
+  });
+
+  it('passes preflight for a minimal complete project', async () => {
+    const tempDir = mkdtempSync(resolve(projectRoot, '.tmp_release-preflight-'));
+    try {
+      createMinimalProject(tempDir);
+      const report = await releasePreflight.runPreflight({
+        root: tempDir,
+        commands: [],
+        minFreeGb: 0,
+        network: false,
+      });
+
+      expect(report.ok).toBe(true);
+    } finally {
+      rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('fails preflight when a required project file is missing', async () => {
+    const tempDir = mkdtempSync(resolve(projectRoot, '.tmp_release-preflight-'));
+    try {
+      createMinimalProject(tempDir);
+      rmSync(resolve(tempDir, 'resources/app.ico'));
+      const report = await releasePreflight.runPreflight({
+        root: tempDir,
+        commands: [],
+        minFreeGb: 0,
+        network: false,
+      });
+
+      expect(report.ok).toBe(false);
+      expect(report.checks).toContainEqual(expect.objectContaining({ name: 'file:resources/app.ico', ok: false }));
+    } finally {
+      rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+});
 
 describe('release packaging configuration', () => {
   it('uses the Catfish app, executable, copyright, and GitHub publisher identity', () => {
@@ -83,16 +287,22 @@ describe('release packaging configuration', () => {
     expect(workflow).toContain('draft: true');
   });
 
-  it('repairs a release from the selected source without moving its existing tag', () => {
+  it('creates only new stable tags after candidate builds and never moves an existing tag', () => {
     const workflow = readProjectFile('.github/workflows/build-and-release.yml');
     const manualReleaseGate =
       "(github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && !contains(inputs.release_tag, '-dev-'))";
 
     expect(workflow.match(new RegExp(manualReleaseGate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'))).toHaveLength(5);
-    expect(workflow).toContain('git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG"');
+    expect(workflow.match(/git ls-remote --exit-code --tags origin/g)).toHaveLength(2);
     expect(workflow).toContain('if [[ "$RELEASE_TAG" != "v$VERSION" ]]');
+    expect(workflow).toContain('if [[ "$GITHUB_REF" != "refs/heads/main" ]]');
+    expect(workflow).toContain('release_tag_oid: ${{ steps.release_tag.outputs.oid }}');
+    expect(workflow).toContain('if [[ "$ACTUAL_OID" != "$EXPECTED_OID" ]]');
     expect(workflow).toContain('if [[ -n "$MANUAL_RELEASE_TAG" ]]');
-    expect(workflow).not.toContain('target_commitish:');
+    expect(workflow).toContain(
+      "target_commitish: ${{ github.event_name == 'workflow_dispatch' && needs.code-quality.outputs.release_tag_exists == 'false' && github.sha || '' }}"
+    );
+    expect(workflow.match(/target_commitish:/g)).toHaveLength(1);
   });
 
   it('uses supported macOS runners for build workflows', () => {

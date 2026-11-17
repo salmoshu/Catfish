@@ -104,6 +104,22 @@ bunx vitest run
 | i18n 错误 | 检查缺失的 key，运行 `bun run i18n:types` 重新生成类型 |
 | 测试失败  | 修复失败的测试或实现，重新运行 `bunx vitest run`       |
 
+## 开发与发布流程
+
+排查问题期间先运行定向测试，修复就绪后才运行完整的 `just push` 门禁，不要把完整门禁当作反复发现失败的工具。CatfishCore 先用 `just diagnose` 一次收集各类独立失败，修复期间使用 `just test-affected -p <crate>` 做定向验证。
+
+长时间测试、构建和发布监控应作为后台任务运行，并根据完成通知继续处理；不要用前台 `sleep` 或反复查询进程来等待。不要同时运行高 CPU 负载的本地测试和打包，资源竞争会拖慢双方，也可能造成误导性失败。
+
+打包前检查发布环境，随后按准确的源码提交和工作流运行记录监控或核验：
+
+```bash
+bun run release:preflight -- --require-dependencies --network
+bun run release:watch -- --repo salmoshu/Catfish --profile catfish --run-id 123456789 --sha <完整40位提交哈希> --tag v0.5.0
+bun run release:verify -- --repo salmoshu/Catfish --profile catfish --run-id 123456789 --sha <完整40位提交哈希> --tag v0.5.0
+```
+
+从 `main` 手动发布正式版本时，只有全部候选构建和打包成功后才创建新标签。既有标签是不可移动的修复目标：发布前会再次核对其对象 ID，绝不会移动标签。遇到基础设施故障时，先检查失败原因，再明确只重跑失败任务，不要盲目启动另一轮完整构建。
+
 ## 执行方式
 
 不符合规则时，维护者可能：
