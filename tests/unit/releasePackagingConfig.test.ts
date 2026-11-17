@@ -305,7 +305,17 @@ describe('release packaging configuration', () => {
     expect(workflow.match(/target_commitish:/g)).toHaveLength(1);
   });
 
-  it('uses supported macOS runners for build workflows', () => {
+  it('uses supported, architecture-matched macOS runners for build workflows', () => {
+    const release = readProjectFile('.github/workflows/build-and-release.yml');
+    expect(release).toContain('"platform":"macos-arm64","os":"macos-15"');
+    expect(release).toContain('"platform":"macos-x64","os":"macos-15-intel"');
+    expect(readProjectFile('.github/workflows/build-manual.yml')).toContain(
+      '"platform":"macos-x64","os":"macos-15-intel"'
+    );
+    expect(readProjectFile('.github/workflows/pack-web-cli.yml')).toContain(
+      '- { platform: darwin, arch: x64, os: macos-15-intel }'
+    );
+
     for (const path of [
       '.github/workflows/build-and-release.yml',
       '.github/workflows/pack-web-cli.yml',

@@ -4,7 +4,8 @@
 
 ### Bug Fixes
 
-- **conversation:** bundle CatfishCore v0.2.7 and allow a bounded handoff window for trailing ACP terminal activity before diagnosing an empty reply, without replaying user instructions
+- **conversation:** bundle CatfishCore v0.2.8 and allow a bounded handoff window for trailing ACP terminal activity before diagnosing an empty reply, without replaying user instructions
+- **release:** run Intel macOS build jobs on the matching `macos-15-intel` runner
 - **sidebar:** present project and conversation overflow controls as natural list rows with directional icons
 - **composer:** use the native `/goal` slash command instead of a separate Goal button and composer
 
