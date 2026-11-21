@@ -75,44 +75,39 @@
   flex-direction: column;
 }
 
-/* A horizontal guide under each step: it rests as a short stub and extends
- * like a piano string when the pointer moves onto the row. */
 .tool-row::before {
+  content: '';
   position: absolute;
   inset-inline-start: 28px;
   top: 25px;
-  width: calc(100% - 28px);
+  width: 100%;
   height: 1px;
-  background: linear-gradient(90deg, var(--color-border-2) 0%, var(--color-border-2) 55%, transparent 100%);
-  content: '';
-  pointer-events: none;
-  opacity: 0.65;
   transform: scaleX(0.08);
   transform-origin: left center;
-  transition:
-    transform 280ms cubic-bezier(0.22, 0.61, 0.36, 1),
-    opacity 280ms ease;
+  background: var(--color-border-2);
+  pointer-events: none;
 }
 
 .tool-row:hover::before,
 .tool-row:focus-within::before {
-  opacity: 1;
   transform: scaleX(1);
 }
 
 .tool-row:not(:last-child) {
-  padding-bottom: 12px;
+  padding-bottom: 2px;
 }
 
 .tool-row__button.arco-btn,
 .tool-row__button--static {
   display: flex;
-  width: 100%;
+  width: calc(100% + 12px);
   min-width: 0;
-  min-height: 24px;
-  padding: 0;
+  min-height: 26px;
+  margin-inline-start: -6px;
+  padding: 2px 6px;
   align-items: center;
   gap: 8px;
+  border-radius: 6px;
   background: transparent;
   color: var(--text-secondary);
   text-align: start;
@@ -120,7 +115,7 @@
 
 .tool-row__button.arco-btn:hover,
 .tool-row__button.arco-btn:focus-visible {
-  background: transparent;
+  background: var(--color-fill-2);
   color: var(--text-primary);
 }
 
@@ -162,6 +157,40 @@
   line-height: 20px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.tool-row__description--mono {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 12px;
+}
+
+.tool-row__counts {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 4px;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tool-row__additions {
+  color: rgb(var(--green-6));
+}
+
+.tool-row__deletions {
+  color: rgb(var(--red-6));
+}
+
+.tool-status__ok {
+  color: rgb(var(--green-6));
+}
+
+.tool-status__fail {
+  color: rgb(var(--red-6));
+}
+
+.tool-status__warn {
+  color: rgb(var(--orange-6));
 }
 
 .tool-row__chevron {
@@ -211,6 +240,142 @@
   white-space: pre-wrap;
 }
 
+.tool-command {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--color-fill-1);
+}
+
+.tool-command__text {
+  max-height: 140px;
+  margin: 0;
+  padding: 8px 10px;
+  overflow: auto;
+  border: 1px solid var(--color-border-2);
+  border-radius: 6px;
+  background: var(--color-bg-1);
+  color: var(--text-primary);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.tool-command__cwd {
+  overflow: hidden;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 11px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tool-diff {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border-2);
+  border-radius: 8px;
+  background: var(--color-bg-1);
+}
+
+.tool-diff__header {
+  display: flex;
+  min-width: 0;
+  min-height: 28px;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--color-border-2);
+  background: var(--color-fill-1);
+}
+
+.tool-diff__path.arco-btn {
+  display: inline-flex;
+  min-width: 0;
+  height: auto;
+  flex: 1;
+  justify-content: flex-start;
+  gap: 0;
+  padding: 2px 0;
+  overflow: hidden;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.tool-diff__path.arco-btn:hover,
+.tool-diff__path.arco-btn:focus-visible {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.tool-diff__directory {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-tertiary);
+  text-overflow: ellipsis;
+}
+
+.tool-diff__name {
+  flex-shrink: 0;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.tool-diff__counts.arco-btn {
+  flex-shrink: 0;
+  height: auto;
+  padding: 0;
+  background: transparent;
+}
+
+.tool-diff__body {
+  max-height: 240px;
+  margin: 0;
+  padding: 6px 0;
+  overflow: auto;
+  background: var(--color-bg-1);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.tool-diff__line {
+  min-height: 18px;
+  padding: 0 10px;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.tool-diff__line--add {
+  background: rgb(var(--green-1));
+  color: rgb(var(--green-7));
+}
+
+.tool-diff__line--del {
+  background: rgb(var(--red-1));
+  color: rgb(var(--red-7));
+}
+
+.tool-diff__line--hunk {
+  color: var(--text-tertiary);
+}
+
+.tool-diff__more {
+  padding: 4px 10px 8px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .badge-breathing .arco-badge-status-dot {
     animation: none;
@@ -218,10 +383,6 @@
 
   .tool-group-summary__arrow,
   .tool-row__chevron {
-    transition: none;
-  }
-
-  .tool-row::before {
     transition: none;
   }
 }

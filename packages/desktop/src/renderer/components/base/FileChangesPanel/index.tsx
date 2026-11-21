@@ -101,8 +101,8 @@ const FileChangesPanel: React.FC<FileChangesPanelProps> = ({
                 >
                   {!summary && <span className={styles.editLabel}>{t('common.edit')}</span>}
                   <span className={styles.path}>
-                    <span className={styles.directory}>{directory}</span>
                     <span className={styles.basename}>{file.file_name}</span>
+                    <span className={styles.directory}>{directory}</span>
                   </span>
                 </Button>
                 <Button

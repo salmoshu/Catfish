@@ -55,10 +55,10 @@ const MessageFileChanges: React.FC<MessageFileChangesProps> = ({
       if (!fileInfo) return;
 
       const { contentType, editable, language } = getFileTypeInfo(fileInfo.file_name);
-      if (variant === 'summary') openWorkbenchSection('changes');
+      openWorkbenchSection('changes');
 
       void launchPreview({
-        placement: variant === 'summary' ? 'sidebar' : undefined,
+        placement: 'sidebar',
         relativePath: fileInfo.fullPath,
         file_name: fileInfo.file_name,
         contentType,
@@ -68,17 +68,17 @@ const MessageFileChanges: React.FC<MessageFileChangesProps> = ({
         diffContent: fileInfo.diff,
       });
     },
-    [fileChanges, launchPreview, variant]
+    [fileChanges, launchPreview]
   );
 
   const handleDiffClick = useCallback(
     (file: FileChangeItem) => {
       const fileInfo = fileChanges.find((candidate) => candidate.fullPath === file.fullPath);
       if (!fileInfo) return;
-      if (variant === 'summary') openWorkbenchSection('changes');
+      openWorkbenchSection('changes');
 
       void launchPreview({
-        placement: variant === 'summary' ? 'sidebar' : undefined,
+        placement: 'sidebar',
         file_name: fileInfo.file_name,
         contentType: 'diff',
         editable: false,
@@ -86,7 +86,7 @@ const MessageFileChanges: React.FC<MessageFileChangesProps> = ({
         diffContent: fileInfo.diff,
       });
     },
-    [fileChanges, launchPreview, variant]
+    [fileChanges, launchPreview]
   );
 
   if (fileChanges.length === 0) {

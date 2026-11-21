@@ -44,7 +44,18 @@ export function peekRemoteEnvironmentManager(): RemoteEnvironmentManager | undef
 async function requestRemoteRuntime<T>(id: string, path: string, method: 'GET' | 'POST' = 'GET'): Promise<T> {
   const port = getRemoteEnvironmentManager().portFor(id);
   if (!port) throw new Error('Remote environment is not connected');
-  const response = await fetch(`http://127.0.0.1:${port}${path}`, { method });
+  let response: Response;
+  try {
+    response = await fetch(`http://127.0.0.1:${port}${path}`, {
+      method,
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch (error) {
+    // Node's undici reports a dead tunnel as the opaque "fetch failed". Name the
+    // environment and the likely remedy instead of leaking that bare message.
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`Remote environment is unreachable (${reason}). Reconnect and try again.`);
+  }
   if (!response.ok) throw new Error(`Remote runtime request failed (${response.status})`);
   const payload: unknown = await response.json();
   if (payload && typeof payload === 'object' && 'data' in payload) {

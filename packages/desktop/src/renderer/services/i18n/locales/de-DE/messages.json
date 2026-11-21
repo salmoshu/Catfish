@@ -24,7 +24,9 @@
     "viewSteps_other": "Schritte anzeigen · {{count}}",
     "input": "Eingabe",
     "output": "Ausgabe",
-    "loadFailed": "Vollständige Ausgabe konnte nicht geladen werden"
+    "loadFailed": "Vollständige Ausgabe konnte nicht geladen werden",
+    "command": "Bash",
+    "diffMoreLines": "{{count}} more lines"
   },
   "turnWork": {
     "summary": "{{duration}} gearbeitet",
@@ -155,7 +157,8 @@
     "targetAgent": "Ziel-Agent",
     "handoffDescription": "Das neue Gespräch erhält eine kurze Übergabe und setzt die Arbeit fort. Das Original läuft weiter.",
     "errorTargetUnavailable": "Der Ziel-Agent ist nicht verfügbar.",
-    "errorOperationConflict": "Diese Operation wurde bereits für einen anderen Fork verwendet."
+    "errorOperationConflict": "Diese Operation wurde bereits für einen anderen Fork verwendet.",
+    "optionsUnavailable": "Available after the forked session connects"
   },
   "askSubmit": "Absenden",
   "askDecline": "Nicht beantworten",

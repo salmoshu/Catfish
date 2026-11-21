@@ -11,8 +11,8 @@ import { parseSessionMessageBlock, parseSessionsBlock } from './sessionMarkers';
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
-import { Alert, Button, Dropdown, Menu, Message, Tooltip } from '@arco-design/web-react';
-import { Copy, People } from '@icon-park/react';
+import { Alert, Button, Message, Tooltip } from '@arco-design/web-react';
+import { Copy } from '@icon-park/react';
 import styles from './MessageText.module.css';
 import classNames from 'classnames';
 import React, { useMemo, useState } from 'react';
@@ -107,7 +107,7 @@ export const MessageTextActions: React.FC<{
 }) => {
   const { t } = useTranslation();
   const [showCopyAlert, setShowCopyAlert] = useState(false);
-  const [forkDialogMode, setForkDialogMode] = useState<'current' | 'agent' | null>(null);
+  const [forkDialogMode, setForkDialogMode] = useState<'unified' | null>(null);
   const [forkLoading, setForkLoading] = useState(false);
   const conversationContext = useConversationContextSafe();
   const forkConversation = useForkConversation(conversationContext?.conversation_id);
@@ -153,36 +153,18 @@ export const MessageTextActions: React.FC<{
           />
         </Tooltip>
         {showForkButton && (
-          <Dropdown
-            trigger={['hover', 'click']}
-            position='bottom'
-            droplist={
-              <Menu
-                onClickMenuItem={(key) => {
-                  if (key === 'current') setForkDialogMode('current');
-                  if (key === 'agent') setForkDialogMode('agent');
-                }}
-              >
-                <Menu.Item key='current'>
-                  <ForkBranchIcon size={14} fill='currentColor' /> {t('messages.fork.action')}
-                </Menu.Item>
-                <Menu.Item key='agent'>
-                  <People size={14} /> {t('messages.fork.toAnotherAgent')}
-                </Menu.Item>
-              </Menu>
-            }
-          >
+          <Tooltip content={t('messages.fork.action')}>
             <Button
               type='text'
               size='mini'
               aria-label={t('messages.fork.action')}
               className='p-4px rd-4px !text-t-secondary hover:!text-t-primary hover:!bg-fill-2 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
               loading={forkLoading}
-              aria-haspopup='menu'
               data-testid='message-fork-button'
+              onClick={() => setForkDialogMode('unified')}
               icon={<ForkBranchIcon size={16} fill='currentColor' />}
             />
-          </Dropdown>
+          </Tooltip>
         )}
         {message.created_at && (
           <span className='text-12px text-t-secondary opacity-0 group-hover:opacity-100 transition-opacity select-none'>
@@ -192,9 +174,9 @@ export const MessageTextActions: React.FC<{
       </div>
       {forkDialogMode !== null && (
         <ForkConversationDialog
+          sourceConversationId={conversationContext?.conversation_id}
           sourceBackend={conversationContext?.backend}
           sourceAssistantId={conversationContext?.assistantId}
-          defaultToAnotherAgent={forkDialogMode === 'agent'}
           submitting={forkLoading}
           onCancel={() => setForkDialogMode(null)}
           onSubmit={(options) => {

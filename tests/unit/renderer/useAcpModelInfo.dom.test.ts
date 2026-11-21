@@ -660,6 +660,6 @@ describe('useAcpModelInfo', () => {
     await waitFor(() => {
       expect(result.current.model_info?.current_model_id).toBe('opus-4');
     });
-    expect(result.current.canSwitch).toBe(false);
+    expect(result.current.canSwitch).toBe(true);
   });
 });

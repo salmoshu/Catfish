@@ -80,21 +80,23 @@ const ConversationPlanCard: React.FC<{ conversation_id: string }> = ({ conversat
       {state.planOpen &&
         floating &&
         createPortal(
-          <div
-            role='dialog'
-            aria-label={t('conversation.planBar.title')}
-            data-plan-presentation='floating'
-            className={styles.floatingPlan}
-          >
-            <Button
-              type='text'
-              size='mini'
-              className={styles.closeFloating}
-              aria-label={t('common.close')}
-              icon={<Close size={14} />}
-              onClick={() => toggle('plan')}
-            />
-            <ConversationPlanBar conversation_id={conversation_id} variant='panel' />
+          <div className={styles.floatingLayer}>
+            <div
+              role='dialog'
+              aria-label={t('conversation.planBar.title')}
+              data-plan-presentation='floating'
+              className={styles.floatingPlan}
+            >
+              <Button
+                type='text'
+                size='mini'
+                className={styles.closeFloating}
+                aria-label={t('common.close')}
+                icon={<Close size={14} />}
+                onClick={() => toggle('plan')}
+              />
+              <ConversationPlanBar conversation_id={conversation_id} variant='panel' />
+            </div>
           </div>,
           slots.chat ?? document.body
         )}

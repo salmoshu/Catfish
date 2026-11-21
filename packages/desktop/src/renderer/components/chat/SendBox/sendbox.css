@@ -553,8 +553,7 @@ body[arco-theme='dark'] .sendbox-panel .send-button-custom--disabled svg * {
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  padding-top: 4px;
-  padding-bottom: 4px;
+  padding: 4px 2px;
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: break-word;

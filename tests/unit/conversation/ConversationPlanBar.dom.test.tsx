@@ -316,7 +316,8 @@ describe('independent workspace and plan panels', () => {
     fireEvent.click(screen.getByRole('button', { name: 'conversation.planBar.title' }));
     const floatingPlan = screen.getByRole('dialog', { name: 'conversation.planBar.title' });
     expect(floatingPlan).toBeVisible();
-    expect(floatingPlan.parentElement).toBe(screen.getByTestId('chat-content-area'));
+    expect(floatingPlan.parentElement?.className).toContain('floatingLayer');
+    expect(floatingPlan.closest('[data-testid="chat-content-area"]')).toBe(screen.getByTestId('chat-content-area'));
     expect(floatingPlan.className).not.toContain('floatingPlanLeft');
     expect(screen.getByTestId('workspace-explorer')).toBe(explorer);
     expectPresentation(true, true);

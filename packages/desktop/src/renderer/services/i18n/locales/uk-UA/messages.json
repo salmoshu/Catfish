@@ -27,7 +27,9 @@
     "viewSteps_many": "Переглянути кроки · {{count}}",
     "input": "Ввід",
     "output": "Вивід",
-    "loadFailed": "Не вдалося завантажити повний вивід"
+    "loadFailed": "Не вдалося завантажити повний вивід",
+    "command": "Bash",
+    "diffMoreLines": "Ще рядків: {{count}}"
   },
   "turnWork": {
     "summary": "Робота тривала {{duration}}",
@@ -163,7 +165,8 @@
     "targetAgent": "Цільовий агент",
     "handoffDescription": "Новий чат отримує стислий підсумок і продовжує роботу. Початковий чат продовжує виконання.",
     "errorTargetUnavailable": "Цільовий агент недоступний.",
-    "errorOperationConflict": "Цю операцію вже використано для іншої гілки."
+    "errorOperationConflict": "Цю операцію вже використано для іншої гілки.",
+    "optionsUnavailable": "Доступно після підключення сесії"
   },
   "askSubmit": "Надіслати",
   "askDecline": "Не відповідати",

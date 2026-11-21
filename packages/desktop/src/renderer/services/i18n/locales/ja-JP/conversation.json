@@ -92,7 +92,8 @@
     "archiving": "Archiving...",
     "expandAllProjects": "すべてのプロジェクト会話を展開",
     "collapseAllProjects": "すべてのプロジェクト会話を折りたたむ",
-    "hasDraft": "未送信の下書き"
+    "hasDraft": "未送信の下書き",
+    "unsentDraft": "Unsent draft"
   },
   "historySearch": {
     "tooltip": "メッセージを検索",
@@ -603,9 +604,9 @@
     "sendboxHint": "実行環境を準備しています。初回起動は少し時間がかかる場合があります。"
   },
   "sendbox": {
-    "hint": "/ でコマンド、@ でファイルを参照、↑/↓ でメッセージ履歴",
+    "hint": "/ でコマンド、@ でファイルを参照",
     "mediaPathFallback": "このエージェントはこのファイル形式をネイティブに扱えないため、ファイルパスとして送信されます。",
-    "hintWithSessions": "/ でコマンド、@ でファイル、@@ で会話を参照、↑/↓ で履歴"
+    "hintWithSessions": "/ でコマンド、@ でファイル、@@ で会話を参照"
   },
   "agentTip": {
     "codes": {

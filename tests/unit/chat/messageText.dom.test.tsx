@@ -879,7 +879,6 @@ describe('MessageText fork entry point', () => {
   it('clicking fork calls the API, refreshes, navigates, and pre-warms the runtime', async () => {
     renderWithCapability({ at_turn: true }, { isLastMessage: false, hasForkAnchor: true });
     fireEvent.click(screen.getByTestId('message-fork-button'));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'messages.fork.action' }));
     fireEvent.click(await screen.findByRole('button', { name: 'messages.fork.startContinuation' }));
     await waitFor(() => {
       expect(forkMocks.fork).toHaveBeenCalledWith({
@@ -896,15 +895,12 @@ describe('MessageText fork entry point', () => {
     renderWithCapability({ at_turn: true }, { isLastMessage: true });
     const button = screen.getByTestId('message-fork-button');
     fireEvent.click(button);
-    const action = await screen.findByRole('menuitem', { name: 'messages.fork.action' });
-    fireEvent.click(action);
     const submit = await screen.findByRole('button', { name: 'messages.fork.startContinuation' });
     fireEvent.click(submit);
     fireEvent.click(submit);
     await waitFor(() => expect(forkMocks.fork).toHaveBeenCalledTimes(1));
     await new Promise((resolve) => setTimeout(resolve, 0));
     fireEvent.click(button);
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'messages.fork.action' }));
     fireEvent.click(await screen.findByRole('button', { name: 'messages.fork.startContinuation' }));
     await waitFor(() => expect(forkMocks.fork).toHaveBeenCalledTimes(2));
     expect(forkMocks.fork.mock.calls[0][0].operation_id).toBe(forkMocks.fork.mock.calls[1][0].operation_id);
@@ -925,10 +921,12 @@ describe('MessageText fork entry point', () => {
     ]);
     renderWithCapability({ at_turn: true }, { isLastMessage: true });
     expect(screen.queryByTestId('message-fork-agent-button')).not.toBeInTheDocument();
-    fireEvent.mouseEnter(screen.getByTestId('message-fork-button'));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'messages.fork.toAnotherAgent' }));
+    fireEvent.click(screen.getByTestId('message-fork-button'));
+    fireEvent.change(await screen.findByRole('combobox', { name: 'messages.fork.targetAgent' }), {
+      target: { value: 'agent-claude' },
+    });
     await screen.findByRole('dialog');
-    expect(screen.getByRole('combobox')).toHaveValue('agent-claude');
+    expect(screen.getByRole('combobox', { name: 'messages.fork.targetAgent' })).toHaveValue('agent-claude');
     fireEvent.click(screen.getByRole('button', { name: 'messages.fork.startContinuation' }));
     await waitFor(() =>
       expect(forkMocks.fork).toHaveBeenCalledWith({
@@ -978,9 +976,10 @@ describe('MessageText fork entry point', () => {
     forkMocks.ensureRuntime.mockResolvedValue({ config_options: configOptions });
     renderWithCapability({ at_turn: true }, { isLastMessage: true });
     fireEvent.click(screen.getByTestId('message-fork-button'));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'messages.fork.action' }));
 
-    fireEvent.change(await screen.findByRole('combobox', { name: 'common.model' }), { target: { value: 'gpt-new' } });
+    const modelSelect = await screen.findByRole('combobox', { name: 'common.model' });
+    await waitFor(() => expect(modelSelect).not.toBeDisabled());
+    fireEvent.change(modelSelect, { target: { value: 'gpt-new' } });
     fireEvent.change(screen.getByRole('combobox', { name: 'agent.thoughtLevel.label' }), { target: { value: 'max' } });
     fireEvent.change(screen.getByRole('combobox', { name: 'agentMode.switchMode' }), { target: { value: 'plan' } });
     fireEvent.click(screen.getByRole('button', { name: 'messages.fork.startContinuation' }));

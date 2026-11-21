@@ -92,7 +92,8 @@
     "archiving": "Archiving...",
     "expandAllProjects": "Développer toutes les conversations de projet",
     "collapseAllProjects": "Réduire toutes les conversations de projet",
-    "hasDraft": "Brouillon non envoyé"
+    "hasDraft": "Brouillon non envoyé",
+    "unsentDraft": "Unsent draft"
   },
   "historySearch": {
     "tooltip": "Rechercher des messages",
@@ -603,9 +604,9 @@
     "sendboxHint": "Préparation de l'environnement d'exécution. Le premier démarrage peut prendre un peu plus de temps."
   },
   "sendbox": {
-    "hint": "Tapez / pour les commandes, @ pour référencer des fichiers, ↑/↓ pour l'historique des messages",
+    "hint": "Tapez / pour les commandes, @ pour référencer des fichiers",
     "mediaPathFallback": "Cet agent ne prend pas en charge nativement ce type de fichier ; il sera envoyé sous forme de chemin de fichier.",
-    "hintWithSessions": "/ pour les commandes, @ pour les fichiers, @@ pour les conversations, ↑/↓ pour l’historique"
+    "hintWithSessions": "/ pour les commandes, @ pour les fichiers, @@ pour les conversations"
   },
   "agentTip": {
     "codes": {

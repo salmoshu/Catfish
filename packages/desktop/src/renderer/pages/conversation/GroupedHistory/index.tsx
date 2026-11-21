@@ -13,7 +13,7 @@ import { restrictToVerticalAxis } from '@/renderer/utils/ui/dndModifiers';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Button, Dropdown, Empty, Menu, Spin, Tooltip } from '@arco-design/web-react';
-import { FolderClose, MoreOne, Plus, Right } from '@icon-park/react';
+import { FolderClose, EditOne, MoreOne, Plus, Right } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -36,6 +36,7 @@ import {
 } from '@/renderer/utils/workspace/environmentProjects';
 import { buildProjectOrder } from '@/renderer/utils/workspace/projectOrder';
 import { getBackendEnvironment } from '@/common/adapter/httpBridge';
+import { useDraftConversationKey } from '@/renderer/hooks/chat/useSendBoxDraft';
 import { writeExpandedWorkspaces } from './hooks/useWorkspaceExpansionState';
 
 const SIDER_VISIBLE_LIMIT = 8;
@@ -72,6 +73,11 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
   const layout = useLayoutContext();
   const isMobile = layout?.isMobile ?? false;
   const { getJobStatus, markAsRead, setActiveConversation } = useCronJobsMap();
+  const draftConversationKey = useDraftConversationKey();
+  const draftConversationIds = useMemo(
+    () => new Set(draftConversationKey.split('\n').filter(Boolean)),
+    [draftConversationKey]
+  );
   const [environmentHistory, setEnvironmentHistory] = useState(readEnvironmentProjects);
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [showAllConversations, setShowAllConversations] = useState(false);
@@ -603,6 +609,9 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
                   const showProjectActivity =
                     !projectExpanded &&
                     group.conversations.some((conversation) => isConversationGenerating(conversation.id));
+                  const showProjectDraft =
+                    !projectExpanded &&
+                    group.conversations.some((conversation) => draftConversationIds.has(conversation.id));
                   const projectMenu = (
                     <Menu
                       onClickMenuItem={(key) => {
@@ -651,6 +660,15 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
                           <span className='flex items-center gap-6px'>
                             {showProjectActivity && (
                               <Spin size={14} className='group-hover:hidden' data-testid='active-project-running' />
+                            )}
+                            {showProjectDraft && (
+                              <span
+                                className='flex-center text-t-tertiary group-hover:hidden'
+                                title={t('conversation.history.unsentDraft', { defaultValue: 'Unsent draft' })}
+                                data-testid='project-draft-indicator'
+                              >
+                                <EditOne theme='outline' size={14} />
+                              </span>
                             )}
                             <Tooltip content={t('conversation.history.newConversationInProject')} position='top'>
                               <span

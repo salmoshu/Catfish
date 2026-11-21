@@ -112,12 +112,21 @@
   flex-direction: column;
 }
 
+/* Keep Files / Changes / Terminal / Agents visible and put the opened file
+ * tabs in their own row underneath instead of covering the whole sidebar. */
 .workbench-body[data-preview-visible='true'] > section:first-child {
-  flex: 0 0 auto;
+  flex: 1 1 0;
+  min-height: 120px;
 }
 
 .workbench-body[data-preview-visible='true'] > section:first-child > .h-full {
-  height: auto;
+  height: 100%;
+}
+
+.workbench-body[data-preview-visible='true'] > .preview-panel {
+  flex: 1 1 0;
+  min-height: 160px;
+  border-top: 1px solid var(--color-border-2);
 }
 
 .workbench-empty {

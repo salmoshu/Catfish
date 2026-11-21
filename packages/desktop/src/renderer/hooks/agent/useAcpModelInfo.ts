@@ -110,6 +110,12 @@ export const useAcpModelInfo = ({
       })),
     };
   }, [initialModelId, model]);
+  const cachedModelList = useMemo(() => cachedModels?.available_models ?? [], [cachedModels]);
+  const availableModels = useMemo(() => {
+    if (configModelInfo?.available_models.length) return configModelInfo.available_models;
+    if (legacyModelInfo?.available_models.length) return legacyModelInfo.available_models;
+    return cachedModelList;
+  }, [cachedModelList, configModelInfo, legacyModelInfo]);
   const persistedModelInfo = useMemo<AcpModelInfo | null>(() => {
     if (!initialModelId) return null;
     return {
@@ -147,7 +153,15 @@ export const useAcpModelInfo = ({
     return ipcBridge.acpConversation.responseStream.on(handler);
   }, [conversation_id, enabled, initialModelId]);
 
-  const model_info = configModelInfo ?? legacyModelInfo ?? persistedModelInfo;
+  const model_info = useMemo<AcpModelInfo | null>(() => {
+    const base = configModelInfo ?? legacyModelInfo ?? persistedModelInfo;
+    if (!base) return null;
+    // An old conversation may know its current model long before the runtime
+    // republishes the catalog. Keep the picker populated from the persisted
+    // agent snapshot instead of collapsing to "select model".
+    if (base.available_models.length > 0 || availableModels.length === 0) return base;
+    return { ...base, available_models: availableModels };
+  }, [availableModels, configModelInfo, legacyModelInfo, persistedModelInfo]);
   const switchingModelId =
     setStatus.state === 'setting' && setStatus.optionId === model?.id ? setStatus.requestedValue : undefined;
   const selectedModelId =
@@ -159,13 +173,16 @@ export const useAcpModelInfo = ({
 
   const selectModel = useCallback(
     (model_id: string) => {
-      if (!enabled || !model) return;
+      if (!enabled || availableModels.length === 0) return;
+      // The runtime may not have published its option list yet; every ACP
+      // backend uses `model` (or the catalog id) for this category.
+      const optionId = model?.id ?? 'model';
       // Only the switch itself decides success/failure. The rejection handler is
       // passed to `then` rather than chained as `catch` so it can ONLY see a
       // failure from `setConfigOption` — never one from `onSelectModelSuccess`.
       // Once the runtime has switched, reporting a failure would tell the user
       // the opposite of what happened.
-      void setConfigOption(model.id, model_id)
+      void setConfigOption(optionId, model_id)
         .then(
           () => onSelectModelSuccess?.(model_id),
           (error) => onSelectModelFailed?.(model_id, error)
@@ -175,15 +192,13 @@ export const useAcpModelInfo = ({
         // escape would surface as an unhandled rejection.
         .catch(() => {});
     },
-    [enabled, model, onSelectModelFailed, onSelectModelSuccess, setConfigOption]
+    [availableModels.length, enabled, model, onSelectModelFailed, onSelectModelSuccess, setConfigOption]
   );
 
   return {
     model_info,
     isRuntimeReady: runtimeConfig.isRuntimeReady,
-    canSwitch: Boolean(
-      configModelInfo && configModelInfo.available_models.length > 0 && model && !isConfigOptionBlocked(model.id)
-    ),
+    canSwitch: Boolean(availableModels.length > 0 && (!model || !isConfigOptionBlocked(model.id))),
     isLoading: !model_info && isLoading,
     isSetting: setStatus.state === 'setting' && setStatus.optionId === model?.id,
     selectModel,

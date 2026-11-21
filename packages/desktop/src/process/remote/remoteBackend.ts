@@ -39,6 +39,19 @@ export class RemoteBackend {
     return this.exited;
   }
 
+  /** Liveness probe through the tunnel; a suspended WSL distro fails fast. */
+  async ping(timeoutMs = 2_000): Promise<boolean> {
+    if (this.exited) return false;
+    try {
+      const response = await fetch(`http://127.0.0.1:${this.tunnel.port}/health`, {
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
   private constructor(
     private readonly executor: RemoteExecutor,
     private readonly process: RemoteProcess,

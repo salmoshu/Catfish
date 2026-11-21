@@ -24,7 +24,9 @@
     "viewSteps_other": "Adımları görüntüle · {{count}}",
     "input": "Girdi",
     "output": "Çıktı",
-    "loadFailed": "Tam çıktı yüklenemedi"
+    "loadFailed": "Tam çıktı yüklenemedi",
+    "command": "Bash",
+    "diffMoreLines": "{{count}} more lines"
   },
   "turnWork": {
     "summary": "{{duration}} boyunca çalıştı",
@@ -155,7 +157,8 @@
     "targetAgent": "Hedef ajan",
     "handoffDescription": "Yeni konuşma kısa bir özet alır ve çalışmaya devam eder. Kaynak konuşma çalışmayı sürdürür.",
     "errorTargetUnavailable": "Hedef ajan kullanılamıyor.",
-    "errorOperationConflict": "Bu işlem başka bir çatal için zaten kullanılmış."
+    "errorOperationConflict": "Bu işlem başka bir çatal için zaten kullanılmış.",
+    "optionsUnavailable": "Available after the forked session connects"
   },
   "askSubmit": "Gönder",
   "askDecline": "Yanıtlama",

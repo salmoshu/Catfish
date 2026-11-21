@@ -51,11 +51,29 @@ const subscribeDrafts = (listener: () => void): (() => void) => {
 };
 
 /** Reports unsent text across composers without mounting another composer. */
+export const conversationHasDraft = (conversation_id: string): boolean =>
+  Object.values(store).some((drafts) => Boolean(drafts.get(conversation_id)?.content.trim()));
+
 export const useConversationHasDraft = (conversation_id: string): boolean => {
-  const snapshot = useCallback(
-    () => Object.values(store).some((drafts) => Boolean(drafts.get(conversation_id)?.content.trim())),
-    [conversation_id]
-  );
+  const snapshot = useCallback(() => conversationHasDraft(conversation_id), [conversation_id]);
+  return useSyncExternalStore(subscribeDrafts, snapshot, snapshot);
+};
+
+/**
+ * A stable, newline-joined snapshot of every conversation holding unsent text.
+ * Grouped headers use it to keep their draft badge visible while collapsed
+ * without subscribing to each row individually.
+ */
+export const useDraftConversationKey = (): string => {
+  const snapshot = useCallback(() => {
+    const ids: string[] = [];
+    for (const drafts of Object.values(store)) {
+      for (const [id, draft] of drafts) {
+        if (draft.content.trim()) ids.push(id);
+      }
+    }
+    return ids.sort().join('\n');
+  }, []);
   return useSyncExternalStore(subscribeDrafts, snapshot, snapshot);
 };
 

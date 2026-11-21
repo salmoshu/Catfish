@@ -330,7 +330,7 @@ describe('MessageAcpToolCall image output', () => {
     expect(screen.getByText('一只小猫')).toBeInTheDocument();
     expect(screen.queryByText(/"prompt"/)).not.toBeInTheDocument();
     expect(screen.getByText('done')).toBeInTheDocument();
-    expect(screen.getByTestId('file-changes-panel')).toHaveAttribute('data-file-count', '2');
+    expect(screen.getAllByTestId('tool-diff-preview')).toHaveLength(2);
   });
 
   it('keeps the failure status visible when a file edit fails', () => {
@@ -364,10 +364,9 @@ describe('MessageAcpToolCall image output', () => {
     );
 
     expandDetails();
-    const panel = screen.getByTestId('file-changes-panel');
-    expect(panel).toHaveAttribute('data-title', 'messages.fileChangesCount');
-    expect(panel).toHaveAttribute('data-insertions', '2');
-    expect(panel).toHaveAttribute('data-deletions', '1');
+    expect(screen.getByTestId('tool-diff-preview')).toBeVisible();
+    expect(screen.getAllByText('+2').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('−1').length).toBeGreaterThan(0);
   });
 
   it('keeps a diff-only change collapsed and reveals its real diff on request', () => {
@@ -388,11 +387,11 @@ describe('MessageAcpToolCall image output', () => {
       />
     );
 
-    expect(screen.queryByTestId('file-changes-panel')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('tool-diff-preview')).not.toBeInTheDocument();
     expect(screen.queryByText(/Tool Call ID/)).not.toBeInTheDocument();
     expect(screen.queryByText(/workspace\/file.ts/)).not.toBeInTheDocument();
     expandDetails();
-    expect(screen.getByTestId('file-changes-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('tool-diff-preview')).toBeInTheDocument();
   });
 
   it('reveals string raw input only when expanded', () => {
@@ -424,6 +423,6 @@ describe('MessageAcpToolCall image output', () => {
       />
     );
 
-    expect(screen.queryByTestId('file-changes-panel')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('tool-diff-preview')).not.toBeInTheDocument();
   });
 });

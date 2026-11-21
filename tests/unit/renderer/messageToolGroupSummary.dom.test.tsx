@@ -11,14 +11,6 @@ import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
 import zhMessages from '@/renderer/services/i18n/locales/zh-CN/messages.json';
 
-const fileChangesMock = vi.hoisted(() => vi.fn());
-vi.mock('@/renderer/pages/conversation/Messages/MessageFileChanges', () => ({
-  default: (props: unknown) => {
-    fileChangesMock(props);
-    return <div data-testid='inline-file-changes' />;
-  },
-}));
-
 vi.mock('@/common', () => ({
   ipcBridge: {
     database: {
@@ -49,13 +41,9 @@ describe('MessageToolGroupSummary', () => {
     expect(screen.getByText('native.ts')).toBeVisible();
     expect(screen.queryByTestId('inline-file-changes')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Edit file/ }));
-    expect(fileChangesMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        diffsChanges: [
-          expect.objectContaining({ fullPath: '/workspace/native.ts', diff: expect.stringContaining('+after') }),
-        ],
-      })
-    );
+    const preview = screen.getByTestId('tool-diff-preview');
+    expect(preview).toBeVisible();
+    expect(preview.textContent).toContain('+after');
   });
 
   it('shows a localized purpose before exposing command details', async () => {
@@ -85,11 +73,11 @@ describe('MessageToolGroupSummary', () => {
     );
 
     expect(screen.getByText('运行命令')).toBeVisible();
-    expect(screen.getByText('单线程复测滑块双击交互')).toBeVisible();
-    expect(screen.queryByText('bun run test --workers=1')).not.toBeInTheDocument();
+    expect(screen.getByText('bun run test --workers=1')).toBeVisible();
+    expect(screen.queryByText('单线程复测滑块双击交互')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /运行命令/ }));
-    expect(screen.getByText('bun run test --workers=1')).toBeVisible();
+    expect(screen.getAllByText('bun run test --workers=1').length).toBeGreaterThan(1);
     expect(screen.getByText('工作目录')).toBeVisible();
   });
 
@@ -264,12 +252,8 @@ describe('MessageToolGroupSummary', () => {
     fireEvent.click(screen.getByText('View Steps · {{count}}'));
     fireEvent.click(screen.getByText('Edit file'));
 
-    expect(fileChangesMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        diffsChanges: [
-          expect.objectContaining({ fullPath: '/workspace/app.ts', diff: expect.stringContaining('after') }),
-        ],
-      })
-    );
+    const preview = screen.getByTestId('tool-diff-preview');
+    expect(preview).toBeVisible();
+    expect(preview.textContent).toContain('+after');
   });
 });

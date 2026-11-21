@@ -28,7 +28,9 @@
     "viewSteps_many": "Показать шаги · {{count}}",
     "input": "Ввод",
     "output": "Вывод",
-    "loadFailed": "Не удалось загрузить полный вывод"
+    "loadFailed": "Не удалось загрузить полный вывод",
+    "command": "Bash",
+    "diffMoreLines": "{{count}} more lines"
   },
   "turnWork": {
     "summary": "Работа заняла {{duration}}",
@@ -161,7 +163,8 @@
     "targetAgent": "Целевой агент",
     "handoffDescription": "Новый чат получает краткую сводку и продолжает работу. Исходный чат продолжает выполняться.",
     "errorTargetUnavailable": "Целевой агент недоступен.",
-    "errorOperationConflict": "Эта операция уже использована для другой ветки."
+    "errorOperationConflict": "Эта операция уже использована для другой ветки.",
+    "optionsUnavailable": "Available after the forked session connects"
   },
   "askSubmit": "Отправить",
   "askDecline": "Не отвечать",

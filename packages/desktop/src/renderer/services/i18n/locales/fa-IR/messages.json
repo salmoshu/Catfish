@@ -24,7 +24,9 @@
     "viewSteps_other": "مشاهده مراحل · {{count}}",
     "input": "ورودی",
     "output": "خروجی",
-    "loadFailed": "بارگیری خروجی کامل ناموفق بود"
+    "loadFailed": "بارگیری خروجی کامل ناموفق بود",
+    "command": "Bash",
+    "diffMoreLines": "{{count}} more lines"
   },
   "turnWork": {
     "summary": "مدت کار: {{duration}}",
@@ -155,7 +157,8 @@
     "targetAgent": "عامل مقصد",
     "handoffDescription": "گفتگوی جدید خلاصه‌ای دریافت می‌کند و کار را ادامه می‌دهد. گفتگوی مبدأ فعال می‌ماند.",
     "errorTargetUnavailable": "عامل مقصد در دسترس نیست.",
-    "errorOperationConflict": "این عملیات قبلاً برای انشعاب دیگری استفاده شده است."
+    "errorOperationConflict": "این عملیات قبلاً برای انشعاب دیگری استفاده شده است.",
+    "optionsUnavailable": "Available after the forked session connects"
   },
   "askSubmit": "ارسال",
   "askDecline": "پاسخ ندادن",

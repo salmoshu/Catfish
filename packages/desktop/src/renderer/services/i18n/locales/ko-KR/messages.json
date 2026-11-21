@@ -24,7 +24,9 @@
     "viewSteps_other": "단계 보기 · {{count}}",
     "input": "입력",
     "output": "출력",
-    "loadFailed": "전체 출력을 불러오지 못했습니다"
+    "loadFailed": "전체 출력을 불러오지 못했습니다",
+    "command": "Bash",
+    "diffMoreLines": "{{count}} more lines"
   },
   "turnWork": {
     "summary": "작업 시간: {{duration}}",
@@ -155,7 +157,8 @@
     "targetAgent": "대상 에이전트",
     "handoffDescription": "새 대화가 요약을 전달받아 작업을 계속합니다. 원본 대화는 계속 실행됩니다.",
     "errorTargetUnavailable": "대상 에이전트를 사용할 수 없습니다.",
-    "errorOperationConflict": "이 작업 ID는 다른 Fork에 이미 사용되었습니다."
+    "errorOperationConflict": "이 작업 ID는 다른 Fork에 이미 사용되었습니다.",
+    "optionsUnavailable": "Available after the forked session connects"
   },
   "askSubmit": "제출",
   "askDecline": "답변 안 함",

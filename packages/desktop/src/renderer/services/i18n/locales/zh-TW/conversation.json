@@ -92,7 +92,8 @@
     "archiving": "歸檔中...",
     "expandAllProjects": "展開全部專案會話",
     "collapseAllProjects": "摺疊全部專案會話",
-    "hasDraft": "有未傳送的草稿"
+    "hasDraft": "有未傳送的草稿",
+    "unsentDraft": "未傳送的草稿"
   },
   "historySearch": {
     "tooltip": "搜尋訊息",
@@ -603,9 +604,9 @@
     "sendboxHint": "正在準備執行環境。首次啟動可能會稍慢一些。"
   },
   "sendbox": {
-    "hint": "輸入 / 喚起命令，@ 引用檔案，↑/↓ 切換歷史訊息",
+    "hint": "輸入 / 喚起命令，@ 引用檔案",
     "mediaPathFallback": "該 Agent 不原生支援此檔案類型，將以檔案路徑形式傳送。",
-    "hintWithSessions": "輸入 / 喚起命令，@ 引用檔案，@@ 引用對話，↑/↓ 切換歷史訊息"
+    "hintWithSessions": "輸入 / 喚起命令，@ 引用檔案，@@ 引用對話"
   },
   "agentTip": {
     "codes": {

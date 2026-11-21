@@ -96,7 +96,10 @@ describe('remote environment runtime bridge', () => {
     const result = await mocks.handlers.get('agents')?.({ id: 'wsl' });
 
     expect(result).toEqual([agent]);
-    expect(mocks.fetch).toHaveBeenCalledWith('http://127.0.0.1:41001/api/agents/management', { method: 'GET' });
+    expect(mocks.fetch).toHaveBeenCalledWith(
+      'http://127.0.0.1:41001/api/agents/management',
+      expect.objectContaining({ method: 'GET' })
+    );
   });
 
   it('uses the same Core API envelope for remote conversation lists', async () => {
@@ -111,8 +114,9 @@ describe('remote environment runtime bridge', () => {
     const result = await mocks.handlers.get('conversations')?.({ id: 'wsl' });
 
     expect(result).toEqual([expect.objectContaining(conversation)]);
-    expect(mocks.fetch).toHaveBeenCalledWith('http://127.0.0.1:41001/api/conversations?limit=10000', {
-      method: 'GET',
-    });
+    expect(mocks.fetch).toHaveBeenCalledWith(
+      'http://127.0.0.1:41001/api/conversations?limit=10000',
+      expect.objectContaining({ method: 'GET' })
+    );
   });
 });

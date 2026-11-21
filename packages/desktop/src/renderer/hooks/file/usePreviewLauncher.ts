@@ -9,7 +9,7 @@ import { localFileRef } from '@/common/types/chatFile';
 import type { PreviewContentType } from '@/common/types/office/preview';
 import type { PreviewPlacement } from '@/renderer/pages/conversation/Preview/context/placementPreference';
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
-import { usePreviewContext } from '@/renderer/pages/conversation/Preview';
+import { useOptionalPreviewContext } from '@/renderer/pages/conversation/Preview/context/PreviewContext';
 import { resolvePreviewPayload, upgradeFileRef } from '@/renderer/utils/file/previewPayload';
 import { getCurrentProject } from '@/renderer/pages/conversation/explorer/currentProjectStore';
 import { classifyPreviewError, type PreviewErrorKind } from '@/renderer/utils/previewError';
@@ -54,8 +54,9 @@ interface PreviewLaunchOptions {
  */
 export const usePreviewLauncher = () => {
   const conversationContext = useConversationContextSafe();
+  const previewContext = useOptionalPreviewContext();
   const workspace = conversationContext?.workspace;
-  const { openPreview } = usePreviewContext();
+  const openPreview = previewContext?.openPreview;
   const [loading, setLoading] = useState(false);
   const [errorKind, setErrorKind] = useState<PreviewErrorKind | null>(null);
 
@@ -75,6 +76,7 @@ export const usePreviewLauncher = () => {
       diffContent,
       placement,
     }: PreviewLaunchOptions) => {
+      if (!openPreview) return;
       setLoading(true);
       setErrorKind(null);
 

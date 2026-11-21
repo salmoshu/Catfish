@@ -54,6 +54,17 @@
 .row {
   min-width: 0;
   min-height: 30px;
+  border-radius: 6px;
+}
+
+.summary .row {
+  margin: 0 -8px;
+  padding: 0 8px;
+}
+
+.summary .row:hover,
+.operation .row:hover {
+  background: var(--color-fill-1);
 }
 
 .fileName:global(.arco-btn),
@@ -90,6 +101,7 @@
 
 .directory {
   min-width: 0;
+  margin-inline-start: 6px;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--text-tertiary);

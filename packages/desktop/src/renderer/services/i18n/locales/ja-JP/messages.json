@@ -24,7 +24,9 @@
     "viewSteps_other": "ステップを表示 · {{count}}",
     "input": "入力",
     "output": "出力",
-    "loadFailed": "完全な出力の読み込みに失敗しました"
+    "loadFailed": "完全な出力の読み込みに失敗しました",
+    "command": "Bash",
+    "diffMoreLines": "{{count}} more lines"
   },
   "turnWork": {
     "summary": "作業時間: {{duration}}",
@@ -155,7 +157,8 @@
     "targetAgent": "移行先エージェント",
     "handoffDescription": "新しい会話に要約を引き継いで作業を続行します。元の会話は実行を継続します。",
     "errorTargetUnavailable": "移行先エージェントを利用できません。",
-    "errorOperationConflict": "この操作 ID は別の Fork に使用されています。"
+    "errorOperationConflict": "この操作 ID は別の Fork に使用されています。",
+    "optionsUnavailable": "Available after the forked session connects"
   },
   "askSubmit": "送信",
   "askDecline": "回答しない",

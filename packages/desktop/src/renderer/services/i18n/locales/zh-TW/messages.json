@@ -24,7 +24,9 @@
     "viewSteps_other": "檢視步驟 · {{count}}",
     "input": "輸入",
     "output": "輸出",
-    "loadFailed": "載入完整輸出失敗"
+    "loadFailed": "載入完整輸出失敗",
+    "command": "Bash",
+    "diffMoreLines": "還有 {{count}} 行"
   },
   "turnWork": {
     "summary": "工作了 {{duration}}",
@@ -155,7 +157,8 @@
     "targetAgent": "目標 Agent",
     "handoffDescription": "新對話接收任務摘要並繼續下一步，來源對話保持執行。",
     "errorTargetUnavailable": "目標 Agent 目前無法使用。",
-    "errorOperationConflict": "此操作編號已用於另一項 Fork。"
+    "errorOperationConflict": "此操作編號已用於另一項 Fork。",
+    "optionsUnavailable": "工作階段連線後可用"
   },
   "askSubmit": "提交",
   "askDecline": "不回答",

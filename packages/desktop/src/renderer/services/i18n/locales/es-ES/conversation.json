@@ -92,7 +92,8 @@
     "archiving": "Archiving...",
     "expandAllProjects": "Expandir todas las conversaciones de proyectos",
     "collapseAllProjects": "Contraer todas las conversaciones de proyectos",
-    "hasDraft": "Borrador sin enviar"
+    "hasDraft": "Borrador sin enviar",
+    "unsentDraft": "Unsent draft"
   },
   "historySearch": {
     "tooltip": "Buscar mensajes",
@@ -604,9 +605,9 @@
     "sendboxHint": "Preparando el entorno de ejecución. El primer inicio puede tardar un poco más."
   },
   "sendbox": {
-    "hint": "Escribe / para comandos, @ para referenciar archivos y ↑/↓ para el historial de mensajes",
+    "hint": "Escribe / para comandos, @ para referenciar archivos",
     "mediaPathFallback": "Este agente no admite este tipo de archivo de forma nativa; se enviará como ruta de archivo.",
-    "hintWithSessions": "/ para comandos, @ para archivos, @@ para conversaciones, ↑/↓ para el historial"
+    "hintWithSessions": "/ para comandos, @ para archivos, @@ para conversaciones"
   },
   "agentTip": {
     "codes": {

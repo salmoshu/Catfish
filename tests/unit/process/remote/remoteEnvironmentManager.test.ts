@@ -43,7 +43,12 @@ const installation: RemoteInstallation = {
 const directories: string[] = [];
 
 function backend(port: number): RemoteBackend {
-  return { port, isExited: false, stop: vi.fn(async () => {}) } as unknown as RemoteBackend;
+  return {
+    port,
+    isExited: false,
+    ping: vi.fn(async () => true),
+    stop: vi.fn(async () => {}),
+  } as unknown as RemoteBackend;
 }
 
 async function manager(): Promise<RemoteEnvironmentManager> {

@@ -378,7 +378,7 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
       // drop (which carries `Files`). Pe roots are bindings, not entries — not
       // draggable.
       const dragProps =
-        onTransfer && !isRoot
+        onTransfer && !isRoot && !isRenaming
           ? {
               draggable: true,
               onDragStart: (e: React.DragEvent) => {
@@ -481,6 +481,10 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
                   event.preventDefault();
                   cancelRename();
                 }
+              }}
+              onDragStart={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
               }}
               placeholder={t('conversation.explorer.namePlaceholder')}
             />

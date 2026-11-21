@@ -24,7 +24,9 @@
     "viewSteps_other": "Ver etapas · {{count}}",
     "input": "Entrada",
     "output": "Saída",
-    "loadFailed": "Falha ao carregar a saída completa"
+    "loadFailed": "Falha ao carregar a saída completa",
+    "command": "Bash",
+    "diffMoreLines": "{{count}} more lines"
   },
   "turnWork": {
     "summary": "Trabalhou por {{duration}}",
@@ -155,7 +157,8 @@
     "targetAgent": "Agente de destino",
     "handoffDescription": "A nova conversa recebe um resumo e continua o trabalho. A original continua em execução.",
     "errorTargetUnavailable": "O agente de destino está indisponível.",
-    "errorOperationConflict": "Esta operação já foi usada para outra bifurcação."
+    "errorOperationConflict": "Esta operação já foi usada para outra bifurcação.",
+    "optionsUnavailable": "Available after the forked session connects"
   },
   "askSubmit": "Enviar",
   "askDecline": "Não responder",

@@ -101,8 +101,14 @@ const MessageQuestion: React.FC<MessageQuestionProps> = React.memo(({ message })
               {multi ? (
                 <Checkbox.Group
                   className={own.optionList}
-                  value={d.labels}
-                  onChange={(labels) => updateDraft(qi, { labels: labels as string[] })}
+                  value={d.otherSelected ? [...d.labels, OTHER_VALUE] : d.labels}
+                  onChange={(labels) => {
+                    const values = labels as string[];
+                    updateDraft(qi, {
+                      labels: values.filter((label) => label !== OTHER_VALUE),
+                      otherSelected: values.includes(OTHER_VALUE),
+                    });
+                  }}
                   disabled={submitted !== null}
                 >
                   {q.options.map((opt) => (
@@ -118,6 +124,25 @@ const MessageQuestion: React.FC<MessageQuestionProps> = React.memo(({ message })
                       </span>
                     </Checkbox>
                   ))}
+                  <Checkbox
+                    className={own.optionRow}
+                    value={OTHER_VALUE}
+                    data-testid={`message-question-option-${qi}-other`}
+                  >
+                    <span className={own.optionText}>
+                      <span className={own.optionLabel}>{t('messages.askOther')}</span>
+                    </span>
+                  </Checkbox>
+                  {d.otherSelected ? (
+                    <Input
+                      className={own.otherInput}
+                      placeholder={t('messages.askOtherPlaceholder')}
+                      value={d.other}
+                      onChange={(v) => updateDraft(qi, { other: v })}
+                      disabled={submitted !== null}
+                      data-testid={`message-question-other-input-${qi}`}
+                    />
+                  ) : null}
                 </Checkbox.Group>
               ) : (
                 <Radio.Group

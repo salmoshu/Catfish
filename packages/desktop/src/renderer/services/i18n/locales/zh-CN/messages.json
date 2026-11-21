@@ -24,7 +24,9 @@
     "viewSteps_other": "查看步骤 · {{count}}",
     "input": "输入",
     "output": "输出",
-    "loadFailed": "加载完整输出失败"
+    "loadFailed": "加载完整输出失败",
+    "command": "Bash",
+    "diffMoreLines": "还有 {{count}} 行"
   },
   "turnWork": {
     "summary": "工作了 {{duration}}",
@@ -155,7 +157,8 @@
     "targetAgent": "目标 Agent",
     "handoffDescription": "新会话接收任务摘要并继续下一步，源会话保持运行。",
     "errorTargetUnavailable": "目标 Agent 当前不可用。",
-    "errorOperationConflict": "此操作编号已用于另一项 Fork。"
+    "errorOperationConflict": "此操作编号已用于另一项 Fork。",
+    "optionsUnavailable": "会话连接后可用"
   },
   "askSubmit": "提交",
   "askDecline": "不回答",

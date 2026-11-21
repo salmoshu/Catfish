@@ -184,12 +184,23 @@ export class RemoteEnvironmentManager {
 
   async connect(params: RemoteEnvironmentConnectParams): Promise<RemoteOperationResult<BackendEnvironment>> {
     if (this.connectingId) return { ok: false, code: 'busy', message: 'A connection attempt is in progress' };
-    if (this.activeRuntime?.environmentId === params.id) return success(this.activeRuntime.environment);
-    const existing = this.runtimes.get(params.id);
-    if (existing) {
-      this.activeRuntime = existing;
-      this.progress(params.id, 'connected');
-      return success(existing.environment);
+    const reusable =
+      this.runtimes.get(params.id) ??
+      (this.activeRuntime?.environmentId === params.id ? this.activeRuntime : undefined);
+    if (reusable) {
+      if (await reusable.backend.ping()) {
+        this.activeRuntime = reusable;
+        this.progress(params.id, 'connected');
+        return success(reusable.environment);
+      }
+      // A cached runtime whose WSL process or tunnel died (common after sleep,
+      // a distro restart, or a stale tunnel) used to short-circuit reconnect and
+      // surface as a bare "fetch failed" on the next request. Drop it and
+      // establish a fresh backend instead.
+      this.runtimes.delete(params.id);
+      if (this.activeRuntime?.environmentId === params.id) this.activeRuntime = undefined;
+      this.progress(params.id, 'connecting');
+      await reusable.backend.stop().catch(() => {});
     }
     let connection: RemoteConnection;
     try {

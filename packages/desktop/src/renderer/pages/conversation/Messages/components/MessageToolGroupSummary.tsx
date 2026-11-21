@@ -1,6 +1,9 @@
 import { Button, Message, Spin, Tooltip } from '@arco-design/web-react';
 import {
+  Caution,
+  CheckSmall,
   Checklist,
+  CloseSmall,
   Delete,
   Down,
   Download,
@@ -20,9 +23,10 @@ import { getAcpImageFileName } from '@/common/chat/acpToolCallOutput';
 import type { NormalizedToolCall, ToolAction, ToolDisplayStatus, ToolMessage } from '@/common/chat/normalizeToolCall';
 import { getToolDisplayStatus, normalizeToolMessages, hasRunningToolMessages } from '@/common/chat/normalizeToolCall';
 import LocalImageView from '@/renderer/components/media/LocalImageView';
-import StructuredContent from '@/renderer/components/chat/StructuredContent';
-import MessageFileChanges from '../MessageFileChanges';
-import { parseFileChange } from '@/renderer/utils/file/diffUtils';
+import StructuredContent, { parseStructuredValue } from '@/renderer/components/chat/StructuredContent';
+import { usePreviewLauncher } from '@/renderer/hooks/file/usePreviewLauncher';
+import { getFileTypeInfo } from '@/renderer/utils/file/fileType';
+import { extractContentFromDiff, parseFileChange, type FileChangeInfo } from '@/renderer/utils/file/diffUtils';
 import { downloadFileFromPath } from '@/renderer/utils/file/download';
 import { isAgentToolName } from '../../Workbench/workbenchActivity';
 import { openWorkbenchSection } from '../../Workbench/workbenchActivityStore';
@@ -64,8 +68,103 @@ const STATUS_LABELS: Record<ToolDisplayStatus, string> = {
   incomplete: 'Incomplete',
 };
 
+const basename = (path: string): string => path.split(/[/\\]/).findLast((part) => part.length > 0) ?? path;
+
+const asRecord = (value: unknown): Record<string, unknown> | undefined =>
+  typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
+
+const stringValue = (value: unknown): string | undefined =>
+  typeof value === 'string' && value.trim() ? value.trim() : undefined;
+
+/** Unified-diff body without the git/file headers the row already shows. */
+const diffBodyLines = (diff: string): string[] =>
+  diff.split('\n').filter((line) => {
+    if (!line) return false;
+    if (line.startsWith('diff --git')) return false;
+    if (line.startsWith('index ')) return false;
+    if (line.startsWith('--- ')) return false;
+    if (line.startsWith('+++ ')) return false;
+    if (line.startsWith('\\')) return false;
+    return true;
+  });
+
+const DiffCounts: React.FC<{ insertions: number; deletions: number }> = ({ insertions, deletions }) =>
+  insertions + deletions > 0 ? (
+    <span className='tool-row__counts'>
+      {insertions > 0 && <span className='tool-row__additions'>+{insertions}</span>}
+      {deletions > 0 && <span className='tool-row__deletions'>−{deletions}</span>}
+    </span>
+  ) : null;
+
+const StatusGlyph: React.FC<{ status: ToolDisplayStatus; label: string }> = ({ status, label }) => {
+  if (status === 'running' || status === 'pending') return <Spin size={12} />;
+  if (status === 'completed')
+    return <CheckSmall theme='outline' size={15} fill='currentColor' className='tool-status__ok' aria-label={label} />;
+  if (status === 'error')
+    return (
+      <CloseSmall theme='outline' size={15} fill='currentColor' className='tool-status__fail' aria-label={label} />
+    );
+  if (status === 'canceled' || status === 'incomplete')
+    return <Caution theme='outline' size={14} fill='currentColor' className='tool-status__warn' aria-label={label} />;
+  return null;
+};
+
+const ToolDiffPreview: React.FC<{
+  file: FileChangeInfo;
+  onOpen: (file: FileChangeInfo) => void;
+  onDiff: (file: FileChangeInfo) => void;
+}> = ({ file, onOpen, onDiff }) => {
+  const { t } = useTranslation();
+  const lines = useMemo(() => diffBodyLines(file.diff), [file.diff]);
+  const visible = lines.slice(0, 80);
+  const hiddenCount = lines.length - visible.length;
+
+  return (
+    <div className='tool-diff' data-testid='tool-diff-preview'>
+      <div className='tool-diff__header'>
+        <Button type='text' className='tool-diff__path' title={file.fullPath} onClick={() => onOpen(file)}>
+          <span className='tool-diff__directory'>
+            {file.fullPath.slice(0, Math.max(0, file.fullPath.length - file.file_name.length))}
+          </span>
+          <span className='tool-diff__name'>{file.file_name}</span>
+        </Button>
+        <Button
+          type='text'
+          className='tool-diff__counts'
+          aria-label={`${t('messages.fileChanges')}: ${file.fullPath}`}
+          onClick={() => onDiff(file)}
+        >
+          <DiffCounts insertions={file.insertions} deletions={file.deletions} />
+        </Button>
+      </div>
+      <pre className='tool-diff__body'>
+        {visible.map((line, index) => {
+          const kind = line.startsWith('@@')
+            ? 'hunk'
+            : line.startsWith('+')
+              ? 'add'
+              : line.startsWith('-')
+                ? 'del'
+                : 'context';
+          return (
+            <div key={index} className={`tool-diff__line tool-diff__line--${kind}`}>
+              {line || ' '}
+            </div>
+          );
+        })}
+      </pre>
+      {hiddenCount > 0 && (
+        <div className='tool-diff__more'>
+          {t('messages.toolGroup.diffMoreLines', { count: hiddenCount, defaultValue: '{{count}} more lines' })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ToolItemDetail: React.FC<{ item: NormalizedToolCall; isProcessing: boolean }> = ({ item, isProcessing }) => {
   const { t } = useTranslation();
+  const { launchPreview } = usePreviewLauncher();
   const [expanded, setExpanded] = useState(false);
   useEffect(() => {
     if (!isProcessing) setExpanded(false);
@@ -82,10 +181,87 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall; isProcessing: boolean
       ? t('messages.toolActions.other', { defaultValue: 'Tool' })
       : displayItem.name;
   const needsAttention = ['error', 'canceled', 'incomplete'].includes(displayStatus);
+  const isEdit = displayItem.action === 'edit' || displayItem.action === 'write';
+  const isExecute = displayItem.action === 'execute';
+
+  const parsedInput = useMemo(() => asRecord(parseStructuredValue(displayItem.input)), [displayItem.input]);
+
+  // Some ACP backends only expose the edit payload in rawInput; synthesize the
+  // same preview the diff content would have produced.
+  const diffFiles = useMemo<FileChangeInfo[]>(() => {
+    if (displayItem.diffs?.length) {
+      return displayItem.diffs.map((diff) => parseFileChange(diff.path, diff.old_text, diff.new_text ?? ''));
+    }
+    if (!isEdit) return [];
+    const path =
+      stringValue(parsedInput?.file_path) ?? stringValue(parsedInput?.path) ?? stringValue(parsedInput?.file_name);
+    const after = parsedInput?.new_string ?? parsedInput?.new_text ?? parsedInput?.content ?? parsedInput?.new_source;
+    if (!path || typeof after !== 'string') return [];
+    const before = parsedInput?.old_string ?? parsedInput?.old_text ?? parsedInput?.old_source;
+    return [parseFileChange(path, typeof before === 'string' ? before : undefined, after)];
+  }, [displayItem.diffs, isEdit, parsedInput]);
+
+  const editTotals = useMemo(
+    () =>
+      diffFiles.reduce(
+        (total, file) => ({
+          insertions: total.insertions + file.insertions,
+          deletions: total.deletions + file.deletions,
+        }),
+        { insertions: 0, deletions: 0 }
+      ),
+    [diffFiles]
+  );
+
+  const primaryPath = diffFiles[0]?.fullPath ?? displayItem.filePath;
+  const primaryName = primaryPath ? basename(primaryPath) : undefined;
+  const command = displayItem.command;
+  const cwd =
+    stringValue(parsedInput?.cwd) ??
+    stringValue(parsedInput?.workdir) ??
+    stringValue(parsedInput?.working_directory) ??
+    stringValue(parsedInput?.workingDirectory);
+
   const hasDetail = Boolean(
-    displayItem.input || displayItem.output || displayItem.diffs?.length || item.truncated || item.imagePath
+    diffFiles.length ||
+    command ||
+    displayItem.input ||
+    displayItem.output ||
+    item.truncated ||
+    item.imagePath ||
+    displayItem.description
   );
   const [messageApi, messageContext] = Message.useMessage();
+
+  const openFile = useCallback(
+    (file: FileChangeInfo, asDiff = false) => {
+      openWorkbenchSection('changes');
+      const { contentType, editable, language } = getFileTypeInfo(file.file_name);
+      if (asDiff) {
+        void launchPreview({
+          placement: 'sidebar',
+          file_name: file.file_name,
+          contentType: 'diff',
+          editable: false,
+          language: 'diff',
+          diffContent: file.diff,
+        });
+        return;
+      }
+      void launchPreview({
+        placement: 'sidebar',
+        relativePath: file.fullPath,
+        file_name: file.file_name,
+        contentType,
+        editable,
+        language,
+        fallbackContent: editable ? extractContentFromDiff(file.diff) : undefined,
+        diffContent: file.diff,
+      });
+    },
+    [launchPreview]
+  );
+
   const handleDownloadImage = useCallback(
     async (path: string) => {
       try {
@@ -127,23 +303,29 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall; isProcessing: boolean
     }
   };
 
+  // t3code-style subtitle: the file for edits, the command for shell work, and
+  // the existing description for every other tool.
+  const subtitle = diffFiles.length > 0 && primaryName ? primaryName : isExecute ? command : displayItem.description;
+
   const heading = (
     <>
       <span
         className={`tool-row__rail ${displayStatus === 'error' ? 'text-danger' : needsAttention ? 'text-warning' : ''}`}
         aria-label={statusLabel}
       >
-        {displayStatus === 'running' ? <Spin size={12} /> : ACTION_ICONS[displayItem.action ?? 'other']}
+        {displayStatus === 'running' && !isExecute ? <Spin size={12} /> : ACTION_ICONS[displayItem.action ?? 'other']}
       </span>
       <span className='tool-row__heading'>
         <span className='tool-row__name'>{actionLabel}</span>
-        {displayItem.description && displayItem.description !== actionLabel && (
-          <span className='tool-row__description' title={displayItem.description}>
-            {displayItem.description}
+        {subtitle && subtitle !== actionLabel && (
+          <span className={`tool-row__description${isExecute ? ' tool-row__description--mono' : ''}`} title={subtitle}>
+            {subtitle}
           </span>
         )}
+        {diffFiles.length > 0 && <DiffCounts insertions={editTotals.insertions} deletions={editTotals.deletions} />}
       </span>
-      {needsAttention && (
+      {isExecute && <StatusGlyph status={displayStatus} label={statusLabel} />}
+      {needsAttention && !isExecute && (
         <span className={`shrink-0 text-12px ${displayStatus === 'error' ? 'text-danger' : 'text-warning'}`}>
           {statusLabel}
         </span>
@@ -157,7 +339,7 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall; isProcessing: boolean
   );
 
   return (
-    <div className='tool-row'>
+    <div className='tool-row' data-status={displayStatus}>
       {messageContext}
       {hasDetail ? (
         <Button type='text' className='tool-row__button' aria-expanded={expanded} onClick={toggleExpanded}>
@@ -176,16 +358,28 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall; isProcessing: boolean
               {t('messages.toolGroup.loadFailed', { defaultValue: 'Failed to load full output' })}
             </div>
           )}
-          {displayItem.input && (
+          {diffFiles.map((file) => (
+            <ToolDiffPreview
+              key={file.fullPath}
+              file={file}
+              onOpen={(change) => openFile(change)}
+              onDiff={(change) => openFile(change, true)}
+            />
+          ))}
+          {command && (
+            <div className='tool-command'>
+              <div className='tool-detail-label'>{t('messages.toolGroup.command', { defaultValue: 'Bash' })}</div>
+              <pre className='tool-command__text' dir='ltr'>
+                {command}
+              </pre>
+              {cwd && <StructuredContent value={{ workdir: cwd }} />}
+            </div>
+          )}
+          {!command && displayItem.input && (
             <div className='tool-detail-section'>
               <div className='tool-detail-label'>{t('messages.toolGroup.input', { defaultValue: 'Input' })}</div>
               <StructuredContent value={displayItem.input} />
             </div>
-          )}
-          {displayItem.diffs && displayItem.diffs.length > 0 && (
-            <MessageFileChanges
-              diffsChanges={displayItem.diffs.map((diff) => parseFileChange(diff.path, diff.old_text, diff.new_text))}
-            />
           )}
           {displayItem.output && (
             <div className='tool-detail-section'>
@@ -210,7 +404,7 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall; isProcessing: boolean
               size='mini'
               shape='circle'
               icon={<Download theme='outline' size='14' />}
-              onClick={() => void handleDownloadImage(item.imagePath)}
+              onClick={() => void handleDownloadImage(item.imagePath!)}
             />
           </Tooltip>
         </div>

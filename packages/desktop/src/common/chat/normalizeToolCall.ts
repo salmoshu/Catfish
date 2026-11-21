@@ -29,6 +29,8 @@ export type NormalizedToolCall = {
   action?: ToolAction;
   input?: string;
   output?: string;
+  command?: string;
+  filePath?: string;
   truncated?: boolean;
   messageId?: string;
   conversationId?: string;
@@ -90,14 +92,23 @@ const actionForName = (name: string): ToolAction | undefined => {
   return Object.hasOwn(TOOL_ACTIONS, key) ? TOOL_ACTIONS[key] : undefined;
 };
 
+const commandField = (fields: Record<string, unknown> | undefined): string | undefined => {
+  const value = fields?.command ?? fields?.cmd ?? fields?.command_line ?? fields?.commandline;
+  if (typeof value === 'string') return stringField(value);
+  if (Array.isArray(value) && value.length > 0 && value.every((part) => typeof part === 'string')) {
+    return value.join(' ');
+  }
+  return undefined;
+};
+
 const summarizeTool = (
   name: string,
   input: unknown,
   description?: string,
   kind?: string
-): Pick<NormalizedToolCall, 'action' | 'description'> => {
+): Pick<NormalizedToolCall, 'action' | 'description' | 'command' | 'filePath'> => {
   const fields = asRecord(input);
-  const command = stringField(fields?.command) ?? stringField(fields?.cmd);
+  const command = commandField(fields);
   const action =
     actionForName(name) ??
     // ACP execute also covers custom tools such as image generation. Only call it
@@ -111,6 +122,8 @@ const summarizeTool = (
 
   return {
     action,
+    command: action === 'execute' ? command : undefined,
+    filePath: path,
     description:
       (purpose !== command && purpose !== name ? purpose : undefined) ??
       customTitle ??
@@ -260,12 +273,14 @@ export function normalizeAcpToolCall(message: IMessageAcpToolCall): NormalizedTo
   }
 
   const name = stringField(update.title) ?? update.kind ?? 'Tool';
+  const summary = summarizeTool(name, rawInput, undefined, update.kind);
 
   return {
     key: update.tool_call_id,
     name,
     status: normalizeAcpStatus(update.status),
-    ...summarizeTool(name, rawInput, undefined, update.kind),
+    ...summary,
+    filePath: summary.filePath ?? diffs[0]?.path,
     input,
     output,
     truncated: content?._compact?.truncated === true,

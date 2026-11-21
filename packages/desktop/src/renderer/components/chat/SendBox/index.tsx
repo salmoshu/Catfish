@@ -1794,7 +1794,7 @@ const SendBox: React.FC<{
    */
   const sendboxHint = canMentionSessions
     ? t('conversation.sendbox.hintWithSessions', {
-        defaultValue: 'Type / for commands, @ for files, @@ for conversations, ↑/↓ for history',
+        defaultValue: 'Type / for commands, @ for files, @@ for conversations',
       })
     : t('conversation.sendbox.hint', { defaultValue: 'Type / for commands, @ to reference files' });
 
@@ -2111,7 +2111,7 @@ const SendBox: React.FC<{
               spellCheck={false}
               value={input}
               placeholder={placeholder ?? (bottomHint as string | undefined) ?? sendboxHint}
-              className={`${shouldUseHighlightOverlay ? 'sendbox-highlight-textarea ' : ''}ps-0 pe-0 !b-none focus:shadow-none m-0 !bg-transparent !focus:bg-transparent !hover:bg-transparent lh-[20px] !resize-none text-14px ${isMobile ? 'sendbox-input--mobile' : ''}`}
+              className={`${shouldUseHighlightOverlay ? 'sendbox-highlight-textarea ' : ''}ps-2px pe-2px !b-none focus:shadow-none m-0 !bg-transparent !focus:bg-transparent !hover:bg-transparent lh-[20px] !resize-none text-14px ${isMobile ? 'sendbox-input--mobile' : ''}`}
               data-testid='sendbox-input'
               style={{
                 width: '100%',

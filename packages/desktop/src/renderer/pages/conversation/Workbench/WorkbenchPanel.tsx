@@ -92,7 +92,6 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
     openBrowserTab,
     sideChat,
     closeSideChat,
-    closePreview,
   } = usePreviewContext();
   const activeTab = sidebarTabs.find((tab) => tab.id === sidebarActiveTabId) ?? null;
   const previewVisible = Boolean(previewOpen && activeTab);
@@ -132,11 +131,10 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
         else openBrowserTab(undefined, 'sidebar');
         return;
       }
-      if (previewOpen) closePreview('sidebar');
       update((current) => openWorkbenchWorkspace(current, section));
       notifyWorkbenchSectionChange(section);
     },
-    [activeTab, closePreview, openBrowserTab, switchTab, previewOpen, update]
+    [activeTab, openBrowserTab, switchTab, previewOpen, update]
   );
 
   return (
@@ -151,7 +149,7 @@ export const WorkbenchPanel: React.FC<WorkbenchPanelProps> = ({ projectId, onSec
           <ExplorerContainer
             projectId={projectId}
             activeSection={activeSection}
-            contentHidden={previewVisible || activeSection === 'agents'}
+            contentHidden={activeSection === 'agents'}
             terminalActivity={activity.terminals}
             onSectionChange={selectSection}
           />

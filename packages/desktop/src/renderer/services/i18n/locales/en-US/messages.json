@@ -24,7 +24,9 @@
     "viewSteps_other": "View Steps · {{count}}",
     "input": "Input",
     "output": "Output",
-    "loadFailed": "Failed to load full output"
+    "loadFailed": "Failed to load full output",
+    "command": "Bash",
+    "diffMoreLines": "{{count}} more lines"
   },
   "turnWork": {
     "summary": "Worked for {{duration}}",
@@ -155,7 +157,8 @@
     "targetAgent": "Target Agent",
     "handoffDescription": "The new conversation receives a concise handoff and starts the next steps. The source keeps running.",
     "errorTargetUnavailable": "The target Agent is unavailable.",
-    "errorOperationConflict": "This operation was already used for another fork."
+    "errorOperationConflict": "This operation was already used for another fork.",
+    "optionsUnavailable": "Available after the forked session connects"
   },
   "askSubmit": "Submit",
   "askDecline": "Dismiss",
