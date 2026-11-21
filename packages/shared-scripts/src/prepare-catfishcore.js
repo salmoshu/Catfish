@@ -230,6 +230,15 @@ function extractArchive(archivePath, outputDir, platform) {
   ensureDirectory(outputDir);
   if (platform === 'win32' || archivePath.endsWith('.zip')) {
     if (platform === 'win32') {
+      // Windows runners ship bsdtar, which handles zip without the fragile
+      // System.IO.Compression overload resolution that breaks inside the
+      // Microsoft.PowerShell.Archive module on PowerShell 7.
+      try {
+        execFileSync('tar', ['-xf', archivePath, '-C', outputDir], { timeout: 120000 });
+        return;
+      } catch {
+        // Fall through to the .NET extractor when bsdtar is unavailable.
+      }
       const archiveLiteral = `'${archivePath.replace(/'/g, "''")}'`;
       const outputLiteral = `'${outputDir.replace(/'/g, "''")}'`;
       const ps = `Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::ExtractToDirectory(${archiveLiteral}, ${outputLiteral})`;
